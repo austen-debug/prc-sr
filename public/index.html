@@ -272,7 +272,8 @@
      </div>
     </div><!-- Open/Close -->
     <div id="modal-action-section" class="flex gap-3 justify-center"></div>
-   </div>
+      </div>
+  </div><!-- End Dorm Processing Modal -->
 
   <!-- Closed Dorm Edit Modal -->
 <div id="dorm-edit-modal" class="confirm-overlay hidden">
@@ -351,7 +352,7 @@
   </div>
 </div> 
    
-  </div><!-- Local Bus Modal -->
+  <!-- Local Bus Modal -->
   <div id="local-bus-modal" class="confirm-overlay hidden">
    <div class="modal-content">
     <div class="flex justify-between items-center mb-4">
@@ -802,23 +803,22 @@ return `<div class="proc-card ${borderClass} ${closedClass}" onclick="openDormMo
       document.getElementById('modal-load-input').value = d.current_load || 0;
       document.getElementById('modal-load-max').textContent = `/ ${d.max_load}`;
 
-      // Actions
-      c// Actions
-const actionEl = document.getElementById('modal-action-section');
+            // Actions
+      const actionEl = document.getElementById('modal-action-section');
 
-if (currentRole !== 'instructor') {
-  if (d.state === 'closed') {
-    actionEl.innerHTML = `<div class="text-muted font-bold">DORM CLOSED</div>`;
-  } else {
-    actionEl.innerHTML = `<div class="text-muted font-bold text-center">Instructor access required to open or close dorms.</div>`;
-  }
-} else if (d.state === 'empty') {
-  actionEl.innerHTML = `<button onclick="openDorm('${id}')" class="px-8 py-3 rounded-lg font-bold text-white text-lg" style="background:var(--green);">OPEN DORM</button>`;
-} else if (d.state === 'open') {
-  actionEl.innerHTML = `<button onclick="closeDorm('${id}')" class="px-8 py-3 rounded-lg font-bold text-white text-lg" style="background:var(--red);">CLOSE DORM</button>`;
-} else {
-  actionEl.innerHTML = `<div class="text-muted font-bold">DORM CLOSED</div>`;
-}
+      if (currentRole !== 'instructor') {
+        if (d.state === 'closed') {
+          actionEl.innerHTML = `<div class="text-muted font-bold">DORM CLOSED</div>`;
+        } else {
+          actionEl.innerHTML = `<div class="text-muted font-bold text-center">Instructor access required to open or close dorms.</div>`;
+        }
+      } else if (d.state === 'empty') {
+        actionEl.innerHTML = `<button onclick="openDorm('${id}')" class="px-8 py-3 rounded-lg font-bold text-white text-lg" style="background:var(--green);">OPEN DORM</button>`;
+      } else if (d.state === 'open') {
+        actionEl.innerHTML = `<button onclick="closeDorm('${id}')" class="px-8 py-3 rounded-lg font-bold text-white text-lg" style="background:var(--red);">CLOSE DORM</button>`;
+      } else {
+        actionEl.innerHTML = `<div class="text-muted font-bold">DORM CLOSED</div>`;
+      }
 
       document.getElementById('dorm-modal').classList.remove('hidden');
     }

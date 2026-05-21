@@ -451,7 +451,7 @@
   const result = await response.json();
 
   if (!result.isOk) {
-    window.location.href = '/login.html';
+    window.location.href = '/login/';
     return;
   }
 
@@ -467,7 +467,7 @@ async function logout() {
     }
   });
 
-  window.location.href = '/login.html';
+  window.location.href = '/login/';
 }
 
     function buildNav() {

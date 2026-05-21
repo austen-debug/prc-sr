@@ -427,6 +427,88 @@ body > * {
      <div id="local-bus-msg" class="text-center text-sm hidden"></div>
     </form>
    </div>
+<!-- Archive Edit Modal -->
+<div id="archive-edit-modal" class="confirm-overlay hidden">
+  <div class="modal-content" style="max-width: 900px;">
+    <div class="flex justify-between items-center mb-4">
+      <h2 class="text-xl font-black">Edit Archived Week Group</h2>
+      <button onclick="closeArchiveEditModal()" class="text-3xl leading-none text-muted hover:text-white">×</button>
+    </div>
+
+    <form id="archive-edit-form" class="space-y-4">
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-sm font-medium mb-1" for="archive-edit-wg">Week Group</label>
+          <input id="archive-edit-wg" type="text" class="w-full border rounded px-3 py-2 bg-transparent" style="border-color:var(--border);color:var(--text);">
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-1" for="archive-edit-archived-at">Archived At</label>
+          <input id="archive-edit-archived-at" type="text" class="w-full border rounded px-3 py-2 bg-transparent font-tabular" style="border-color:var(--border);color:var(--text);">
+        </div>
+      </div>
+
+      <div class="grid grid-cols-4 gap-3">
+        <div>
+          <label class="block text-sm font-medium mb-1" for="archive-edit-dorm-count">Dorms</label>
+          <input id="archive-edit-dorm-count" type="number" min="0" class="w-full border rounded px-3 py-2 bg-transparent font-tabular" style="border-color:var(--border);color:var(--text);">
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-1" for="archive-edit-bus-count">Buses</label>
+          <input id="archive-edit-bus-count" type="number" min="0" class="w-full border rounded px-3 py-2 bg-transparent font-tabular" style="border-color:var(--border);color:var(--text);">
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-1" for="archive-edit-total-arrived">Total Arrived</label>
+          <input id="archive-edit-total-arrived" type="number" min="0" class="w-full border rounded px-3 py-2 bg-transparent font-tabular" style="border-color:var(--border);color:var(--text);">
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-1" for="archive-edit-female-total">Females</label>
+          <input id="archive-edit-female-total" type="number" min="0" class="w-full border rounded px-3 py-2 bg-transparent font-tabular" style="border-color:var(--border);color:var(--text);">
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-sm font-medium mb-1" for="archive-edit-nat-total">Naturalizations</label>
+          <input id="archive-edit-nat-total" type="number" min="0" class="w-full border rounded px-3 py-2 bg-transparent font-tabular" style="border-color:var(--border);color:var(--text);">
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-1">Actions</label>
+          <div class="flex gap-2">
+            <button type="button" onclick="printArchiveSpreadsheet()" class="flex-1 py-2 rounded font-bold text-white" style="background:var(--blue);">PRINT</button>
+            <button type="button" onclick="deleteArchiveWithOverride()" class="flex-1 py-2 rounded font-bold text-white" style="background:var(--red);">DELETE</button>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium mb-1" for="archive-edit-dorm-data">Dorm Data JSON</label>
+        <textarea id="archive-edit-dorm-data" rows="8" class="w-full border rounded px-3 py-2 bg-transparent font-mono text-xs" style="border-color:var(--border);color:var(--text);"></textarea>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium mb-1" for="archive-edit-bus-data">Bus Data JSON</label>
+        <textarea id="archive-edit-bus-data" rows="8" class="w-full border rounded px-3 py-2 bg-transparent font-mono text-xs" style="border-color:var(--border);color:var(--text);"></textarea>
+      </div>
+
+      <div class="text-xs text-muted">
+        Dorm and bus data are stored as JSON so the full archived week group can be corrected without changing the live board.
+      </div>
+
+      <div class="flex gap-3 pt-2">
+        <button type="submit" class="flex-1 py-3 rounded-lg font-bold text-white" style="background:var(--green);">SAVE ARCHIVE</button>
+        <button type="button" onclick="closeArchiveEditModal()" class="flex-1 py-3 rounded-lg font-bold surface border" style="border-color:var(--border);">CANCEL</button>
+      </div>
+
+      <div id="archive-edit-msg" class="hidden text-center text-sm font-bold"></div>
+    </form>
+  </div>
+</div>
+   
   </div><!-- Confirmation Dialog -->
   <div id="confirm-dialog" class="confirm-overlay hidden">
    <div class="surface border rounded-lg p-6 max-w-sm w-full mx-4 text-center" style="border-color:var(--border);">
@@ -563,6 +645,7 @@ async function refresh(force = false) {
     let currentUsername = '';
     let modalDormId = null;
     let editDormId = null;
+    let editArchiveId = null;
 
     function escapeHtml(value) {
       return String(value ?? '')
@@ -1324,23 +1407,74 @@ closed_timer: d.state === 'closed'
     }
 
     function renderArchives() {
-      const archives = getRecords('archive');
-      const el = document.getElementById('archive-history');
-      if (archives.length === 0) { el.innerHTML = 'No archived week groups.'; return; }
-      el.innerHTML = archives.map(a => {
-        let dormLog = '';
-        if (a.dorm_data) {
-          try {
-            const parsed = JSON.parse(a.dorm_data);
-            if (parsed.length > 0) {
-              dormLog = `<div class="mt-3 border-t pt-2" style="border-color:var(--border);"><div class="grid grid-cols-4 gap-2 text-[10px] uppercase font-bold text-muted mb-1"><div>Dorm</div><div>Opened</div><div>Closed</div><div>Elapsed</div></div><div class="space-y-1">${parsed.map(d => `<div class="grid grid-cols-4 gap-2 text-xs"><div class="font-bold">${escapeHtml(d.name)}</div><div class="font-tabular">${escapeHtml(d.open_time)}</div><div class="font-tabular">${escapeHtml(d.close_time)}</div><div class="font-tabular text-muted">${escapeHtml(d.elapsed)}</div></div>`).join('')}</div></div>`;
-            }
-          } catch(e) {}
+  const archives = getRecords('archive');
+  const el = document.getElementById('archive-history');
+
+  if (archives.length === 0) {
+    el.innerHTML = 'No archived week groups.';
+    return;
+  }
+
+  el.innerHTML = archives.map(a => {
+    let dormLog = '';
+
+    if (a.dorm_data) {
+      try {
+        const parsed = JSON.parse(a.dorm_data);
+
+        if (parsed.length > 0) {
+          dormLog = `
+            <div class="mt-3 border-t pt-2" style="border-color:var(--border);">
+              <div class="grid grid-cols-6 gap-2 text-[10px] uppercase font-bold text-muted mb-1">
+                <div>Dorm</div>
+                <div>Loaded</div>
+                <div>Max</div>
+                <div>Opened</div>
+                <div>Closed</div>
+                <div>Elapsed</div>
+              </div>
+              <div class="space-y-1">
+                ${parsed.map(d => `
+                  <div class="grid grid-cols-6 gap-2 text-xs">
+                    <div class="font-bold">${escapeHtml(d.name || d.dorm_name || '')}</div>
+                    <div class="font-tabular">${escapeHtml(d.current_load ?? d.loaded ?? '')}</div>
+                    <div class="font-tabular">${escapeHtml(d.max_load ?? '')}</div>
+                    <div class="font-tabular">${escapeHtml(d.open_time || '')}</div>
+                    <div class="font-tabular">${escapeHtml(d.close_time || '')}</div>
+                    <div class="font-tabular text-muted">${escapeHtml(d.elapsed || '')}</div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          `;
         }
-        return `<div class="surface border rounded-lg p-3 mb-3" style="border-color:var(--border);"><div class="font-bold text-lg">${escapeHtml(a.week_group || 'Unknown')}</div><div class="text-xs text-muted mb-1">Archived: ${a.archived_at ? new Date(a.archived_at).toLocaleString() : ''} | Buses: ${a.bus_count || 0} | Arrived: ${a.total_arrived || 0}</div>${dormLog}</div>`;
-      }).reverse().join('');
+      } catch(e) {}
     }
 
+    const femaleTotal = Number(a.female_total || 0);
+    const natTotal = Number(a.nat_total || 0);
+
+    return `
+      <div
+        class="surface border rounded-lg p-3 mb-3"
+        style="border-color:var(--border); cursor:pointer;"
+        oncontextmenu="openArchiveEditModal(event, '${a.__backendId}')"
+        title="Right-click to edit archived week group"
+      >
+        <div class="font-bold text-lg">${escapeHtml(a.week_group || 'Unknown')}</div>
+        <div class="text-xs text-muted mb-1">
+          Archived: ${a.archived_at ? new Date(a.archived_at).toLocaleString() : ''}
+          | Buses: ${a.bus_count || 0}
+          | Arrived: ${a.total_arrived || 0}
+          | Females: ${femaleTotal}
+          | NAT: ${natTotal}
+        </div>
+        ${dormLog}
+      </div>
+    `;
+  }).reverse().join('');
+}
+   
     function initiateCloseout() {
       showConfirm('Close out this week group? This archives all data.', async () => {
         const wg = getActiveWG();
@@ -1349,14 +1483,58 @@ closed_timer: d.state === 'closed'
         const arrivedBuses = buses.filter(b => b.status === 'arrived');
         const totalArrived = arrivedBuses.reduce((s, b) => s + (Number(b.otw_count) || 0), 0);
         const dormHistory = dorms.map(d => ({
-          name: d.dorm_name,
-          open_time: d.opened_at ? new Date(d.opened_at).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : '—',
-          close_time: d.closed_at ? new Date(d.closed_at).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : '—',
-          elapsed: d.closed_timer || '—'
-        }));
-        if (allData.length < 999) {
-          await window.dataSdk.create({type: 'archive', week_group: wg, archived_at: new Date().toISOString(), dorm_count: dorms.length, bus_count: buses.length, total_arrived: totalArrived, dorm_data: JSON.stringify(dormHistory), destination: '', bus_type: ''});
-        }
+  name: d.dorm_name,
+  dorm_name: d.dorm_name,
+  sdq: d.sdq || '',
+  section: d.section || '',
+  inter_sec: d.inter_sec || '',
+  sex: d.sex || '',
+  band: d.band || 'false',
+  current_load: Number(d.current_load || 0),
+  max_load: Number(d.max_load || 0),
+  state: d.state || '',
+  phase: d.phase || '',
+  opened_at: d.opened_at || '',
+  closed_at: d.closed_at || '',
+  open_time: d.opened_at ? new Date(d.opened_at).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : '—',
+  close_time: d.closed_at ? new Date(d.closed_at).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : '—',
+  elapsed: d.closed_timer || '—'
+}));
+
+const busHistory = buses.map(b => ({
+  bus_id: b.bus_id || '',
+  bus_type: b.bus_type || 'airport',
+  originating_destination: b.originating_destination || b.destination || '',
+  destination: b.destination || '',
+  departed_at: b.created_at || '',
+  arrived_at: b.arrived_at || '',
+  otw_count: Number(b.otw_count || 0),
+  female_count: Number(b.female_count || 0),
+  nat_count: Number(b.nat_count || 0),
+  status: b.status || ''
+}));
+
+const femaleTotal = buses.reduce((s, b) => s + Number(b.female_count || 0), 0);
+const natTotal = buses.reduce((s, b) => s + Number(b.nat_count || 0), 0);
+const loadedTotal = dorms.reduce((s, d) => s + Number(d.current_load || 0), 0);
+const expectedTotal = dorms.reduce((s, d) => s + Number(d.max_load || 0), 0);
+
+if (allData.length < 999) {
+  await window.dataSdk.create({
+    type: 'archive',
+    week_group: wg,
+    archived_at: new Date().toISOString(),
+    dorm_count: dorms.length,
+    bus_count: buses.length,
+    total_arrived: totalArrived,
+    total_loaded: loadedTotal,
+    total_expected: expectedTotal,
+    female_total: femaleTotal,
+    nat_total: natTotal,
+    dorm_data: JSON.stringify(dormHistory),
+    bus_data: JSON.stringify(busHistory)
+  });
+}
         for (const rec of [...dorms, ...buses]) await window.dataSdk.delete(rec);
         const lastAirport = allData.find(d => d.type === 'config' && d.key === 'last_airport');
         if (lastAirport) await window.dataSdk.update({...lastAirport, value: ''});
@@ -1373,7 +1551,298 @@ closed_timer: d.state === 'closed'
       el.textContent = msg; el.className = `text-center text-sm ${isErr ? 'text-red-500' : 'text-green-400'}`;
       el.classList.remove('hidden'); setTimeout(() => el.classList.add('hidden'), 3000);
     }
+function safeJsonPretty(value, fallback = []) {
+  try {
+    if (!value) return JSON.stringify(fallback, null, 2);
+    return JSON.stringify(JSON.parse(value), null, 2);
+  } catch {
+    return JSON.stringify(fallback, null, 2);
+  }
+}
 
+function parseJsonField(fieldId, fallback = []) {
+  const value = document.getElementById(fieldId).value.trim();
+
+  if (!value) {
+    return fallback;
+  }
+
+  return JSON.parse(value);
+}
+
+function openArchiveEditModal(event, id) {
+  event.preventDefault();
+  event.stopPropagation();
+
+  if (currentRole !== 'instructor') {
+    return;
+  }
+
+  const archive = allData.find(r => r.__backendId === id);
+
+  if (!archive) {
+    return;
+  }
+
+  editArchiveId = id;
+
+  document.getElementById('archive-edit-wg').value = archive.week_group || '';
+  document.getElementById('archive-edit-archived-at').value = archive.archived_at || '';
+  document.getElementById('archive-edit-dorm-count').value = archive.dorm_count || 0;
+  document.getElementById('archive-edit-bus-count').value = archive.bus_count || 0;
+  document.getElementById('archive-edit-total-arrived').value = archive.total_arrived || 0;
+  document.getElementById('archive-edit-female-total').value = archive.female_total || 0;
+  document.getElementById('archive-edit-nat-total').value = archive.nat_total || 0;
+  document.getElementById('archive-edit-dorm-data').value = safeJsonPretty(archive.dorm_data, []);
+  document.getElementById('archive-edit-bus-data').value = safeJsonPretty(archive.bus_data, []);
+
+  const msg = document.getElementById('archive-edit-msg');
+  msg.classList.add('hidden');
+  msg.textContent = '';
+
+  document.getElementById('archive-edit-modal').classList.remove('hidden');
+}
+
+function closeArchiveEditModal() {
+  document.getElementById('archive-edit-modal').classList.add('hidden');
+  editArchiveId = null;
+}
+
+document.getElementById('archive-edit-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  if (currentRole !== 'instructor' || !editArchiveId) {
+    return;
+  }
+
+  const archive = allData.find(r => r.__backendId === editArchiveId);
+
+  if (!archive) {
+    return;
+  }
+
+  const msg = document.getElementById('archive-edit-msg');
+
+  try {
+    const dormData = parseJsonField('archive-edit-dorm-data', []);
+    const busData = parseJsonField('archive-edit-bus-data', []);
+
+    const updatedArchive = {
+      ...archive,
+      week_group: document.getElementById('archive-edit-wg').value.trim() || archive.week_group,
+      archived_at: document.getElementById('archive-edit-archived-at').value.trim() || archive.archived_at,
+      dorm_count: Number(document.getElementById('archive-edit-dorm-count').value || 0),
+      bus_count: Number(document.getElementById('archive-edit-bus-count').value || 0),
+      total_arrived: Number(document.getElementById('archive-edit-total-arrived').value || 0),
+      female_total: Number(document.getElementById('archive-edit-female-total').value || 0),
+      nat_total: Number(document.getElementById('archive-edit-nat-total').value || 0),
+      dorm_data: JSON.stringify(dormData),
+      bus_data: JSON.stringify(busData)
+    };
+
+    const result = await window.dataSdk.update(updatedArchive);
+
+    if (result.isOk) {
+      closeArchiveEditModal();
+    } else {
+      throw new Error('Failed to save archive.');
+    }
+  } catch (error) {
+    msg.textContent = `Archive save failed: ${error.message}`;
+    msg.style.color = 'var(--red)';
+    msg.classList.remove('hidden');
+  }
+});
+
+function printArchiveSpreadsheet() {
+  if (!editArchiveId) {
+    return;
+  }
+
+  const archive = allData.find(r => r.__backendId === editArchiveId);
+
+  if (!archive) {
+    return;
+  }
+
+  let dormData = [];
+  let busData = [];
+
+  try {
+    dormData = parseJsonField('archive-edit-dorm-data', []);
+    busData = parseJsonField('archive-edit-bus-data', []);
+  } catch (error) {
+    alert('Dorm Data JSON or Bus Data JSON is invalid. Fix the JSON before printing.');
+    return;
+  }
+
+  const weekGroup = document.getElementById('archive-edit-wg').value.trim() || archive.week_group || '';
+  const totalArrived = Number(document.getElementById('archive-edit-total-arrived').value || 0);
+  const femaleTotal = Number(document.getElementById('archive-edit-female-total').value || 0);
+  const natTotal = Number(document.getElementById('archive-edit-nat-total').value || 0);
+  const loadedTotal = dormData.reduce((s, d) => s + Number(d.current_load || d.loaded || 0), 0);
+  const expectedTotal = dormData.reduce((s, d) => s + Number(d.max_load || 0), 0);
+
+  const dormRows = dormData.map(d => `
+    <tr>
+      <td>${escapeHtml(d.name || d.dorm_name || '')}</td>
+      <td>${escapeHtml(d.sdq || '')}</td>
+      <td>${escapeHtml(d.section || '')}</td>
+      <td>${escapeHtml(d.inter_sec || '')}</td>
+      <td>${escapeHtml(d.sex || '')}</td>
+      <td>${escapeHtml(d.band === 'true' ? 'YES' : '')}</td>
+      <td>${escapeHtml(d.current_load ?? d.loaded ?? 0)}</td>
+      <td>${escapeHtml(d.max_load ?? 0)}</td>
+      <td>${escapeHtml(d.open_time || '')}</td>
+      <td>${escapeHtml(d.close_time || '')}</td>
+      <td>${escapeHtml(d.elapsed || '')}</td>
+    </tr>
+  `).join('');
+
+  const busRows = busData.map(b => `
+    <tr>
+      <td>${escapeHtml(b.bus_type || '')}</td>
+      <td>${escapeHtml(b.bus_id || '')}</td>
+      <td>${escapeHtml(b.originating_destination || b.destination || '')}</td>
+      <td>${escapeHtml(b.otw_count || 0)}</td>
+      <td>${escapeHtml(b.female_count || 0)}</td>
+      <td>${escapeHtml(b.nat_count || 0)}</td>
+      <td>${b.departed_at ? escapeHtml(new Date(b.departed_at).toLocaleString()) : ''}</td>
+      <td>${b.arrived_at ? escapeHtml(new Date(b.arrived_at).toLocaleString()) : ''}</td>
+      <td>${escapeHtml(b.status || '')}</td>
+    </tr>
+  `).join('');
+
+  const printWindow = window.open('', '_blank');
+
+  printWindow.document.write(`
+    <!doctype html>
+    <html>
+    <head>
+      <title>${escapeHtml(weekGroup)} Archive Report</title>
+      <style>
+        body { font-family: Arial, sans-serif; color: #111; margin: 24px; }
+        h1, h2 { margin-bottom: 6px; }
+        .summary { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin: 16px 0; }
+        .box { border: 1px solid #333; padding: 8px; }
+        .label { font-size: 10px; text-transform: uppercase; color: #555; }
+        .value { font-size: 20px; font-weight: 800; }
+        table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 11px; }
+        th, td { border: 1px solid #333; padding: 5px; text-align: left; }
+        th { background: #e5e7eb; }
+        @media print {
+          body { margin: 12px; }
+          .no-print { display: none; }
+        }
+      </style>
+    </head>
+    <body>
+      <button class="no-print" onclick="window.print()" style="padding:8px 16px;margin-bottom:12px;">Print</button>
+
+      <h1>PRC-SR Archive Report</h1>
+      <div><strong>Week Group:</strong> ${escapeHtml(weekGroup)}</div>
+      <div><strong>Archived:</strong> ${archive.archived_at ? escapeHtml(new Date(archive.archived_at).toLocaleString()) : ''}</div>
+
+      <div class="summary">
+        <div class="box"><div class="label">Total Arrived</div><div class="value">${totalArrived}</div></div>
+        <div class="box"><div class="label">Loaded to Dorms</div><div class="value">${loadedTotal}</div></div>
+        <div class="box"><div class="label">Expected Capacity</div><div class="value">${expectedTotal}</div></div>
+        <div class="box"><div class="label">Females</div><div class="value">${femaleTotal}</div></div>
+        <div class="box"><div class="label">Naturalizations</div><div class="value">${natTotal}</div></div>
+      </div>
+
+      <h2>Dorm Loadout</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Dorm</th>
+            <th>SDQ</th>
+            <th>Section</th>
+            <th>Inter/Sec</th>
+            <th>Sex</th>
+            <th>Band</th>
+            <th>Loaded</th>
+            <th>Max</th>
+            <th>Opened</th>
+            <th>Closed</th>
+            <th>Elapsed</th>
+          </tr>
+        </thead>
+        <tbody>${dormRows}</tbody>
+      </table>
+
+      <h2>Bus / Arrival Log</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Type</th>
+            <th>Bus #</th>
+            <th>Originating Destination</th>
+            <th>Arrived/OTW</th>
+            <th>Females</th>
+            <th>Naturalizations</th>
+            <th>Departed</th>
+            <th>Arrived</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>${busRows}</tbody>
+      </table>
+    </body>
+    </html>
+  `);
+
+  printWindow.document.close();
+  printWindow.focus();
+}
+
+   async function deleteArchiveWithOverride() {
+  if (!editArchiveId) {
+    return;
+  }
+
+  const archive = allData.find(r => r.__backendId === editArchiveId);
+
+  if (!archive) {
+    return;
+  }
+
+  const override = prompt('Enter ADMIN_OVERRIDE password to delete this archived week group.');
+
+  if (!override) {
+    return;
+  }
+
+  const confirmed = confirm(`Delete archived week group ${archive.week_group || 'Unknown'}? This cannot be undone.`);
+
+  if (!confirmed) {
+    return;
+  }
+
+  const response = await fetch('/api/archive-delete', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
+    },
+    body: JSON.stringify({
+      record_id: archive.__backendId,
+      override
+    })
+  });
+
+  const result = await response.json();
+
+  if (result.isOk) {
+    closeArchiveEditModal();
+    await window.dataSdk.init(handler);
+  } else {
+    const msg = document.getElementById('archive-edit-msg');
+    msg.textContent = result.error || 'Archive delete failed.';
+    msg.style.color = 'var(--red)';
+    msg.classList.remove('hidden');
+  }
+}
     initApp();
   </script>
  </body>

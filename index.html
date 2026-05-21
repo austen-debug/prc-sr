@@ -7,8 +7,8 @@
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;900&amp;display=swap" rel="stylesheet">
-  <script src="/_sdk/data_sdk.js"></script>
-  <script src="/_sdk/editing_sdk.js"></script>
+
+  
   <style>
     :root {
       --bg: #121212; --surface: #1e1e1e; --surface-alt: #2a2a2a;
@@ -64,7 +64,7 @@
       .dorm-dashboard { grid-template-columns: 1fr; overflow-y: auto; }
     }
   </style>
-  <script src="/_sdk/resizing_sdk.js" type="text/javascript"></script>
+  
  </head>
  <body data-template-id="__page-root" class="w-full"><!-- Security Banner -->
   <div data-template-id="security-banner" class="canva-banner security-banner-fixed" style="background-color: #16a34a; color: white; font-weight: 900; letter-spacing: 0.1em;">
@@ -301,6 +301,100 @@
     </div>
    </div>
   </div>
+
+  <script>
+  // Cloudflare/local browser fallback for Canva's dataSdk.
+  // Temporary storage layer until PRC-SR gets a real Cloudflare backend.
+  (function () {
+    if (window.dataSdk) return;
+
+    const STORAGE_KEY = 'prc_sr_records_v1';
+    let handlerRef = null;
+
+    function readRecords() {
+      try {
+        return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+      } catch (e) {
+        console.error('Failed to read local PRC-SR records:', e);
+        return [];
+      }
+    }
+
+    function writeRecords(records) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+
+      if (handlerRef && typeof handlerRef.onDataChanged === 'function') {
+        handlerRef.onDataChanged(records);
+      }
+    }
+
+    function makeId() {
+      return 'local_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 10);
+    }
+
+    window.dataSdk = {
+      async init(handler) {
+        handlerRef = handler;
+
+        const records = readRecords();
+
+        if (handlerRef && typeof handlerRef.onDataChanged === 'function') {
+          handlerRef.onDataChanged(records);
+        }
+
+        return { isOk: true };
+      },
+
+      async create(record) {
+        const records = readRecords();
+
+        const newRecord = {
+          ...record,
+          __backendId: makeId()
+        };
+
+        records.push(newRecord);
+        writeRecords(records);
+
+        return { isOk: true, data: newRecord };
+      },
+
+      async update(record) {
+        const records = readRecords();
+        const id = record.__backendId;
+
+        if (!id) {
+          return { isOk: false, error: 'Missing __backendId on update.' };
+        }
+
+        const index = records.findIndex(r => r.__backendId === id);
+
+        if (index === -1) {
+          return { isOk: false, error: 'Record not found.' };
+        }
+
+        records[index] = record;
+        writeRecords(records);
+
+        return { isOk: true, data: record };
+      },
+
+      async delete(record) {
+        const records = readRecords();
+        const id = record.__backendId;
+
+        if (!id) {
+          return { isOk: false, error: 'Missing __backendId on delete.' };
+        }
+
+        const nextRecords = records.filter(r => r.__backendId !== id);
+        writeRecords(nextRecords);
+
+        return { isOk: true };
+      }
+    };
+  })();
+</script>
   <script>
     let allData = [];
     let busCounter = 0;
@@ -370,13 +464,31 @@
       }
     };
 
-    async function initApp() {
-      const r = await window.dataSdk.init(handler);
-      lucide.createIcons();
-      timerInterval = setInterval(updateTimers, 1000);
-      initBatchGrid();
-      buildNav();
+async function initApp() {
+  try {
+    if (!window.dataSdk) {
+      throw new Error('Data SDK unavailable.');
     }
+
+    const r = await window.dataSdk.init(handler);
+
+    if (!r || !r.isOk) {
+      console.warn('Data SDK initialized with a warning:', r);
+    }
+  } catch (err) {
+    console.error('PRC-SR failed to initialize data layer:', err);
+    allData = [];
+  }
+
+  if (window.lucide) {
+    lucide.createIcons();
+  }
+
+  timerInterval = setInterval(updateTimers, 1000);
+  initBatchGrid();
+  buildNav();
+  renderAll();
+}
 
     function getRecords(type) { return allData.filter(r => r.type === type); }
     function getConfig(key) { const r = allData.find(d => d.type === 'config' && d.key === key); return r ? r.value : ''; }
@@ -847,5 +959,5 @@
 
     initApp();
   </script>
- <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9ff0311d04de1a5f',t:'MTc3OTMzMDk2OS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+ </body>
 </html>

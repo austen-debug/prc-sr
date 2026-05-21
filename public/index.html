@@ -637,7 +637,13 @@ abEl.innerHTML = activeBuses.length === 0 ? '<span class="text-muted text-sm">No
   timerHtml = `<div class="text-3xl font-mono font-black font-tabular mt-2 timer-display text-center" data-opened="${d.opened_at}">${timer.text}</div>`;
 }
       if (d.state === 'closed' && d.closed_timer) timerHtml = `<div class="text-3xl font-mono font-black font-tabular mt-2 text-muted text-center">${escapeHtml(d.closed_timer)}</div>`;
-      let phaseHtml = d.phase ? `<div class="text-sm font-bold text-center mt-1" style="color:var(--green);">${escapeHtml(d.phase)}</div>` : '';
+      const displayStatus = d.state === 'closed'
+  ? 'CLOSED'
+  : d.phase || '';
+
+let phaseHtml = displayStatus
+  ? `<div class="text-sm font-bold text-center mt-1" style="color:${d.state === 'closed' ? 'var(--text-muted)' : 'var(--green)'};">${escapeHtml(displayStatus)}</div>`
+  : '';
 
       return `<div class="dorm-card ${borderClass} ${closedClass} items-center p-3" style="cursor:default;">
         <div class="font-black text-4xl tracking-tight leading-none">${escapeHtml(d.dorm_name || '')}</div>
@@ -674,7 +680,12 @@ abEl.innerHTML = activeBuses.length === 0 ? '<span class="text-muted text-sm">No
         </div>
         <div class="text-xs text-muted font-bold uppercase">${[escapeHtml(d.sdq), escapeHtml(d.section), escapeHtml(d.inter_sec)].filter(Boolean).join(' · ')}</div>
         <div class="text-xl font-black font-tabular mt-2">${d.current_load || 0} / ${d.max_load || 0}</div>
-        ${d.phase ? `<div class="text-sm font-bold mt-1" style="color:var(--green);">${escapeHtml(d.phase)}</div>` : ''}
+        ${d.state === 'closed'
+  ? `<div class="text-sm font-bold mt-1" style="color:var(--text-muted);">CLOSED</div>`
+  : d.phase
+    ? `<div class="text-sm font-bold mt-1" style="color:var(--green);">${escapeHtml(d.phase)}</div>`
+    : ''
+}
         ${timerHtml}
       </div>`;
     }
@@ -766,7 +777,13 @@ abEl.innerHTML = activeBuses.length === 0 ? '<span class="text-muted text-sm">No
       if (!d) return;
       const timerEl = document.querySelector(`.timer-display[data-opened="${d.opened_at}"]`);
       const finalTime = timerEl ? timerEl.textContent : '00:00';
-      await window.dataSdk.update({...d, state: 'closed', closed_timer: finalTime, closed_at: new Date().toISOString()});
+     await window.dataSdk.update({
+  ...d,
+  state: 'closed',
+  phase: 'Closed',
+  closed_timer: finalTime,
+  closed_at: new Date().toISOString()
+});
       closeDormModal();
     }
 

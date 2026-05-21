@@ -302,99 +302,116 @@
    </div>
   </div>
 
-  <script>
-  // Cloudflare/local browser fallback for Canva's dataSdk.
-  // Temporary storage layer until PRC-SR gets a real Cloudflare backend.
+ <script>
+  // Cloudflare Pages + D1 dataSdk replacement.
+  // This mimics Canva's dataSdk so the existing PRC-SR app can keep working.
   (function () {
-    if (window.dataSdk) return;
-
-    const STORAGE_KEY = 'prc_sr_records_v1';
+    const API_URL = '/api/records';
     let handlerRef = null;
 
-    function readRecords() {
-      try {
-        return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-      } catch (e) {
-        console.error('Failed to read local PRC-SR records:', e);
-        return [];
+    async function fetchRecords() {
+      const response = await fetch(API_URL, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json'
+        },
+        cache: 'no-store'
+      });
+
+      const result = await response.json();
+
+      if (!result.isOk) {
+        throw new Error(result.error || 'Failed to fetch records.');
       }
+
+      return result.records || [];
     }
 
-    function writeRecords(records) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+    async function refresh() {
+      const records = await fetchRecords();
 
       if (handlerRef && typeof handlerRef.onDataChanged === 'function') {
         handlerRef.onDataChanged(records);
       }
-    }
 
-    function makeId() {
-      return 'local_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 10);
+      return records;
     }
 
     window.dataSdk = {
       async init(handler) {
         handlerRef = handler;
 
-        const records = readRecords();
+        await refresh();
 
-        if (handlerRef && typeof handlerRef.onDataChanged === 'function') {
-          handlerRef.onDataChanged(records);
-        }
+        setInterval(() => {
+          refresh().catch(err => {
+            console.error('PRC-SR refresh failed:', err);
+          });
+        }, 3000);
 
         return { isOk: true };
       },
 
       async create(record) {
-        const records = readRecords();
+        const response = await fetch(API_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify(record)
+        });
 
-        const newRecord = {
-          ...record,
-          __backendId: makeId()
-        };
+        const result = await response.json();
 
-        records.push(newRecord);
-        writeRecords(records);
+        if (result.isOk) {
+          await refresh();
+        }
 
-        return { isOk: true, data: newRecord };
+        return result;
       },
 
       async update(record) {
-        const records = readRecords();
-        const id = record.__backendId;
+        const response = await fetch(API_URL, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify(record)
+        });
 
-        if (!id) {
-          return { isOk: false, error: 'Missing __backendId on update.' };
+        const result = await response.json();
+
+        if (result.isOk) {
+          await refresh();
         }
 
-        const index = records.findIndex(r => r.__backendId === id);
-
-        if (index === -1) {
-          return { isOk: false, error: 'Record not found.' };
-        }
-
-        records[index] = record;
-        writeRecords(records);
-
-        return { isOk: true, data: record };
+        return result;
       },
 
       async delete(record) {
-        const records = readRecords();
-        const id = record.__backendId;
+        const response = await fetch(API_URL, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify(record)
+        });
 
-        if (!id) {
-          return { isOk: false, error: 'Missing __backendId on delete.' };
+        const result = await response.json();
+
+        if (result.isOk) {
+          await refresh();
         }
 
-        const nextRecords = records.filter(r => r.__backendId !== id);
-        writeRecords(nextRecords);
-
-        return { isOk: true };
+        return result;
       }
     };
   })();
 </script>
+  
   <script>
     let allData = [];
     let busCounter = 0;

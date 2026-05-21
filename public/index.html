@@ -210,7 +210,7 @@
   <div id="page-processing" class="page flex-col w-full overflow-y-auto">
    <div class="px-4 py-3 flex-shrink-0 flex items-center gap-4">
   <button onclick="openLocalBusModal()" class="px-6 py-3 rounded-lg font-bold text-white text-lg" style="background:#2563eb;">+ ADD LOCAL BUS</button>
-  <div class="text-xs text-muted font-bold">Instructor access: right-click a closed dorm to edit its record.</div>
+  <div id="processing-edit-hint" class="text-xs text-muted font-bold hidden">Instructor access: right-click any dorm to edit its record.</div>
 </div>
    <div id="proc-dorm-grid" class="flex-1 px-4 pb-4 grid gap-4" style="grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); align-content: start;"></div>
   </div><!-- PAGE: ARCHIVES -->
@@ -279,7 +279,7 @@
 <div id="dorm-edit-modal" class="confirm-overlay hidden">
   <div class="modal-content">
     <div class="flex justify-between items-center mb-4">
-      <h2 class="text-xl font-black">Edit Closed Dorm Record</h2>
+      <h2 class="text-xl font-black">Edit Dorm Record</h2>
       <button onclick="closeDormEditModal()" class="text-3xl leading-none text-muted hover:text-white">×</button>
     </div>
 
@@ -339,7 +339,7 @@
       </div>
 
       <div class="text-xs text-muted">
-        This edits the closed dorm record for correction purposes. Open/close timestamps are preserved.
+        This edits the dorm record for correction purposes. Open/close timestamps are preserved.
       </div>
 
       <div class="flex gap-3 pt-3">
@@ -572,11 +572,16 @@ async function logout() {
     }
 
     function updateRoleVisibility() {
-      const closeoutBtn = document.getElementById('closeout-btn');
-      if (closeoutBtn) {
-        closeoutBtn.style.display = currentRole === 'instructor' ? '' : 'none';
-      }
-    }
+  const closeoutBtn = document.getElementById('closeout-btn');
+  if (closeoutBtn) {
+    closeoutBtn.style.display = currentRole === 'instructor' ? '' : 'none';
+  }
+
+  const processingEditHint = document.getElementById('processing-edit-hint');
+  if (processingEditHint) {
+    processingEditHint.classList.toggle('hidden', currentRole !== 'instructor');
+  }
+}
 
     function showPage(id) {
       document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -727,7 +732,7 @@ let phaseHtml = displayStatus
   ? `<div class="text-sm font-bold text-center mt-1" style="color:${d.state === 'closed' ? 'var(--text-muted)' : 'var(--green)'};">${escapeHtml(displayStatus)}</div>`
   : '';
 
-      const editHandler = currentRole === 'instructor' && d.state === 'closed'
+      const editHandler = currentRole === 'instructor'
   ? `oncontextmenu="openDormEditModal(event, '${d.__backendId}')"`
   : '';
 
@@ -853,9 +858,9 @@ function openDormEditModal(event, id) {
 
   const d = allData.find(r => r.__backendId === id);
 
-  if (!d || d.state !== 'closed') {
-    return;
-  }
+  if (!d) {
+  return;
+}
 
   editDormId = id;
 
@@ -890,9 +895,9 @@ document.getElementById('dorm-edit-form').addEventListener('submit', async (e) =
 
   const d = allData.find(r => r.__backendId === editDormId);
 
-  if (!d || d.state !== 'closed') {
-    return;
-  }
+  if (!d) {
+  return;
+}
 
   const maxLoad = Math.max(0, Number(document.getElementById('edit-max-load').value || 0));
   const currentLoadRaw = Math.max(0, Number(document.getElementById('edit-current-load').value || 0));
@@ -908,8 +913,10 @@ document.getElementById('dorm-edit-form').addEventListener('submit', async (e) =
     band: document.getElementById('edit-band').checked ? 'true' : 'false',
     max_load: maxLoad,
     current_load: currentLoad,
-    phase: 'Closed',
-    closed_timer: document.getElementById('edit-closed-timer').value.trim() || d.closed_timer
+    phase: d.state === 'closed' ? 'Closed' : d.phase,
+closed_timer: d.state === 'closed'
+  ? document.getElementById('edit-closed-timer').value.trim() || d.closed_timer
+  : d.closed_timer
   };
 
   const result = await window.dataSdk.update(updatedDorm);

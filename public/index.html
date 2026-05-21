@@ -721,10 +721,19 @@ abEl.innerHTML = activeBuses.length === 0 ? '<span class="text-muted text-sm">No
     }
 
     async function setPhase(phase) {
-      if (!modalDormId) return;
-      const d = allData.find(r => r.__backendId === modalDormId);
-      if (d) await window.dataSdk.update({...d, phase});
-    }
+  if (!modalDormId) return;
+
+  const d = allData.find(r => r.__backendId === modalDormId);
+
+  if (d) {
+    await window.dataSdk.update({
+      ...d,
+      phase
+    });
+  }
+
+  closeDormModal();
+}
 
     function modLoad(delta) {
       const input = document.getElementById('modal-load-input');

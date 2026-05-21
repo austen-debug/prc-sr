@@ -843,11 +843,11 @@ abEl.innerHTML = activeBuses.length === 0 ? '<span class="text-muted text-sm">No
     el.textContent = timer.text;
     el.classList.remove('timer-yellow', 'timer-red', 'timer-flash');
 
-    if (timer.minutes >= 90) {
+    if (timer.minutes >= 60) {
       el.classList.add('timer-flash');
-    } else if (timer.minutes >= 60) {
+    } else if (timer.minutes >= 50) {
       el.classList.add('timer-red');
-    } else if (timer.minutes >= 45) {
+    } else if (timer.minutes >= 40) {
       el.classList.add('timer-yellow');
     }
   });

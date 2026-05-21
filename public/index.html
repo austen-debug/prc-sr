@@ -758,12 +758,26 @@ let phaseHtml = displayStatus
   ? `<div class="text-sm font-bold text-center mt-1" style="color:${d.state === 'closed' ? 'var(--text-muted)' : 'var(--green)'};">${escapeHtml(displayStatus)}</div>`
   : '';
 
-      const editHandler = currentRole === 'instructor'
-  ? `oncontextmenu="openDormEditModal(event, '${d.__backendId}')"`
-  : '';
+      const editHandler = '';
+
+const currentLoad = Number(d.current_load || 0);
+const maxLoad = Number(d.max_load || 0);
+const isFull = maxLoad > 0 && currentLoad >= maxLoad;
+
+let dormNameColor = 'var(--text)';
+
+if (d.state === 'empty') {
+  dormNameColor = '#8a8a8a'; // medium grey
+} else if (d.state === 'open' && isFull) {
+  dormNameColor = 'var(--green)';
+} else if (d.state === 'open') {
+  dormNameColor = '#ffffff';
+} else if (d.state === 'closed') {
+  dormNameColor = 'var(--text-muted)';
+}
 
 return `<div class="dorm-card ${borderClass} ${closedClass} items-center p-3" style="cursor:default;" ${editHandler}>
-        <div class="font-black text-4xl tracking-tight leading-none">${escapeHtml(d.dorm_name || '')}</div>
+        <div class="font-black text-4xl tracking-tight leading-none" style="color:${dormNameColor};">${escapeHtml(d.dorm_name || '')}</div>
         <div class="text-xs text-muted font-bold uppercase tracking-wider mt-1">${[escapeHtml(d.sdq), escapeHtml(d.section), escapeHtml(d.inter_sec)].filter(Boolean).join(' · ')}</div>
         <div class="text-xl font-black font-tabular mt-2">${d.current_load || 0} / ${d.max_load || 0}</div>
         ${timerHtml}${phaseHtml}

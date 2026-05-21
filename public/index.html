@@ -11,14 +11,25 @@
   
   <style>
     :root {
-      --bg: #121212; --surface: #1e1e1e; --surface-alt: #2a2a2a;
-      --text: #e8e8e8; --text-muted: #8a8a8a; --border: #333333;
-      --green: #16a34a; --red: #dc2626; --yellow: #eab308; --blue: #38bdf8;
-    }
+  --bg: #121212; --surface: #1e1e1e; --surface-alt: #2a2a2a;
+  --text: #e8e8e8; --text-muted: #8a8a8a; --border: #333333;
+  --green: #16a34a; --red: #dc2626; --yellow: #eab308; --blue: #38bdf8;
+
+  --dorm-empty-text: #8a8a8a;
+  --dorm-open-text: #ffffff;
+  --dorm-full-text: #22c55e;
+  --dorm-closed-text: #8a8a8a;
+}
     .theme-light {
-      --bg: #f3f4f6; --surface: #ffffff; --surface-alt: #e5e7eb;
-      --text: #111827; --text-muted: #6b7280; --border: #d1d5db;
-    }
+      .theme-light {
+  --bg: #f3f4f6; --surface: #ffffff; --surface-alt: #e5e7eb;
+  --text: #111827; --text-muted: #6b7280; --border: #d1d5db;
+
+  --dorm-empty-text: #6b7280;
+  --dorm-open-text: #111827;
+  --dorm-full-text: #15803d;
+  --dorm-closed-text: #6b7280;
+}
     body {
   font-family: 'DM Sans', sans-serif;
   background: var(--bg);
@@ -767,13 +778,13 @@ const isFull = maxLoad > 0 && currentLoad >= maxLoad;
 let dormNameColor = 'var(--text)';
 
 if (d.state === 'empty') {
-  dormNameColor = '#8a8a8a'; // medium grey
+  dormNameColor = 'var(--dorm-empty-text)';
 } else if (d.state === 'open' && isFull) {
-  dormNameColor = 'var(--green)';
+  dormNameColor = 'var(--dorm-full-text)';
 } else if (d.state === 'open') {
-  dormNameColor = '#ffffff';
+  dormNameColor = 'var(--dorm-open-text)';
 } else if (d.state === 'closed') {
-  dormNameColor = 'var(--text-muted)';
+  dormNameColor = 'var(--dorm-closed-text)';
 }
 
 return `<div class="dorm-card ${borderClass} ${closedClass} items-center p-3" style="cursor:default;" ${editHandler}>

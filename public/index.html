@@ -308,6 +308,7 @@
   (function () {
     const API_URL = '/api/records';
     let handlerRef = null;
+    let lastPayload = '';
 
     async function fetchRecords() {
       const response = await fetch(API_URL, {
@@ -327,21 +328,28 @@
       return result.records || [];
     }
 
-    async function refresh() {
-      const records = await fetchRecords();
+async function refresh(force = false) {
+  const records = await fetchRecords();
+  const payload = JSON.stringify(records);
 
-      if (handlerRef && typeof handlerRef.onDataChanged === 'function') {
-        handlerRef.onDataChanged(records);
-      }
+  if (!force && payload === lastPayload) {
+    return records;
+  }
 
-      return records;
-    }
+  lastPayload = payload;
+
+  if (handlerRef && typeof handlerRef.onDataChanged === 'function') {
+    handlerRef.onDataChanged(records);
+  }
+
+  return records;
+}
 
     window.dataSdk = {
       async init(handler) {
         handlerRef = handler;
 
-        await refresh();
+        await refresh(true);
 
         setInterval(() => {
           refresh().catch(err => {
@@ -365,7 +373,7 @@
         const result = await response.json();
 
         if (result.isOk) {
-          await refresh();
+          await refresh(true);
         }
 
         return result;
@@ -384,7 +392,7 @@
         const result = await response.json();
 
         if (result.isOk) {
-          await refresh();
+          await refresh(true);
         }
 
         return result;
@@ -403,7 +411,7 @@
         const result = await response.json();
 
         if (result.isOk) {
-          await refresh();
+          await refresh(true);
         }
 
         return result;
@@ -534,6 +542,27 @@ async function initApp() {
     function getConfig(key) { const r = allData.find(d => d.type === 'config' && d.key === key); return r ? r.value : ''; }
     function getActiveWG() { return getConfig('week_group') || ''; }
 
+function getElapsedTimer(openedAt) {
+  if (!openedAt) {
+    return { text: '00:00', minutes: 0 };
+  }
+
+  const openedMs = new Date(openedAt).getTime();
+
+  if (Number.isNaN(openedMs)) {
+    return { text: '00:00', minutes: 0 };
+  }
+
+  const elapsed = Math.max(0, Math.floor((Date.now() - openedMs) / 1000));
+  const mins = Math.floor(elapsed / 60);
+  const secs = elapsed % 60;
+
+  return {
+    text: `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`,
+    minutes: mins
+  };
+}
+   
     function renderAll() {
       const wg = getActiveWG();
       document.getElementById('week-group-display').textContent = wg || 'No WG';
@@ -560,6 +589,7 @@ async function initApp() {
       renderArrivals(arrivedBuses);
       renderArchives();
       busCounter = buses.length;
+      updateTimers();
     }
 
     // STATUS BOARD dorm columns (read-only display)
@@ -575,7 +605,10 @@ async function initApp() {
       let borderClass = d.sex === 'female' ? 'border-female' : (d.band === 'true' ? 'border-band' : '');
       let closedClass = d.state === 'closed' ? 'dorm-closed' : '';
       let timerHtml = '';
-      if (d.state === 'open' && d.opened_at) timerHtml = `<div class="text-3xl font-mono font-black font-tabular mt-2 timer-display text-center" data-opened="${d.opened_at}">00:00</div>`;
+     if (d.state === 'open' && d.opened_at) {
+  const timer = getElapsedTimer(d.opened_at);
+  timerHtml = `<div class="text-3xl font-mono font-black font-tabular mt-2 timer-display text-center" data-opened="${d.opened_at}">${timer.text}</div>`;
+}
       if (d.state === 'closed' && d.closed_timer) timerHtml = `<div class="text-3xl font-mono font-black font-tabular mt-2 text-muted text-center">${escapeHtml(d.closed_timer)}</div>`;
       let phaseHtml = d.phase ? `<div class="text-sm font-bold text-center mt-1" style="color:var(--green);">${escapeHtml(d.phase)}</div>` : '';
 
@@ -598,7 +631,10 @@ async function initApp() {
       let borderClass = d.sex === 'female' ? 'border-female' : (d.band === 'true' ? 'border-band' : '');
       let closedClass = d.state === 'closed' ? 'dorm-closed' : '';
       let timerHtml = '';
-      if (d.state === 'open' && d.opened_at) timerHtml = `<div class="text-2xl font-mono font-black font-tabular timer-display" data-opened="${d.opened_at}">00:00</div>`;
+     if (d.state === 'open' && d.opened_at) {
+  const timer = getElapsedTimer(d.opened_at);
+  timerHtml = `<div class="text-2xl font-mono font-black font-tabular timer-display" data-opened="${d.opened_at}">${timer.text}</div>`;
+}
       if (d.state === 'closed' && d.closed_timer) timerHtml = `<div class="text-2xl font-mono font-black font-tabular text-muted">${escapeHtml(d.closed_timer)}</div>`;
       let stateLabel = d.state === 'empty' ? '<span class="text-xs font-bold uppercase px-2 py-1 rounded" style="background:var(--surface-alt);">EMPTY</span>' :
         d.state === 'open' ? '<span class="text-xs font-bold uppercase px-2 py-1 rounded text-white" style="background:var(--green);">OPEN</span>' :
@@ -765,18 +801,21 @@ async function initApp() {
 
     // TIMERS
     function updateTimers() {
-      document.querySelectorAll('.timer-display').forEach(el => {
-        const opened = new Date(el.dataset.opened);
-        const elapsed = Math.floor((Date.now() - opened.getTime()) / 1000);
-        const mins = Math.floor(elapsed / 60);
-        const secs = elapsed % 60;
-        el.textContent = `${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
-        el.classList.remove('timer-yellow','timer-red','timer-flash');
-        if (mins >= 90) el.classList.add('timer-flash');
-        else if (mins >= 60) el.classList.add('timer-red');
-        else if (mins >= 45) el.classList.add('timer-yellow');
-      });
+  document.querySelectorAll('.timer-display').forEach(el => {
+    const timer = getElapsedTimer(el.dataset.opened);
+
+    el.textContent = timer.text;
+    el.classList.remove('timer-yellow', 'timer-red', 'timer-flash');
+
+    if (timer.minutes >= 90) {
+      el.classList.add('timer-flash');
+    } else if (timer.minutes >= 60) {
+      el.classList.add('timer-red');
+    } else if (timer.minutes >= 45) {
+      el.classList.add('timer-yellow');
     }
+  });
+}
 
     // BUS ARRIVAL CONFIRM
     function confirmBusArrival(id) {

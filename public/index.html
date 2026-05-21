@@ -19,7 +19,33 @@
       --bg: #f3f4f6; --surface: #ffffff; --surface-alt: #e5e7eb;
       --text: #111827; --text-muted: #6b7280; --border: #d1d5db;
     }
-    body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); margin: 0; overflow-x: hidden; }
+    body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  margin: 0;
+  overflow-x: hidden;
+  position: relative;
+  min-height: 100vh;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url('/assets/prc-logo-blue.png');
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: 75vw auto;
+  opacity: 0.5;
+  pointer-events: none;
+  z-index: 0;
+}
+
+body > * {
+  position: relative;
+  z-index: 1;
+}
     .surface { background: var(--surface); border-color: var(--border); }
     .text-muted { color: var(--text-muted); }
     .page { display: none; min-height: calc(100 * min(var(--vh, 1vh), 1vh)); padding-top: 80px; padding-bottom: 40px; }

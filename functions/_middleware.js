@@ -104,25 +104,27 @@ export async function onRequest(context) {
   const url = new URL(context.request.url);
   const pathname = url.pathname;
 
-  // Always allow login page and login/logout/session endpoints.
-  // This prevents redirect loops.
+  // Always allow login routes. Do not redirect these.
   if (
     pathname === '/login' ||
-    pathname === '/login.html' ||
-    pathname.startsWith('/api/login') ||
-    pathname.startsWith('/api/logout') ||
-    pathname.startsWith('/api/ping') ||
-    pathname === '/favicon.ico'
+    pathname === '/login/' ||
+    pathname === '/login.html'
   ) {
-    if (pathname === '/login') {
-      return Response.redirect(`${url.origin}/login.html`, 302);
-    }
-
     return context.next();
   }
 
-  // Allow common static asset files if you add any later.
+  // Always allow auth endpoints.
   if (
+    pathname === '/api/login' ||
+    pathname === '/api/logout' ||
+    pathname === '/api/ping'
+  ) {
+    return context.next();
+  }
+
+  // Allow static assets.
+  if (
+    pathname === '/favicon.ico' ||
     pathname.endsWith('.css') ||
     pathname.endsWith('.js') ||
     pathname.endsWith('.png') ||
@@ -145,7 +147,7 @@ export async function onRequest(context) {
       }, 401);
     }
 
-    return Response.redirect(`${url.origin}/login.html`, 302);
+    return Response.redirect(`${url.origin}/login/`, 302);
   }
 
   return context.next();

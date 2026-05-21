@@ -72,7 +72,7 @@
   </div><!-- Navigation -->
   <nav class="app-nav" role="navigation" aria-label="Main navigation">
    <div id="nav-links" class="flex gap-1"></div>
-   <div class="flex items-center gap-3"><span id="week-group-display" class="font-bold text-xs font-tabular"></span> <button id="role-toggle" onclick="toggleRole()" class="nav-btn text-xs"></button> <button onclick="toggleTheme()" class="nav-btn" aria-label="Toggle theme"><i data-lucide="sun" style="width:16px;height:16px;"></i></button>
+   <div class="flex items-center gap-3"><span id="week-group-display" class="font-bold text-xs font-tabular"></span> <button id="role-toggle" onclick="logout()" class="nav-btn text-xs"></button> <button onclick="toggleTheme()" class="nav-btn" aria-label="Toggle theme"><i data-lucide="sun" style="width:16px;height:16px;"></i></button>
    </div>
   </nav><!-- PAGE: STATUS BOARD -->
   <main id="page-board" class="page active" role="main">
@@ -418,6 +418,7 @@
     let timerInterval = null;
     let isDark = true;
     let currentRole = 'instructor'; // 'instructor' or 'airman'
+    let currentUsername = '';
     let modalDormId = null;
 
     function escapeHtml(value) {
@@ -438,17 +439,36 @@
       document.body.classList.toggle('theme-light', !isDark);
     }
 
-    function toggleRole() {
-      currentRole = currentRole === 'instructor' ? 'airman' : 'instructor';
-      buildNav();
-      // If on a page not accessible, go to board
-      const pages = currentRole === 'instructor' ? PAGES_INSTRUCTOR : PAGES_AIRMAN;
-      const activePage = document.querySelector('.page.active');
-      if (activePage) {
-        const id = activePage.id.replace('page-','');
-        if (!pages.includes(id)) showPage('board');
-      }
+    async function loadSession() {
+  const response = await fetch('/api/session', {
+    method: 'GET',
+    headers: {
+      'Accept': 'application/json'
+    },
+    cache: 'no-store'
+  });
+
+  const result = await response.json();
+
+  if (!result.isOk) {
+    window.location.href = '/login.html';
+    return;
+  }
+
+  currentRole = result.role || 'airman';
+  currentUsername = result.username || '';
+}
+
+async function logout() {
+  await fetch('/api/logout', {
+    method: 'POST',
+    headers: {
+      'Accept': 'application/json'
     }
+  });
+
+  window.location.href = '/login.html';
+}
 
     function buildNav() {
       const pages = currentRole === 'instructor' ? PAGES_INSTRUCTOR : PAGES_AIRMAN;
@@ -456,7 +476,8 @@
       const activePage = document.querySelector('.page.active');
       const activeId = activePage ? activePage.id.replace('page-','') : 'board';
       container.innerHTML = pages.map(p => `<button class="nav-btn ${p===activeId?'active':''}" onclick="showPage('${p}')">${PAGE_LABELS[p]}</button>`).join('');
-      document.getElementById('role-toggle').textContent = currentRole === 'instructor' ? 'DEMO: INSTRUCTOR' : 'DEMO: AIRMAN';
+     document.getElementById('role-toggle').textContent =
+       currentRole === 'instructor' ? 'INSTRUCTOR / LOGOUT' : 'AIRMAN / LOGOUT';
       updateRoleVisibility();
     }
 
@@ -482,6 +503,8 @@
     };
 
 async function initApp() {
+  await loadSession();
+
   try {
     if (!window.dataSdk) {
       throw new Error('Data SDK unavailable.');

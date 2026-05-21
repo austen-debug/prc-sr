@@ -542,6 +542,20 @@ async function initApp() {
     function getConfig(key) { const r = allData.find(d => d.type === 'config' && d.key === key); return r ? r.value : ''; }
     function getActiveWG() { return getConfig('week_group') || ''; }
 
+function getNextAirportBusId() {
+  const wg = getActiveWG();
+
+  const airportBuses = getRecords('bus')
+    .filter(b => b.week_group === wg && b.bus_type === 'airport');
+
+  const highestBusNumber = airportBuses.reduce((max, b) => {
+    const n = Number(b.bus_id);
+    return Number.isFinite(n) && n > max ? n : max;
+  }, 0);
+
+  return highestBusNumber + 1;
+}
+
 function getElapsedTimer(openedAt) {
   if (!openedAt) {
     return { text: '00:00', minutes: 0 };
@@ -601,7 +615,7 @@ abEl.innerHTML = activeBuses.length === 0 ? '<span class="text-muted text-sm">No
       renderProcessingPage(dorms);
       renderArrivals(arrivedBuses);
       renderArchives();
-      busCounter = buses.length;
+      busCounter = getNextAirportBusId() - 1;
       updateTimers();
     }
 
@@ -789,7 +803,7 @@ abEl.innerHTML = activeBuses.length === 0 ? '<span class="text-muted text-sm">No
 
       const r = await window.dataSdk.create({
         type: 'bus',
-        bus_id: String(newBusId),
+        bus_id: '',
         bus_type: 'local',
         destination: dest,
         otw_count: total,
@@ -887,7 +901,7 @@ abEl.innerHTML = activeBuses.length === 0 ? '<span class="text-muted text-sm">No
 
       const btn = e.target.querySelector('button[type=submit]');
       btn.disabled = true; btn.textContent = 'Dispatching...';
-      const newBusId = busCounter + 1;
+      const newBusId = getNextAirportBusId();
       const r = await window.dataSdk.create({
         type: 'bus', bus_id: String(newBusId), bus_type: 'airport', destination: '',
         otw_count: otw, female_count: females, nat_count: nats,

@@ -834,7 +834,7 @@ return `<div class="proc-card ${borderClass} ${closedClass}" onclick="openDormMo
       document.getElementById('modal-dorm-info').innerHTML = `${[escapeHtml(d.sdq), escapeHtml(d.section), escapeHtml(d.inter_sec)].filter(Boolean).join(' · ')} | ${d.sex === 'female' ? '♀ Female' : '♂ Male'}${d.band === 'true' ? ' | 🎵 Band' : ''} | Max: ${d.max_load}`;
 
       // Phase buttons
-      const phases = ['LOBBY','STANDBY','INITIAL ISSUE','ITEM SETUP','LATRINE','FIT TEST','EATING','READY TO DEPART'];
+      const phases = ['OPEN','LOBBY','AUDITORIUM','STANDBY','INITIAL ISSUE','ITEM SETUP','LATRINE','FIT TEST','EATING','READY TO DEPART'];
       const phaseSection = document.getElementById('modal-phase-section');
       const phaseBtns = document.getElementById('modal-phase-buttons');
       if (d.state === 'open') {

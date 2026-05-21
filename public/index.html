@@ -578,11 +578,24 @@ function getElapsedTimer(openedAt) {
       document.getElementById('metric-airport').textContent = lastAirport ? `LAST: ${lastAirport}` : '—';
 
       const abEl = document.getElementById('active-buses');
-      abEl.innerHTML = activeBuses.length === 0 ? '<span class="text-muted text-sm">None</span>' :
-        activeBuses.map(b => {
-          const label = b.bus_type === 'local' ? `LOCAL – ${b.destination || ''} – ${b.otw_count}` : `BUS #${b.bus_id} – ${b.otw_count} OTW`;
-          return `<span class="bus-badge" style="cursor:default;">${label} EN ROUTE</span>`;
-        }).join('');
+
+abEl.innerHTML = activeBuses.length === 0 ? '<span class="text-muted text-sm">None</span>' :
+  activeBuses.map(b => {
+    const label = b.bus_type === 'local'
+      ? `LOCAL – ${escapeHtml(b.destination || '')} – ${b.otw_count}`
+      : `BUS #${escapeHtml(b.bus_id)} – ${b.otw_count} OTW`;
+
+    return `
+      <button
+        type="button"
+        class="bus-badge"
+        onclick="confirmBusArrival('${b.__backendId}')"
+        title="Confirm bus arrival"
+      >
+        ${label} EN ROUTE
+      </button>
+    `;
+  }).join('');
 
       renderDormColumns(dorms);
       renderProcessingPage(dorms);
@@ -819,11 +832,24 @@ function getElapsedTimer(openedAt) {
 
     // BUS ARRIVAL CONFIRM
     function confirmBusArrival(id) {
-      showConfirm('Confirm Bus Arrival?', async () => {
-        const b = allData.find(r => r.__backendId === id);
-        if (b) await window.dataSdk.update({...b, status: 'arrived', arrived_at: new Date().toISOString()});
-      });
-    }
+  const b = allData.find(r => r.__backendId === id);
+
+  if (!b) {
+    return;
+  }
+
+  const busLabel = b.bus_type === 'local'
+    ? `LOCAL – ${b.destination || 'Originating Destination'}`
+    : `Bus #${b.bus_id}`;
+
+  showConfirm(`Confirm ${busLabel} has arrived at PRC?`, async () => {
+    await window.dataSdk.update({
+      ...b,
+      status: 'arrived',
+      arrived_at: new Date().toISOString()
+    });
+  });
+}
 
     let confirmCallback = null;
     function showConfirm(msg, cb) {

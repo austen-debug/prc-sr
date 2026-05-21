@@ -65,7 +65,7 @@ async function sign(value, secret) {
 
   const key = await crypto.subtle.importKey(
     'raw',
-    encoder.encode(secret),
+    encoder.encode(secret || 'missing-secret'),
     { name: 'HMAC', hash: 'SHA-256' },
     false,
     ['sign']
@@ -104,19 +104,34 @@ export async function onRequest(context) {
   const url = new URL(context.request.url);
   const pathname = url.pathname;
 
-  const publicPaths = [
-    '/login.html',
-    '/api/login',
-    '/api/logout',
-    '/api/ping',
-    '/favicon.ico'
-  ];
+  // Always allow login page and login/logout/session endpoints.
+  // This prevents redirect loops.
+  if (
+    pathname === '/login' ||
+    pathname === '/login.html' ||
+    pathname.startsWith('/api/login') ||
+    pathname.startsWith('/api/logout') ||
+    pathname.startsWith('/api/ping') ||
+    pathname === '/favicon.ico'
+  ) {
+    if (pathname === '/login') {
+      return Response.redirect(`${url.origin}/login.html`, 302);
+    }
 
-  if (pathname === '/login') {
-    return Response.redirect(`${url.origin}/login.html`, 302);
+    return context.next();
   }
 
-  if (publicPaths.includes(pathname)) {
+  // Allow common static asset files if you add any later.
+  if (
+    pathname.endsWith('.css') ||
+    pathname.endsWith('.js') ||
+    pathname.endsWith('.png') ||
+    pathname.endsWith('.jpg') ||
+    pathname.endsWith('.jpeg') ||
+    pathname.endsWith('.svg') ||
+    pathname.endsWith('.ico') ||
+    pathname.endsWith('.webp')
+  ) {
     return context.next();
   }
 

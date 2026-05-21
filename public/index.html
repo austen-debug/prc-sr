@@ -208,8 +208,10 @@
    </div>
   </div><!-- PAGE: PROCESSING -->
   <div id="page-processing" class="page flex-col w-full overflow-y-auto">
-   <div class="px-4 py-3 flex-shrink-0"><button onclick="openLocalBusModal()" class="px-6 py-3 rounded-lg font-bold text-white text-lg" style="background:#2563eb;">+ ADD LOCAL BUS</button>
-   </div>
+   <div class="px-4 py-3 flex-shrink-0 flex items-center gap-4">
+  <button onclick="openLocalBusModal()" class="px-6 py-3 rounded-lg font-bold text-white text-lg" style="background:#2563eb;">+ ADD LOCAL BUS</button>
+  <div class="text-xs text-muted font-bold">Instructor access: right-click a closed dorm to edit its record.</div>
+</div>
    <div id="proc-dorm-grid" class="flex-1 px-4 pb-4 grid gap-4" style="grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); align-content: start;"></div>
   </div><!-- PAGE: ARCHIVES -->
   <div id="page-archives" class="page px-4 pb-4 overflow-y-auto">
@@ -271,6 +273,84 @@
     </div><!-- Open/Close -->
     <div id="modal-action-section" class="flex gap-3 justify-center"></div>
    </div>
+
+  <!-- Closed Dorm Edit Modal -->
+<div id="dorm-edit-modal" class="confirm-overlay hidden">
+  <div class="modal-content">
+    <div class="flex justify-between items-center mb-4">
+      <h2 class="text-xl font-black">Edit Closed Dorm Record</h2>
+      <button onclick="closeDormEditModal()" class="text-3xl leading-none text-muted hover:text-white">×</button>
+    </div>
+
+    <form id="dorm-edit-form" class="space-y-3">
+      <div>
+        <label class="block text-sm font-medium mb-1" for="edit-dorm-name">Dorm</label>
+        <input id="edit-dorm-name" type="text" class="w-full border rounded px-3 py-2 bg-transparent" style="border-color:var(--border);color:var(--text);">
+      </div>
+
+      <div class="grid grid-cols-3 gap-2">
+        <div>
+          <label class="block text-sm font-medium mb-1" for="edit-sdq">SDQ</label>
+          <input id="edit-sdq" type="text" class="w-full border rounded px-3 py-2 bg-transparent" style="border-color:var(--border);color:var(--text);">
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-1" for="edit-section">Section</label>
+          <input id="edit-section" type="text" class="w-full border rounded px-3 py-2 bg-transparent" style="border-color:var(--border);color:var(--text);">
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-1" for="edit-inter-sec">Inter/Sec</label>
+          <input id="edit-inter-sec" type="text" class="w-full border rounded px-3 py-2 bg-transparent" style="border-color:var(--border);color:var(--text);">
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-2">
+        <div>
+          <label class="block text-sm font-medium mb-1" for="edit-sex">Sex</label>
+          <select id="edit-sex" class="w-full border rounded px-3 py-2 bg-transparent" style="border-color:var(--border);color:var(--text);">
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-1" for="edit-closed-timer">Final Time</label>
+          <input id="edit-closed-timer" type="text" placeholder="00:00" class="w-full border rounded px-3 py-2 bg-transparent font-tabular" style="border-color:var(--border);color:var(--text);">
+        </div>
+      </div>
+
+      <label class="flex items-center gap-2 text-sm font-bold">
+        <input id="edit-band" type="checkbox" class="w-4 h-4">
+        Band Dorm
+      </label>
+
+      <div class="grid grid-cols-2 gap-2">
+        <div>
+          <label class="block text-sm font-medium mb-1" for="edit-max-load">Max Load</label>
+          <input id="edit-max-load" type="number" min="0" class="w-full border rounded px-3 py-2 bg-transparent font-tabular" style="border-color:var(--border);color:var(--text);">
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-1" for="edit-current-load">Current Load</label>
+          <input id="edit-current-load" type="number" min="0" class="w-full border rounded px-3 py-2 bg-transparent font-tabular" style="border-color:var(--border);color:var(--text);">
+        </div>
+      </div>
+
+      <div class="text-xs text-muted">
+        This edits the closed dorm record for correction purposes. Open/close timestamps are preserved.
+      </div>
+
+      <div class="flex gap-3 pt-3">
+        <button type="submit" class="flex-1 py-3 rounded-lg font-bold text-white" style="background:var(--green);">SAVE CHANGES</button>
+        <button type="button" onclick="closeDormEditModal()" class="flex-1 py-3 rounded-lg font-bold surface border" style="border-color:var(--border);">CANCEL</button>
+      </div>
+
+      <div id="dorm-edit-msg" class="hidden text-center text-sm font-bold"></div>
+    </form>
+  </div>
+</div> 
+   
   </div><!-- Local Bus Modal -->
   <div id="local-bus-modal" class="confirm-overlay hidden">
    <div class="modal-content">
@@ -428,6 +508,7 @@ async function refresh(force = false) {
     let currentRole = 'instructor'; // 'instructor' or 'airman'
     let currentUsername = '';
     let modalDormId = null;
+    let editDormId = null;
 
     function escapeHtml(value) {
       return String(value ?? '')
@@ -645,7 +726,11 @@ let phaseHtml = displayStatus
   ? `<div class="text-sm font-bold text-center mt-1" style="color:${d.state === 'closed' ? 'var(--text-muted)' : 'var(--green)'};">${escapeHtml(displayStatus)}</div>`
   : '';
 
-      return `<div class="dorm-card ${borderClass} ${closedClass} items-center p-3" style="cursor:default;">
+      const editHandler = currentRole === 'instructor' && d.state === 'closed'
+  ? `oncontextmenu="openDormEditModal(event, '${d.__backendId}')"`
+  : '';
+
+return `<div class="dorm-card ${borderClass} ${closedClass} items-center p-3" style="cursor:default;" ${editHandler}>
         <div class="font-black text-4xl tracking-tight leading-none">${escapeHtml(d.dorm_name || '')}</div>
         <div class="text-xs text-muted font-bold uppercase tracking-wider mt-1">${[escapeHtml(d.sdq), escapeHtml(d.section), escapeHtml(d.inter_sec)].filter(Boolean).join(' · ')}</div>
         <div class="text-xl font-black font-tabular mt-2">${d.current_load || 0} / ${d.max_load || 0}</div>
@@ -673,7 +758,11 @@ let phaseHtml = displayStatus
         d.state === 'open' ? '<span class="text-xs font-bold uppercase px-2 py-1 rounded text-white" style="background:var(--green);">OPEN</span>' :
         '<span class="text-xs font-bold uppercase px-2 py-1 rounded text-white" style="background:var(--red);">CLOSED</span>';
 
-      return `<div class="proc-card ${borderClass} ${closedClass}" onclick="openDormModal('${d.__backendId}')">
+      const editHandler = currentRole === 'instructor' && d.state === 'closed'
+  ? `oncontextmenu="openDormEditModal(event, '${d.__backendId}')"`
+  : '';
+
+return `<div class="proc-card ${borderClass} ${closedClass}" onclick="openDormModal('${d.__backendId}')" ${editHandler}>
         <div class="flex justify-between items-start mb-2">
           <div class="font-black text-3xl">${escapeHtml(d.dorm_name || '')}</div>
           ${stateLabel}
@@ -714,14 +803,22 @@ let phaseHtml = displayStatus
       document.getElementById('modal-load-max').textContent = `/ ${d.max_load}`;
 
       // Actions
-      const actionEl = document.getElementById('modal-action-section');
-      if (d.state === 'empty') {
-        actionEl.innerHTML = `<button onclick="openDorm('${id}')" class="px-8 py-3 rounded-lg font-bold text-white text-lg" style="background:var(--green);">OPEN DORM</button>`;
-      } else if (d.state === 'open') {
-        actionEl.innerHTML = `<button onclick="closeDorm('${id}')" class="px-8 py-3 rounded-lg font-bold text-white text-lg" style="background:var(--red);">CLOSE DORM</button>`;
-      } else {
-        actionEl.innerHTML = `<div class="text-muted font-bold">DORM CLOSED</div>`;
-      }
+      c// Actions
+const actionEl = document.getElementById('modal-action-section');
+
+if (currentRole !== 'instructor') {
+  if (d.state === 'closed') {
+    actionEl.innerHTML = `<div class="text-muted font-bold">DORM CLOSED</div>`;
+  } else {
+    actionEl.innerHTML = `<div class="text-muted font-bold text-center">Instructor access required to open or close dorms.</div>`;
+  }
+} else if (d.state === 'empty') {
+  actionEl.innerHTML = `<button onclick="openDorm('${id}')" class="px-8 py-3 rounded-lg font-bold text-white text-lg" style="background:var(--green);">OPEN DORM</button>`;
+} else if (d.state === 'open') {
+  actionEl.innerHTML = `<button onclick="closeDorm('${id}')" class="px-8 py-3 rounded-lg font-bold text-white text-lg" style="background:var(--red);">CLOSE DORM</button>`;
+} else {
+  actionEl.innerHTML = `<div class="text-muted font-bold">DORM CLOSED</div>`;
+}
 
       document.getElementById('dorm-modal').classList.remove('hidden');
     }
@@ -746,6 +843,87 @@ let phaseHtml = displayStatus
   closeDormModal();
 }
 
+function openDormEditModal(event, id) {
+  event.preventDefault();
+  event.stopPropagation();
+
+  if (currentRole !== 'instructor') {
+    return;
+  }
+
+  const d = allData.find(r => r.__backendId === id);
+
+  if (!d || d.state !== 'closed') {
+    return;
+  }
+
+  editDormId = id;
+
+  document.getElementById('edit-dorm-name').value = d.dorm_name || '';
+  document.getElementById('edit-sdq').value = d.sdq || '';
+  document.getElementById('edit-section').value = d.section || '';
+  document.getElementById('edit-inter-sec').value = d.inter_sec || '';
+  document.getElementById('edit-sex').value = d.sex || 'male';
+  document.getElementById('edit-band').checked = d.band === 'true';
+  document.getElementById('edit-max-load').value = d.max_load || 0;
+  document.getElementById('edit-current-load').value = d.current_load || 0;
+  document.getElementById('edit-closed-timer').value = d.closed_timer || '';
+
+  const msg = document.getElementById('dorm-edit-msg');
+  msg.classList.add('hidden');
+  msg.textContent = '';
+
+  document.getElementById('dorm-edit-modal').classList.remove('hidden');
+}
+
+function closeDormEditModal() {
+  document.getElementById('dorm-edit-modal').classList.add('hidden');
+  editDormId = null;
+}
+
+document.getElementById('dorm-edit-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  if (currentRole !== 'instructor' || !editDormId) {
+    return;
+  }
+
+  const d = allData.find(r => r.__backendId === editDormId);
+
+  if (!d || d.state !== 'closed') {
+    return;
+  }
+
+  const maxLoad = Math.max(0, Number(document.getElementById('edit-max-load').value || 0));
+  const currentLoadRaw = Math.max(0, Number(document.getElementById('edit-current-load').value || 0));
+  const currentLoad = Math.min(currentLoadRaw, maxLoad);
+
+  const updatedDorm = {
+    ...d,
+    dorm_name: document.getElementById('edit-dorm-name').value.trim() || d.dorm_name,
+    sdq: document.getElementById('edit-sdq').value.trim(),
+    section: document.getElementById('edit-section').value.trim(),
+    inter_sec: document.getElementById('edit-inter-sec').value.trim(),
+    sex: document.getElementById('edit-sex').value,
+    band: document.getElementById('edit-band').checked ? 'true' : 'false',
+    max_load: maxLoad,
+    current_load: currentLoad,
+    phase: 'Closed',
+    closed_timer: document.getElementById('edit-closed-timer').value.trim() || d.closed_timer
+  };
+
+  const result = await window.dataSdk.update(updatedDorm);
+
+  if (result.isOk) {
+    closeDormEditModal();
+  } else {
+    const msg = document.getElementById('dorm-edit-msg');
+    msg.textContent = 'Failed to save changes.';
+    msg.style.color = 'var(--red)';
+    msg.classList.remove('hidden');
+  }
+});
+
     function modLoad(delta) {
       const input = document.getElementById('modal-load-input');
       let val = parseInt(input.value) || 0;
@@ -767,25 +945,45 @@ let phaseHtml = displayStatus
     }
 
     async function openDorm(id) {
-      const d = allData.find(r => r.__backendId === id);
-      if (d) await window.dataSdk.update({...d, state: 'open', opened_at: new Date().toISOString()});
-      closeDormModal();
-    }
+  if (currentRole !== 'instructor') {
+    return;
+  }
 
-    async function closeDorm(id) {
-      const d = allData.find(r => r.__backendId === id);
-      if (!d) return;
-      const timerEl = document.querySelector(`.timer-display[data-opened="${d.opened_at}"]`);
-      const finalTime = timerEl ? timerEl.textContent : '00:00';
-     await window.dataSdk.update({
-  ...d,
-  state: 'closed',
-  phase: 'Closed',
-  closed_timer: finalTime,
-  closed_at: new Date().toISOString()
-});
-      closeDormModal();
-    }
+  const d = allData.find(r => r.__backendId === id);
+
+  if (d) {
+    await window.dataSdk.update({
+      ...d,
+      state: 'open',
+      opened_at: new Date().toISOString()
+    });
+  }
+
+  closeDormModal();
+}
+
+   async function closeDorm(id) {
+  if (currentRole !== 'instructor') {
+    return;
+  }
+
+  const d = allData.find(r => r.__backendId === id);
+
+  if (!d) return;
+
+  const timerEl = document.querySelector(`.timer-display[data-opened="${d.opened_at}"]`);
+  const finalTime = timerEl ? timerEl.textContent : '00:00';
+
+  await window.dataSdk.update({
+    ...d,
+    state: 'closed',
+    phase: 'Closed',
+    closed_timer: finalTime,
+    closed_at: new Date().toISOString()
+  });
+
+  closeDormModal();
+}
 
     // LOCAL BUS
     function openLocalBusModal() { document.getElementById('local-bus-modal').classList.remove('hidden'); }

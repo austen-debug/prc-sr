@@ -940,15 +940,35 @@ async function initApp() {
   }
 
   timerInterval = setInterval(updateTimers, 1000);
-  initBatchGrid();
-  buildNav();
-  updateSoundButton();
-  renderAll();
+setInterval(updateAirportMetric, 1000);
+
+initBatchGrid();
+buildNav();
+renderAll();
 }
 
     function getRecords(type) { return allData.filter(r => r.type === type); }
     function getConfig(key) { const r = allData.find(d => d.type === 'config' && d.key === key); return r ? r.value : ''; }
     function getActiveWG() { return getConfig('week_group') || ''; }
+
+ function getLocalTime24() {
+  const now = new Date();
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+
+  return `${hours}:${minutes}`;
+}
+
+function updateAirportMetric() {
+  const el = document.getElementById('metric-airport');
+
+  if (!el) {
+    return;
+  }
+
+  const lastAirport = getConfig('last_airport') || '—';
+  el.textContent = `LAST: ${lastAirport} | LOCAL: ${getLocalTime24()}`;
+}
 
  function updateSoundButton() {
   const btn = document.getElementById('sound-toggle-btn');
@@ -1127,8 +1147,7 @@ function getElapsedTimer(openedAt) {
       const totalArrived = arrivedBuses.reduce((s, b) => s + (Number(b.otw_count) || 0), 0);
 
       document.getElementById('metric-arrived').textContent = `ARRIVED: ${totalArrived} | EXPECTED: ${totalExpected}`;
-      const lastAirport = getConfig('last_airport');
-      document.getElementById('metric-airport').textContent = lastAirport ? `LAST: ${lastAirport}` : '—';
+      updateAirportMetric();
 
       const abEl = document.getElementById('active-buses');
 

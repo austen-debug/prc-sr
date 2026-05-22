@@ -93,9 +93,6 @@ body > * {
     select { background-color: var(--surface) !important; color: var(--text) !important; }
     select option { background-color: var(--surface); color: var(--text); }
     input, select, button { min-height: 36px; }
-    #page-input input:not([type="checkbox"]),
-    #page-input select {
-    background-color: rgba(211, 211, 211, 0.25) !important;
 }
    #page-input input:not([type="checkbox"]),
 #page-input select {
@@ -219,9 +216,10 @@ body > * {
     </div>
    </div>
    <div class="board-footer hidden"></div>
+   
   </main><!-- PAGE: AIRPORT -->
   <div id="page-airport" class="page px-4 pb-4 overflow-y-auto">
-   <div class="max-w-lg mx-auto">
+   <div class="max-w-3xl mx-auto">
     <h2 data-template-id="airport-title" class="canva-text text-xl font-bold mb-4"></h2>
     <div class="surface border rounded-lg p-4 mb-4"><label class="block text-sm font-medium mb-1" for="flight-time">Flight Arrival Time</label>
      <div class="flex gap-2"><input id="flight-time" type="time" class="flex-1 border rounded px-3 py-2 bg-transparent" style="border-color:var(--border);color:var(--text);"> <button onclick="updateFlightTime()" class="px-4 py-2 rounded font-bold text-white text-sm" style="background:#16a34a;">UPDATE</button>
@@ -229,6 +227,7 @@ body > * {
      <div id="flight-time-msg" class="text-sm mt-2 hidden"></div>
     </div>
     <form id="airport-form" class="surface border rounded-lg p-4 space-y-3">
+ <h3 class="font-black text-lg uppercase tracking-wider">Generate Airport Bus</h3>
      <div>
       <label class="block text-sm font-medium mb-1" for="bus-otw">Total On The Way (Max 44)</label><input id="bus-otw" type="number" inputmode="numeric" min="0" max="44" class="w-full border rounded px-3 py-2 bg-transparent" style="border-color:var(--border);color:var(--text);" required>
       <div id="bus-otw-error" class="text-red-500 text-xs mt-1 hidden"></div>
@@ -241,8 +240,40 @@ body > * {
       <label class="block text-sm font-medium mb-1" for="bus-nat">Naturalizations</label><input id="bus-nat" type="number" inputmode="numeric" min="0" value="0" class="w-full border rounded px-3 py-2 bg-transparent" style="border-color:var(--border);color:var(--text);">
       <div id="bus-nat-error" class="text-red-500 text-xs mt-1 hidden"></div>
      </div><button type="submit" class="w-full py-3 rounded-lg font-bold text-white text-lg" style="background:#16a34a;">DISPATCH BUS</button>
-     <div id="airport-msg" class="text-center text-sm hidden"></div>
+          <div id="airport-msg" class="text-center text-sm hidden"></div>
     </form>
+
+    <div class="surface border rounded-lg overflow-hidden mt-4" style="border-color:var(--border);">
+      <div class="px-4 py-3 border-b" style="border-color:var(--border);">
+        <h3 class="font-black text-lg uppercase tracking-wider">Airport Bus Log</h3>
+        <div class="text-xs text-muted">Click a bus to edit OTW, female, or naturalization counts.</div>
+      </div>
+
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b" style="border-color:var(--border);">
+            <th class="px-3 py-2 text-left">Bus</th>
+            <th class="px-3 py-2 text-left">Departed</th>
+            <th class="px-3 py-2 text-left">Arrived</th>
+            <th class="px-3 py-2 text-left">Status</th>
+            <th class="px-3 py-2 text-left">OTW</th>
+            <th class="px-3 py-2 text-left">F</th>
+            <th class="px-3 py-2 text-left">NAT</th>
+          </tr>
+        </thead>
+
+        <tbody id="airport-bus-log-body"></tbody>
+
+        <tfoot>
+          <tr class="border-t font-bold" style="border-color:var(--border);">
+            <td class="px-3 py-2" colspan="4">AIRPORT TOTAL</td>
+            <td class="px-3 py-2 font-tabular" id="airport-log-total-otw">0</td>
+            <td class="px-3 py-2 font-tabular" id="airport-log-total-f">0</td>
+            <td class="px-3 py-2 font-tabular" id="airport-log-total-nat">0</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
    </div>
   </div><!-- PAGE: INPUT -->
   <div id="page-input" class="page flex-col w-full overflow-hidden">
@@ -510,6 +541,48 @@ body > * {
       </div>
   </div><!-- End Local Bus Modal -->
 
+<!-- Airport Bus Edit Modal -->
+<div id="airport-bus-edit-modal" class="confirm-overlay hidden">
+  <div class="modal-content">
+    <div class="flex justify-between items-center mb-4">
+      <h2 id="airport-bus-edit-title" class="text-xl font-black">Edit Bus</h2>
+      <button onclick="closeAirportBusEditModal()" class="text-3xl leading-none text-muted hover:text-white">×</button>
+    </div>
+
+    <form id="airport-bus-edit-form" class="space-y-4">
+      <div>
+        <label class="block text-sm font-medium mb-1" for="edit-bus-otw">Total On The Way</label>
+        <input id="edit-bus-otw" type="number" inputmode="numeric" min="0" max="44" class="w-full border rounded px-3 py-2 bg-transparent" style="border-color:var(--border);color:var(--text);" required>
+        <div id="edit-bus-otw-error" class="text-red-500 text-xs mt-1 hidden"></div>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium mb-1" for="edit-bus-female">Females</label>
+        <input id="edit-bus-female" type="number" inputmode="numeric" min="0" class="w-full border rounded px-3 py-2 bg-transparent" style="border-color:var(--border);color:var(--text);">
+        <div id="edit-bus-female-error" class="text-red-500 text-xs mt-1 hidden"></div>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium mb-1" for="edit-bus-nat">Naturalizations</label>
+        <input id="edit-bus-nat" type="number" inputmode="numeric" min="0" class="w-full border rounded px-3 py-2 bg-transparent" style="border-color:var(--border);color:var(--text);">
+        <div id="edit-bus-nat-error" class="text-red-500 text-xs mt-1 hidden"></div>
+      </div>
+
+      <div class="text-xs text-muted">
+        Updating this bus changes the active bus display, arrived total, arrivals log, and final archive totals.
+      </div>
+
+      <div class="flex gap-2 pt-3 justify-end items-center">
+        <button type="button" onclick="closeAirportBusEditModal()" class="px-3 py-1.5 rounded text-xs font-bold surface border" style="border-color:var(--border); min-height:30px;">CANCEL</button>
+
+        <button type="submit" class="px-4 py-1.5 rounded text-xs font-bold text-white" style="background:var(--green); min-height:30px;">SAVE BUS UPDATE</button>
+      </div>
+
+      <div id="edit-bus-msg" class="hidden text-center text-sm font-bold"></div>
+    </form>
+  </div>
+</div>
+
 <!-- Archive Edit Modal -->
 <div id="archive-edit-modal" class="confirm-overlay hidden">
   <div class="modal-content" style="max-width: 900px;">
@@ -729,6 +802,7 @@ async function refresh(force = false) {
     let modalDormId = null;
     let editDormId = null;
     let editArchiveId = null;
+    let editBusId = null;
 
     function escapeHtml(value) {
       return String(value ?? '')
@@ -920,6 +994,7 @@ abEl.innerHTML = activeBuses.length === 0 ? '<span class="text-muted text-sm">No
       renderDormColumns(dorms);
       renderProcessingPage(dorms);
       renderArrivals(arrivedBuses);
+      renderAirportBusLog(buses);
       renderArchives();
       busCounter = getNextAirportBusId() - 1;
       updateTimers();
@@ -1520,6 +1595,167 @@ closed_timer: d.state === 'closed'
       document.getElementById('total-f').textContent = arrivedBuses.reduce((s,b) => s + Number(b.female_count||0), 0);
       document.getElementById('total-nat').textContent = arrivedBuses.reduce((s,b) => s + Number(b.nat_count||0), 0);
     }
+
+   function renderAirportBusLog(buses) {
+  const tbody = document.getElementById('airport-bus-log-body');
+
+  if (!tbody) {
+    return;
+  }
+
+  const wg = getActiveWG();
+
+  const airportBuses = (buses || getRecords('bus').filter(b => b.week_group === wg))
+    .filter(b => b.bus_type === 'airport')
+    .sort((a, b) => Number(a.bus_id || 0) - Number(b.bus_id || 0));
+
+  if (airportBuses.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td class="px-3 py-4 text-center text-muted" colspan="7">No airport buses generated for this week group.</td>
+      </tr>
+    `;
+
+    document.getElementById('airport-log-total-otw').textContent = '0';
+    document.getElementById('airport-log-total-f').textContent = '0';
+    document.getElementById('airport-log-total-nat').textContent = '0';
+    return;
+  }
+
+  tbody.innerHTML = airportBuses.map(b => {
+    const departed = b.created_at
+      ? new Date(b.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      : '—';
+
+    const arrived = b.arrived_at
+      ? new Date(b.arrived_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      : '—';
+
+    const statusLabel = b.status === 'arrived'
+      ? '<span class="text-xs font-bold uppercase px-2 py-1 rounded text-white" style="background:var(--green);">ARRIVED</span>'
+      : '<span class="text-xs font-bold uppercase px-2 py-1 rounded text-white" style="background:var(--blue);">EN ROUTE</span>';
+
+    return `
+      <tr
+        class="border-b hover:opacity-80"
+        style="border-color:var(--border); cursor:pointer;"
+        onclick="openAirportBusEditModal('${b.__backendId}')"
+        title="Click to edit Bus #${escapeHtml(b.bus_id)}"
+      >
+        <td class="px-3 py-2 font-bold">#${escapeHtml(b.bus_id)}</td>
+        <td class="px-3 py-2 font-tabular text-muted">${departed}</td>
+        <td class="px-3 py-2 font-tabular">${arrived}</td>
+        <td class="px-3 py-2">${statusLabel}</td>
+        <td class="px-3 py-2 font-tabular">${escapeHtml(b.otw_count || 0)}</td>
+        <td class="px-3 py-2 font-tabular">${escapeHtml(b.female_count || 0)}</td>
+        <td class="px-3 py-2 font-tabular">${escapeHtml(b.nat_count || 0)}</td>
+      </tr>
+    `;
+  }).join('');
+
+  document.getElementById('airport-log-total-otw').textContent =
+    airportBuses.reduce((s, b) => s + Number(b.otw_count || 0), 0);
+
+  document.getElementById('airport-log-total-f').textContent =
+    airportBuses.reduce((s, b) => s + Number(b.female_count || 0), 0);
+
+  document.getElementById('airport-log-total-nat').textContent =
+    airportBuses.reduce((s, b) => s + Number(b.nat_count || 0), 0);
+}
+
+function openAirportBusEditModal(id) {
+  const bus = allData.find(r => r.__backendId === id);
+
+  if (!bus || bus.bus_type !== 'airport') {
+    return;
+  }
+
+  editBusId = id;
+
+  document.getElementById('airport-bus-edit-title').textContent = `Edit Bus #${bus.bus_id}`;
+  document.getElementById('edit-bus-otw').value = bus.otw_count || 0;
+  document.getElementById('edit-bus-female').value = bus.female_count || 0;
+  document.getElementById('edit-bus-nat').value = bus.nat_count || 0;
+
+  ['edit-bus-otw-error', 'edit-bus-female-error', 'edit-bus-nat-error'].forEach(id => {
+    const el = document.getElementById(id);
+    el.textContent = '';
+    el.classList.add('hidden');
+  });
+
+  const msg = document.getElementById('edit-bus-msg');
+  msg.textContent = '';
+  msg.classList.add('hidden');
+
+  document.getElementById('airport-bus-edit-modal').classList.remove('hidden');
+}
+
+document.getElementById('airport-bus-edit-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  if (!editBusId) {
+    return;
+  }
+
+  const bus = allData.find(r => r.__backendId === editBusId);
+
+  if (!bus || bus.bus_type !== 'airport') {
+    return;
+  }
+
+  const otw = Number(document.getElementById('edit-bus-otw').value);
+  const females = Number(document.getElementById('edit-bus-female').value || 0);
+  const nats = Number(document.getElementById('edit-bus-nat').value || 0);
+
+  ['edit-bus-otw-error', 'edit-bus-female-error', 'edit-bus-nat-error'].forEach(id => {
+    const el = document.getElementById(id);
+    el.textContent = '';
+    el.classList.add('hidden');
+  });
+
+  if (!Number.isFinite(otw) || otw < 0 || otw > 44) {
+    const el = document.getElementById('edit-bus-otw-error');
+    el.textContent = 'OTW must be between 0 and 44.';
+    el.classList.remove('hidden');
+    return;
+  }
+
+  if (!Number.isFinite(females) || females < 0 || females > otw) {
+    const el = document.getElementById('edit-bus-female-error');
+    el.textContent = 'Females cannot exceed OTW.';
+    el.classList.remove('hidden');
+    return;
+  }
+
+  if (!Number.isFinite(nats) || nats < 0 || nats > otw) {
+    const el = document.getElementById('edit-bus-nat-error');
+    el.textContent = 'Naturalizations cannot exceed OTW.';
+    el.classList.remove('hidden');
+    return;
+  }
+
+  const result = await window.dataSdk.update({
+    ...bus,
+    otw_count: otw,
+    female_count: females,
+    nat_count: nats,
+    updated_at: new Date().toISOString()
+  });
+
+  if (result.isOk) {
+    closeAirportBusEditModal();
+  } else {
+    const msg = document.getElementById('edit-bus-msg');
+    msg.textContent = 'Failed to save bus update.';
+    msg.style.color = 'var(--red)';
+    msg.classList.remove('hidden');
+  }
+});
+
+function closeAirportBusEditModal() {
+  document.getElementById('airport-bus-edit-modal').classList.add('hidden');
+  editBusId = null;
+}
 
     function renderArchives() {
   const archives = getRecords('archive');

@@ -93,8 +93,8 @@ body > * {
     select { background-color: var(--surface) !important; color: var(--text) !important; }
     select option { background-color: var(--surface); color: var(--text); }
     input, select, button { min-height: 36px; }
-}
-   #page-input input:not([type="checkbox"]),
+
+#page-input input:not([type="checkbox"]),
 #page-input select {
   background-color: rgba(211, 211, 211, 0.25) !important;
   border-color: rgba(211, 211, 211, 0.35) !important;
@@ -968,11 +968,12 @@ async function initApp() {
     lucide.createIcons();
   }
 
-  timerInterval = setInterval(updateTimers, 1000);
+ timerInterval = setInterval(updateTimers, 1000);
 setInterval(updateAirportMetric, 1000);
 
 initBatchGrid();
 buildNav();
+updateSoundButton();
 renderAll();
 }
 
@@ -1201,6 +1202,7 @@ abEl.innerHTML = activeBuses.length === 0 ? '<span class="text-muted text-sm">No
       renderDormColumns(dorms);
       renderProcessingPage(dorms);
       renderArrivals(arrivedBuses);
+      renderAirportBusLog(buses);
       renderArchives();
       busCounter = getNextAirportBusId() - 1;
       updateTimers();
@@ -1844,17 +1846,29 @@ closed_timer: d.state === 'closed'
       let ok = 0;
       for (const row of filledRows) {
         const r = await window.dataSdk.create({
-          type: 'dorm', dorm_name: row.dorm_name.trim() || `Dorm ${row.rowIndex+1}`,
-          section: row.sec.trim(), sdq: row.sdq.trim(), inter_sec: row.inter_sec.trim(),
-          max_load: parseInt(row.load) || 0, current_load: 0,
-          sex: row.sex, band: row.band ? 'true' : 'false',
-          state: 'empty', phase: '', opened_at: '', closed_timer: '', closed_at: '',
-          notes: ''
-          assigned_airman; '',
-          overtime_sound_sent: 'false',
-          overtime_sound_at: '',
-          week_group: wg, created_at: new Date().toISOString(), destination: '', bus_type: ''
-        });
+                type: 'dorm',
+                dorm_name: row.dorm_name.trim() || `Dorm ${row.rowIndex+1}`,
+                section: row.sec.trim(),
+                sdq: row.sdq.trim(),
+                inter_sec: row.inter_sec.trim(),
+                max_load: parseInt(row.load) || 0,
+                current_load: 0,
+                sex: row.sex,
+                band: row.band ? 'true' : 'false',
+                state: 'empty',
+                phase: '',
+                opened_at: '',
+                closed_timer: '',
+                closed_at: '',
+                notes: '',
+                assigned_airman: '',
+                overtime_sound_sent: 'false',
+                overtime_sound_at: '',
+                week_group: wg,
+                created_at: new Date().toISOString(),
+                destination: '',
+                bus_type: ''
+              });
         if (r.isOk) ok++;
       }
       btn.disabled = false; btn.textContent = 'INITIALIZE WEEK GROUP';

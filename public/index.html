@@ -423,6 +423,17 @@ body > * {
           <input id="edit-max-load" type="number" min="0" class="w-full border rounded px-3 py-2 bg-transparent font-tabular" style="border-color:var(--border);color:var(--text);">
         </div>
 
+<div>
+  <label class="block text-sm font-medium mb-1" for="edit-notes">Notes</label>
+  <textarea
+    id="edit-notes"
+    rows="4"
+    placeholder="Add instructor notes for this dorm..."
+    class="w-full border rounded px-3 py-2 bg-transparent text-sm"
+    style="border-color:var(--border);color:var(--text);"
+  ></textarea>
+</div>
+       
         <div>
           <label class="block text-sm font-medium mb-1" for="edit-current-load">Current Load</label>
           <input id="edit-current-load" type="number" min="0" class="w-full border rounded px-3 py-2 bg-transparent font-tabular" style="border-color:var(--border);color:var(--text);">
@@ -434,9 +445,19 @@ body > * {
       </div>
 
       <div class="flex gap-3 pt-3">
-        <button type="submit" class="flex-1 py-3 rounded-lg font-bold text-white" style="background:var(--green);">SAVE CHANGES</button>
-        <button type="button" onclick="closeDormEditModal()" class="flex-1 py-3 rounded-lg font-bold surface border" style="border-color:var(--border);">CANCEL</button>
-      </div>
+  <button type="submit" class="flex-1 py-3 rounded-lg font-bold text-white" style="background:var(--green);">SAVE CHANGES</button>
+
+  <button
+    type="button"
+    onclick="deleteDormitoryFromEditModal()"
+    class="flex-1 py-3 rounded-lg font-bold text-white"
+    style="background:var(--red);"
+  >
+    DELETE DORMITORY
+  </button>
+
+  <button type="button" onclick="closeDormEditModal()" class="flex-1 py-3 rounded-lg font-bold surface border" style="border-color:var(--border);">CANCEL</button>
+</div>
 
       <div id="dorm-edit-msg" class="hidden text-center text-sm font-bold"></div>
     </form>
@@ -1063,6 +1084,7 @@ function openDormEditModal(event, id) {
   document.getElementById('edit-max-load').value = d.max_load || 0;
   document.getElementById('edit-current-load').value = d.current_load || 0;
   document.getElementById('edit-closed-timer').value = d.closed_timer || '';
+  document.getElementById('edit-notes').value = d.notes || '';
 
   const msg = document.getElementById('dorm-edit-msg');
   msg.classList.add('hidden');
@@ -1101,9 +1123,10 @@ document.getElementById('dorm-edit-form').addEventListener('submit', async (e) =
     inter_sec: document.getElementById('edit-inter-sec').value.trim(),
     sex: document.getElementById('edit-sex').value,
     band: document.getElementById('edit-band').checked ? 'true' : 'false',
-    max_load: maxLoad,
-    current_load: currentLoad,
-    phase: d.state === 'closed' ? 'Closed' : d.phase,
+max_load: maxLoad,
+current_load: currentLoad,
+notes: document.getElementById('edit-notes').value.trim(),
+phase: d.state === 'closed' ? 'Closed' : d.phase,
 closed_timer: d.state === 'closed'
   ? document.getElementById('edit-closed-timer').value.trim() || d.closed_timer
   : d.closed_timer
@@ -1159,6 +1182,35 @@ closed_timer: d.state === 'closed'
   closeDormModal();
 }
 
+   async function deleteDormitoryFromEditModal() {
+  if (currentRole !== 'instructor' || !editDormId) {
+    return;
+  }
+
+  const d = allData.find(r => r.__backendId === editDormId);
+
+  if (!d) {
+    return;
+  }
+
+  const confirmed = confirm(`Delete dormitory ${d.dorm_name || 'this dorm'} from the current week group? This cannot be undone.`);
+
+  if (!confirmed) {
+    return;
+  }
+
+  const result = await window.dataSdk.delete(d);
+
+  if (result.isOk) {
+    closeDormEditModal();
+  } else {
+    const msg = document.getElementById('dorm-edit-msg');
+    msg.textContent = 'Failed to delete dormitory.';
+    msg.style.color = 'var(--red)';
+    msg.classList.remove('hidden');
+  }
+}
+   
    async function closeDorm(id) {
   if (currentRole !== 'instructor') {
     return;
@@ -1413,6 +1465,7 @@ closed_timer: d.state === 'closed'
           max_load: parseInt(row.load) || 0, current_load: 0,
           sex: row.sex, band: row.band ? 'true' : 'false',
           state: 'empty', phase: '', opened_at: '', closed_timer: '', closed_at: '',
+          notes: '',
           week_group: wg, created_at: new Date().toISOString(), destination: '', bus_type: ''
         });
         if (r.isOk) ok++;
@@ -1534,6 +1587,7 @@ closed_timer: d.state === 'closed'
   max_load: Number(d.max_load || 0),
   state: d.state || '',
   phase: d.phase || '',
+  notes: d.notes || '',
   opened_at: d.opened_at || '',
   closed_at: d.closed_at || '',
   open_time: d.opened_at ? new Date(d.opened_at).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : '—',
@@ -1736,6 +1790,7 @@ function printArchiveSpreadsheet() {
       <td>${escapeHtml(d.open_time || '')}</td>
       <td>${escapeHtml(d.close_time || '')}</td>
       <td>${escapeHtml(d.elapsed || '')}</td>
+      <td>${escapeHtml(d.notes || '')}</td>
     </tr>
   `).join('');
 
@@ -1806,6 +1861,7 @@ function printArchiveSpreadsheet() {
             <th>Opened</th>
             <th>Closed</th>
             <th>Elapsed</th>
+            <th>Notes</th>
           </tr>
         </thead>
         <tbody>${dormRows}</tbody>

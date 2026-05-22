@@ -860,6 +860,8 @@ let playedSoundEventIds = new Set(
   JSON.parse(localStorage.getItem(SOUND_PLAYED_KEY) || '[]')
 );
 
+let soundPlayers = {};
+
     function escapeHtml(value) {
       return String(value ?? '')
         .replaceAll('&', '&amp;')
@@ -1017,15 +1019,24 @@ async function enableOperationalSounds() {
   localStorage.setItem(SOUND_ENABLED_KEY, 'true');
   updateSoundButton();
 
-  try {
-    const audio = new Audio(SOUND_FILES.dorm_open);
+  soundPlayers = {};
+
+  for (const [soundKey, src] of Object.entries(SOUND_FILES)) {
+    const audio = new Audio(src);
+    audio.preload = 'auto';
     audio.volume = 0.01;
-    await audio.play();
-    audio.pause();
-    audio.currentTime = 0;
-    audio.volume = 1;
-  } catch (error) {
-    console.warn('Sound unlock attempt failed:', error);
+    audio.load();
+
+    soundPlayers[soundKey] = audio;
+
+    try {
+      await audio.play();
+      audio.pause();
+      audio.currentTime = 0;
+      audio.volume = 1;
+    } catch (error) {
+      console.warn(`Sound unlock failed for ${soundKey}:`, error);
+    }
   }
 }
 
@@ -1059,18 +1070,32 @@ function playOperationalSound(soundKey) {
     return;
   }
 
-  const src = SOUND_FILES[soundKey];
+  if (!soundPlayers[soundKey]) {
+    const src = SOUND_FILES[soundKey];
 
-  if (!src) {
-    return;
+    if (!src) {
+      return;
+    }
+
+    const audio = new Audio(src);
+    audio.preload = 'auto';
+    audio.load();
+    soundPlayers[soundKey] = audio;
   }
 
-  const audio = new Audio(src);
-  audio.volume = 1;
+  const audio = soundPlayers[soundKey];
 
-  audio.play().catch(error => {
-    console.warn('Sound playback blocked, muted, or failed:', error);
-  });
+  try {
+    audio.pause();
+    audio.currentTime = 0;
+    audio.volume = 1;
+
+    audio.play().catch(error => {
+      console.warn(`Sound playback blocked, muted, or failed for ${soundKey}:`, error);
+    });
+  } catch (error) {
+    console.warn(`Sound playback failed for ${soundKey}:`, error);
+  }
 }
 
 function processSoundEvents() {

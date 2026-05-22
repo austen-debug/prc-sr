@@ -156,17 +156,26 @@ body > * {
   <button id="role-toggle" onclick="logout()" class="nav-btn text-xs"></button>
 
   <button
-    id="fullscreen-btn"
-    type="button"
-    onclick="toggleFullscreenBoard()"
-    class="nav-btn text-xs"
-  >
-    FULL SCREEN
-  </button>
+  id="fullscreen-btn"
+  type="button"
+  onclick="toggleFullscreenBoard()"
+  class="nav-btn text-xs"
+>
+  FULL SCREEN
+</button>
 
-  <button onclick="toggleTheme()" class="nav-btn" aria-label="Toggle theme">
-    <i data-lucide="sun" style="width:16px;height:16px;"></i>
-  </button>
+<button
+  id="sound-toggle-btn"
+  type="button"
+  onclick="enableOperationalSounds()"
+  class="nav-btn text-xs"
+>
+  ENABLE SOUND
+</button>
+
+<button onclick="toggleTheme()" class="nav-btn" aria-label="Toggle theme">
+  <i data-lucide="sun" style="width:16px;height:16px;"></i>
+</button>
 </div>
    
   </nav><!-- PAGE: STATUS BOARD -->
@@ -804,6 +813,24 @@ async function refresh(force = false) {
     let editArchiveId = null;
     let editBusId = null;
 
+const SOUND_FILES = {
+  dorm_open: '/assets/sr_open_sound.mp3',
+  dorm_closed: '/assets/sr_closed_sound.mp3',
+  bus_dispatch: '/assets/sr_bus_sound.mp3',
+  overtime: '/assets/sr_overtime_sound.mp3'
+};
+
+const SOUND_ENABLED_KEY = 'prc_sr_sound_enabled_v1';
+const SOUND_PLAYED_KEY = 'prc_sr_played_sound_events_v1';
+
+let soundEnabled = localStorage.getItem(SOUND_ENABLED_KEY) === 'true';
+let soundEventBaseline = Date.now();
+let overtimeSoundInProgress = new Set();
+
+let playedSoundEventIds = new Set(
+  JSON.parse(localStorage.getItem(SOUND_PLAYED_KEY) || '[]')
+);
+
     function escapeHtml(value) {
       return String(value ?? '')
         .replaceAll('&', '&amp;')
@@ -915,12 +942,144 @@ async function initApp() {
   timerInterval = setInterval(updateTimers, 1000);
   initBatchGrid();
   buildNav();
+  updateSoundButton();
   renderAll();
 }
 
     function getRecords(type) { return allData.filter(r => r.type === type); }
     function getConfig(key) { const r = allData.find(d => d.type === 'config' && d.key === key); return r ? r.value : ''; }
     function getActiveWG() { return getConfig('week_group') || ''; }
+
+ function updateSoundButton() {
+  const btn = document.getElementById('sound-toggle-btn');
+
+  if (!btn) {
+    return;
+  }
+
+  btn.textContent = soundEnabled ? 'SOUND ON' : 'ENABLE SOUND';
+}
+
+async function enableOperationalSounds() {
+  soundEnabled = true;
+  soundEventBaseline = Date.now();
+
+  localStorage.setItem(SOUND_ENABLED_KEY, 'true');
+  updateSoundButton();
+
+  try {
+    const audio = new Audio(SOUND_FILES.dorm_open);
+    audio.volume = 0.01;
+    await audio.play();
+    audio.pause();
+    audio.currentTime = 0;
+    audio.volume = 1;
+  } catch (error) {
+    console.warn('Sound unlock attempt failed:', error);
+  }
+}
+
+function savePlayedSoundEventIds() {
+  const ids = Array.from(playedSoundEventIds).slice(-300);
+  playedSoundEventIds = new Set(ids);
+  localStorage.setItem(SOUND_PLAYED_KEY, JSON.stringify(ids));
+}
+
+async function createSoundEvent(soundKey, details = {}) {
+  if (!SOUND_FILES[soundKey]) {
+    return;
+  }
+
+  if (allData.length >= 990) {
+    console.warn('Sound event skipped because record count is near the app limit.');
+    return;
+  }
+
+  await window.dataSdk.create({
+    type: 'sound_event',
+    sound_key: soundKey,
+    week_group: getActiveWG(),
+    created_at: new Date().toISOString(),
+    details: JSON.stringify(details)
+  });
+}
+
+function playOperationalSound(soundKey) {
+  if (!soundEnabled) {
+    return;
+  }
+
+  const src = SOUND_FILES[soundKey];
+
+  if (!src) {
+    return;
+  }
+
+  const audio = new Audio(src);
+  audio.volume = 1;
+
+  audio.play().catch(error => {
+    console.warn('Sound playback blocked, muted, or failed:', error);
+  });
+}
+
+function processSoundEvents() {
+  const events = getRecords('sound_event')
+    .filter(e => e.week_group === getActiveWG())
+    .sort((a, b) => new Date(a.created_at || 0) - new Date(b.created_at || 0));
+
+  for (const event of events) {
+    const id = event.__backendId;
+
+    if (!id || playedSoundEventIds.has(id)) {
+      continue;
+    }
+
+    const eventTime = new Date(event.created_at || '').getTime();
+
+    if (!Number.isFinite(eventTime) || eventTime < soundEventBaseline) {
+      playedSoundEventIds.add(id);
+      continue;
+    }
+
+    playOperationalSound(event.sound_key);
+    playedSoundEventIds.add(id);
+  }
+
+  savePlayedSoundEventIds();
+}
+
+async function triggerOvertimeSoundIfNeeded(dormId) {
+  if (!dormId || overtimeSoundInProgress.has(dormId)) {
+    return;
+  }
+
+  const d = allData.find(r => r.__backendId === dormId);
+
+  if (!d || d.type !== 'dorm' || d.state !== 'open' || d.overtime_sound_sent === 'true') {
+    return;
+  }
+
+  overtimeSoundInProgress.add(dormId);
+
+  try {
+    const updateResult = await window.dataSdk.update({
+      ...d,
+      overtime_sound_sent: 'true',
+      overtime_sound_at: new Date().toISOString()
+    });
+
+    if (updateResult.isOk) {
+      await createSoundEvent('overtime', {
+        dorm_id: dormId,
+        dorm_name: d.dorm_name || '',
+        action: 'timer_overtime'
+      });
+    }
+  } finally {
+    overtimeSoundInProgress.delete(dormId);
+  }
+}
 
 function getNextAirportBusId() {
   const wg = getActiveWG();
@@ -994,10 +1153,10 @@ abEl.innerHTML = activeBuses.length === 0 ? '<span class="text-muted text-sm">No
       renderDormColumns(dorms);
       renderProcessingPage(dorms);
       renderArrivals(arrivedBuses);
-      renderAirportBusLog(buses);
       renderArchives();
       busCounter = getNextAirportBusId() - 1;
       updateTimers();
+      processSoundEvents();
     }
 
     // STATUS BOARD dorm columns (read-only display)
@@ -1015,7 +1174,7 @@ abEl.innerHTML = activeBuses.length === 0 ? '<span class="text-muted text-sm">No
       let timerHtml = '';
      if (d.state === 'open' && d.opened_at) {
   const timer = getElapsedTimer(d.opened_at);
-  timerHtml = `<div class="text-3xl font-mono font-black font-tabular mt-2 timer-display text-center" data-opened="${d.opened_at}">${timer.text}</div>`;
+  timerHtml = `<div class="text-3xl font-mono font-black font-tabular mt-2 timer-display text-center" data-opened="${d.opened_at}" data-dorm-id="${d.__backendId}">${timer.text}</div>`;
 }
       if (d.state === 'closed' && d.closed_timer) timerHtml = `<div class="text-3xl font-mono font-black font-tabular mt-2 text-muted text-center">${escapeHtml(d.closed_timer)}</div>`;
       const displayStatus = d.state === 'closed'
@@ -1065,7 +1224,7 @@ return `<div class="dorm-card ${borderClass} ${closedClass} items-center p-3" st
       let timerHtml = '';
      if (d.state === 'open' && d.opened_at) {
   const timer = getElapsedTimer(d.opened_at);
-  timerHtml = `<div class="text-2xl font-mono font-black font-tabular timer-display" data-opened="${d.opened_at}">${timer.text}</div>`;
+  timerHtml = `<div class="text-2xl font-mono font-black font-tabular timer-display" data-opened="${d.opened_at}" data-dorm-id="${d.__backendId}">${timer.text}</div>`;
 }
       if (d.state === 'closed' && d.closed_timer) timerHtml = `<div class="text-2xl font-mono font-black font-tabular text-muted">${escapeHtml(d.closed_timer)}</div>`;
       let stateLabel = d.state === 'empty' ? '<span class="text-xs font-bold uppercase px-2 py-1 rounded" style="background:var(--surface-alt);">EMPTY</span>' :
@@ -1268,11 +1427,23 @@ closed_timer: d.state === 'closed'
 
   const d = allData.find(r => r.__backendId === id);
 
-  if (d) {
-    await window.dataSdk.update({
-      ...d,
-      state: 'open',
-      opened_at: new Date().toISOString()
+  if (!d) {
+    return;
+  }
+
+  const result = await window.dataSdk.update({
+    ...d,
+    state: 'open',
+    opened_at: new Date().toISOString(),
+    overtime_sound_sent: 'false',
+    overtime_sound_at: ''
+  });
+
+  if (result.isOk) {
+    await createSoundEvent('dorm_open', {
+      dorm_id: id,
+      dorm_name: d.dorm_name || '',
+      action: 'open_dorm'
     });
   }
 
@@ -1320,13 +1491,22 @@ closed_timer: d.state === 'closed'
   const timerEl = document.querySelector(`.timer-display[data-opened="${d.opened_at}"]`);
   const finalTime = timerEl ? timerEl.textContent : '00:00';
 
-  await window.dataSdk.update({
+  const result = await window.dataSdk.update({
     ...d,
     state: 'closed',
     phase: 'Closed',
     closed_timer: finalTime,
     closed_at: new Date().toISOString()
   });
+
+  if (result.isOk) {
+    await createSoundEvent('dorm_closed', {
+      dorm_id: id,
+      dorm_name: d.dorm_name || '',
+      final_time: finalTime,
+      action: 'close_dorm'
+    });
+  }
 
   closeDormModal();
 }
@@ -1405,12 +1585,13 @@ closed_timer: d.state === 'closed'
     el.classList.remove('timer-yellow', 'timer-red', 'timer-flash');
 
     if (timer.minutes >= 60) {
-      el.classList.add('timer-flash');
-    } else if (timer.minutes >= 50) {
-      el.classList.add('timer-red');
-    } else if (timer.minutes >= 40) {
-      el.classList.add('timer-yellow');
-    }
+  el.classList.add('timer-flash');
+  triggerOvertimeSoundIfNeeded(el.dataset.dormId);
+} else if (timer.minutes >= 50) {
+  el.classList.add('timer-red');
+} else if (timer.minutes >= 40) {
+  el.classList.add('timer-yellow');
+}
   });
 }
 
@@ -1478,8 +1659,22 @@ closed_timer: d.state === 'closed'
         status: 'active', created_at: new Date().toISOString(), week_group: wg
       });
       btn.disabled = false; btn.textContent = 'DISPATCH BUS';
-      if (r.isOk) { e.target.reset(); document.getElementById('bus-female').value = '0'; document.getElementById('bus-nat').value = '0'; showMsg('airport-msg', `Bus #${newBusId} Dispatched`, false); }
-      else { showMsg('airport-msg', 'Failed', true); }
+      if (r.isOk) {
+  await createSoundEvent('bus_dispatch', {
+    bus_id: String(newBusId),
+    otw_count: otw,
+    female_count: females,
+    nat_count: nats,
+    action: 'dispatch_bus'
+  });
+
+  e.target.reset();
+  document.getElementById('bus-female').value = '0';
+  document.getElementById('bus-nat').value = '0';
+  showMsg('airport-msg', `Bus #${newBusId} Dispatched`, false);
+} else {
+  showMsg('airport-msg', 'Failed', true);
+}
     });
 
     async function updateFlightTime() {
@@ -1563,6 +1758,8 @@ closed_timer: d.state === 'closed'
           sex: row.sex, band: row.band ? 'true' : 'false',
           state: 'empty', phase: '', opened_at: '', closed_timer: '', closed_at: '',
           notes: '',
+          overtime_sound_sent: 'false',
+          overtime_sound_at: '',
           week_group: wg, created_at: new Date().toISOString(), destination: '', bus_type: ''
         });
         if (r.isOk) ok++;
@@ -1831,6 +2028,7 @@ function closeAirportBusEditModal() {
         const wg = getActiveWG();
         const dorms = getRecords('dorm').filter(d => d.week_group === wg);
         const buses = getRecords('bus').filter(b => b.week_group === wg);
+        const soundEvents = getRecords('sound_event').filter(e => e.week_group === wg);
         const arrivedBuses = buses.filter(b => b.status === 'arrived');
         const totalArrived = arrivedBuses.reduce((s, b) => s + (Number(b.otw_count) || 0), 0);
         const dormHistory = dorms.map(d => ({
@@ -1887,7 +2085,7 @@ if (allData.length < 999) {
     bus_data: JSON.stringify(busHistory)
   });
 }
-        for (const rec of [...dorms, ...buses]) await window.dataSdk.delete(rec);
+        for (const rec of [...dorms, ...buses, ...soundEvents]) await window.dataSdk.delete(rec);
         const lastAirport = allData.find(d => d.type === 'config' && d.key === 'last_airport');
         if (lastAirport) await window.dataSdk.update({...lastAirport, value: ''});
         const activeWgConfig = allData.find(d => d.type === 'config' && d.key === 'week_group');

@@ -2521,9 +2521,10 @@ function printArchiveSpreadsheet() {
   const result = await response.json();
 
   if (result.isOk) {
-    closeArchiveEditModal();
-    await window.dataSdk.init(handler);
-  } else {
+  closeArchiveEditModal();
+  allData = allData.filter(r => r.__backendId !== archive.__backendId);
+  renderAll();
+} else {
     const msg = document.getElementById('archive-edit-msg');
     msg.textContent = result.error || 'Archive delete failed.';
     msg.style.color = 'var(--red)';

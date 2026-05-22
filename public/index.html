@@ -444,19 +444,32 @@ body > * {
         This edits the dorm record for correction purposes. Open/close timestamps are preserved.
       </div>
 
-      <div class="flex gap-3 pt-3">
-  <button type="submit" class="flex-1 py-3 rounded-lg font-bold text-white" style="background:var(--green);">SAVE CHANGES</button>
+      <div class="flex gap-2 pt-3 justify-end items-center">
+  <button
+    type="button"
+    onclick="closeDormEditModal()"
+    class="px-3 py-1.5 rounded text-xs font-bold surface border"
+    style="border-color:var(--border); min-height:30px;"
+  >
+    CANCEL
+  </button>
 
   <button
     type="button"
     onclick="deleteDormitoryFromEditModal()"
-    class="flex-1 py-3 rounded-lg font-bold text-white"
-    style="background:var(--red);"
+    class="px-3 py-1.5 rounded text-xs font-bold text-white"
+    style="background:var(--red); min-height:30px;"
   >
-    DELETE DORMITORY
+    DELETE
   </button>
 
-  <button type="button" onclick="closeDormEditModal()" class="flex-1 py-3 rounded-lg font-bold surface border" style="border-color:var(--border);">CANCEL</button>
+  <button
+    type="submit"
+    class="px-4 py-1.5 rounded text-xs font-bold text-white"
+    style="background:var(--green); min-height:30px;"
+  >
+    SAVE
+  </button>
 </div>
 
       <div id="dorm-edit-msg" class="hidden text-center text-sm font-bold"></div>

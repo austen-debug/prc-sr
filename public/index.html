@@ -104,6 +104,25 @@ body > * {
     .dorm-card:hover { transform: scale(1.01); }
     .metric-block { background: var(--surface); border: 1px solid var(--border); border-radius: 0.5rem; padding: 0.75rem; }
     .board-footer { flex-shrink: 0; padding: 0.5rem; display: flex; justify-content: center; border-top: 1px solid var(--border); }
+
+   .fullscreen-board .app-nav {
+  display: none !important;
+}
+
+.fullscreen-board #page-board {
+  padding-top: 32px;
+  padding-bottom: 0;
+  min-height: 100vh;
+}
+
+.fullscreen-board .board-footer {
+  display: none !important;
+}
+
+.fullscreen-board .dorm-dashboard {
+  padding-bottom: 0.75rem;
+}
+   
     .phase-btn { padding: 0.75rem 1rem; border-radius: 0.5rem; font-weight: 700; font-size: 1rem; border: 2px solid var(--border); background: var(--surface); color: var(--text); cursor: pointer; transition: all 0.15s; }
     .phase-btn.selected { background: var(--green); color: #fff; border-color: var(--green); }
     .phase-btn:hover:not(.selected) { background: var(--surface-alt); }
@@ -147,11 +166,22 @@ body > * {
      </div>
     </div>
     <div class="metric-block">
-     <div class="text-xs uppercase tracking-wider font-medium text-muted mb-1">
-      Active Buses En Route
-     </div>
-     <div id="active-buses" class="flex gap-2 flex-wrap items-center"></div>
-    </div>
+ <div class="flex items-center justify-between gap-2 mb-1">
+  <div class="text-xs uppercase tracking-wider font-medium text-muted">
+   Active Buses En Route
+  </div>
+  <button
+    id="fullscreen-btn"
+    type="button"
+    onclick="toggleFullscreenBoard()"
+    class="px-3 py-1 rounded font-bold text-white text-[10px]"
+    style="background:var(--blue); min-height:28px;"
+  >
+   FULL SCREEN
+  </button>
+ </div>
+ <div id="active-buses" class="flex gap-2 flex-wrap items-center"></div>
+</div>
    </div>
    <div class="dorm-dashboard">
     <div class="dorm-column">
@@ -1845,6 +1875,35 @@ function printArchiveSpreadsheet() {
     msg.classList.remove('hidden');
   }
 }
+
+ function toggleFullscreenBoard() {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch(err => {
+      console.error('Fullscreen failed:', err);
+    });
+  } else {
+    document.exitFullscreen();
+  }
+}
+
+function syncFullscreenBoardState() {
+  const isFullscreen = Boolean(document.fullscreenElement);
+
+  document.body.classList.toggle('fullscreen-board', isFullscreen);
+
+  const btn = document.getElementById('fullscreen-btn');
+
+  if (btn) {
+    btn.textContent = isFullscreen ? 'EXIT FULL SCREEN' : 'FULL SCREEN';
+  }
+
+  if (isFullscreen) {
+    showPage('board');
+  }
+}
+
+document.addEventListener('fullscreenchange', syncFullscreenBoardState);
+   
     initApp();
   </script>
  </body>

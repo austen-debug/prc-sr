@@ -144,8 +144,25 @@ body > * {
   </div><!-- Navigation -->
   <nav class="app-nav" role="navigation" aria-label="Main navigation">
    <div id="nav-links" class="flex gap-1"></div>
-   <div class="flex items-center gap-3"><span id="week-group-display" class="font-bold text-xs font-tabular"></span> <button id="role-toggle" onclick="logout()" class="nav-btn text-xs"></button> <button onclick="toggleTheme()" class="nav-btn" aria-label="Toggle theme"><i data-lucide="sun" style="width:16px;height:16px;"></i></button>
-   </div>
+   <div class="flex items-center gap-3">
+  <span id="week-group-display" class="font-bold text-xs font-tabular"></span>
+
+  <button id="role-toggle" onclick="logout()" class="nav-btn text-xs"></button>
+
+  <button
+    id="fullscreen-btn"
+    type="button"
+    onclick="toggleFullscreenBoard()"
+    class="nav-btn text-xs"
+  >
+    FULL SCREEN
+  </button>
+
+  <button onclick="toggleTheme()" class="nav-btn" aria-label="Toggle theme">
+    <i data-lucide="sun" style="width:16px;height:16px;"></i>
+  </button>
+</div>
+   
   </nav><!-- PAGE: STATUS BOARD -->
   <main id="page-board" class="page active" role="main">
    <div class="board-header">
@@ -166,19 +183,8 @@ body > * {
      </div>
     </div>
     <div class="metric-block">
- <div class="flex items-center justify-between gap-2 mb-1">
-  <div class="text-xs uppercase tracking-wider font-medium text-muted">
-   Active Buses En Route
-  </div>
-  <button
-    id="fullscreen-btn"
-    type="button"
-    onclick="toggleFullscreenBoard()"
-    class="px-3 py-1 rounded font-bold text-white text-[10px]"
-    style="background:var(--blue); min-height:28px;"
-  >
-   FULL SCREEN
-  </button>
+ <div class="text-xs uppercase tracking-wider font-medium text-muted mb-1">
+  Active Buses En Route
  </div>
  <div id="active-buses" class="flex gap-2 flex-wrap items-center"></div>
 </div>

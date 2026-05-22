@@ -392,7 +392,36 @@ body > * {
     <div class="flex justify-between items-center mb-4">
      <h2 id="modal-dorm-name" class="text-2xl font-black"></h2><button onclick="closeDormModal()" class="text-3xl leading-none text-muted hover:text-white">×</button>
     </div>
-    <div id="modal-dorm-info" class="text-sm text-muted mb-4"></div><!-- Phase Selection -->
+    <div id="modal-dorm-info" class="text-sm text-muted mb-4"></div>
+
+<!-- Assigned Airman -->
+<div class="mb-6">
+  <label class="block text-xs uppercase tracking-wider font-bold text-muted mb-2" for="modal-airman-input">
+    Airman
+  </label>
+
+  <div class="flex gap-2">
+    <input
+      id="modal-airman-input"
+      type="text"
+      placeholder="AIRMAN"
+      class="flex-1 border rounded px-3 py-2 bg-transparent text-sm uppercase"
+      style="border-color:var(--border);color:var(--text);"
+      onkeydown="handleAirmanInputKey(event)"
+    >
+
+    <button
+      type="button"
+      onclick="saveAssignedAirman()"
+      class="px-4 py-2 rounded font-bold text-white text-xs"
+      style="background:var(--green);"
+    >
+      SAVE
+    </button>
+  </div>
+</div>
+
+<!-- Phase Selection -->
     <div id="modal-phase-section" class="mb-6">
      <div class="text-xs uppercase tracking-wider font-bold text-muted mb-2">
       Processing Phase
@@ -1222,7 +1251,12 @@ if (d.state === 'empty') {
   dormNameColor = 'var(--text-muted)';
 }
 
-return `<div class="dorm-card ${borderClass} ${closedClass} items-center p-3" style="cursor:default;" ${editHandler}>
+const assignedAirmanHtml = d.assigned_airman
+  ? `<div class="absolute top-2 right-3 text-[10px] font-black uppercase tracking-wider text-muted">${escapeHtml(d.assigned_airman)}</div>`
+  : '';
+
+return `<div class="dorm-card ${borderClass} ${closedClass} items-center p-3 relative" style="cursor:default;" ${editHandler}>
+        ${assignedAirmanHtml}
         <div class="font-black text-4xl tracking-tight leading-none" style="color:${dormNameColor};">${escapeHtml(d.dorm_name || '')}</div>
         <div class="text-xs text-muted font-bold uppercase tracking-wider mt-1">${[escapeHtml(d.sdq), escapeHtml(d.section), escapeHtml(d.inter_sec)].filter(Boolean).join(' · ')}</div>
         <div class="text-xl font-black font-tabular mt-2">${d.current_load || 0} / ${d.max_load || 0}</div>
@@ -1249,16 +1283,24 @@ return `<div class="dorm-card ${borderClass} ${closedClass} items-center p-3" st
       let stateLabel = d.state === 'empty' ? '<span class="text-xs font-bold uppercase px-2 py-1 rounded" style="background:var(--surface-alt);">EMPTY</span>' :
         d.state === 'open' ? '<span class="text-xs font-bold uppercase px-2 py-1 rounded text-white" style="background:var(--green);">OPEN</span>' :
         '<span class="text-xs font-bold uppercase px-2 py-1 rounded text-white" style="background:var(--red);">CLOSED</span>';
-
+     
+const assignedAirmanHtml = d.assigned_airman
+  ? `<div class="text-[10px] font-black uppercase tracking-wider text-muted mt-1 text-right">${escapeHtml(d.assigned_airman)}</div>`
+  : '';
+     
       const editHandler = currentRole === 'instructor'
   ? `oncontextmenu="openDormEditModal(event, '${d.__backendId}')"`
   : '';
 
 return `<div class="proc-card ${borderClass} ${closedClass}" onclick="openDormModal('${d.__backendId}')" ${editHandler}>
-        <div class="flex justify-between items-start mb-2">
-          <div class="font-black text-3xl">${escapeHtml(d.dorm_name || '')}</div>
-          ${stateLabel}
-        </div>
+        <div class="flex justify-between items-start mb-2 gap-3">
+  <div class="font-black text-3xl">${escapeHtml(d.dorm_name || '')}</div>
+
+  <div class="flex flex-col items-end">
+    ${stateLabel}
+    ${assignedAirmanHtml}
+  </div>
+</div>
         <div class="text-xs text-muted font-bold uppercase">${[escapeHtml(d.sdq), escapeHtml(d.section), escapeHtml(d.inter_sec)].filter(Boolean).join(' · ')}</div>
         <div class="text-xl font-black font-tabular mt-2">${d.current_load || 0} / ${d.max_load || 0}</div>
         ${d.state === 'closed'
@@ -1278,7 +1320,8 @@ return `<div class="proc-card ${borderClass} ${closedClass}" onclick="openDormMo
       if (!d) return;
       document.getElementById('modal-dorm-name').textContent = escapeHtml(d.dorm_name || '');
       document.getElementById('modal-dorm-info').innerHTML = `${[escapeHtml(d.sdq), escapeHtml(d.section), escapeHtml(d.inter_sec)].filter(Boolean).join(' · ')} | ${d.sex === 'female' ? '♀ Female' : '♂ Male'}${d.band === 'true' ? ' | 🎵 Band' : ''} | Max: ${d.max_load}`;
-
+      document.getElementById('modal-airman-input').value = d.assigned_airman || '';
+     
       // Phase buttons
       const phases = ['OPEN','LOBBY','AUDITORIUM','STANDBY','INITIAL ISSUE','ITEM SETUP','LATRINE','FIT TEST','EATING','READY TO DEPART'];
       const phaseSection = document.getElementById('modal-phase-section');
@@ -1334,6 +1377,36 @@ return `<div class="proc-card ${borderClass} ${closedClass}" onclick="openDormMo
   closeDormModal();
 }
 
+function handleAirmanInputKey(event) {
+  if (event.key === 'Enter') {
+    event.preventDefault();
+    saveAssignedAirman();
+  }
+}
+
+async function saveAssignedAirman() {
+  if (!modalDormId) {
+    return;
+  }
+
+  const d = allData.find(r => r.__backendId === modalDormId);
+
+  if (!d) {
+    return;
+  }
+
+  const assignedAirman = document.getElementById('modal-airman-input').value
+    .trim()
+    .toUpperCase();
+
+  await window.dataSdk.update({
+    ...d,
+    assigned_airman: assignedAirman
+  });
+
+  closeDormModal();
+}
+   
 function openDormEditModal(event, id) {
   event.preventDefault();
   event.stopPropagation();
@@ -1776,7 +1849,8 @@ closed_timer: d.state === 'closed'
           max_load: parseInt(row.load) || 0, current_load: 0,
           sex: row.sex, band: row.band ? 'true' : 'false',
           state: 'empty', phase: '', opened_at: '', closed_timer: '', closed_at: '',
-          notes: '',
+          notes: ''
+          assigned_airman; '',
           overtime_sound_sent: 'false',
           overtime_sound_at: '',
           week_group: wg, created_at: new Date().toISOString(), destination: '', bus_type: ''
@@ -2063,6 +2137,7 @@ function closeAirportBusEditModal() {
   state: d.state || '',
   phase: d.phase || '',
   notes: d.notes || '',
+  assigned_airman: d.assigned_airman || '',
   opened_at: d.opened_at || '',
   closed_at: d.closed_at || '',
   open_time: d.opened_at ? new Date(d.opened_at).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : '—',
@@ -2255,6 +2330,7 @@ function printArchiveSpreadsheet() {
   const dormRows = dormData.map(d => `
     <tr>
       <td>${escapeHtml(d.name || d.dorm_name || '')}</td>
+      <td>${escapeHtml(d.assigned_airman || '')}</td>
       <td>${escapeHtml(d.sdq || '')}</td>
       <td>${escapeHtml(d.section || '')}</td>
       <td>${escapeHtml(d.inter_sec || '')}</td>
@@ -2326,6 +2402,7 @@ function printArchiveSpreadsheet() {
         <thead>
           <tr>
             <th>Dorm</th>
+            <th>Airman</th>
             <th>SDQ</th>
             <th>Section</th>
             <th>Inter/Sec</th>

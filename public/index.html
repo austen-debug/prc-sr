@@ -209,8 +209,7 @@ body > * {
      <div id="col-closed" class="dorm-col-content"></div>
     </div>
    </div>
-   <div class="board-footer"><button id="closeout-btn" onclick="initiateCloseout()" class="px-6 py-2 rounded-lg font-bold text-white text-sm" style="background:#dc2626;">CLOSE OUT WEEK GROUP</button>
-   </div>
+   <div class="board-footer hidden"></div>
   </main><!-- PAGE: AIRPORT -->
   <div id="page-airport" class="page px-4 pb-4 overflow-y-auto">
    <div class="max-w-lg mx-auto">
@@ -297,8 +296,11 @@ body > * {
    </div>
   </div><!-- PAGE: PROCESSING -->
   <div id="page-processing" class="page flex-col w-full overflow-y-auto">
-   <div class="px-4 py-3 flex-shrink-0 flex items-center gap-4">
+  <div class="px-4 py-3 flex-shrink-0 flex items-center gap-4 flex-wrap">
   <button onclick="openLocalBusModal()" class="px-6 py-3 rounded-lg font-bold text-white text-lg" style="background:#2563eb;">+ ADD LOCAL BUS</button>
+
+  <button id="closeout-btn" onclick="initiateCloseout()" class="px-6 py-3 rounded-lg font-bold text-white text-lg" style="background:#dc2626;">CLOSE OUT WEEK GROUP</button>
+
   <div id="processing-edit-hint" class="text-xs text-muted font-bold hidden">Instructor access: right-click any dorm to edit its record.</div>
 </div>
    <div id="proc-dorm-grid" class="flex-1 px-4 pb-4 grid gap-4" style="grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); align-content: start;"></div>

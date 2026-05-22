@@ -93,6 +93,15 @@ body > * {
     select { background-color: var(--surface) !important; color: var(--text) !important; }
     select option { background-color: var(--surface); color: var(--text); }
     input, select, button { min-height: 36px; }
+    #page-input input:not([type="checkbox"]),
+    #page-input select {
+    background-color: rgba(211, 211, 211, 0.25) !important;
+}
+   #page-input input:not([type="checkbox"]),
+#page-input select {
+  background-color: rgba(211, 211, 211, 0.25) !important;
+  border-color: rgba(211, 211, 211, 0.35) !important;
+}
     .security-banner-fixed { position: fixed; top: 0; left: 0; right: 0; height: 32px; z-index: 9999; display: flex; align-items: center; justify-content: center; font-size: 12px; }
     .app-nav { position: fixed; top: 32px; left: 0; right: 0; height: 44px; z-index: 9998; display: flex; align-items: center; justify-content: space-between; padding: 0 1rem; border-bottom: 1px solid var(--border); background: var(--surface); }
     .board-header { display: grid; grid-template-columns: 1fr 1fr 2fr; gap: 0.75rem; padding: 0.75rem; flex-shrink: 0; }

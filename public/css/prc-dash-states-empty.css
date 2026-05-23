@@ -1,0 +1,235 @@
+/* PRC DASH State Badges and Empty States */
+:root {
+  --badge-muted-bg: rgba(148, 163, 184, 0.14);
+  --badge-muted-border: rgba(148, 163, 184, 0.28);
+  --badge-muted-text: var(--text-soft);
+  --badge-open-bg: rgba(34, 197, 94, 0.18);
+  --badge-open-border: rgba(34, 197, 94, 0.42);
+  --badge-open-text: #dcfce7;
+  --badge-closed-bg: rgba(239, 68, 68, 0.16);
+  --badge-closed-border: rgba(239, 68, 68, 0.40);
+  --badge-closed-text: #fee2e2;
+  --badge-enroute-bg: rgba(56, 189, 248, 0.18);
+  --badge-enroute-border: rgba(56, 189, 248, 0.42);
+  --badge-enroute-text: #e0f2fe;
+  --badge-arrived-bg: rgba(34, 197, 94, 0.18);
+  --badge-arrived-border: rgba(34, 197, 94, 0.42);
+  --badge-arrived-text: #dcfce7;
+  --badge-overtime-bg: rgba(239, 68, 68, 0.24);
+  --badge-overtime-border: rgba(239, 68, 68, 0.58);
+  --badge-overtime-text: #ffffff;
+}
+
+.theme-light {
+  --badge-muted-bg: rgba(100, 116, 139, 0.12);
+  --badge-muted-border: rgba(100, 116, 139, 0.28);
+  --badge-muted-text: #475569;
+  --badge-open-bg: rgba(22, 163, 74, 0.14);
+  --badge-open-border: rgba(21, 128, 61, 0.34);
+  --badge-open-text: #14532d;
+  --badge-closed-bg: rgba(220, 38, 38, 0.10);
+  --badge-closed-border: rgba(185, 28, 28, 0.28);
+  --badge-closed-text: #7f1d1d;
+  --badge-enroute-bg: rgba(2, 132, 199, 0.13);
+  --badge-enroute-border: rgba(2, 132, 199, 0.30);
+  --badge-enroute-text: #075985;
+  --badge-arrived-bg: rgba(22, 163, 74, 0.14);
+  --badge-arrived-border: rgba(21, 128, 61, 0.34);
+  --badge-arrived-text: #14532d;
+  --badge-overtime-bg: rgba(220, 38, 38, 0.18);
+  --badge-overtime-border: rgba(185, 28, 28, 0.42);
+  --badge-overtime-text: #7f1d1d;
+}
+
+.proc-card span.text-xs.font-bold.uppercase,
+#airport-bus-log-body span.text-xs.font-bold.uppercase,
+.bus-badge {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  min-height: 25px !important;
+  padding: 0.34rem 0.62rem !important;
+  border-radius: 999px !important;
+  border: 1px solid var(--badge-muted-border) !important;
+  font-size: 0.66rem !important;
+  font-weight: 950 !important;
+  line-height: 1 !important;
+  letter-spacing: 0.075em !important;
+  text-transform: uppercase !important;
+  white-space: nowrap;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.14),
+    0 5px 14px rgba(0,0,0,0.16) !important;
+  text-shadow: none !important;
+}
+
+.proc-card span[style*="background:var(--surface-alt)"],
+.proc-card span[style*="background: var(--surface-alt)"] {
+  background: var(--badge-muted-bg) !important;
+  color: var(--badge-muted-text) !important;
+  border-color: var(--badge-muted-border) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.10),
+    0 4px 12px rgba(0,0,0,0.12) !important;
+}
+
+.proc-card span[style*="background:var(--green)"],
+.proc-card span[style*="background: var(--green)"] {
+  background: var(--badge-open-bg) !important;
+  color: var(--badge-open-text) !important;
+  border-color: var(--badge-open-border) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.14),
+    0 0 16px rgba(34, 197, 94, 0.18) !important;
+}
+
+.proc-card span[style*="background:var(--red)"],
+.proc-card span[style*="background: var(--red)"] {
+  background: var(--badge-closed-bg) !important;
+  color: var(--badge-closed-text) !important;
+  border-color: var(--badge-closed-border) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.12),
+    0 0 16px rgba(239, 68, 68, 0.16) !important;
+}
+
+#airport-bus-log-body span[style*="background:var(--green)"],
+#airport-bus-log-body span[style*="background: var(--green)"] {
+  background: var(--badge-arrived-bg) !important;
+  color: var(--badge-arrived-text) !important;
+  border-color: var(--badge-arrived-border) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.14),
+    0 0 16px rgba(34, 197, 94, 0.16) !important;
+}
+
+#airport-bus-log-body span[style*="background:var(--blue)"],
+#airport-bus-log-body span[style*="background: var(--blue)"],
+.bus-badge {
+  background: var(--badge-enroute-bg) !important;
+  color: var(--badge-enroute-text) !important;
+  border-color: var(--badge-enroute-border) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.14),
+    0 0 16px rgba(56, 189, 248, 0.18) !important;
+}
+
+.bus-badge:hover {
+  border-color: rgba(56, 189, 248, 0.58) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.18),
+    0 0 20px rgba(56, 189, 248, 0.26) !important;
+}
+
+#page-board .dorm-card .text-sm.font-bold.text-center,
+#page-processing .proc-card .text-sm.font-bold.mt-1 {
+  display: inline-flex;
+  align-self: center;
+  justify-content: center;
+  width: auto;
+  max-width: 100%;
+  margin-top: 0.42rem !important;
+  padding: 0.28rem 0.58rem;
+  border: 1px solid var(--badge-muted-border);
+  border-radius: 999px;
+  background: var(--badge-muted-bg);
+  color: var(--badge-muted-text) !important;
+  font-size: 0.68rem !important;
+  line-height: 1;
+  letter-spacing: 0.065em;
+  text-transform: uppercase;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.10);
+}
+
+#page-board #col-open .dorm-card .text-sm.font-bold.text-center,
+#page-processing .proc-card:not(.dorm-closed) .text-sm.font-bold.mt-1 {
+  background: var(--badge-open-bg);
+  color: var(--badge-open-text) !important;
+  border-color: var(--badge-open-border);
+}
+
+#page-board #col-closed .dorm-card .text-sm.font-bold.text-center,
+#page-processing .proc-card.dorm-closed .text-sm.font-bold.mt-1 {
+  background: var(--badge-muted-bg);
+  color: var(--badge-muted-text) !important;
+  border-color: var(--badge-muted-border);
+}
+
+.timer-flash {
+  display: inline-flex !important;
+  align-self: center;
+  justify-content: center;
+  padding: 0.18rem 0.58rem;
+  border: 1px solid var(--badge-overtime-border);
+  border-radius: 999px;
+  background: var(--badge-overtime-bg);
+  color: var(--badge-overtime-text) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.16),
+    0 0 22px rgba(239, 68, 68, 0.34) !important;
+}
+
+.prc-empty-panel,
+.dorm-col-content > .text-muted.text-xs,
+#proc-dorm-grid > .text-muted.text-center,
+#airport-bus-log-body td[colspan="7"],
+#active-buses > span.text-muted,
+#archive-history:not(:has(.surface)) {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  min-height: 72px;
+  width: 100%;
+  padding: 1rem 1.2rem !important;
+  border: 1px solid var(--glass-border) !important;
+  border-radius: var(--radius-lg) !important;
+  background:
+    linear-gradient(145deg, rgba(255,255,255,0.075), rgba(255,255,255,0.028)) !important;
+  color: var(--text-muted) !important;
+  font-size: 0.78rem !important;
+  font-weight: 850 !important;
+  letter-spacing: 0.055em;
+  text-align: center !important;
+  text-transform: uppercase;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.10),
+    0 8px 20px rgba(0,0,0,0.12) !important;
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  backdrop-filter: blur(var(--glass-blur));
+}
+
+.dorm-col-content > .text-muted.text-xs {
+  min-height: 96px;
+}
+
+#active-buses > span.text-muted {
+  min-height: 38px;
+  justify-content: flex-start;
+  padding: 0.45rem 0.7rem !important;
+  border-radius: 999px !important;
+  font-size: 0.66rem !important;
+}
+
+#airport-bus-log-body td[colspan="7"] {
+  min-height: 92px;
+  border: none !important;
+}
+
+#archive-history:not(:has(.surface)) {
+  min-height: 120px;
+}
+
+.theme-light .prc-empty-panel,
+.theme-light .dorm-col-content > .text-muted.text-xs,
+.theme-light #proc-dorm-grid > .text-muted.text-center,
+.theme-light #airport-bus-log-body td[colspan="7"],
+.theme-light #active-buses > span.text-muted,
+.theme-light #archive-history:not(:has(.surface)) {
+  background:
+    linear-gradient(145deg, rgba(255,255,255,0.76), rgba(255,255,255,0.48)) !important;
+  border-color: rgba(100, 116, 139, 0.20) !important;
+  color: #64748b !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.80),
+    0 6px 16px rgba(15,23,42,0.07) !important;
+}

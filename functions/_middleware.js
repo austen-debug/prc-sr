@@ -1,7 +1,8 @@
 const COOKIE_NAME = 'prc_sr_session';
 const UI_STYLESHEETS = [
   '<link rel="stylesheet" href="/css/liquid-command.css">',
-  '<link rel="stylesheet" href="/css/prc-dash-nav.css">'
+  '<link rel="stylesheet" href="/css/prc-dash-nav.css">',
+  '<link rel="stylesheet" href="/css/prc-dash-states-empty.css">'
 ];
 
 function jsonResponse(data, status = 200) {

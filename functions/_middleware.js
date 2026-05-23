@@ -165,6 +165,87 @@ button:focus-visible {
   box-shadow: var(--focus-ring);
 }`;
 
+const PHASE_2_CORE_SURFACES_CSS = `
+/* PRC-SR Phase 2 Core Surfaces */
+.surface,
+.metric-block,
+.dorm-card,
+.proc-card,
+.modal-content {
+  background: var(--glass-bg) !important;
+  border-color: var(--glass-border) !important;
+  box-shadow: var(--glass-highlight), var(--shadow-soft);
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  backdrop-filter: blur(var(--glass-blur));
+}
+
+.surface {
+  border-radius: var(--radius-lg);
+}
+
+.metric-block {
+  border: 1px solid var(--glass-border) !important;
+  border-radius: var(--radius-lg) !important;
+  box-shadow: var(--glass-highlight), var(--shadow-soft), var(--shadow-glow-blue);
+}
+
+.dorm-card {
+  border-radius: var(--radius-md) !important;
+  box-shadow: var(--glass-highlight), var(--shadow-soft);
+  transition:
+    transform var(--transition-fast),
+    box-shadow var(--transition-medium),
+    border-color var(--transition-medium),
+    background var(--transition-medium) !important;
+}
+
+.dorm-card:hover {
+  transform: translateY(-1px) scale(1.008) !important;
+  box-shadow: var(--glass-highlight), var(--shadow-medium), var(--shadow-glow-blue);
+  border-color: var(--glass-border-strong) !important;
+}
+
+.proc-card {
+  background: var(--glass-bg-strong) !important;
+  border: 1px solid var(--glass-border) !important;
+  border-radius: var(--radius-xl) !important;
+  box-shadow: var(--glass-highlight), var(--shadow-soft);
+  transition:
+    transform var(--transition-fast),
+    box-shadow var(--transition-medium),
+    border-color var(--transition-medium),
+    background var(--transition-medium) !important;
+}
+
+.proc-card:hover {
+  transform: translateY(-2px) scale(1.012) !important;
+  box-shadow: var(--glass-highlight), var(--shadow-medium), var(--shadow-glow-blue);
+  border-color: var(--glass-border-strong) !important;
+}
+
+.modal-content {
+  background: var(--glass-bg-strong) !important;
+  border: 1px solid var(--glass-border-strong) !important;
+  border-radius: var(--radius-xl) !important;
+  box-shadow: var(--glass-highlight), var(--shadow-strong), var(--shadow-glow-blue);
+  -webkit-backdrop-filter: blur(var(--glass-blur-strong));
+  backdrop-filter: blur(var(--glass-blur-strong));
+  animation: modalSurfaceIn var(--transition-slow) both;
+}
+
+@keyframes modalSurfaceIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.985);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+`;
+
 function jsonResponse(data, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
@@ -265,8 +346,8 @@ async function verifySession(request, env) {
   return payload;
 }
 
-function applyPhaseOneUiTokens(html) {
-  return html
+function applyPhaseUi(html) {
+  const themedHtml = html
     .replace(
       /:root\s*\{[\s\S]*?\}\s*\.theme-light\s*\{[\s\S]*?\}\s*html,\s*body\s*\{[\s\S]*?\}/,
       PHASE_1_THEME_CSS
@@ -275,16 +356,22 @@ function applyPhaseOneUiTokens(html) {
       /input,\s*select,\s*button\s*\{\s*min-height:\s*36px;\s*\}/,
       FOCUS_POLISH_CSS
     );
+
+  if (themedHtml.includes('PRC-SR Phase 2 Core Surfaces')) {
+    return themedHtml;
+  }
+
+  return themedHtml.replace(/<\/style>/i, `${PHASE_2_CORE_SURFACES_CSS}\n  </style>`);
 }
 
-async function maybeApplyPhaseOneUi(response) {
+async function maybeApplyPhaseUi(response) {
   const contentType = response.headers.get('content-type') || '';
 
   if (!contentType.includes('text/html')) {
     return response;
   }
 
-  const html = applyPhaseOneUiTokens(await response.text());
+  const html = applyPhaseUi(await response.text());
   const headers = new Headers(response.headers);
   headers.set('content-type', 'text/html; charset=UTF-8');
   headers.delete('content-length');
@@ -347,5 +434,5 @@ export async function onRequest(context) {
     return Response.redirect(`${url.origin}/login/`, 302);
   }
 
-  return maybeApplyPhaseOneUi(await context.next());
+  return maybeApplyPhaseUi(await context.next());
 }

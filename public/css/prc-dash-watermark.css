@@ -1,0 +1,70 @@
+/* PRC DASH Watermark / Background Tune */
+body::before {
+  position: fixed !important;
+  inset: 0 !important;
+  background-image: url('/assets/prc-logo-blue.png') !important;
+  background-repeat: no-repeat !important;
+  background-position: center center !important;
+  background-size: min(72vw, 980px) auto !important;
+  opacity: 0.16 !important;
+  filter:
+    drop-shadow(0 0 22px rgba(56, 189, 248, 0.22))
+    drop-shadow(0 0 58px rgba(37, 99, 235, 0.10));
+  mix-blend-mode: screen;
+  pointer-events: none !important;
+  z-index: 0 !important;
+  transform: translateZ(0);
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(circle at 50% 42%, rgba(56, 189, 248, 0.055), transparent 34%),
+    radial-gradient(circle at 50% 58%, rgba(15, 23, 42, 0.18), transparent 46%),
+    linear-gradient(180deg, rgba(2, 6, 23, 0.04), rgba(2, 6, 23, 0.16));
+}
+
+body > * {
+  position: relative;
+  z-index: 1;
+}
+
+.theme-light::before {
+  opacity: 0.055 !important;
+  filter:
+    drop-shadow(0 0 14px rgba(2, 132, 199, 0.08))
+    grayscale(0.15);
+  mix-blend-mode: multiply;
+}
+
+.theme-light::after {
+  background:
+    radial-gradient(circle at 50% 42%, rgba(2, 132, 199, 0.035), transparent 34%),
+    radial-gradient(circle at 50% 58%, rgba(255, 255, 255, 0.38), transparent 48%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(226, 232, 240, 0.08));
+}
+
+.fullscreen-board::before {
+  background-size: min(78vw, 1120px) auto !important;
+  opacity: 0.14 !important;
+}
+
+.fullscreen-board.theme-light::before,
+.theme-light.fullscreen-board::before {
+  opacity: 0.045 !important;
+}
+
+@media (max-width: 768px) {
+  body::before {
+    background-size: 92vw auto !important;
+    opacity: 0.11 !important;
+  }
+
+  .theme-light::before {
+    opacity: 0.04 !important;
+  }
+}

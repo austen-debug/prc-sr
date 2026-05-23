@@ -6,6 +6,9 @@ const UI_STYLESHEETS = [
   '<link rel="stylesheet" href="/css/prc-dash-watermark.css">',
   '<link rel="stylesheet" href="/css/prc-dash-danger-actions.css">'
 ];
+const UI_HEAD_SCRIPTS = [
+  '<script src="/js/prc-dash-runtime-fixes.js" defer></script>'
+];
 
 function jsonResponse(data, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -112,27 +115,34 @@ function extractUrl(assetTag, attributeName) {
   return match ? match[1] : '';
 }
 
-function applyStylesheetLinks(html) {
+function applyUiAssets(html) {
   const linksToAdd = UI_STYLESHEETS.filter(link => {
     const href = extractUrl(link, 'href');
     return href && !html.includes(href);
   });
 
-  if (linksToAdd.length === 0) {
+  const scriptsToAdd = UI_HEAD_SCRIPTS.filter(script => {
+    const src = extractUrl(script, 'src');
+    return src && !html.includes(src);
+  });
+
+  const assetsToAdd = [...linksToAdd, ...scriptsToAdd];
+
+  if (assetsToAdd.length === 0) {
     return html;
   }
 
-  return html.replace(/<\/head>/i, `  ${linksToAdd.join('\n  ')}\n </head>`);
+  return html.replace(/<\/head>/i, `  ${assetsToAdd.join('\n  ')}\n </head>`);
 }
 
-async function maybeApplyStylesheetLinks(response) {
+async function maybeApplyUiAssets(response) {
   const contentType = response.headers.get('content-type') || '';
 
   if (!contentType.includes('text/html')) {
     return response;
   }
 
-  const html = applyStylesheetLinks(await response.text());
+  const html = applyUiAssets(await response.text());
   const headers = new Headers(response.headers);
   headers.set('content-type', 'text/html; charset=UTF-8');
   headers.delete('content-length');
@@ -189,5 +199,5 @@ export async function onRequest(context) {
     return Response.redirect(`${url.origin}/login/`, 302);
   }
 
-  return maybeApplyStylesheetLinks(await context.next());
+  return maybeApplyUiAssets(await context.next());
 }

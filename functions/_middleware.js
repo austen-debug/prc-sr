@@ -1,7 +1,7 @@
 const COOKIE_NAME = 'prc_sr_session';
 
 const LIQUID_COMMAND_UI_CSS = `
-/* PRC-SR Liquid Command UI: Phases 1-4 */
+/* PRC-SR Liquid Command UI: Phases 1-5 */
 :root {
   --bg: #0b1020;
   --bg-soft: #10172a;
@@ -375,22 +375,167 @@ input[type="checkbox"] { accent-color: var(--blue); }
   text-shadow: 0 1px 18px rgba(56, 189, 248, 0.12);
 }
 
-@keyframes modalBackdropIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
+@keyframes modalBackdropIn { from { opacity: 0; } to { opacity: 1; } }
 
 @keyframes modalGlassIn {
-  from {
-    opacity: 0;
-    transform: translateY(12px) scale(0.975);
-    filter: blur(2px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-    filter: blur(0);
-  }
+  from { opacity: 0; transform: translateY(12px) scale(0.975); filter: blur(2px); }
+  to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+}
+
+/* Phase 5 Status Board Readability */
+#page-board .board-header {
+  gap: 0.9rem !important;
+  padding: 0.9rem !important;
+}
+
+#page-board .metric-block {
+  min-height: 96px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  border-color: rgba(125, 211, 252, 0.26) !important;
+}
+
+#metric-arrived,
+#metric-airport {
+  font-size: clamp(1.6rem, 2.35vw, 2.7rem) !important;
+  line-height: 1.02 !important;
+  letter-spacing: -0.045em;
+  color: var(--text) !important;
+  text-shadow: 0 1px 18px rgba(56, 189, 248, 0.22);
+}
+
+#active-buses {
+  min-height: 44px;
+  align-content: center;
+}
+
+#page-board .dorm-dashboard {
+  gap: 0.9rem !important;
+  padding: 0 0.9rem 0.9rem !important;
+}
+
+#page-board .dorm-col-header {
+  font-size: clamp(0.72rem, 0.9vw, 0.95rem) !important;
+  color: var(--text-soft) !important;
+  padding: 0.35rem 0.55rem;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  background: rgba(255,255,255,0.045);
+  box-shadow: var(--glass-highlight);
+}
+
+#page-board .dorm-card {
+  min-height: clamp(122px, 15vh, 190px);
+  justify-content: center;
+  padding: clamp(0.75rem, 1.05vw, 1.25rem) !important;
+  border-width: 1px !important;
+}
+
+#page-board .dorm-card .font-black.text-4xl,
+#page-board .dorm-card .font-black.text-5xl {
+  font-size: clamp(2.25rem, 4.1vw, 5.15rem) !important;
+  line-height: 0.92 !important;
+  letter-spacing: -0.075em;
+  text-shadow: 0 1px 20px rgba(0,0,0,0.34);
+}
+
+.theme-light #page-board .dorm-card .font-black.text-4xl,
+.theme-light #page-board .dorm-card .font-black.text-5xl {
+  text-shadow: 0 1px 14px rgba(255,255,255,0.65);
+}
+
+#page-board .dorm-card .text-xl.font-black,
+#page-board .dorm-card .text-2xl.font-black {
+  font-size: clamp(1.35rem, 2vw, 2.2rem) !important;
+  color: var(--text-soft);
+}
+
+.timer-display {
+  font-size: clamp(2rem, 3.35vw, 4rem) !important;
+  line-height: 1 !important;
+  letter-spacing: -0.055em;
+  text-shadow: 0 1px 22px rgba(56, 189, 248, 0.22);
+}
+
+.timer-yellow {
+  color: var(--yellow-bright) !important;
+  text-shadow: 0 0 18px rgba(250, 204, 21, 0.38) !important;
+}
+
+.timer-red {
+  color: var(--red-bright) !important;
+  text-shadow: 0 0 20px rgba(239, 68, 68, 0.46) !important;
+}
+
+.timer-flash {
+  text-shadow: 0 0 24px rgba(239, 68, 68, 0.72) !important;
+}
+
+#col-empty .dorm-card {
+  background: linear-gradient(145deg, rgba(255,255,255,0.06), rgba(255,255,255,0.025)) !important;
+  opacity: 0.86;
+}
+
+#col-open .dorm-card {
+  border-color: rgba(34, 197, 94, 0.24) !important;
+  box-shadow: var(--glass-highlight), var(--shadow-soft), 0 0 20px rgba(34, 197, 94, 0.10);
+}
+
+#col-closed .dorm-card,
+.dorm-closed {
+  opacity: 0.72 !important;
+  background: linear-gradient(145deg, rgba(148,163,184,0.10), rgba(15,23,42,0.10)) !important;
+  filter: saturate(0.86);
+}
+
+.theme-light #col-closed .dorm-card,
+.theme-light .dorm-closed {
+  background: linear-gradient(145deg, rgba(226,232,240,0.86), rgba(255,255,255,0.60)) !important;
+  opacity: 0.78 !important;
+}
+
+.border-female {
+  border-color: var(--red-bright) !important;
+  box-shadow: var(--glass-highlight), var(--shadow-soft), 0 0 0 1px rgba(239, 68, 68, 0.24), var(--shadow-glow-red) !important;
+}
+
+.border-band {
+  border-color: var(--blue) !important;
+  box-shadow: var(--glass-highlight), var(--shadow-soft), 0 0 0 1px rgba(56, 189, 248, 0.26), var(--shadow-glow-blue) !important;
+}
+
+#page-processing .proc-card {
+  min-height: 150px;
+}
+
+#page-processing .proc-card .text-3xl.font-black {
+  font-size: clamp(1.9rem, 2.4vw, 3rem) !important;
+  letter-spacing: -0.06em;
+}
+
+.theme-light .metric-block,
+.theme-light .dorm-card,
+.theme-light .proc-card,
+.theme-light .surface {
+  color: var(--text) !important;
+  border-color: rgba(100, 116, 139, 0.24) !important;
+}
+
+.theme-light .text-muted,
+.theme-light #page-board .dorm-col-header {
+  color: #475569 !important;
+}
+
+.theme-light #metric-arrived,
+.theme-light #metric-airport {
+  color: #0f172a !important;
+  text-shadow: 0 1px 16px rgba(255,255,255,0.70);
+}
+
+@media (min-width: 1600px) {
+  #page-board .dorm-dashboard { gap: 1rem !important; }
+  #page-board .dorm-card { min-height: clamp(150px, 16vh, 220px); }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -502,7 +647,7 @@ async function verifySession(request, env) {
 }
 
 function applyLiquidCommandUi(html) {
-  if (html.includes('PRC-SR Liquid Command UI: Phases 1-4')) {
+  if (html.includes('PRC-SR Liquid Command UI: Phases 1-5')) {
     return html;
   }
 

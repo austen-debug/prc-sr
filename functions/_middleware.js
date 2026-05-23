@@ -1,5 +1,8 @@
 const COOKIE_NAME = 'prc_sr_session';
-const LIQUID_COMMAND_STYLESHEET = '<link rel="stylesheet" href="/css/liquid-command.css">';
+const UI_STYLESHEETS = [
+  '<link rel="stylesheet" href="/css/liquid-command.css">',
+  '<link rel="stylesheet" href="/css/prc-dash-nav.css">'
+];
 
 function jsonResponse(data, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -101,22 +104,27 @@ async function verifySession(request, env) {
   return payload;
 }
 
-function applyStylesheetLink(html) {
-  if (html.includes('/css/liquid-command.css')) {
+function applyStylesheetLinks(html) {
+  let linksToAdd = UI_STYLESHEETS.filter(link => {
+    const hrefMatch = link.match(/href="([^"]+)"/);
+    return hrefMatch && !html.includes(hrefMatch[1]);
+  });
+
+  if (linksToAdd.length === 0) {
     return html;
   }
 
-  return html.replace(/<\/head>/i, `  ${LIQUID_COMMAND_STYLESHEET}\n </head>`);
+  return html.replace(/<\/head>/i, `  ${linksToAdd.join('\n  ')}\n </head>`);
 }
 
-async function maybeApplyStylesheetLink(response) {
+async function maybeApplyStylesheetLinks(response) {
   const contentType = response.headers.get('content-type') || '';
 
   if (!contentType.includes('text/html')) {
     return response;
   }
 
-  const html = applyStylesheetLink(await response.text());
+  const html = applyStylesheetLinks(await response.text());
   const headers = new Headers(response.headers);
   headers.set('content-type', 'text/html; charset=UTF-8');
   headers.delete('content-length');
@@ -173,5 +181,5 @@ export async function onRequest(context) {
     return Response.redirect(`${url.origin}/login/`, 302);
   }
 
-  return maybeApplyStylesheetLink(await context.next());
+  return maybeApplyStylesheetLinks(await context.next());
 }

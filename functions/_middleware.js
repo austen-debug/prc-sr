@@ -1,11 +1,7 @@
 const COOKIE_NAME = 'prc_sr_session';
 const UI_STYLESHEETS = [
   '<link rel="stylesheet" href="/css/liquid-command.css">',
-  '<link rel="stylesheet" href="/css/prc-dash-nav.css">',
-  '<link rel="stylesheet" href="/css/prc-dash-status-header.css">'
-];
-const UI_SCRIPTS = [
-  '<script src="/js/prc-dash-status-header.js" defer></script>'
+  '<link rel="stylesheet" href="/css/prc-dash-nav.css">'
 ];
 
 function jsonResponse(data, status = 200) {
@@ -108,38 +104,27 @@ async function verifySession(request, env) {
   return payload;
 }
 
-function applyUiAssets(html) {
+function applyStylesheetLinks(html) {
   const linksToAdd = UI_STYLESHEETS.filter(link => {
     const hrefMatch = link.match(/href="([^"]+)"/);
     return hrefMatch && !html.includes(hrefMatch[1]);
   });
 
-  const scriptsToAdd = UI_SCRIPTS.filter(script => {
-    const srcMatch = script.match(/src="([^"]+)"/);
-    return srcMatch && !html.includes(srcMatch[1]);
-  });
-
-  let nextHtml = html;
-
-  if (linksToAdd.length > 0) {
-    nextHtml = nextHtml.replace(/<\/head>/i, `  ${linksToAdd.join('\n  ')}\n </head>`);
+  if (linksToAdd.length === 0) {
+    return html;
   }
 
-  if (scriptsToAdd.length > 0) {
-    nextHtml = nextHtml.replace(/<\/body>/i, `  ${scriptsToAdd.join('\n  ')}\n </body>`);
-  }
-
-  return nextHtml;
+  return html.replace(/<\/head>/i, `  ${linksToAdd.join('\n  ')}\n </head>`);
 }
 
-async function maybeApplyUiAssets(response) {
+async function maybeApplyStylesheetLinks(response) {
   const contentType = response.headers.get('content-type') || '';
 
   if (!contentType.includes('text/html')) {
     return response;
   }
 
-  const html = applyUiAssets(await response.text());
+  const html = applyStylesheetLinks(await response.text());
   const headers = new Headers(response.headers);
   headers.set('content-type', 'text/html; charset=UTF-8');
   headers.delete('content-length');
@@ -196,5 +181,5 @@ export async function onRequest(context) {
     return Response.redirect(`${url.origin}/login/`, 302);
   }
 
-  return maybeApplyUiAssets(await context.next());
+  return maybeApplyStylesheetLinks(await context.next());
 }

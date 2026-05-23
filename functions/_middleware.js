@@ -246,6 +246,198 @@ const PHASE_2_CORE_SURFACES_CSS = `
 }
 `;
 
+const PHASE_3_BUTTONS_INPUTS_CSS = `
+/* PRC-SR Phase 3 Buttons and Inputs */
+.nav-btn,
+.bus-badge,
+.phase-btn,
+.load-btn,
+form button,
+.modal-content button:not([class*="text-3xl"]),
+#airport-form button,
+#init-wg-btn,
+#closeout-btn {
+  border-radius: var(--radius-md) !important;
+  border: 1px solid var(--glass-border) !important;
+  box-shadow: var(--glass-highlight), var(--shadow-soft);
+  transition:
+    transform var(--transition-fast),
+    box-shadow var(--transition-medium),
+    border-color var(--transition-medium),
+    background var(--transition-medium),
+    opacity var(--transition-fast) !important;
+}
+
+.nav-btn {
+  background: var(--btn-neutral-gradient) !important;
+  color: var(--text-soft) !important;
+  border-color: var(--glass-border) !important;
+  min-height: 34px !important;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  backdrop-filter: blur(var(--glass-blur));
+}
+
+.nav-btn:hover,
+.nav-btn.active {
+  color: var(--text) !important;
+  border-color: var(--glass-border-strong) !important;
+  box-shadow: var(--glass-highlight), var(--shadow-soft), var(--shadow-glow-blue);
+  transform: translateY(-1px);
+}
+
+.nav-btn.active {
+  background: var(--glass-bg-strong) !important;
+}
+
+.bus-badge {
+  background: var(--btn-green-gradient) !important;
+  color: #ffffff !important;
+  border-color: rgba(255,255,255,0.22) !important;
+  text-shadow: 0 1px 8px rgba(0,0,0,0.28);
+  box-shadow: var(--glass-highlight), var(--shadow-soft), var(--shadow-glow-green);
+}
+
+.bus-badge:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--glass-highlight), var(--shadow-medium), var(--shadow-glow-green);
+}
+
+.phase-btn,
+.load-btn {
+  background: var(--btn-neutral-gradient) !important;
+  color: var(--text) !important;
+  border-color: var(--glass-border) !important;
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  backdrop-filter: blur(var(--glass-blur));
+}
+
+.phase-btn:hover:not(.selected),
+.load-btn:hover {
+  background: var(--glass-bg-strong) !important;
+  border-color: var(--glass-border-strong) !important;
+  transform: translateY(-1px);
+  box-shadow: var(--glass-highlight), var(--shadow-medium), var(--shadow-glow-blue);
+}
+
+.phase-btn.selected {
+  background: var(--btn-green-gradient) !important;
+  color: #ffffff !important;
+  border-color: rgba(255,255,255,0.24) !important;
+  box-shadow: var(--glass-highlight), var(--shadow-soft), var(--shadow-glow-green);
+}
+
+form button,
+#airport-form button,
+#init-wg-btn,
+#closeout-btn,
+.modal-content button:not([class*="text-3xl"]) {
+  font-weight: 900 !important;
+  letter-spacing: 0.035em;
+  text-transform: uppercase;
+}
+
+form button[style*="background:#16a34a"],
+form button[style*="background: #16a34a"],
+form button[style*="background:var(--green)"],
+#init-wg-btn,
+.modal-content button[style*="background:var(--green)"] {
+  background: var(--btn-green-gradient) !important;
+  color: #ffffff !important;
+  border-color: rgba(255,255,255,0.22) !important;
+  box-shadow: var(--glass-highlight), var(--shadow-soft), var(--shadow-glow-green);
+}
+
+button[style*="background:#2563eb"],
+button[style*="background: #2563eb"],
+button[style*="background:var(--blue)"],
+button[style*="background: var(--blue)"] {
+  background: var(--btn-blue-gradient) !important;
+  color: #ffffff !important;
+  border-color: rgba(255,255,255,0.22) !important;
+  box-shadow: var(--glass-highlight), var(--shadow-soft), var(--shadow-glow-blue);
+}
+
+button[style*="background:#dc2626"],
+button[style*="background: #dc2626"],
+button[style*="background:var(--red)"],
+button[style*="background: var(--red)"] {
+  background: var(--btn-red-gradient) !important;
+  color: #ffffff !important;
+  border-color: rgba(255,255,255,0.22) !important;
+  box-shadow: var(--glass-highlight), var(--shadow-soft), var(--shadow-glow-red);
+}
+
+form button:hover,
+#init-wg-btn:hover,
+#closeout-btn:hover,
+.modal-content button:not([class*="text-3xl"]):hover {
+  transform: translateY(-1px);
+  box-shadow: var(--glass-highlight), var(--shadow-medium), var(--shadow-glow-blue);
+}
+
+button:active,
+.nav-btn:active,
+.bus-badge:active,
+.phase-btn:active,
+.load-btn:active {
+  transform: translateY(0) scale(0.985) !important;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+  filter: saturate(0.75);
+  transform: none !important;
+}
+
+input:not([type="checkbox"]),
+select,
+textarea {
+  background: var(--glass-bg-soft) !important;
+  color: var(--text) !important;
+  border: 1px solid var(--glass-border) !important;
+  border-radius: var(--radius-md) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 6px 18px rgba(0,0,0,0.10);
+  transition:
+    border-color var(--transition-medium),
+    box-shadow var(--transition-medium),
+    background var(--transition-medium) !important;
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  backdrop-filter: blur(var(--glass-blur));
+}
+
+input:not([type="checkbox"]):hover,
+select:hover,
+textarea:hover {
+  border-color: var(--glass-border-strong) !important;
+}
+
+input:not([type="checkbox"]):focus,
+select:focus,
+textarea:focus {
+  background: var(--glass-bg) !important;
+  border-color: var(--glass-border-strong) !important;
+  box-shadow: var(--focus-ring), inset 0 1px 0 rgba(255,255,255,0.12) !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-muted);
+  opacity: 0.72;
+}
+
+select option {
+  background-color: var(--surface-solid) !important;
+  color: var(--text) !important;
+}
+
+input[type="checkbox"] {
+  accent-color: var(--blue);
+}
+`;
+
 function jsonResponse(data, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
@@ -357,11 +549,16 @@ function applyPhaseUi(html) {
       FOCUS_POLISH_CSS
     );
 
-  if (themedHtml.includes('PRC-SR Phase 2 Core Surfaces')) {
+  const cssBlocks = [
+    themedHtml.includes('PRC-SR Phase 2 Core Surfaces') ? '' : PHASE_2_CORE_SURFACES_CSS,
+    themedHtml.includes('PRC-SR Phase 3 Buttons and Inputs') ? '' : PHASE_3_BUTTONS_INPUTS_CSS
+  ].filter(Boolean).join('\n');
+
+  if (!cssBlocks) {
     return themedHtml;
   }
 
-  return themedHtml.replace(/<\/style>/i, `${PHASE_2_CORE_SURFACES_CSS}\n  </style>`);
+  return themedHtml.replace(/<\/style>/i, `${cssBlocks}\n  </style>`);
 }
 
 async function maybeApplyPhaseUi(response) {

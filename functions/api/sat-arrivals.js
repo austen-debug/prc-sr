@@ -1,5 +1,8 @@
 const CACHE_TTL_SECONDS = 20 * 60;
-const CACHE_KEY = 'https://prc-dash.internal/cache/sat-arrivals-v2';
+const WINDOW_HOURS = 24;
+const WINDOW_SECONDS = WINDOW_HOURS * 60 * 60;
+const CACHE_KEY = 'https://prc-dash.internal/cache/sat-arrivals-v3-next-24';
+const CENTRAL_TIME_ZONE = 'America/Chicago';
 
 function jsonResponse(data, status = 200, headers = {}) {
   return new Response(JSON.stringify(data), {
@@ -12,12 +15,21 @@ function jsonResponse(data, status = 200, headers = {}) {
   });
 }
 
+function parseScheduleValue(value) {
+  if (!value) return null;
+
+  const normalized = String(value).replace(' ', 'T');
+  const date = new Date(normalized);
+
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
 function formatTime(value) {
   if (!value) return '';
 
-  const date = new Date(String(value).replace(' ', 'T'));
+  const date = parseScheduleValue(value);
 
-  if (Number.isNaN(date.getTime())) {
+  if (!date) {
     const parts = String(value).split(' ');
     return parts.length > 1 ? parts[1].slice(0, 5) : String(value);
   }
@@ -26,8 +38,56 @@ function formatTime(value) {
     hour: '2-digit',
     minute: '2-digit',
     hour12: false,
-    timeZone: 'America/Chicago'
+    timeZone: CENTRAL_TIME_ZONE
   });
+}
+
+function centralDateKey(date) {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: CENTRAL_TIME_ZONE,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).formatToParts(date);
+
+  const values = Object.fromEntries(parts.map(part => [part.type, part.value]));
+  return `${values.year}-${values.month}-${values.day}`;
+}
+
+function formatWindowDateTime(seconds) {
+  const timestamp = Number(seconds || 0);
+  if (!Number.isFinite(timestamp) || timestamp <= 0) return '';
+
+  const date = new Date(timestamp * 1000);
+  const now = new Date();
+  const tomorrow = new Date(now.getTime() + (24 * 60 * 60 * 1000));
+
+  const dateKey = centralDateKey(date);
+  const todayKey = centralDateKey(now);
+  const tomorrowKey = centralDateKey(tomorrow);
+
+  const time = date.toLocaleTimeString('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+    timeZone: CENTRAL_TIME_ZONE
+  });
+
+  if (dateKey === todayKey) return `Today ${time}`;
+  if (dateKey === tomorrowKey) return `Tomorrow ${time}`;
+
+  const day = date.toLocaleDateString('en-US', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    timeZone: CENTRAL_TIME_ZONE
+  });
+
+  return `${day} ${time}`;
+}
+
+function formatWindowLabel(startSeconds, endSeconds) {
+  return `${formatWindowDateTime(startSeconds)} – ${formatWindowDateTime(endSeconds)}`;
 }
 
 function normalizeStatus(flight) {
@@ -47,26 +107,56 @@ function chooseEstimatedValue(flight) {
   return flight.arr_estimated || flight.arr_actual || flight.arr_time || flight.arr_estimated_utc || flight.arr_actual_utc || '';
 }
 
+function normalizedTimestamp(value) {
+  const timestamp = Number(value || 0);
+  if (!Number.isFinite(timestamp) || timestamp <= 0) return 0;
+
+  // AirLabs timestamps are normally Unix seconds. This guard keeps the app safe if a provider ever returns milliseconds.
+  return timestamp > 9999999999 ? Math.floor(timestamp / 1000) : Math.floor(timestamp);
+}
+
 function normalizeArrival(flight) {
   const scheduledValue = flight.arr_time || flight.arr_time_utc || '';
   const estimatedValue = chooseEstimatedValue(flight);
+  const arrivalTimestamp = normalizedTimestamp(flight.arr_time_ts || flight.arr_estimated_ts || flight.arr_actual_ts || 0);
+  const estimatedTimestamp = normalizedTimestamp(flight.arr_estimated_ts || flight.arr_actual_ts || flight.arr_time_ts || 0);
+  const displayTimestamp = estimatedTimestamp || arrivalTimestamp;
 
   return {
     flight: flight.flight_iata || flight.cs_flight_iata || flight.flight_icao || '',
     airline: flight.airline_iata || flight.airline_icao || '',
     operatingFlight: flight.cs_flight_iata || flight.flight_iata || flight.flight_icao || '',
     origin: flight.dep_iata || flight.dep_icao || '',
-    scheduled: formatTime(scheduledValue),
-    estimated: formatTime(estimatedValue),
+    scheduled: formatWindowDateTime(arrivalTimestamp) || formatTime(scheduledValue),
+    estimated: formatWindowDateTime(estimatedTimestamp) || formatTime(estimatedValue),
+    scheduledRaw: formatTime(scheduledValue),
+    estimatedRaw: formatTime(estimatedValue),
     gate: flight.arr_gate || '',
     terminal: flight.arr_terminal || '',
     baggage: flight.arr_baggage || '',
     status: normalizeStatus(flight),
     rawStatus: flight.status || '',
-    arrivalTimestamp: Number(flight.arr_time_ts || flight.arr_estimated_ts || flight.arr_actual_ts || 0),
-    estimatedTimestamp: Number(flight.arr_estimated_ts || flight.arr_actual_ts || flight.arr_time_ts || 0),
+    arrivalTimestamp,
+    estimatedTimestamp,
+    displayTimestamp,
     delayMinutes: Number(flight.arr_delayed || flight.delayed || 0)
   };
+}
+
+function flightWindowTimestamp(arrival) {
+  return Number(arrival.estimatedTimestamp || arrival.arrivalTimestamp || arrival.displayTimestamp || 0);
+}
+
+function filterNext24Hours(arrivals, nowSeconds) {
+  const windowStart = Number(nowSeconds || Math.floor(Date.now() / 1000));
+  const windowEnd = windowStart + WINDOW_SECONDS;
+
+  return arrivals
+    .filter(arrival => {
+      const timestamp = flightWindowTimestamp(arrival);
+      return Number.isFinite(timestamp) && timestamp >= windowStart && timestamp <= windowEnd;
+    })
+    .sort((a, b) => flightWindowTimestamp(a) - flightWindowTimestamp(b));
 }
 
 function dedupeCodeshares(arrivals) {
@@ -75,7 +165,7 @@ function dedupeCodeshares(arrivals) {
   for (const arrival of arrivals) {
     const tripKey = [
       arrival.origin || 'UNK',
-      arrival.arrivalTimestamp || arrival.estimatedTimestamp || 0,
+      arrival.displayTimestamp || arrival.arrivalTimestamp || arrival.estimatedTimestamp || 0,
       arrival.gate || '',
       arrival.terminal || '',
       arrival.operatingFlight || arrival.flight || ''
@@ -100,6 +190,9 @@ function dedupeCodeshares(arrivals) {
 }
 
 async function fetchAirLabsArrivals(apiKey) {
+  const nowSeconds = Math.floor(Date.now() / 1000);
+  const windowEndSeconds = nowSeconds + WINDOW_SECONDS;
+
   const url = new URL('https://airlabs.co/api/v9/schedules');
   url.searchParams.set('arr_iata', 'SAT');
   url.searchParams.set('limit', '100');
@@ -116,10 +209,11 @@ async function fetchAirLabsArrivals(apiKey) {
     throw new Error(payload?.error?.message || `AirLabs request failed with HTTP ${response.status}.`);
   }
 
-  const arrivals = dedupeCodeshares((payload.response || [])
+  const normalizedArrivals = dedupeCodeshares((payload.response || [])
     .map(normalizeArrival)
-    .filter(arrival => arrival.flight || arrival.origin))
-    .sort((a, b) => (a.arrivalTimestamp || a.estimatedTimestamp || 0) - (b.arrivalTimestamp || b.estimatedTimestamp || 0));
+    .filter(arrival => arrival.flight || arrival.origin));
+
+  const arrivals = filterNext24Hours(normalizedArrivals, nowSeconds);
 
   return {
     isOk: true,
@@ -127,9 +221,14 @@ async function fetchAirLabsArrivals(apiKey) {
     source: 'AirLabs',
     cacheTtlSeconds: CACHE_TTL_SECONDS,
     lastUpdated: new Date().toISOString(),
+    windowHours: WINDOW_HOURS,
+    windowStart: new Date(nowSeconds * 1000).toISOString(),
+    windowEnd: new Date(windowEndSeconds * 1000).toISOString(),
+    windowLabel: formatWindowLabel(nowSeconds, windowEndSeconds),
     hasMore: Boolean(payload.request?.has_more),
-    totalItems: Number(payload.request?.total_items || arrivals.length || 0),
-    note: 'AirLabs schedules return live/current schedule coverage and may not include every arrival for the full calendar day on all plans.',
+    totalItems: Number(payload.request?.total_items || normalizedArrivals.length || 0),
+    returnedItems: arrivals.length,
+    note: 'PRC DASH filters SAT arrivals to a rolling next-24-hours window and hides flights before the current time.',
     arrivals
   };
 }
@@ -142,7 +241,14 @@ async function getCachedPayload() {
   if (!cachedResponse) return null;
 
   try {
-    return await cachedResponse.json();
+    const payload = await cachedResponse.json();
+    const windowEnd = new Date(payload.windowEnd || 0).getTime();
+
+    if (!windowEnd || windowEnd <= Date.now()) {
+      return null;
+    }
+
+    return payload;
   } catch (_) {
     return null;
   }

@@ -1,5 +1,6 @@
 // PRC DASH SAT arrivals board
 (function () {
+  const AUTO_REFRESH_MS = 20 * 60 * 1000;
   let refreshTimer = null;
   let isLoading = false;
 
@@ -22,6 +23,44 @@
     return 'sat-status sat-status-muted';
   }
 
+  function nowCentralParts() {
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Chicago',
+      weekday: 'short',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    });
+
+    const parts = formatter.formatToParts(new Date());
+    const values = Object.fromEntries(parts.map(part => [part.type, part.value]));
+    return {
+      weekday: values.weekday,
+      hour: Number(values.hour),
+      minute: Number(values.minute)
+    };
+  }
+
+  function isAutoRefreshWindow() {
+    const { weekday, hour } = nowCentralParts();
+
+    // Tuesday 1600 through Wednesday 0600 local.
+    if (weekday === 'Tue' && hour >= 16) return true;
+    if (weekday === 'Wed' && hour < 6) return true;
+
+    // Wednesday 1600 through Thursday 0300 local.
+    if (weekday === 'Wed' && hour >= 16) return true;
+    if (weekday === 'Thu' && hour < 3) return true;
+
+    return false;
+  }
+
+  function autoRefreshLabel() {
+    return isAutoRefreshWindow()
+      ? 'Auto refresh active: every 20 minutes'
+      : 'Manual refresh only outside Tuesday/Wednesday arrival windows';
+  }
+
   function ensureSatArrivalsBoard() {
     const airportPage = document.getElementById('page-airport');
     if (!airportPage) return null;
@@ -38,13 +77,14 @@
         <div>
           <div class="text-xs uppercase tracking-wider font-black text-muted">San Antonio Arrivals</div>
           <div class="text-lg font-black">SAT Arrivals — Today</div>
+          <div id="sat-arrivals-mode" class="text-xs font-bold text-muted mt-1">${autoRefreshLabel()}</div>
         </div>
         <div class="flex items-center gap-2">
           <div id="sat-arrivals-updated" class="text-xs font-bold text-muted">Last updated: —</div>
           <button id="sat-arrivals-refresh" type="button" class="px-3 py-2 rounded font-bold text-white text-xs" style="background:var(--blue);">Refresh</button>
         </div>
       </div>
-      <div id="sat-arrivals-message" class="text-sm text-muted py-3">Loading SAT arrivals...</div>
+      <div id="sat-arrivals-message" class="text-sm text-muted py-3">SAT arrivals are available by manual refresh.</div>
       <div class="overflow-auto hidden" id="sat-arrivals-table-wrap">
         <table class="w-full text-sm">
           <thead>
@@ -72,6 +112,11 @@
     return board;
   }
 
+  function updateModeText() {
+    const mode = document.getElementById('sat-arrivals-mode');
+    if (mode) mode.textContent = autoRefreshLabel();
+  }
+
   function renderArrivals(payload) {
     const message = document.getElementById('sat-arrivals-message');
     const wrapper = document.getElementById('sat-arrivals-table-wrap');
@@ -81,8 +126,9 @@
     if (!message || !wrapper || !body || !updated) return;
 
     const arrivals = payload.arrivals || [];
+    const sourceMode = payload.fromCache ? 'cached' : 'fresh';
 
-    updated.textContent = `Last updated: ${new Date(payload.lastUpdated || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+    updated.textContent = `Last updated: ${new Date(payload.lastUpdated || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} (${sourceMode})`;
 
     if (arrivals.length === 0) {
       wrapper.classList.add('hidden');
@@ -110,6 +156,7 @@
     if (isLoading) return;
 
     ensureSatArrivalsBoard();
+    updateModeText();
 
     const message = document.getElementById('sat-arrivals-message');
     const refreshButton = document.getElementById('sat-arrivals-refresh');
@@ -121,9 +168,9 @@
       refreshButton.textContent = 'Refreshing...';
     }
 
-    if (message && manual) {
+    if (message) {
       message.classList.remove('hidden');
-      message.textContent = 'Refreshing SAT arrivals...';
+      message.textContent = manual ? 'Refreshing SAT arrivals...' : 'Loading SAT arrivals...';
     }
 
     try {
@@ -156,12 +203,26 @@
     }
   }
 
+  function maybeAutoLoadSatArrivals() {
+    ensureSatArrivalsBoard();
+    updateModeText();
+
+    if (isAutoRefreshWindow()) {
+      loadSatArrivals(false);
+      return;
+    }
+
+    const message = document.getElementById('sat-arrivals-message');
+    if (message && !document.getElementById('sat-arrivals-table-wrap')?.classList.contains('hidden')) return;
+    if (message) message.textContent = 'Outside auto-refresh window. Use Refresh to load SAT arrivals manually.';
+  }
+
   function startSatArrivalsBoard() {
     ensureSatArrivalsBoard();
-    loadSatArrivals(false);
+    maybeAutoLoadSatArrivals();
 
     if (!refreshTimer) {
-      refreshTimer = setInterval(() => loadSatArrivals(false), 5 * 60 * 1000);
+      refreshTimer = setInterval(maybeAutoLoadSatArrivals, AUTO_REFRESH_MS);
     }
   }
 

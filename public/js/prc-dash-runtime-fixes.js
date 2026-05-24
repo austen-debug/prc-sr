@@ -120,6 +120,121 @@
     }
   }
 
+  function getModalDormRecord() {
+    if (typeof modalDormId === 'undefined' || !modalDormId || typeof allData === 'undefined') return null;
+    return allData.find(record => record.__backendId === modalDormId && record.type === 'dorm') || null;
+  }
+
+  function getDormMaxLoad(dorm) {
+    const maxLoad = Number(dorm?.max_load || 0);
+    return Number.isFinite(maxLoad) ? Math.max(0, Math.floor(maxLoad)) : 0;
+  }
+
+  function clampDormLoad(value, dorm) {
+    const maxLoad = getDormMaxLoad(dorm);
+    const parsed = Number.parseInt(value, 10);
+    const normalized = Number.isFinite(parsed) ? parsed : 0;
+    return Math.min(maxLoad, Math.max(0, normalized));
+  }
+
+  function syncModalLoadInputLimit() {
+    try {
+      const input = document.getElementById('modal-load-input');
+      const maxLabel = document.getElementById('modal-load-max');
+      const dorm = getModalDormRecord();
+
+      if (!input || !dorm) return;
+
+      const maxLoad = getDormMaxLoad(dorm);
+      input.min = '0';
+      input.max = String(maxLoad);
+
+      if (maxLabel) maxLabel.textContent = `/ ${maxLoad}`;
+
+      const currentValue = input.value;
+      if (currentValue !== '' && Number(input.value) > maxLoad) {
+        input.value = String(maxLoad);
+      }
+
+      if (currentValue !== '' && Number(input.value) < 0) {
+        input.value = '0';
+      }
+    } catch (error) {
+      console.warn('PRC DASH load input limit sync failed:', error);
+    }
+  }
+
+  function modLoadCapped(delta) {
+    const input = document.getElementById('modal-load-input');
+    const dorm = getModalDormRecord();
+
+    if (!input || !dorm) return;
+
+    const current = Number.parseInt(input.value, 10) || 0;
+    input.value = String(clampDormLoad(current + Number(delta || 0), dorm));
+  }
+
+  function setLoadFullCapped() {
+    const input = document.getElementById('modal-load-input');
+    const dorm = getModalDormRecord();
+
+    if (!input || !dorm) return;
+
+    input.value = String(getDormMaxLoad(dorm));
+  }
+
+  async function saveLoadCapped() {
+    if (typeof modalDormId === 'undefined' || !modalDormId) return;
+
+    const dorm = getModalDormRecord();
+    const input = document.getElementById('modal-load-input');
+
+    if (!dorm || !input) return;
+
+    const cappedLoad = clampDormLoad(input.value, dorm);
+    input.value = String(cappedLoad);
+
+    const result = await window.dataSdk.update({
+      ...dorm,
+      current_load: cappedLoad
+    });
+
+    if (!result || !result.isOk) {
+      console.warn('PRC DASH save load failed:', result);
+    }
+  }
+
+  function patchDormLoadControls() {
+    try {
+      window.modLoad = modLoadCapped;
+      window.setLoadFull = setLoadFullCapped;
+      window.saveLoad = saveLoadCapped;
+
+      try { modLoad = modLoadCapped; } catch (_) {}
+      try { setLoadFull = setLoadFullCapped; } catch (_) {}
+      try { saveLoad = saveLoadCapped; } catch (_) {}
+
+      const input = document.getElementById('modal-load-input');
+
+      if (input && input.dataset.prcLoadCapPatched !== 'true') {
+        input.dataset.prcLoadCapPatched = 'true';
+
+        input.addEventListener('input', () => {
+          syncModalLoadInputLimit();
+        });
+
+        input.addEventListener('blur', () => {
+          const dorm = getModalDormRecord();
+          if (dorm) input.value = String(clampDormLoad(input.value, dorm));
+        });
+      }
+
+      syncModalLoadInputLimit();
+    } catch (error) {
+      console.warn('PRC DASH dorm load control patch failed:', error);
+    }
+  }
+
   function ensureCloseoutStatusElement() {
     const closeoutBtn = document.getElementById('closeout-btn');
     if (!closeoutBtn) return null;
@@ -386,11 +501,13 @@
 
   function startRuntimeFixes() {
     patchSoundButton();
+    patchDormLoadControls();
     patchCloseoutWorkflow();
     updateActiveBusBadges();
 
     setInterval(() => {
       patchSoundButton();
+      patchDormLoadControls();
       patchCloseoutWorkflow();
       updateActiveBusBadges();
     }, 1000);

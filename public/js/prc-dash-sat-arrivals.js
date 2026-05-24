@@ -76,7 +76,8 @@
       <div class="flex items-center justify-between gap-3 flex-wrap mb-3">
         <div>
           <div class="text-xs uppercase tracking-wider font-black text-muted">San Antonio Arrivals</div>
-          <div class="text-lg font-black">SAT Arrivals — Today</div>
+          <div class="text-lg font-black">SAT Arrivals — Next 24 Hours</div>
+          <div id="sat-arrivals-window" class="text-xs font-bold text-muted mt-1">Window: now through next 24 hours</div>
           <div id="sat-arrivals-mode" class="text-xs font-bold text-muted mt-1">${autoRefreshLabel()}</div>
         </div>
         <div class="flex items-center gap-2">
@@ -122,6 +123,7 @@
     const wrapper = document.getElementById('sat-arrivals-table-wrap');
     const body = document.getElementById('sat-arrivals-body');
     const updated = document.getElementById('sat-arrivals-updated');
+    const windowLabel = document.getElementById('sat-arrivals-window');
 
     if (!message || !wrapper || !body || !updated) return;
 
@@ -130,10 +132,16 @@
 
     updated.textContent = `Last updated: ${new Date(payload.lastUpdated || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} (${sourceMode})`;
 
+    if (windowLabel) {
+      windowLabel.textContent = payload.windowLabel
+        ? `Window: ${payload.windowLabel}`
+        : 'Window: now through next 24 hours';
+    }
+
     if (arrivals.length === 0) {
       wrapper.classList.add('hidden');
       message.classList.remove('hidden');
-      message.textContent = 'No SAT arrivals returned by AirLabs for the current schedule window.';
+      message.textContent = 'No SAT arrivals are scheduled in the next 24 hours.';
       return;
     }
 
@@ -170,7 +178,7 @@
 
     if (message) {
       message.classList.remove('hidden');
-      message.textContent = manual ? 'Refreshing SAT arrivals...' : 'Loading SAT arrivals...';
+      message.textContent = manual ? 'Refreshing SAT arrivals for the next 24 hours...' : 'Loading SAT arrivals for the next 24 hours...';
     }
 
     try {
@@ -213,8 +221,9 @@
     }
 
     const message = document.getElementById('sat-arrivals-message');
-    if (message && !document.getElementById('sat-arrivals-table-wrap')?.classList.contains('hidden')) return;
-    if (message) message.textContent = 'Outside auto-refresh window. Use Refresh to load SAT arrivals manually.';
+    const tableWrap = document.getElementById('sat-arrivals-table-wrap');
+    if (message && tableWrap && !tableWrap.classList.contains('hidden')) return;
+    if (message) message.textContent = 'Outside auto-refresh window. Use Refresh to load SAT arrivals for the next 24 hours.';
   }
 
   function startSatArrivalsBoard() {

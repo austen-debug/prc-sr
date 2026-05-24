@@ -9,8 +9,10 @@
   };
 
   const SOUND_ENABLED_KEY = 'prc_sr_sound_enabled_v1';
+
   let soundUnlockedThisPage = false;
   let soundUnlockInProgress = false;
+  let renderAllPatched = false;
 
   function safeUpdateSoundButton() {
     try {
@@ -90,6 +92,7 @@
     const otw = Number(bus.otw_count || 0);
     const females = Number(bus.female_count || 0);
     const nats = Number(bus.nat_count || 0);
+
     const prefix = bus.bus_type === 'local'
       ? `LOCAL – ${escapeText(bus.destination || bus.originating_destination || 'LOCAL')}`
       : `BUS #${escapeText(bus.bus_id || '')}`;
@@ -114,9 +117,31 @@
         const label = formatBusBadge(bus);
         button.textContent = label;
         button.title = `Confirm arrival: ${label}`;
+        button.setAttribute('aria-label', `Confirm arrival: ${label}`);
       });
     } catch (error) {
-      console.warn('PRC DASH active bus badge update failed:', error);
+      console.warn('PRC DASH active bus badge render update failed:', error);
+    }
+  }
+
+  function patchRenderAllBusBadges() {
+    try {
+      if (renderAllPatched || typeof renderAll !== 'function') return;
+
+      const originalRenderAll = renderAll;
+      const patchedRenderAll = function patchedRenderAll(...args) {
+        const result = originalRenderAll.apply(this, args);
+        updateActiveBusBadges();
+        return result;
+      };
+
+      window.renderAll = patchedRenderAll;
+      try { renderAll = patchedRenderAll; } catch (_) {}
+
+      renderAllPatched = true;
+      updateActiveBusBadges();
+    } catch (error) {
+      console.warn('PRC DASH renderAll bus badge patch failed:', error);
     }
   }
 
@@ -151,14 +176,8 @@
 
       if (maxLabel) maxLabel.textContent = `/ ${maxLoad}`;
 
-      const currentValue = input.value;
-      if (currentValue !== '' && Number(input.value) > maxLoad) {
-        input.value = String(maxLoad);
-      }
-
-      if (currentValue !== '' && Number(input.value) < 0) {
-        input.value = '0';
-      }
+      if (input.value !== '' && Number(input.value) > maxLoad) input.value = String(maxLoad);
+      if (input.value !== '' && Number(input.value) < 0) input.value = '0';
     } catch (error) {
       console.warn('PRC DASH load input limit sync failed:', error);
     }
@@ -218,11 +237,7 @@
 
       if (input && input.dataset.prcLoadCapPatched !== 'true') {
         input.dataset.prcLoadCapPatched = 'true';
-
-        input.addEventListener('input', () => {
-          syncModalLoadInputLimit();
-        });
-
+        input.addEventListener('input', syncModalLoadInputLimit);
         input.addEventListener('blur', () => {
           const dorm = getModalDormRecord();
           if (dorm) input.value = String(clampDormLoad(input.value, dorm));
@@ -503,13 +518,13 @@
     patchSoundButton();
     patchDormLoadControls();
     patchCloseoutWorkflow();
-    updateActiveBusBadges();
+    patchRenderAllBusBadges();
 
     setInterval(() => {
       patchSoundButton();
       patchDormLoadControls();
       patchCloseoutWorkflow();
-      updateActiveBusBadges();
+      patchRenderAllBusBadges();
     }, 1000);
   }
 

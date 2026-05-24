@@ -13,6 +13,7 @@
   let soundUnlockedThisPage = false;
   let soundUnlockInProgress = false;
   let renderAllPatched = false;
+  let localBusFormPatched = false;
 
   function safeUpdateSoundButton() {
     try {
@@ -218,7 +219,9 @@
       current_load: cappedLoad
     });
 
-    if (!result || !result.isOk) {
+    if (result && result.isOk) {
+      if (typeof closeDormModal === 'function') closeDormModal();
+    } else {
       console.warn('PRC DASH save load failed:', result);
     }
   }
@@ -242,11 +245,197 @@
           const dorm = getModalDormRecord();
           if (dorm) input.value = String(clampDormLoad(input.value, dorm));
         });
+        input.addEventListener('keydown', event => {
+          if (event.key === 'Enter') {
+            event.preventDefault();
+            saveLoadCapped();
+          }
+        });
       }
 
       syncModalLoadInputLimit();
     } catch (error) {
       console.warn('PRC DASH dorm load control patch failed:', error);
+    }
+  }
+
+  function setModalEscapeCloseBehavior() {
+    try {
+      if (document.body.dataset.prcEscapeClosePatched === 'true') return;
+      document.body.dataset.prcEscapeClosePatched = 'true';
+
+      document.addEventListener('keydown', event => {
+        if (event.key !== 'Escape') return;
+
+        const modalClosers = [
+          ['dorm-modal', 'closeDormModal'],
+          ['dorm-edit-modal', 'closeDormEditModal'],
+          ['local-bus-modal', 'closeLocalBusModal'],
+          ['airport-bus-edit-modal', 'closeAirportBusEditModal'],
+          ['archive-edit-modal', 'closeArchiveEditModal']
+        ];
+
+        for (const [modalId, closerName] of modalClosers) {
+          const modal = document.getElementById(modalId);
+          if (modal && !modal.classList.contains('hidden') && typeof window[closerName] === 'function') {
+            event.preventDefault();
+            window[closerName]();
+            return;
+          }
+        }
+
+        const confirmDialog = document.getElementById('confirm-dialog');
+        const confirmNo = document.getElementById('confirm-no');
+        if (confirmDialog && !confirmDialog.classList.contains('hidden') && confirmNo) {
+          event.preventDefault();
+          confirmNo.click();
+        }
+      });
+    } catch (error) {
+      console.warn('PRC DASH escape close patch failed:', error);
+    }
+  }
+
+  function patchHorizontalBatchTabFlow() {
+    try {
+      const container = document.getElementById('batch-rows-container');
+      if (!container) return;
+
+      const fieldClasses = [
+        'batch-sdq',
+        'batch-sec',
+        'batch-inter',
+        'batch-dorm',
+        'batch-sex',
+        'batch-band',
+        'batch-load'
+      ];
+
+      for (let row = 0; row < 25; row += 1) {
+        fieldClasses.forEach((className, col) => {
+          const field = container.querySelector(`.${className}[data-row="${row}"]`);
+          if (field) field.tabIndex = (row * fieldClasses.length) + col + 1;
+        });
+      }
+
+      container.querySelectorAll('button[onclick^="clearBatchRow"]').forEach(button => {
+        button.tabIndex = -1;
+      });
+
+      if (container.dataset.prcTabFlowPatched !== 'true') {
+        container.dataset.prcTabFlowPatched = 'true';
+        container.addEventListener('keydown', event => {
+          if (event.key !== 'Tab') return;
+
+          const active = document.activeElement;
+          if (!active || !active.dataset || typeof active.dataset.row === 'undefined') return;
+
+          const ordered = [];
+          for (let row = 0; row < 25; row += 1) {
+            fieldClasses.forEach(className => {
+              const field = container.querySelector(`.${className}[data-row="${row}"]`);
+              if (field) ordered.push(field);
+            });
+          }
+
+          const index = ordered.indexOf(active);
+          if (index === -1) return;
+
+          const nextIndex = event.shiftKey ? index - 1 : index + 1;
+          const next = ordered[nextIndex];
+
+          if (next) {
+            event.preventDefault();
+            next.focus();
+            if (typeof next.select === 'function' && next.tagName !== 'SELECT') next.select();
+          }
+        });
+      }
+    } catch (error) {
+      console.warn('PRC DASH horizontal tab flow patch failed:', error);
+    }
+  }
+
+  function patchLocalBusSubmitClose() {
+    try {
+      const form = document.getElementById('local-bus-form');
+      if (!form || localBusFormPatched) return;
+
+      form.addEventListener('submit', async event => {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+
+        const dest = document.getElementById('local-dest').value.trim();
+        const total = Number(document.getElementById('local-total').value);
+        const females = Number(document.getElementById('local-female').value || 0);
+        const nats = Number(document.getElementById('local-nat').value || 0);
+        const wg = typeof getActiveWG === 'function' ? getActiveWG() : '';
+
+        if (!dest || !total) {
+          showMsg('local-bus-msg', 'Destination and total arrived are required.', true);
+          return;
+        }
+
+        if (!wg) {
+          showMsg('local-bus-msg', 'Initialize a Week Group before adding a local arrival.', true);
+          return;
+        }
+
+        if (females > total) {
+          showMsg('local-bus-msg', 'Females cannot exceed total arrived.', true);
+          return;
+        }
+
+        if (nats > total) {
+          showMsg('local-bus-msg', 'Naturalizations cannot exceed total arrived.', true);
+          return;
+        }
+
+        if (allData.length >= 999) {
+          showMsg('local-bus-msg', 'Record limit reached!', true);
+          return;
+        }
+
+        const submitButton = form.querySelector('button[type="submit"]');
+        const originalText = submitButton ? submitButton.textContent : '';
+
+        if (submitButton) {
+          submitButton.disabled = true;
+          submitButton.textContent = 'SAVING...';
+        }
+
+        const result = await window.dataSdk.create({
+          type: 'bus',
+          bus_id: '',
+          bus_type: 'local',
+          destination: dest,
+          otw_count: total,
+          female_count: females,
+          nat_count: nats,
+          status: 'arrived',
+          created_at: new Date().toISOString(),
+          arrived_at: new Date().toISOString(),
+          week_group: wg
+        });
+
+        if (submitButton) {
+          submitButton.disabled = false;
+          submitButton.textContent = originalText || 'SAVE';
+        }
+
+        if (result && result.isOk) {
+          form.reset();
+          document.getElementById('local-female').value = '0';
+          document.getElementById('local-nat').value = '0';
+          if (typeof closeLocalBusModal === 'function') closeLocalBusModal();
+        } else {
+          showMsg('local-bus-msg', 'Failed', true);
+        }
+      }, true);
+
+      localBusFormPatched = true;
+    } catch (error) {
+      console.warn('PRC DASH local bus submit close patch failed:', error);
     }
   }
 
@@ -517,12 +706,18 @@
   function startRuntimeFixes() {
     patchSoundButton();
     patchDormLoadControls();
+    patchHorizontalBatchTabFlow();
+    patchLocalBusSubmitClose();
+    setModalEscapeCloseBehavior();
     patchCloseoutWorkflow();
     patchRenderAllBusBadges();
 
     setInterval(() => {
       patchSoundButton();
       patchDormLoadControls();
+      patchHorizontalBatchTabFlow();
+      patchLocalBusSubmitClose();
+      setModalEscapeCloseBehavior();
       patchCloseoutWorkflow();
       patchRenderAllBusBadges();
     }, 1000);

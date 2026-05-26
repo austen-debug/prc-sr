@@ -44,11 +44,8 @@
   function isAutoRefreshWindow() {
     const { weekday, hour } = nowCentralParts();
 
-    // Tuesday 1600 through Wednesday 0600 local.
     if (weekday === 'Tue' && hour >= 16) return true;
     if (weekday === 'Wed' && hour < 6) return true;
-
-    // Wednesday 1600 through Thursday 0300 local.
     if (weekday === 'Wed' && hour >= 16) return true;
     if (weekday === 'Thu' && hour < 3) return true;
 
@@ -106,9 +103,7 @@
     airportPage.appendChild(board);
 
     const refreshButton = document.getElementById('sat-arrivals-refresh');
-    if (refreshButton) {
-      refreshButton.addEventListener('click', () => loadSatArrivals(true));
-    }
+    if (refreshButton) refreshButton.addEventListener('click', () => loadSatArrivals(true));
 
     return board;
   }
@@ -133,9 +128,7 @@
     updated.textContent = `Last updated: ${new Date(payload.lastUpdated || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} (${sourceMode})`;
 
     if (windowLabel) {
-      windowLabel.textContent = payload.windowLabel
-        ? `Window: ${payload.windowLabel}`
-        : 'Window: now through next 24 hours';
+      windowLabel.textContent = payload.windowLabel ? `Window: ${payload.windowLabel}` : 'Window: now through next 24 hours';
     }
 
     if (arrivals.length === 0) {
@@ -190,9 +183,7 @@
 
       const payload = await response.json();
 
-      if (!response.ok || !payload.isOk) {
-        throw new Error(payload.error || 'Unable to retrieve SAT arrivals.');
-      }
+      if (!response.ok || !payload.isOk) throw new Error(payload.error || 'Unable to retrieve SAT arrivals.');
 
       renderArrivals(payload);
     } catch (error) {
@@ -230,9 +221,7 @@
     ensureSatArrivalsBoard();
     maybeAutoLoadSatArrivals();
 
-    if (!refreshTimer) {
-      refreshTimer = setInterval(maybeAutoLoadSatArrivals, AUTO_REFRESH_MS);
-    }
+    if (!refreshTimer) refreshTimer = setInterval(maybeAutoLoadSatArrivals, AUTO_REFRESH_MS);
   }
 
   if (document.readyState === 'loading') {
@@ -385,5 +374,198 @@
     document.addEventListener('DOMContentLoaded', startHeaderPatch);
   } else {
     startHeaderPatch();
+  }
+})();
+
+// PRC DASH active bus card formatter
+(function () {
+  let observerReady = false;
+  let scheduled = false;
+
+  function ensureActiveBusCardStyles() {
+    if (document.getElementById('prc-active-bus-card-styles')) return;
+
+    const style = document.createElement('style');
+    style.id = 'prc-active-bus-card-styles';
+    style.textContent = `
+      .prc-active-buses-v3 #active-buses {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        gap: 0.72rem !important;
+        align-items: stretch !important;
+        align-content: flex-start !important;
+      }
+
+      .prc-active-buses-v3 #active-buses .bus-badge.prc-bus-card {
+        width: 142px !important;
+        min-width: 142px !important;
+        min-height: 118px !important;
+        padding: 0.78rem 0.82rem !important;
+        border-radius: 1.05rem !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        justify-content: center !important;
+        gap: 0.26rem !important;
+        text-align: left !important;
+        white-space: normal !important;
+        line-height: 1.02 !important;
+        background:
+          linear-gradient(145deg, rgba(56, 189, 248, 0.22), rgba(37, 99, 235, 0.12)),
+          rgba(15, 23, 42, 0.36) !important;
+        border-color: rgba(56, 189, 248, 0.48) !important;
+        box-shadow:
+          inset 0 1px 0 rgba(255,255,255,0.16),
+          0 8px 20px rgba(0,0,0,0.20),
+          0 0 18px rgba(56,189,248,0.16) !important;
+      }
+
+      .prc-active-buses-v3 #active-buses .bus-badge.prc-bus-card:hover {
+        transform: translateY(-1px) !important;
+        border-color: rgba(125, 211, 252, 0.72) !important;
+        box-shadow:
+          inset 0 1px 0 rgba(255,255,255,0.20),
+          0 11px 24px rgba(0,0,0,0.24),
+          0 0 24px rgba(56,189,248,0.28) !important;
+      }
+
+      .prc-bus-card-title {
+        color: var(--text);
+        font-size: 0.82rem;
+        font-weight: 950;
+        letter-spacing: 0.07em;
+        text-transform: uppercase;
+      }
+
+      .prc-bus-card-line {
+        color: var(--text-soft, var(--text-muted));
+        font-size: 0.72rem;
+        font-weight: 900;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+      }
+
+      .theme-light .prc-active-buses-v3 #active-buses .bus-badge.prc-bus-card {
+        background:
+          linear-gradient(145deg, rgba(2, 132, 199, 0.13), rgba(255,255,255,0.76)),
+          rgba(255,255,255,0.64) !important;
+        border-color: rgba(2, 132, 199, 0.34) !important;
+        box-shadow:
+          inset 0 1px 0 rgba(255,255,255,0.84),
+          0 7px 16px rgba(15,23,42,0.08) !important;
+      }
+
+      .theme-light .prc-bus-card-title { color: #0f172a; }
+      .theme-light .prc-bus-card-line { color: #334155; }
+
+      @media (max-width: 640px) {
+        .prc-active-buses-v3 #active-buses .bus-badge.prc-bus-card {
+          width: 132px !important;
+          min-width: 132px !important;
+          min-height: 104px !important;
+          padding: 0.66rem 0.7rem !important;
+        }
+      }
+    `;
+
+    document.head.appendChild(style);
+  }
+
+  function escapeCardHtml(value) {
+    return String(value ?? '')
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#039;');
+  }
+
+  function findBusForButton(button) {
+    if (typeof allData === 'undefined') return null;
+
+    const onclick = button.getAttribute('onclick') || '';
+    const idMatch = onclick.match(/confirmBusArrival\('([^']+)'\)/);
+    const id = idMatch ? idMatch[1] : '';
+    if (!id) return null;
+
+    return allData.find(record => record.__backendId === id) || null;
+  }
+
+  function cardTitle(bus) {
+    if (bus.bus_type === 'local') {
+      return `LOCAL – ${String(bus.destination || bus.originating_destination || 'LOCAL').trim()}`;
+    }
+
+    return `BUS #${String(bus.bus_id || '').trim()}`;
+  }
+
+  function formatActiveBusCards() {
+    ensureActiveBusCardStyles();
+
+    const activeBusContainer = document.getElementById('active-buses');
+    if (!activeBusContainer) return;
+
+    activeBusContainer.querySelectorAll('.bus-badge').forEach(button => {
+      const bus = findBusForButton(button);
+      if (!bus) return;
+
+      const title = cardTitle(bus);
+      const otw = Number(bus.otw_count || 0);
+      const females = Number(bus.female_count || 0);
+      const nats = Number(bus.nat_count || 0);
+      const signature = `${title}|${otw}|${females}|${nats}`;
+
+      if (button.dataset.prcBusCardSig === signature && button.querySelector('.prc-bus-card-title')) return;
+
+      button.classList.add('prc-bus-card');
+      button.dataset.prcBusCardSig = signature;
+      button.title = `Confirm arrival: ${title} – ${otw} OTW | ${females} FEMALE | ${nats} NAT`;
+      button.setAttribute('aria-label', button.title);
+      button.innerHTML = `
+        <span class="prc-bus-card-title">${escapeCardHtml(title)}</span>
+        <span class="prc-bus-card-line">${otw} OTW</span>
+        <span class="prc-bus-card-line">${females} FEMALE</span>
+        <span class="prc-bus-card-line">${nats} NAT</span>
+      `;
+    });
+  }
+
+  function scheduleFormat() {
+    if (scheduled) return;
+    scheduled = true;
+
+    requestAnimationFrame(() => {
+      scheduled = false;
+      formatActiveBusCards();
+    });
+  }
+
+  function createObserver() {
+    if (observerReady) return;
+
+    const activeBusContainer = document.getElementById('active-buses');
+    if (!activeBusContainer) return;
+
+    const observer = new MutationObserver(scheduleFormat);
+    observer.observe(activeBusContainer, { childList: true, subtree: true, characterData: true });
+
+    observerReady = true;
+  }
+
+  function startActiveBusCards() {
+    ensureActiveBusCardStyles();
+    formatActiveBusCards();
+    createObserver();
+
+    setInterval(() => {
+      formatActiveBusCards();
+      createObserver();
+    }, 500);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', startActiveBusCards);
+  } else {
+    startActiveBusCards();
   }
 })();

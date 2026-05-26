@@ -241,3 +241,149 @@
     startSatArrivalsBoard();
   }
 })();
+
+// PRC DASH Status Board header split
+(function () {
+  let headerPatched = false;
+  let observersCreated = false;
+
+  function ensureHeaderStylesheet() {
+    if (document.querySelector('link[href="/css/prc-dash-board-header.css"]')) return;
+
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = '/css/prc-dash-board-header.css';
+    document.head.appendChild(link);
+  }
+
+  function buildMetric(kind, label, id, fallback) {
+    const card = document.createElement('div');
+    card.className = 'metric-block prc-metric-card-v3';
+    card.dataset.kind = kind;
+    card.innerHTML = `
+      <div class="prc-metric-label-v3">${label}</div>
+      <div id="${id}" class="prc-metric-value-v3 font-tabular">${fallback}</div>
+    `;
+    return card;
+  }
+
+  function parseArrivedExpected(text) {
+    const value = String(text || '');
+    const arrivedMatch = value.match(/ARRIVED:\s*(\d+)/i);
+    const expectedMatch = value.match(/EXPECTED:\s*(\d+)/i);
+    const slashMatch = value.match(/(\d+)\s*\/\s*(\d+)/);
+    const numbers = value.match(/\d+/g) || [];
+
+    return {
+      arrived: arrivedMatch?.[1] || slashMatch?.[1] || numbers[0] || '0',
+      expected: expectedMatch?.[1] || slashMatch?.[2] || numbers[1] || '0'
+    };
+  }
+
+  function parseLastLocal(text) {
+    const value = String(text || '');
+    const lastMatch = value.match(/LAST:\s*([^|]+)/i);
+    const localMatch = value.match(/LOCAL:\s*([^|]+)/i);
+    const timeMatches = value.match(/\b\d{1,2}:\d{2}\b/g) || [];
+
+    return {
+      last: (lastMatch?.[1] || timeMatches[0] || '—').trim(),
+      local: (localMatch?.[1] || timeMatches[1] || '—').trim()
+    };
+  }
+
+  function syncHeaderValues() {
+    const metricArrived = document.getElementById('metric-arrived');
+    const metricAirport = document.getElementById('metric-airport');
+
+    const arrivedEl = document.getElementById('metric-arrived-v3');
+    const expectedEl = document.getElementById('metric-expected-v3');
+    const lastEl = document.getElementById('metric-last-v3');
+    const localEl = document.getElementById('metric-local-v3');
+
+    if (metricArrived && arrivedEl && expectedEl) {
+      const values = parseArrivedExpected(metricArrived.textContent);
+      arrivedEl.textContent = values.arrived;
+      expectedEl.textContent = values.expected;
+    }
+
+    if (metricAirport && lastEl && localEl) {
+      const values = parseLastLocal(metricAirport.textContent);
+      lastEl.textContent = values.last;
+      localEl.textContent = values.local;
+    }
+  }
+
+  function createObservers() {
+    if (observersCreated) return;
+
+    const metricArrived = document.getElementById('metric-arrived');
+    const metricAirport = document.getElementById('metric-airport');
+    const config = { childList: true, characterData: true, subtree: true };
+
+    if (metricArrived) new MutationObserver(syncHeaderValues).observe(metricArrived, config);
+    if (metricAirport) new MutationObserver(syncHeaderValues).observe(metricAirport, config);
+
+    observersCreated = true;
+  }
+
+  function patchStatusBoardHeader() {
+    ensureHeaderStylesheet();
+
+    const header = document.querySelector('#page-board .board-header');
+    const metricArrived = document.getElementById('metric-arrived');
+    const metricAirport = document.getElementById('metric-airport');
+    const activeBuses = document.getElementById('active-buses');
+
+    if (!header || !metricArrived || !metricAirport || !activeBuses) {
+      syncHeaderValues();
+      return;
+    }
+
+    if (!headerPatched && !header.classList.contains('prc-header-v3')) {
+      const arrivedBlock = metricArrived.closest('.metric-block');
+      const airportBlock = metricAirport.closest('.metric-block');
+      const activeBusBlock = activeBuses.closest('.metric-block');
+
+      const legacy = document.createElement('div');
+      legacy.className = 'prc-header-legacy-v3';
+      legacy.setAttribute('aria-hidden', 'true');
+
+      if (arrivedBlock) legacy.appendChild(arrivedBlock);
+      if (airportBlock) legacy.appendChild(airportBlock);
+
+      const metricGrid = document.createElement('div');
+      metricGrid.className = 'prc-metric-grid-v3';
+      metricGrid.appendChild(buildMetric('arrived', 'Arrived', 'metric-arrived-v3', '0'));
+      metricGrid.appendChild(buildMetric('last', 'Last', 'metric-last-v3', '—'));
+      metricGrid.appendChild(buildMetric('expected', 'Expected', 'metric-expected-v3', '0'));
+      metricGrid.appendChild(buildMetric('local', 'Local', 'metric-local-v3', '—'));
+
+      header.innerHTML = '';
+      header.classList.add('prc-header-v3');
+      header.appendChild(metricGrid);
+
+      if (activeBusBlock) {
+        activeBusBlock.classList.add('prc-active-buses-v3');
+        header.appendChild(activeBusBlock);
+      }
+
+      header.appendChild(legacy);
+      headerPatched = true;
+      createObservers();
+    }
+
+    syncHeaderValues();
+  }
+
+  function startHeaderPatch() {
+    patchStatusBoardHeader();
+    setInterval(patchStatusBoardHeader, 1000);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', startHeaderPatch);
+  } else {
+    startHeaderPatch();
+  }
+})();

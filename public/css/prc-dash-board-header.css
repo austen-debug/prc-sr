@@ -1,0 +1,153 @@
+/* PRC DASH Alpha Status Board Header */
+#page-board .board-header.prc-header-v3 {
+  display: grid !important;
+  grid-template-columns: minmax(360px, 1.05fr) minmax(360px, 1.95fr) !important;
+  gap: 0.75rem !important;
+  align-items: stretch;
+}
+
+.prc-metric-grid-v3 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+  min-width: 0;
+}
+
+.prc-metric-card-v3 {
+  position: relative;
+  min-height: 92px;
+  padding: 0.72rem 0.78rem !important;
+  overflow: hidden;
+}
+
+.prc-metric-card-v3::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(135deg, rgba(255,255,255,0.12), transparent 38%),
+    radial-gradient(circle at 18% 0%, rgba(56, 189, 248, 0.10), transparent 42%);
+  opacity: 0.72;
+}
+
+.prc-metric-card-v3 > * {
+  position: relative;
+  z-index: 1;
+}
+
+.prc-metric-label-v3 {
+  display: flex;
+  align-items: center;
+  gap: 0.36rem;
+  color: var(--text-soft, var(--text-muted));
+  font-size: clamp(0.58rem, 0.72vw, 0.76rem);
+  font-weight: 950;
+  letter-spacing: 0.105em;
+  line-height: 1;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.prc-metric-label-v3::before {
+  content: '';
+  width: 0.42rem;
+  height: 0.42rem;
+  border-radius: 999px;
+  background: var(--blue);
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.44);
+}
+
+.prc-metric-value-v3 {
+  margin-top: 0.34rem;
+  color: var(--text);
+  font-size: clamp(1.85rem, 3.1vw, 3.1rem);
+  font-weight: 950;
+  line-height: 0.92;
+  letter-spacing: -0.075em;
+  text-shadow: 0 1px 22px rgba(56, 189, 248, 0.16);
+  white-space: nowrap;
+}
+
+.prc-metric-card-v3[data-kind="arrived"] .prc-metric-label-v3::before,
+.prc-metric-card-v3[data-kind="expected"] .prc-metric-label-v3::before {
+  background: var(--green);
+  box-shadow: 0 0 12px rgba(34, 197, 94, 0.44);
+}
+
+.prc-metric-card-v3[data-kind="last"] .prc-metric-label-v3::before,
+.prc-metric-card-v3[data-kind="local"] .prc-metric-label-v3::before {
+  background: var(--blue);
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.44);
+}
+
+.prc-active-buses-v3 {
+  min-height: 192px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+.prc-active-buses-v3 #active-buses {
+  align-content: flex-start;
+  align-items: flex-start;
+  gap: 0.46rem !important;
+}
+
+.prc-header-legacy-v3 {
+  display: none !important;
+}
+
+.theme-light .prc-metric-card-v3::before {
+  background:
+    linear-gradient(135deg, rgba(255,255,255,0.62), transparent 38%),
+    radial-gradient(circle at 18% 0%, rgba(2, 132, 199, 0.10), transparent 42%);
+}
+
+.theme-light .prc-metric-value-v3 {
+  color: #0f172a;
+  text-shadow: 0 1px 16px rgba(255,255,255,0.75);
+}
+
+.theme-light .prc-metric-label-v3 {
+  color: #334155;
+}
+
+.fullscreen-board #page-board .board-header.prc-header-v3 {
+  grid-template-columns: minmax(420px, 1.1fr) minmax(460px, 1.9fr) !important;
+}
+
+.fullscreen-board .prc-metric-card-v3 {
+  min-height: 96px;
+}
+
+@media (max-width: 1024px) {
+  #page-board .board-header.prc-header-v3 {
+    grid-template-columns: 1fr !important;
+  }
+
+  .prc-active-buses-v3 {
+    min-height: 94px;
+  }
+}
+
+@media (max-width: 640px) {
+  .prc-metric-grid-v3 {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+  }
+
+  .prc-metric-card-v3 {
+    min-height: 78px;
+    padding: 0.58rem 0.62rem !important;
+  }
+
+  .prc-metric-value-v3 {
+    font-size: clamp(1.42rem, 8vw, 2.2rem);
+  }
+
+  .prc-metric-label-v3 {
+    font-size: 0.54rem;
+    letter-spacing: 0.08em;
+  }
+}

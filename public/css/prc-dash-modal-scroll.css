@@ -1,0 +1,19 @@
+/* PRC DASH modal scroll safety patch */
+.modal-content {
+  max-height: calc(100dvh - 5rem) !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-height: 820px) {
+  .modal-content {
+    max-height: calc(100dvh - 3rem) !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .modal-content {
+    max-height: calc(100dvh - 2rem) !important;
+  }
+}

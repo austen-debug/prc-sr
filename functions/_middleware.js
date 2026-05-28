@@ -5,8 +5,7 @@ const UI_STYLESHEETS = [
   '<link rel="stylesheet" href="/css/prc-dash-nav.css">',
   '<link rel="stylesheet" href="/css/prc-dash-states-empty.css">',
   '<link rel="stylesheet" href="/css/prc-dash-watermark.css">',
-  '<link rel="stylesheet" href="/css/prc-dash-danger-actions.css">',
-  '<link rel="stylesheet" href="/css/prc-dash-liquid-refinement.css">'
+  '<link rel="stylesheet" href="/css/prc-dash-danger-actions.css">'
 ];
 
 const UI_HEAD_SCRIPTS = [
@@ -206,66 +205,105 @@ async function verifySession(request, env) {
   const token = getCookie(request, COOKIE_NAME);
   if (!token) return null;
 
-  const parts = token.split('.');
-  if (parts.length !== 2) return null;
+  const [body, signature] = token.split('.');
+  if (!body || !signature) return null;
 
-  const [payloadPart, signature] = parts;
-  const expectedSignature = await sign(payloadPart, env.SESSION_SECRET || 'prc-sr-dev-secret');
+  const expected = await sign(body, env.AUTH_SECRET);
+  if (!safeEqual(signature, expected)) return null;
 
-  if (!safeEqual(signature, expectedSignature)) return null;
+  const payload = JSON.parse(base64urlDecodeString(body));
+  if (!payload.exp || payload.exp < Date.now()) return null;
 
-  try {
-    return JSON.parse(base64urlDecodeString(payloadPart));
-  } catch {
-    return null;
-  }
+  return payload;
 }
 
-function isHtmlResponse(response) {
-  const contentType = response.headers.get('Content-Type') || '';
-  return contentType.includes('text/html');
+function extractUrl(assetTag, attributeName) {
+  const match = assetTag.match(new RegExp(`${attributeName}="([^"]+)"`));
+  return match ? match[1] : '';
 }
 
-async function injectUiLayers(response) {
-  let html = await response.text();
+function applyNativeFunctionReplacements(html) {
+  if (!html.includes('function printArchiveSpreadsheet()')) return html;
 
-  if (!html.includes('/css/liquid-command.css')) {
-    html = html.replace('</head>', `${UI_STYLESHEETS.join('\n')}\n</head>`);
+  const pattern = /function printArchiveSpreadsheet\(\) \{[\s\S]*?\n\s*async function deleteArchiveWithOverride\(\)/;
+  if (!pattern.test(html)) return html;
+
+  return html.replace(pattern, `${PRINT_ARCHIVE_FUNCTION}\n\nasync function deleteArchiveWithOverride()`);
+}
+
+function applyUiAssets(html) {
+  const linksToAdd = UI_STYLESHEETS.filter(link => {
+    const href = extractUrl(link, 'href');
+    return href && !html.includes(href);
+  });
+
+  const scriptsToAdd = UI_HEAD_SCRIPTS.filter(script => {
+    const src = extractUrl(script, 'src');
+    return src && !html.includes(src);
+  });
+
+  const assetsToAdd = [...linksToAdd, ...scriptsToAdd];
+  let nextHtml = applyNativeFunctionReplacements(html);
+
+  if (assetsToAdd.length === 0) {
+    return nextHtml;
   }
 
-  if (!html.includes('/js/prc-dash-runtime-fixes.js')) {
-    html = html.replace('</head>', `${UI_HEAD_SCRIPTS.join('\n')}\n</head>`);
-  }
+  return nextHtml.replace(/<\/head>/i, `  ${assetsToAdd.join('\n  ')}\n </head>`);
+}
 
-  if (html.includes('function printArchiveSpreadsheet()')) {
-    html = html.replace(/function printArchiveSpreadsheet\(\) \{[\s\S]*?\n\}\n\s*async function deleteArchiveWithOverride/, PRINT_ARCHIVE_FUNCTION + '\n\nasync function deleteArchiveWithOverride');
-  }
+async function maybeApplyUiAssets(response) {
+  const contentType = response.headers.get('content-type') || '';
+  if (!contentType.includes('text/html')) return response;
+
+  const html = applyUiAssets(await response.text());
+  const headers = new Headers(response.headers);
+  headers.set('content-type', 'text/html; charset=UTF-8');
+  headers.delete('content-length');
 
   return new Response(html, {
     status: response.status,
     statusText: response.statusText,
-    headers: response.headers
+    headers
   });
 }
 
-export async function onRequest({ request, env, next }) {
-  const url = new URL(request.url);
+export async function onRequest(context) {
+  const url = new URL(context.request.url);
+  const pathname = url.pathname;
 
-  if (url.pathname.startsWith('/api/')) {
-    return next();
+  if (pathname === '/login' || pathname === '/login/' || pathname === '/login.html') {
+    return context.next();
   }
 
-  if (url.pathname === '/login' || url.pathname === '/login/') {
-    const response = await next();
-    return isHtmlResponse(response) ? injectUiLayers(response) : response;
+  if (pathname === '/api/login' || pathname === '/api/logout' || pathname === '/api/ping') {
+    return context.next();
   }
 
-  const session = await verifySession(request, env);
+  if (
+    pathname === '/favicon.ico' ||
+    pathname.endsWith('.css') ||
+    pathname.endsWith('.js') ||
+    pathname.endsWith('.png') ||
+    pathname.endsWith('.jpg') ||
+    pathname.endsWith('.jpeg') ||
+    pathname.endsWith('.svg') ||
+    pathname.endsWith('.ico') ||
+    pathname.endsWith('.webp') ||
+    pathname.endsWith('.mp3')
+  ) {
+    return context.next();
+  }
+
+  const session = await verifySession(context.request, context.env);
 
   if (!session) {
+    if (pathname.startsWith('/api/')) {
+      return jsonResponse({ isOk: false, error: 'Unauthorized.' }, 401);
+    }
+
     return Response.redirect(`${url.origin}/login/`, 302);
   }
 
-  const response = await next();
-  return isHtmlResponse(response) ? injectUiLayers(response) : response;
+  return maybeApplyUiAssets(await context.next());
 }

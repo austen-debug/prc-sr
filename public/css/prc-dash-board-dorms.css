@@ -1,0 +1,91 @@
+/* PRC DASH compact Status Board dorm card layout */
+#page-board .dorm-col-content {
+  gap: 0.34rem !important;
+}
+
+#page-board .dorm-card {
+  min-height: 82px !important;
+  padding: 0.48rem 0.64rem !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "name airman"
+    "info load"
+    "timer timer";
+  align-items: center;
+  column-gap: 0.62rem;
+  row-gap: 0.08rem;
+}
+
+#page-board .dorm-card > .absolute {
+  position: static !important;
+  top: auto !important;
+  right: auto !important;
+  grid-area: airman;
+  justify-self: end;
+  align-self: start;
+  max-width: 7.5rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.62rem !important;
+  line-height: 1 !important;
+}
+
+#page-board .dorm-card > .text-4xl {
+  grid-area: name;
+  justify-self: start;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 1.7rem !important;
+  line-height: 0.96 !important;
+  letter-spacing: -0.045em !important;
+}
+
+#page-board .dorm-card > .text-xs.text-muted.font-bold.uppercase {
+  grid-area: info;
+  justify-self: start;
+  margin-top: 0 !important;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.64rem !important;
+  line-height: 1 !important;
+}
+
+#page-board .dorm-card > .text-xl.font-black.font-tabular {
+  grid-area: load;
+  justify-self: end;
+  margin-top: 0 !important;
+  white-space: nowrap;
+  font-size: 1.1rem !important;
+  line-height: 1 !important;
+}
+
+#page-board .dorm-card > .timer-display,
+#page-board .dorm-card > .text-3xl.font-mono.font-black.font-tabular {
+  grid-area: timer;
+  justify-self: center;
+  margin-top: 0.05rem !important;
+  font-size: 1.28rem !important;
+  line-height: 1 !important;
+}
+
+#page-board .dorm-card > .text-sm.font-bold.text-center.mt-1 {
+  display: none !important;
+}
+
+.fullscreen-board #page-board .dorm-card {
+  min-height: 76px !important;
+  padding-top: 0.42rem !important;
+  padding-bottom: 0.42rem !important;
+}
+
+@media (max-width: 1024px) {
+  #page-board .dorm-card {
+    min-height: 78px !important;
+  }
+}

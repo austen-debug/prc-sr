@@ -1,0 +1,218 @@
+/* PRC DASH Liquid Glass refinement layer
+   UI-only: visual material, typography, and status board legibility polish. */
+:root {
+  --lg-panel-tint: rgba(255, 255, 255, 0.105);
+  --lg-panel-tint-strong: rgba(255, 255, 255, 0.145);
+  --lg-panel-tint-soft: rgba(255, 255, 255, 0.055);
+  --lg-blur: 22px;
+  --lg-blur-heavy: 28px;
+  --lg-saturate: 210%;
+  --lg-rim-light: rgba(255, 255, 255, 0.26);
+  --lg-rim-soft: rgba(255, 255, 255, 0.13);
+  --lg-rim-shadow: rgba(3, 7, 18, 0.36);
+  --lg-drop-shadow: rgba(0, 0, 0, 0.32);
+  --lg-drop-shadow-soft: rgba(0, 0, 0, 0.18);
+  --lg-specular:
+    linear-gradient(135deg, rgba(255,255,255,0.22), rgba(255,255,255,0.045) 36%, rgba(255,255,255,0.018) 60%, rgba(0,0,0,0.05));
+  --lg-specular-edge:
+    inset 0 1px 0 rgba(255,255,255,0.24),
+    inset 1px 0 0 rgba(255,255,255,0.10),
+    inset -1px -1px 0 rgba(0,0,0,0.18);
+}
+
+.theme-light {
+  --lg-panel-tint: rgba(255, 255, 255, 0.60);
+  --lg-panel-tint-strong: rgba(255, 255, 255, 0.78);
+  --lg-panel-tint-soft: rgba(255, 255, 255, 0.42);
+  --lg-blur: 18px;
+  --lg-blur-heavy: 24px;
+  --lg-saturate: 170%;
+  --lg-rim-light: rgba(255, 255, 255, 0.74);
+  --lg-rim-soft: rgba(255, 255, 255, 0.46);
+  --lg-rim-shadow: rgba(100, 116, 139, 0.20);
+  --lg-drop-shadow: rgba(15, 23, 42, 0.13);
+  --lg-drop-shadow-soft: rgba(15, 23, 42, 0.08);
+  --lg-specular:
+    linear-gradient(135deg, rgba(255,255,255,0.82), rgba(255,255,255,0.34) 38%, rgba(255,255,255,0.12) 62%, rgba(15,23,42,0.035));
+  --lg-specular-edge:
+    inset 0 1px 0 rgba(255,255,255,0.88),
+    inset 1px 0 0 rgba(255,255,255,0.52),
+    inset -1px -1px 0 rgba(100,116,139,0.16);
+}
+
+.surface,
+.metric-block,
+.proc-card,
+.modal-content,
+#page-board .dorm-card {
+  background:
+    var(--lg-specular),
+    linear-gradient(145deg, var(--lg-panel-tint), var(--lg-panel-tint-soft)) !important;
+  -webkit-backdrop-filter: blur(var(--lg-blur)) saturate(var(--lg-saturate)) !important;
+  backdrop-filter: blur(var(--lg-blur)) saturate(var(--lg-saturate)) !important;
+  border-top-color: var(--lg-rim-light) !important;
+  border-left-color: var(--lg-rim-soft) !important;
+  border-right-color: var(--lg-rim-shadow) !important;
+  border-bottom-color: var(--lg-rim-shadow) !important;
+  box-shadow:
+    var(--lg-specular-edge),
+    0 10px 32px var(--lg-drop-shadow-soft) !important;
+  transform-style: preserve-3d;
+}
+
+.metric-block,
+.modal-content {
+  box-shadow:
+    var(--lg-specular-edge),
+    0 18px 48px var(--lg-drop-shadow),
+    0 0 24px rgba(56, 189, 248, 0.10) !important;
+}
+
+.modal-content {
+  -webkit-backdrop-filter: blur(var(--lg-blur-heavy)) saturate(var(--lg-saturate)) !important;
+  backdrop-filter: blur(var(--lg-blur-heavy)) saturate(var(--lg-saturate)) !important;
+}
+
+/* Text headers should feel printed on glass, not placed inside extra boxes. */
+#page-board .dorm-col-header {
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  padding: 0.18rem 0.12rem 0.34rem !important;
+  margin-bottom: 0.36rem !important;
+  color: var(--text-soft, var(--text-muted)) !important;
+  font-size: clamp(0.78rem, 0.82vw, 0.98rem) !important;
+  font-weight: 950 !important;
+  letter-spacing: 0.12em !important;
+  text-shadow: 0 1px 12px rgba(0,0,0,0.18);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.20) !important;
+}
+
+.theme-light #page-board .dorm-col-header {
+  color: #334155 !important;
+  text-shadow: 0 1px 12px rgba(255,255,255,0.80);
+  border-bottom-color: rgba(100, 116, 139, 0.22) !important;
+}
+
+/* Status Board card typography tuned for projection distance and compact height. */
+#page-board .dorm-card {
+  min-height: 82px !important;
+  padding: 0.44rem 0.66rem !important;
+}
+
+#page-board .dorm-card > .text-4xl {
+  font-size: 1.54rem !important;
+  line-height: 0.98 !important;
+  letter-spacing: -0.026em !important;
+  text-shadow: 0 1px 14px rgba(0,0,0,0.30);
+}
+
+#page-board .dorm-card > .text-xs.text-muted.font-bold.uppercase {
+  font-size: 0.82rem !important;
+  line-height: 1.05 !important;
+  letter-spacing: 0.065em !important;
+  background: transparent !important;
+  color: var(--text-soft, var(--text-muted)) !important;
+  text-shadow: 0 1px 10px rgba(0,0,0,0.18);
+}
+
+#page-board .dorm-card > .text-xl.font-black.font-tabular {
+  font-size: 1.16rem !important;
+  line-height: 1 !important;
+  letter-spacing: -0.02em !important;
+}
+
+#page-board .dorm-card > .timer-display,
+#page-board .dorm-card > .text-3xl.font-mono.font-black.font-tabular {
+  font-size: 1.56rem !important;
+  line-height: 1 !important;
+  letter-spacing: -0.035em !important;
+  background: transparent !important;
+  text-shadow: 0 1px 18px rgba(56, 189, 248, 0.22);
+}
+
+#page-board .dorm-card > .absolute {
+  font-size: 0.72rem !important;
+  letter-spacing: 0.075em !important;
+  background: transparent !important;
+}
+
+/* Preserve specialty rings while keeping the glass material coherent. */
+#page-board .dorm-card.border-female,
+#page-board .dorm-card.border-band {
+  box-shadow:
+    var(--lg-specular-edge),
+    0 10px 32px var(--lg-drop-shadow-soft),
+    inset 4px 0 0 var(--board-card-left-accent),
+    0 0 0 1px var(--board-card-special-ring),
+    0 0 18px var(--board-card-special-glow) !important;
+}
+
+#page-board #col-open .dorm-card:not(.border-female):not(.border-band) {
+  box-shadow:
+    var(--lg-specular-edge),
+    0 10px 32px var(--lg-drop-shadow-soft),
+    inset 4px 0 0 var(--board-card-left-accent),
+    0 0 18px rgba(34, 197, 94, 0.08) !important;
+}
+
+/* Buttons remain glass tokens without becoming noisy against status data. */
+.nav-btn,
+.bus-badge,
+.phase-btn,
+.load-btn,
+form button,
+.modal-content button:not([class*="text-3xl"]) {
+  -webkit-backdrop-filter: blur(16px) saturate(170%) !important;
+  backdrop-filter: blur(16px) saturate(170%) !important;
+  border-top-color: rgba(255,255,255,0.30) !important;
+  border-left-color: rgba(255,255,255,0.18) !important;
+  border-right-color: rgba(255,255,255,0.08) !important;
+  border-bottom-color: rgba(0,0,0,0.18) !important;
+}
+
+button:active,
+.nav-btn:active,
+.bus-badge:active,
+.phase-btn:active,
+.load-btn:active {
+  transform: scale(0.95) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.22),
+    0 3px 10px rgba(0,0,0,0.16) !important;
+}
+
+/* Keep informational text clean; reserve background panels for cards, modals, buttons, and true empty states. */
+#page-board .dorm-card .text-muted,
+#page-board .metric-block .text-muted,
+#page-processing .proc-card .text-muted:not(span) {
+  background: transparent !important;
+}
+
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  .surface,
+  .metric-block,
+  .proc-card,
+  .modal-content,
+  #page-board .dorm-card {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    background: var(--surface-solid, var(--surface)) !important;
+  }
+}
+
+@media (max-width: 1024px) {
+  #page-board .dorm-card > .text-4xl {
+    font-size: 1.44rem !important;
+  }
+
+  #page-board .dorm-card > .text-xs.text-muted.font-bold.uppercase {
+    font-size: 0.76rem !important;
+  }
+
+  #page-board .dorm-card > .timer-display,
+  #page-board .dorm-card > .text-3xl.font-mono.font-black.font-tabular {
+    font-size: 1.42rem !important;
+  }
+}

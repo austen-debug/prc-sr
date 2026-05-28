@@ -3,6 +3,12 @@
   gap: 0.34rem !important;
 }
 
+/* CLOSED column only: newest closed records display at the top of the stack. */
+#page-board #col-closed.dorm-col-content {
+  flex-direction: column-reverse !important;
+  justify-content: flex-end;
+}
+
 #page-board .dorm-card {
   --board-card-border: rgba(148, 163, 184, 0.22);
   --board-card-special-ring: transparent;

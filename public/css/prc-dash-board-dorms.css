@@ -4,8 +4,14 @@
 }
 
 #page-board .dorm-card {
+  --board-card-border: rgba(148, 163, 184, 0.22);
+  --board-card-special-ring: transparent;
+  --board-card-special-glow: transparent;
+  --board-card-status-tint: rgba(255, 255, 255, 0.035);
+  --board-card-left-accent: transparent;
+  position: relative;
   min-height: 82px !important;
-  padding: 0.48rem 0.64rem !important;
+  padding: 0.46rem 0.64rem !important;
   display: grid !important;
   grid-template-columns: minmax(0, 1fr) auto;
   grid-template-areas:
@@ -14,7 +20,59 @@
     "timer timer";
   align-items: center;
   column-gap: 0.62rem;
-  row-gap: 0.08rem;
+  row-gap: 0.1rem;
+  border-width: 1px !important;
+  border-color: var(--board-card-border) !important;
+  background:
+    linear-gradient(145deg, var(--board-card-status-tint), rgba(255,255,255,0.025)),
+    var(--glass-bg) !important;
+  box-shadow:
+    var(--glass-highlight),
+    var(--shadow-soft),
+    inset 4px 0 0 var(--board-card-left-accent),
+    0 0 0 1px var(--board-card-special-ring),
+    0 0 16px var(--board-card-special-glow) !important;
+}
+
+/* Column state should read through background tint, not through a competing green ring. */
+#page-board #col-open .dorm-card {
+  --board-card-status-tint: rgba(34, 197, 94, 0.075);
+  --board-card-left-accent: rgba(34, 197, 94, 0.55);
+  border-color: var(--board-card-border) !important;
+}
+
+#page-board #col-empty .dorm-card {
+  --board-card-status-tint: rgba(148, 163, 184, 0.05);
+  --board-card-left-accent: rgba(148, 163, 184, 0.26);
+}
+
+#page-board #col-closed .dorm-card,
+#page-board .dorm-card.dorm-closed {
+  --board-card-status-tint: rgba(148, 163, 184, 0.07);
+  --board-card-left-accent: rgba(148, 163, 184, 0.34);
+}
+
+/* Specialty markings own the outer ring. Open/closed/empty state remains visible by column and left accent. */
+#page-board .dorm-card.border-female {
+  --board-card-special-ring: rgba(239, 68, 68, 0.62);
+  --board-card-special-glow: rgba(239, 68, 68, 0.18);
+  border-color: rgba(239, 68, 68, 0.42) !important;
+}
+
+#page-board .dorm-card.border-band {
+  --board-card-special-ring: rgba(56, 189, 248, 0.62);
+  --board-card-special-glow: rgba(56, 189, 248, 0.18);
+  border-color: rgba(56, 189, 248, 0.42) !important;
+}
+
+#page-board .dorm-card:hover {
+  transform: translateY(-1px) scale(1.004) !important;
+  box-shadow:
+    var(--glass-highlight),
+    var(--shadow-medium),
+    inset 4px 0 0 var(--board-card-left-accent),
+    0 0 0 1px var(--board-card-special-ring),
+    0 0 20px var(--board-card-special-glow) !important;
 }
 
 #page-board .dorm-card > .absolute {
@@ -28,8 +86,9 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 0.62rem !important;
+  font-size: 0.68rem !important;
   line-height: 1 !important;
+  letter-spacing: 0.07em !important;
 }
 
 #page-board .dorm-card > .text-4xl {
@@ -39,9 +98,9 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 1.7rem !important;
+  font-size: 1.62rem !important;
   line-height: 0.96 !important;
-  letter-spacing: -0.045em !important;
+  letter-spacing: -0.035em !important;
 }
 
 #page-board .dorm-card > .text-xs.text-muted.font-bold.uppercase {
@@ -52,8 +111,10 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 0.64rem !important;
+  font-size: 0.78rem !important;
   line-height: 1 !important;
+  letter-spacing: 0.06em !important;
+  color: var(--text-soft, var(--text-muted)) !important;
 }
 
 #page-board .dorm-card > .text-xl.font-black.font-tabular {
@@ -61,8 +122,9 @@
   justify-self: end;
   margin-top: 0 !important;
   white-space: nowrap;
-  font-size: 1.1rem !important;
+  font-size: 1.14rem !important;
   line-height: 1 !important;
+  color: var(--text) !important;
 }
 
 #page-board .dorm-card > .timer-display,
@@ -70,8 +132,9 @@
   grid-area: timer;
   justify-self: center;
   margin-top: 0.05rem !important;
-  font-size: 1.28rem !important;
+  font-size: 1.45rem !important;
   line-height: 1 !important;
+  letter-spacing: -0.035em !important;
 }
 
 #page-board .dorm-card > .text-sm.font-bold.text-center.mt-1 {
@@ -84,8 +147,59 @@
   padding-bottom: 0.42rem !important;
 }
 
+.fullscreen-board #page-board .dorm-card > .text-4xl {
+  font-size: 1.58rem !important;
+}
+
+.fullscreen-board #page-board .dorm-card > .text-xs.text-muted.font-bold.uppercase {
+  font-size: 0.76rem !important;
+}
+
+.fullscreen-board #page-board .dorm-card > .timer-display,
+.fullscreen-board #page-board .dorm-card > .text-3xl.font-mono.font-black.font-tabular {
+  font-size: 1.42rem !important;
+}
+
+.theme-light #page-board .dorm-card {
+  --board-card-border: rgba(100, 116, 139, 0.22);
+  --board-card-status-tint: rgba(255, 255, 255, 0.52);
+  background:
+    linear-gradient(145deg, var(--board-card-status-tint), rgba(255,255,255,0.62)),
+    var(--glass-bg) !important;
+}
+
+.theme-light #page-board #col-open .dorm-card {
+  --board-card-status-tint: rgba(22, 163, 74, 0.105);
+  --board-card-left-accent: rgba(22, 163, 74, 0.58);
+}
+
+.theme-light #page-board .dorm-card.border-female {
+  --board-card-special-ring: rgba(185, 28, 28, 0.58);
+  --board-card-special-glow: rgba(185, 28, 28, 0.12);
+  border-color: rgba(185, 28, 28, 0.34) !important;
+}
+
+.theme-light #page-board .dorm-card.border-band {
+  --board-card-special-ring: rgba(2, 132, 199, 0.56);
+  --board-card-special-glow: rgba(2, 132, 199, 0.12);
+  border-color: rgba(2, 132, 199, 0.34) !important;
+}
+
 @media (max-width: 1024px) {
   #page-board .dorm-card {
     min-height: 78px !important;
+  }
+
+  #page-board .dorm-card > .text-4xl {
+    font-size: 1.5rem !important;
+  }
+
+  #page-board .dorm-card > .text-xs.text-muted.font-bold.uppercase {
+    font-size: 0.72rem !important;
+  }
+
+  #page-board .dorm-card > .timer-display,
+  #page-board .dorm-card > .text-3xl.font-mono.font-black.font-tabular {
+    font-size: 1.34rem !important;
   }
 }

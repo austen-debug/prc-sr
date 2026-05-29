@@ -53,6 +53,15 @@ function formatElapsedFromOpenedAt(openedAt, closedAt = new Date().toISOString()
   return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
 }
 
+function isManualClosedTimerOverride(record) {
+  const value = record?.manual_closed_timer_override;
+  return value === true || value === 'true';
+}
+
+function isValidClosedTimer(value) {
+  return /^\d{1,4}:\d{2}$/.test(String(value || '').trim());
+}
+
 function normalizeDormUpdate(incomingRecord, existingRecord, now) {
   if (!existingRecord || existingRecord.type !== 'dorm') {
     return incomingRecord;
@@ -63,8 +72,15 @@ function normalizeDormUpdate(incomingRecord, existingRecord, now) {
 
   // Once a dorm is closed, its timing fields are locked at the first recorded close.
   // Later stale modal saves may update editable fields, but they cannot reopen the dorm
-  // or replace closed_timer/closed_at with a later running timer.
+  // or replace closed_timer/closed_at with a later running timer. A right-click instructor
+  // edit may intentionally correct the final timer by setting manual_closed_timer_override.
   if (existingState === 'closed') {
+    const manualTimerOverride = isManualClosedTimerOverride(incomingRecord);
+    const incomingClosedTimer = String(incomingRecord.closed_timer || '').trim();
+    const preservedClosedTimer = manualTimerOverride && isValidClosedTimer(incomingClosedTimer)
+      ? incomingClosedTimer
+      : (existingRecord.closed_timer || incomingRecord.closed_timer || '00:00');
+
     return {
       ...existingRecord,
       ...incomingRecord,
@@ -73,9 +89,10 @@ function normalizeDormUpdate(incomingRecord, existingRecord, now) {
       phase: 'Closed',
       opened_at: existingRecord.opened_at || incomingRecord.opened_at || '',
       closed_at: existingRecord.closed_at || incomingRecord.closed_at || now,
-      closed_timer: existingRecord.closed_timer || incomingRecord.closed_timer || '00:00',
+      closed_timer: preservedClosedTimer,
       overtime_sound_sent: existingRecord.overtime_sound_sent || incomingRecord.overtime_sound_sent || 'false',
       overtime_sound_at: existingRecord.overtime_sound_at || incomingRecord.overtime_sound_at || '',
+      manual_closed_timer_override: undefined,
       __backendId: existingRecord.__backendId || incomingRecord.__backendId
     };
   }
@@ -95,6 +112,7 @@ function normalizeDormUpdate(incomingRecord, existingRecord, now) {
       opened_at: openedAt,
       closed_at: closedAt,
       closed_timer: incomingRecord.closed_timer || formatElapsedFromOpenedAt(openedAt, closedAt),
+      manual_closed_timer_override: undefined,
       __backendId: existingRecord.__backendId || incomingRecord.__backendId
     };
   }

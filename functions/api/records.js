@@ -58,6 +58,11 @@ function isManualClosedTimerOverride(record) {
   return value === true || value === 'true';
 }
 
+function isManualDormReopenOverride(record) {
+  const value = record?.manual_reopen_override;
+  return value === true || value === 'true';
+}
+
 function isValidClosedTimer(value) {
   return /^\d{1,4}:\d{2}$/.test(String(value || '').trim());
 }
@@ -69,6 +74,25 @@ function normalizeDormUpdate(incomingRecord, existingRecord, now) {
 
   const existingState = String(existingRecord.state || '').toLowerCase();
   const incomingState = String(incomingRecord.state || '').toLowerCase();
+
+  // A right-click instructor fail-safe may intentionally reopen a closed dorm.
+  // This is the only path that may move a closed dorm back to open; stale devices
+  // still cannot reopen a closed dorm because they do not send manual_reopen_override.
+  if (existingState === 'closed' && incomingState === 'open' && isManualDormReopenOverride(incomingRecord)) {
+    return {
+      ...existingRecord,
+      ...incomingRecord,
+      type: 'dorm',
+      state: 'open',
+      phase: incomingRecord.phase || 'OPEN',
+      opened_at: incomingRecord.opened_at || now,
+      closed_at: '',
+      closed_timer: '',
+      manual_reopen_override: undefined,
+      manual_closed_timer_override: undefined,
+      __backendId: existingRecord.__backendId || incomingRecord.__backendId
+    };
+  }
 
   // Once a dorm is closed, its timing fields are locked at the first recorded close.
   // Later stale modal saves may update editable fields, but they cannot reopen the dorm
@@ -92,6 +116,7 @@ function normalizeDormUpdate(incomingRecord, existingRecord, now) {
       closed_timer: preservedClosedTimer,
       overtime_sound_sent: existingRecord.overtime_sound_sent || incomingRecord.overtime_sound_sent || 'false',
       overtime_sound_at: existingRecord.overtime_sound_at || incomingRecord.overtime_sound_at || '',
+      manual_reopen_override: undefined,
       manual_closed_timer_override: undefined,
       __backendId: existingRecord.__backendId || incomingRecord.__backendId
     };
@@ -112,6 +137,7 @@ function normalizeDormUpdate(incomingRecord, existingRecord, now) {
       opened_at: openedAt,
       closed_at: closedAt,
       closed_timer: incomingRecord.closed_timer || formatElapsedFromOpenedAt(openedAt, closedAt),
+      manual_reopen_override: undefined,
       manual_closed_timer_override: undefined,
       __backendId: existingRecord.__backendId || incomingRecord.__backendId
     };
@@ -128,6 +154,8 @@ function normalizeDormUpdate(incomingRecord, existingRecord, now) {
       opened_at: existingRecord.opened_at || incomingRecord.opened_at || '',
       closed_at: '',
       closed_timer: '',
+      manual_reopen_override: undefined,
+      manual_closed_timer_override: undefined,
       __backendId: existingRecord.__backendId || incomingRecord.__backendId
     };
   }

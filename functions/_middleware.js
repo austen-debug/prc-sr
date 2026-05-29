@@ -11,7 +11,8 @@ const UI_STYLESHEETS = [
 const UI_HEAD_SCRIPTS = [
   '<script src="/js/prc-dash-runtime-fixes.js" defer></script>',
   '<script src="/js/prc-dash-sat-arrivals.js" defer></script>',
-  '<script src="/js/prc-dash-space-force.js" defer></script>'
+  '<script src="/js/prc-dash-space-force.js" defer></script>',
+  '<script src="/js/prc-dash-dorm-reopen.js" defer></script>'
 ];
 
 const PRINT_ARCHIVE_FUNCTION = String.raw`

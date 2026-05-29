@@ -113,7 +113,8 @@
   grid-area: info;
   justify-self: start;
   margin-top: 0 !important;
-  max-width: 100%;
+  margin-left: 0.08rem !important;
+  max-width: calc(100% - 0.08rem);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -159,6 +160,7 @@
 
 .fullscreen-board #page-board .dorm-card > .text-xs.text-muted.font-bold.uppercase {
   font-size: 0.76rem !important;
+  margin-left: 0.08rem !important;
 }
 
 .fullscreen-board #page-board .dorm-card > .timer-display,
@@ -202,6 +204,7 @@
 
   #page-board .dorm-card > .text-xs.text-muted.font-bold.uppercase {
     font-size: 0.72rem !important;
+    margin-left: 0.06rem !important;
   }
 
   #page-board .dorm-card > .timer-display,

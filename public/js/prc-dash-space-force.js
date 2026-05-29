@@ -6,6 +6,7 @@
   let airportEditOpenPatched = false;
   let renderAirportBusLogPatched = false;
   let renderAllPatchedForSf = false;
+  let busCardStylesPatched = false;
 
   function n(value) {
     const parsed = Number(value || 0);
@@ -28,6 +29,13 @@
     } catch (_) {
       return '';
     }
+  }
+
+  function formatDepartedTime(value) {
+    if (!value) return '—';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '—';
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
   }
 
   function findInputWrapper(inputId) {
@@ -77,6 +85,80 @@
     }
 
     return true;
+  }
+
+  function ensureBusCardStyles() {
+    if (busCardStylesPatched || document.getElementById('prc-bus-card-styles')) return;
+
+    const style = document.createElement('style');
+    style.id = 'prc-bus-card-styles';
+    style.textContent = `
+      #page-board #active-buses .bus-badge {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        justify-content: center !important;
+        min-width: 124px !important;
+        min-height: 142px !important;
+        padding: 0.72rem 0.86rem !important;
+        gap: 0.17rem !important;
+        text-align: left !important;
+        white-space: normal !important;
+        line-height: 1.12 !important;
+        font-size: 0.92rem !important;
+      }
+
+      #page-board #active-buses .prc-bus-card-title {
+        display: block !important;
+        font-size: 1.16rem !important;
+        font-weight: 950 !important;
+        letter-spacing: 0.035em !important;
+        line-height: 1 !important;
+        margin-bottom: 0.16rem !important;
+      }
+
+      #page-board #active-buses .prc-bus-card-line {
+        display: block !important;
+        font-size: 0.92rem !important;
+        font-weight: 850 !important;
+        letter-spacing: 0.035em !important;
+        line-height: 1.1 !important;
+      }
+
+      #page-board #active-buses .prc-bus-card-dept {
+        display: block !important;
+        width: 100% !important;
+        margin-top: 0.34rem !important;
+        padding-top: 0.3rem !important;
+        border-top: 1px solid rgba(255,255,255,0.16);
+        font-size: 0.74rem !important;
+        font-weight: 900 !important;
+        letter-spacing: 0.075em !important;
+        opacity: 0.9;
+      }
+
+      .theme-light #page-board #active-buses .prc-bus-card-dept {
+        border-top-color: rgba(100,116,139,0.24);
+      }
+
+      @media (max-width: 1024px) {
+        #page-board #active-buses .bus-badge {
+          min-width: 112px !important;
+          min-height: 132px !important;
+          padding: 0.64rem 0.72rem !important;
+        }
+
+        #page-board #active-buses .prc-bus-card-title {
+          font-size: 1.06rem !important;
+        }
+
+        #page-board #active-buses .prc-bus-card-line {
+          font-size: 0.84rem !important;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+    busCardStylesPatched = true;
   }
 
   function addSpaceForceInputs() {
@@ -171,6 +253,8 @@
   }
 
   function updateActiveBusSfBadges() {
+    ensureBusCardStyles();
+
     const container = document.getElementById('active-buses');
     if (!container || typeof allData === 'undefined') return;
 
@@ -185,14 +269,22 @@
       const females = n(bus.female_count);
       const nats = n(bus.nat_count);
       const sf = n(bus.space_force_count);
-      const prefix = bus.bus_type === 'local'
+      const departed = formatDepartedTime(bus.created_at || bus.departed_at);
+      const title = bus.bus_type === 'local'
         ? `LOCAL – ${bus.destination || bus.originating_destination || 'LOCAL'}`
         : `BUS #${bus.bus_id || ''}`;
-      const label = `${prefix} – ${otw} OTW | ${females} F | ${nats} NAT | ${sf} SF`;
+      const plainLabel = `${title}: ${otw} OTW, ${females} FEMALE, ${nats} NAT, ${sf} SPACE FORCE, DEPT ${departed}`;
 
-      button.textContent = label;
-      button.title = `Confirm arrival: ${label}`;
-      button.setAttribute('aria-label', `Confirm arrival: ${label}`);
+      button.innerHTML = `
+        <span class="prc-bus-card-title">${safeEscape(title)}</span>
+        <span class="prc-bus-card-line">${otw} OTW</span>
+        <span class="prc-bus-card-line">${females} FEMALE</span>
+        <span class="prc-bus-card-line">${nats} NAT</span>
+        <span class="prc-bus-card-line">${sf} SPACE FORCE</span>
+        <span class="prc-bus-card-dept">DEPT: ${safeEscape(departed)}</span>
+      `;
+      button.title = `Confirm arrival: ${plainLabel}`;
+      button.setAttribute('aria-label', `Confirm arrival: ${plainLabel}`);
     });
   }
 
@@ -392,6 +484,7 @@
   }
 
   function startSpaceForcePatch() {
+    ensureBusCardStyles();
     addSpaceForceInputs();
     ensureAirportLogSfColumn();
     patchAirportDispatchForm();
@@ -403,6 +496,7 @@
     updateActiveBusSfBadges();
 
     setInterval(() => {
+      ensureBusCardStyles();
       addSpaceForceInputs();
       ensureAirportLogSfColumn();
       patchAirportDispatchForm();
@@ -412,7 +506,7 @@
       patchRenderAllForSf();
       updateAirportLogRowsWithSf();
       updateActiveBusSfBadges();
-    }, 1000);
+    }, 750);
   }
 
   if (document.readyState === 'loading') {

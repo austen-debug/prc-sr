@@ -1,5 +1,5 @@
 // PRC DASH local bus edit support
-// Shows local bus records in the Airport editable bus log and allows their counts to be edited.
+// Shows local bus records in the Airport editable bus log and allows their counts and identity to be edited.
 (function () {
   let renderPatched = false;
   let submitPatched = false;
@@ -54,6 +54,17 @@
     return `Edit Bus #${bus.bus_id || ''}`;
   }
 
+  function getBusIdentityLabel(bus) {
+    return bus?.bus_type === 'local' ? 'Local Bus Name' : 'Bus Number';
+  }
+
+  function getBusIdentityValue(bus) {
+    if (!bus) return '';
+    return bus.bus_type === 'local'
+      ? String(bus.destination || bus.originating_destination || '').trim()
+      : String(bus.bus_id || '').trim();
+  }
+
   function getEditableBuses(sourceBuses) {
     const wg = getActiveWeekGroupSafe();
     const records = Array.isArray(sourceBuses)
@@ -106,7 +117,7 @@
   function updateHelpText() {
     const help = document.querySelector('#page-airport .surface h3 + .text-xs.text-muted');
     if (help) {
-      help.textContent = 'Click any airport or local bus to edit OTW, female, naturalization, or Space Force counts.';
+      help.textContent = 'Click any airport or local bus to edit bus number/name, OTW, female, naturalization, or Space Force counts.';
     }
   }
 
@@ -176,6 +187,28 @@
     if (sfTotalEl) sfTotalEl.textContent = String(buses.reduce((sum, bus) => sum + n(bus.space_force_count), 0));
   }
 
+  function addBusIdentityEditInput(bus) {
+    const otwInput = document.getElementById('edit-bus-otw');
+    const otwWrapper = otwInput ? otwInput.closest('div') : null;
+
+    if (!otwWrapper) return;
+
+    if (!document.getElementById('edit-bus-identity')) {
+      otwWrapper.insertAdjacentHTML('beforebegin', `
+        <div>
+          <label id="edit-bus-identity-label" class="block text-sm font-medium mb-1" for="edit-bus-identity">Bus Number</label>
+          <input id="edit-bus-identity" type="text" class="w-full border rounded px-3 py-2 bg-transparent" style="border-color:var(--border);color:var(--text);" maxlength="40">
+          <div id="edit-bus-identity-error" class="text-red-500 text-xs mt-1 hidden"></div>
+        </div>
+      `);
+    }
+
+    const label = document.getElementById('edit-bus-identity-label');
+    const input = document.getElementById('edit-bus-identity');
+    if (label) label.textContent = getBusIdentityLabel(bus);
+    if (input && bus) input.value = getBusIdentityValue(bus);
+  }
+
   function addSpaceForceEditInput() {
     const natInput = document.getElementById('edit-bus-nat');
     const natWrapper = natInput ? natInput.closest('div') : null;
@@ -192,7 +225,7 @@
   }
 
   function clearEditErrors() {
-    ['edit-bus-otw-error', 'edit-bus-female-error', 'edit-bus-nat-error', 'edit-bus-sf-error'].forEach(id => {
+    ['edit-bus-identity-error', 'edit-bus-otw-error', 'edit-bus-female-error', 'edit-bus-nat-error', 'edit-bus-sf-error'].forEach(id => {
       const el = document.getElementById(id);
       if (!el) return;
       el.textContent = '';
@@ -214,8 +247,6 @@
   }
 
   function validateEditCounts(otw, females, nats, sf) {
-    clearEditErrors();
-
     if (!Number.isFinite(otw) || otw < 0 || otw > 44) {
       showEditError('edit-bus-otw-error', 'OTW must be between 0 and 44.');
       return false;
@@ -239,6 +270,20 @@
     return true;
   }
 
+  function validateBusIdentity(bus, identity) {
+    if (bus.bus_type === 'local' && !identity) {
+      showEditError('edit-bus-identity-error', 'Local bus name is required.');
+      return false;
+    }
+
+    if (bus.bus_type === 'airport' && !identity) {
+      showEditError('edit-bus-identity-error', 'Bus number is required.');
+      return false;
+    }
+
+    return true;
+  }
+
   function openEditableBusModal(id) {
     const bus = typeof allData !== 'undefined'
       ? allData.find(record => record.__backendId === id)
@@ -247,16 +292,19 @@
     if (!isEditableBus(bus)) return;
 
     editBusId = id;
+    addBusIdentityEditInput(bus);
     addSpaceForceEditInput();
 
     const title = document.getElementById('airport-bus-edit-title');
     if (title) title.textContent = busEditTitle(bus);
 
+    const identityInput = document.getElementById('edit-bus-identity');
     const otwInput = document.getElementById('edit-bus-otw');
     const femaleInput = document.getElementById('edit-bus-female');
     const natInput = document.getElementById('edit-bus-nat');
     const sfInput = document.getElementById('edit-bus-sf');
 
+    if (identityInput) identityInput.value = getBusIdentityValue(bus);
     if (otwInput) otwInput.value = n(bus.otw_count);
     if (femaleInput) femaleInput.value = n(bus.female_count);
     if (natInput) natInput.value = n(bus.nat_count);
@@ -281,24 +329,44 @@
     event.stopPropagation();
     event.stopImmediatePropagation();
 
+    clearEditErrors();
+
+    const identity = String(document.getElementById('edit-bus-identity')?.value || '').trim();
     const otw = n(document.getElementById('edit-bus-otw')?.value);
     const females = n(document.getElementById('edit-bus-female')?.value);
     const nats = n(document.getElementById('edit-bus-nat')?.value);
     const sf = n(document.getElementById('edit-bus-sf')?.value);
 
+    if (!validateBusIdentity(bus, identity)) return;
     if (!validateEditCounts(otw, females, nats, sf)) return;
 
-    const result = await window.dataSdk.update({
+    const identityPatch = bus.bus_type === 'local'
+      ? { destination: identity, originating_destination: identity }
+      : { bus_id: identity };
+
+    const updatedBus = {
       ...bus,
+      ...identityPatch,
       otw_count: otw,
       female_count: females,
       nat_count: nats,
       space_force_count: sf,
       updated_at: new Date().toISOString()
-    });
+    };
+
+    const result = await window.dataSdk.update(updatedBus);
 
     if (result && result.isOk) {
+      const index = allData.findIndex(record => record.__backendId === editBusId);
+      if (index >= 0) {
+        allData[index] = {
+          ...allData[index],
+          ...(result.data || updatedBus)
+        };
+      }
+
       if (typeof closeAirportBusEditModal === 'function') closeAirportBusEditModal();
+      if (typeof renderAll === 'function') renderAll();
       renderEditableBusLog();
     } else {
       const msg = document.getElementById('edit-bus-msg');
@@ -365,12 +433,14 @@
     patchBusLogRenderers();
     patchRenderAll();
     patchSubmitCapture();
+    addBusIdentityEditInput(null);
     addSpaceForceEditInput();
     renderEditableBusLog();
 
     setInterval(() => {
       patchBusLogRenderers();
       patchRenderAll();
+      addBusIdentityEditInput(null);
       addSpaceForceEditInput();
       renderEditableBusLog();
     }, 1000);

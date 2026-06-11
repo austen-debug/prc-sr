@@ -4,8 +4,9 @@
   let styleReady = false;
   let squadronPageReady = false;
   let navPatched = false;
-  let dormCardPatched = false;
   let renderAllPatched = false;
+  let boardDormSignature = '';
+  let squadronDormSignature = '';
 
   function n(value) {
     const parsed = Number(value || 0);
@@ -133,159 +134,180 @@
         flex-shrink: 0;
       }
 
-      .gate-dorm-card {
-        min-height: 156px;
+      #page-board .gate-dorm-card,
+      #page-squadron .gate-dorm-card {
+        min-height: 156px !important;
         display: grid !important;
-        grid-template-rows: auto auto 1fr auto;
+        grid-template-rows: auto auto minmax(2.65rem, 1fr) auto !important;
         align-items: stretch !important;
-        gap: 0.18rem;
+        gap: 0.18rem !important;
         padding: 0.78rem 0.86rem 0.72rem !important;
-        position: relative;
-        overflow: hidden;
+        position: relative !important;
+        overflow: hidden !important;
         cursor: default !important;
       }
 
-      .gate-dorm-card .gate-dorm-top {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) auto;
-        align-items: start;
-        gap: 0.55rem;
-        min-width: 0;
+      #page-board .gate-dorm-card .gate-dorm-top,
+      #page-squadron .gate-dorm-card .gate-dorm-top {
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) minmax(6.5rem, max-content) !important;
+        align-items: start !important;
+        column-gap: 0.75rem !important;
+        width: 100% !important;
+        min-width: 0 !important;
       }
 
-      .gate-dorm-card .gate-dorm-name {
-        min-width: 0;
-        font-size: clamp(1.75rem, 2.45vw, 2.7rem);
-        font-weight: 950;
-        letter-spacing: -0.055em;
-        line-height: 0.95;
-        overflow-wrap: anywhere;
+      #page-board .gate-dorm-card .gate-dorm-name,
+      #page-squadron .gate-dorm-card .gate-dorm-name {
+        min-width: 0 !important;
+        justify-self: start !important;
+        align-self: start !important;
+        text-align: left !important;
+        font-size: clamp(1.75rem, 2.45vw, 2.7rem) !important;
+        font-weight: 950 !important;
+        letter-spacing: -0.055em !important;
+        line-height: 0.95 !important;
+        overflow-wrap: anywhere !important;
       }
 
-      .gate-dorm-card .gate-dorm-airman {
-        max-width: 45%;
-        font-size: 0.62rem;
-        font-weight: 950;
-        letter-spacing: 0.07em;
-        text-transform: uppercase;
-        text-align: right;
-        color: var(--text-muted);
-        line-height: 1.05;
-        padding-top: 0.08rem;
-        overflow-wrap: anywhere;
+      #page-board .gate-dorm-card .gate-dorm-airman,
+      #page-squadron .gate-dorm-card .gate-dorm-airman {
+        justify-self: end !important;
+        align-self: start !important;
+        max-width: 8.75rem !important;
+        min-width: 0 !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        overflow-wrap: normal !important;
+        word-break: normal !important;
+        hyphens: none !important;
+        text-align: right !important;
+        color: var(--text-muted) !important;
+        font-size: 0.62rem !important;
+        font-weight: 950 !important;
+        letter-spacing: 0.07em !important;
+        text-transform: uppercase !important;
+        line-height: 1.05 !important;
+        padding-top: 0.08rem !important;
       }
 
-      .gate-dorm-card .gate-dorm-info {
-        justify-self: start;
-        text-align: left;
-        font-size: 0.72rem;
-        font-weight: 900;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        color: var(--text-muted);
-        line-height: 1.05;
-        margin-top: 0.08rem;
+      #page-board .gate-dorm-card .gate-dorm-info,
+      #page-squadron .gate-dorm-card .gate-dorm-info {
+        justify-self: start !important;
+        align-self: start !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        text-align: left !important;
+        margin-top: 0.08rem !important;
+        color: var(--text-muted) !important;
+        font-size: 0.72rem !important;
+        font-weight: 900 !important;
+        letter-spacing: 0.08em !important;
+        line-height: 1.05 !important;
+        text-transform: uppercase !important;
       }
 
-      .gate-dorm-card .gate-dorm-status-wrap {
-        align-self: center;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        padding: 0.28rem 0;
+      #page-board .gate-dorm-card .gate-dorm-status-wrap,
+      #page-squadron .gate-dorm-card .gate-dorm-status-wrap {
+        justify-self: stretch !important;
+        align-self: center !important;
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        width: 100% !important;
+        padding: 0.48rem 0 !important;
       }
 
-      .gate-dorm-card .gate-dorm-status {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        max-width: 100%;
-        min-height: 1.65rem;
-        padding: 0.28rem 0.78rem;
-        border-radius: 999px;
-        border: 1px solid rgba(148, 163, 184, 0.26);
-        background: rgba(255, 255, 255, 0.055);
-        color: var(--text);
-        font-size: 0.78rem;
-        font-weight: 950;
-        letter-spacing: 0.105em;
-        text-transform: uppercase;
-        text-align: center;
-        line-height: 1.05;
-        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+      #page-board .gate-dorm-card .gate-dorm-status,
+      #page-squadron .gate-dorm-card .gate-dorm-status {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        max-width: 100% !important;
+        min-height: 1.65rem !important;
+        padding: 0.28rem 0.78rem !important;
+        border-radius: 999px !important;
+        border: 1px solid rgba(148, 163, 184, 0.26) !important;
+        background: rgba(255, 255, 255, 0.055) !important;
+        color: var(--text) !important;
+        font-size: 0.78rem !important;
+        font-weight: 950 !important;
+        letter-spacing: 0.105em !important;
+        text-transform: uppercase !important;
+        text-align: center !important;
+        line-height: 1.05 !important;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
       }
 
-      .gate-dorm-card .gate-dorm-status[data-state='open'] {
-        border-color: rgba(34, 197, 94, 0.36);
-        background: rgba(34, 197, 94, 0.12);
-        color: #86efac;
+      #page-board .gate-dorm-card .gate-dorm-status[data-state='open'],
+      #page-squadron .gate-dorm-card .gate-dorm-status[data-state='open'] {
+        border-color: rgba(34, 197, 94, 0.36) !important;
+        background: rgba(34, 197, 94, 0.12) !important;
+        color: #86efac !important;
       }
 
-      .gate-dorm-card .gate-dorm-status[data-state='closed'] {
-        border-color: rgba(148, 163, 184, 0.24);
-        background: rgba(148, 163, 184, 0.08);
-        color: var(--text-muted);
+      #page-board .gate-dorm-card .gate-dorm-status[data-state='closed'],
+      #page-squadron .gate-dorm-card .gate-dorm-status[data-state='closed'] {
+        border-color: rgba(148, 163, 184, 0.24) !important;
+        background: rgba(148, 163, 184, 0.08) !important;
+        color: var(--text-muted) !important;
       }
 
-      .gate-dorm-card .gate-dorm-status[data-state='empty'] {
-        border-color: rgba(148, 163, 184, 0.18);
-        background: rgba(148, 163, 184, 0.055);
-        color: var(--text-muted);
+      #page-board .gate-dorm-card .gate-dorm-status[data-state='empty'],
+      #page-squadron .gate-dorm-card .gate-dorm-status[data-state='empty'] {
+        border-color: rgba(148, 163, 184, 0.18) !important;
+        background: rgba(148, 163, 184, 0.055) !important;
+        color: var(--text-muted) !important;
       }
 
-      .gate-dorm-card .gate-dorm-bottom {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) auto;
-        align-items: end;
-        gap: 0.65rem;
-        min-width: 0;
+      #page-board .gate-dorm-card .gate-dorm-bottom,
+      #page-squadron .gate-dorm-card .gate-dorm-bottom {
+        align-self: end !important;
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) auto !important;
+        align-items: end !important;
+        gap: 0.65rem !important;
+        width: 100% !important;
+        min-width: 0 !important;
       }
 
-      .gate-dorm-card .gate-dorm-timer {
-        justify-self: start;
-        min-height: 2rem;
-        font-size: 2.15rem;
-        font-weight: 950;
-        line-height: 0.98;
-        letter-spacing: -0.045em;
-        font-variant-numeric: tabular-nums;
+      #page-board .gate-dorm-card .gate-dorm-timer,
+      #page-squadron .gate-dorm-card .gate-dorm-timer {
+        justify-self: start !important;
+        align-self: end !important;
+        min-height: 2rem !important;
+        font-size: 2.15rem !important;
+        font-weight: 950 !important;
+        line-height: 0.98 !important;
+        letter-spacing: -0.045em !important;
+        font-variant-numeric: tabular-nums !important;
       }
 
-      .gate-dorm-card .gate-dorm-timer.gate-empty-timer {
-        color: transparent;
+      #page-board .gate-dorm-card .gate-dorm-timer.gate-empty-timer,
+      #page-squadron .gate-dorm-card .gate-dorm-timer.gate-empty-timer {
+        color: transparent !important;
       }
 
-      .gate-dorm-card .gate-dorm-load {
-        justify-self: end;
-        font-size: 1.34rem;
-        font-weight: 950;
-        letter-spacing: -0.045em;
-        line-height: 1;
-        font-variant-numeric: tabular-nums;
-        color: var(--text);
-        white-space: nowrap;
+      #page-board .gate-dorm-card .gate-dorm-load,
+      #page-squadron .gate-dorm-card .gate-dorm-load {
+        justify-self: end !important;
+        align-self: end !important;
+        font-size: 1.34rem !important;
+        font-weight: 950 !important;
+        letter-spacing: -0.045em !important;
+        line-height: 1 !important;
+        font-variant-numeric: tabular-nums !important;
+        color: var(--text) !important;
+        white-space: nowrap !important;
       }
 
-      .dorm-closed.gate-dorm-card {
-        opacity: 0.62;
-      }
-
-      .fullscreen-board .gate-dorm-card {
-        min-height: 168px;
-      }
-
-      .fullscreen-board .gate-dorm-card .gate-dorm-timer {
-        font-size: 2.34rem;
-      }
-
-      .theme-light .gate-dorm-card .gate-dorm-status[data-state='open'] {
-        color: #166534;
-      }
-
+      .dorm-closed.gate-dorm-card { opacity: 0.62 !important; }
+      .fullscreen-board .gate-dorm-card { min-height: 168px !important; }
+      .fullscreen-board .gate-dorm-card .gate-dorm-timer { font-size: 2.34rem !important; }
+      .theme-light .gate-dorm-card .gate-dorm-status[data-state='open'] { color: #166534 !important; }
       .theme-light .gate-dorm-card .gate-dorm-status[data-state='closed'],
-      .theme-light .gate-dorm-card .gate-dorm-status[data-state='empty'] {
-        color: #64748b;
-      }
+      .theme-light .gate-dorm-card .gate-dorm-status[data-state='empty'] { color: #64748b !important; }
 
       @media (max-width: 768px) {
         .prc-active-buses-v3 #active-buses .bus-badge.prc-bus-card,
@@ -296,14 +318,8 @@
           padding: 0.66rem 0.72rem !important;
         }
 
-        .gate-squadron-header {
-          grid-template-columns: 1fr;
-        }
-
-        #page-squadron .dorm-dashboard {
-          grid-template-columns: 1fr;
-          overflow-y: auto;
-        }
+        .gate-squadron-header { grid-template-columns: 1fr; }
+        #page-squadron .dorm-dashboard { grid-template-columns: 1fr; overflow-y: auto; }
       }
     `;
 
@@ -353,6 +369,25 @@
     return 'var(--text)';
   }
 
+  function getDormSignature(dorms) {
+    return dorms.map(dorm => [
+      dorm.__backendId,
+      dorm.dorm_name,
+      dorm.assigned_airman,
+      dorm.sdq,
+      dorm.section,
+      dorm.inter_sec,
+      dorm.sex,
+      dorm.band,
+      dorm.state,
+      dorm.phase,
+      dorm.current_load,
+      dorm.max_load,
+      dorm.opened_at,
+      dorm.closed_timer
+    ].join('|')).join('~');
+  }
+
   function buildGateDormCard(dorm) {
     const borderClass = dorm.sex === 'female' ? 'border-female' : (dorm.band === 'true' ? 'border-band' : '');
     const closedClass = dorm.state === 'closed' ? 'dorm-closed' : '';
@@ -389,14 +424,33 @@
     `;
   }
 
-  function patchDormCardRenderer() {
+  function renderGateDormColumns(dorms, options) {
+    const force = Boolean(options && options.force);
+    const records = Array.isArray(dorms) ? dorms : getDormsForActiveWeek();
+    const signature = getDormSignature(records);
+
+    if (!force && signature === boardDormSignature) return;
+    boardDormSignature = signature;
+
+    ['empty', 'open', 'closed'].forEach(state => {
+      const col = document.getElementById('col-' + state);
+      if (!col) return;
+      const filtered = records.filter(dorm => dorm.state === state);
+      col.innerHTML = filtered.map(dorm => buildGateDormCard(dorm)).join('') || '<div class="text-muted text-xs">None</div>';
+    });
+  }
+
+  function patchDormRenderers() {
     try {
-      if (dormCardPatched || typeof buildBoardDormCard !== 'function') return;
       window.buildBoardDormCard = buildGateDormCard;
+      window.renderDormColumns = function patchedRenderDormColumns(dorms) {
+        renderGateDormColumns(dorms, { force: true });
+      };
+
       try { buildBoardDormCard = buildGateDormCard; } catch (_) {}
-      dormCardPatched = true;
+      try { renderDormColumns = window.renderDormColumns; } catch (_) {}
     } catch (error) {
-      console.warn('PRC GATE dorm card renderer patch failed:', error);
+      console.warn('PRC GATE dorm renderer patch failed:', error);
     }
   }
 
@@ -406,8 +460,7 @@
     const boardPage = document.getElementById('page-board');
     if (!boardPage) return;
 
-    const existing = document.getElementById('page-squadron');
-    if (!existing) {
+    if (!document.getElementById('page-squadron')) {
       boardPage.insertAdjacentHTML('afterend', `
         <main id="page-squadron" class="page gate-squadron-page" role="main" aria-label="Squadron Board">
           <div class="gate-squadron-title">
@@ -488,7 +541,7 @@
     }
   }
 
-  function renderSquadronBoard() {
+  function renderSquadronBoard(options) {
     ensureSquadronPage();
     if (!document.getElementById('page-squadron')) return;
 
@@ -507,6 +560,11 @@
     if (expectedEl) expectedEl.textContent = String(expected);
     if (localEl) localEl.textContent = typeof getLocalTime24 === 'function' ? getLocalTime24() : formatTime(new Date().toISOString());
 
+    const force = Boolean(options && options.force);
+    const signature = getDormSignature(dorms);
+    if (!force && signature === squadronDormSignature) return;
+    squadronDormSignature = signature;
+
     ['empty', 'open', 'closed'].forEach(state => {
       const col = document.getElementById(`squadron-col-${state}`);
       if (!col) return;
@@ -515,13 +573,14 @@
     });
   }
 
-  function patchRenderAllForSquadronBoard() {
+  function patchRenderAllForBoards() {
     try {
       if (renderAllPatched || typeof renderAll !== 'function') return;
       const originalRenderAll = renderAll;
       const patchedRenderAll = function patchedRenderAll(...args) {
         const result = originalRenderAll.apply(this, args);
-        renderSquadronBoard();
+        renderGateDormColumns(null, { force: true });
+        renderSquadronBoard({ force: true });
         return result;
       };
 
@@ -529,7 +588,7 @@
       try { renderAll = patchedRenderAll; } catch (_) {}
       renderAllPatched = true;
     } catch (error) {
-      console.warn('PRC GATE Squadron Board render patch failed:', error);
+      console.warn('PRC GATE board render patch failed:', error);
     }
   }
 
@@ -570,8 +629,6 @@
       const sf = n(bus.space_force_count);
       const departed = formatTime(bus.departed_at || bus.created_at);
 
-      // Match the older formatter's signature so it treats this final display as current
-      // and does not overwrite the Space Force/departure lines on the next pass.
       const legacySignature = `${title}|${otw}|${females}|${nat}`;
       const fullSignature = `${legacySignature}|${sf}|${departed}`;
 
@@ -597,8 +654,6 @@
     const nav = document.querySelector('.app-nav');
     if (!nav) return;
 
-    // If the browser is not actually in fullscreen, the board shell should not keep
-    // the app-nav hidden. This protects against stale fullscreen-board state after TV use.
     if (!document.fullscreenElement && document.body.classList.contains('fullscreen-board')) {
       document.body.classList.remove('fullscreen-board');
       const btn = document.getElementById('fullscreen-btn');
@@ -610,11 +665,12 @@
     ensureFinalStyles();
     ensureSquadronPage();
     patchNavigationForSquadronBoard();
-    patchDormCardRenderer();
-    patchRenderAllForSquadronBoard();
+    patchDormRenderers();
+    patchRenderAllForBoards();
     try { keepNavigationRecoverable(); } catch (error) { console.warn('PRC GATE nav recovery check failed:', error); }
-    try { normalizeActiveBusCards(); } catch (error) { console.warn('PRC GATE final active bus card pass failed:', error); }
+    try { renderGateDormColumns(); } catch (error) { console.warn('PRC GATE Status Board render failed:', error); }
     try { renderSquadronBoard(); } catch (error) { console.warn('PRC GATE Squadron Board render failed:', error); }
+    try { normalizeActiveBusCards(); } catch (error) { console.warn('PRC GATE final active bus card pass failed:', error); }
   }
 
   function startFinalAuditPatch() {

@@ -1,8 +1,8 @@
-/* PRC DASH Watermark / Background Tune */
+/* PRC GATE Watermark / Background Tune */
 body::before {
   position: fixed !important;
   inset: 0 !important;
-  background-image: url('/assets/prc-logo-blue.png') !important;
+  background-image: url('/assets/gate_emblem_large.png') !important;
   background-repeat: no-repeat !important;
   background-position: center center !important;
   background-size: min(72vw, 980px) auto !important;

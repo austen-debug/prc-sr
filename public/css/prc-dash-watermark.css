@@ -152,3 +152,70 @@ body > * {
   line-height: 1 !important;
   white-space: nowrap !important;
 }
+
+#page-board.page.active .gate-dorm-card {
+  min-height: 156px !important;
+  display: grid !important;
+  grid-template-rows: auto auto minmax(2.65rem, 1fr) auto !important;
+  align-items: stretch !important;
+  width: 100% !important;
+}
+
+#page-board.page.active .gate-dorm-card .gate-dorm-top {
+  width: 100% !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(6.5rem, max-content) !important;
+  align-items: start !important;
+  column-gap: 0.75rem !important;
+}
+
+#page-board.page.active .gate-dorm-card .gate-dorm-name {
+  justify-self: start !important;
+  align-self: start !important;
+  text-align: left !important;
+}
+
+#page-board.page.active .gate-dorm-card .gate-dorm-airman {
+  justify-self: end !important;
+  align-self: start !important;
+  max-width: 8.75rem !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  overflow-wrap: normal !important;
+  word-break: normal !important;
+  hyphens: none !important;
+  text-align: right !important;
+}
+
+#page-board.page.active .gate-dorm-card .gate-dorm-info {
+  justify-self: start !important;
+  width: 100% !important;
+  text-align: left !important;
+}
+
+#page-board.page.active .gate-dorm-card .gate-dorm-status-wrap {
+  justify-self: stretch !important;
+  align-self: center !important;
+  display: flex !important;
+  justify-content: center !important;
+  width: 100% !important;
+}
+
+#page-board.page.active .gate-dorm-card .gate-dorm-bottom {
+  justify-self: stretch !important;
+  align-self: end !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  width: 100% !important;
+}
+
+#page-board.page.active .gate-dorm-card .gate-dorm-timer {
+  justify-self: start !important;
+  align-self: end !important;
+}
+
+#page-board.page.active .gate-dorm-card .gate-dorm-load {
+  justify-self: end !important;
+  align-self: end !important;
+}

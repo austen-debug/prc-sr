@@ -1,21 +1,21 @@
 @import url('/css/prc-dash-modal-scroll.css');
 
-/* PRC DASH Danger Action Refinement */
+/* PRC GATE Danger / Confirmation Controls */
 :root {
-  --danger-bg: linear-gradient(135deg, rgba(127, 29, 29, 0.86), rgba(220, 38, 38, 0.92));
-  --danger-bg-strong: linear-gradient(135deg, rgba(127, 29, 29, 0.96), rgba(239, 68, 68, 0.98));
-  --danger-border: rgba(248, 113, 113, 0.36);
-  --danger-border-hover: rgba(252, 165, 165, 0.70);
-  --danger-shadow: 0 7px 18px rgba(127, 29, 29, 0.22);
-  --danger-shadow-confirm: 0 0 24px rgba(239, 68, 68, 0.32);
+  --danger-bg: linear-gradient(135deg, rgba(127, 29, 29, 0.82), rgba(220, 38, 38, 0.92));
+  --danger-bg-strong: linear-gradient(135deg, rgba(127, 29, 29, 0.98), rgba(239, 68, 68, 0.98));
+  --danger-border: rgba(248, 113, 113, 0.38);
+  --danger-border-hover: rgba(252, 165, 165, 0.72);
+  --danger-shadow: 0 8px 20px rgba(127, 29, 29, 0.26);
+  --danger-shadow-confirm: 0 0 24px rgba(239, 68, 68, 0.34);
 }
 
 .theme-light {
   --danger-bg: linear-gradient(135deg, rgba(153, 27, 27, 0.88), rgba(220, 38, 38, 0.92));
   --danger-bg-strong: linear-gradient(135deg, rgba(127, 29, 29, 0.96), rgba(239, 68, 68, 0.98));
-  --danger-border: rgba(185, 28, 28, 0.30);
-  --danger-border-hover: rgba(185, 28, 28, 0.58);
-  --danger-shadow: 0 6px 14px rgba(127, 29, 29, 0.14);
+  --danger-border: rgba(185, 28, 28, 0.32);
+  --danger-border-hover: rgba(185, 28, 28, 0.60);
+  --danger-shadow: 0 6px 14px rgba(127, 29, 29, 0.16);
   --danger-shadow-confirm: 0 0 20px rgba(185, 28, 28, 0.24);
 }
 
@@ -28,10 +28,18 @@ button[onclick*="initiateCloseout"],
   background: var(--danger-bg) !important;
   color: #ffffff !important;
   border: 1px solid var(--danger-border) !important;
+  border-radius: var(--radius-md) !important;
   box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.14),
+    var(--glass-highlight),
     var(--danger-shadow) !important;
-  text-shadow: 0 1px 10px rgba(0,0,0,0.28);
+  text-shadow: 0 1px 10px rgba(0,0,0,0.30);
+  transition:
+    transform var(--transition-fast),
+    border-radius var(--transition-medium),
+    border-color var(--transition-medium),
+    box-shadow var(--transition-medium),
+    background var(--transition-medium) !important;
+  will-change: transform, border-radius;
 }
 
 button[style*="background:#dc2626"]:hover,
@@ -43,47 +51,110 @@ button[onclick*="initiateCloseout"]:hover,
   background: var(--danger-bg-strong) !important;
   border-color: var(--danger-border-hover) !important;
   box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.18),
+    var(--glass-highlight),
     var(--danger-shadow),
-    0 0 12px rgba(239, 68, 68, 0.18) !important;
+    0 0 14px rgba(239, 68, 68, 0.22) !important;
+  transform: translateY(-1px);
+}
+
+button[style*="background:#dc2626"]:active,
+button[style*="background: #dc2626"]:active,
+button[style*="background:var(--red)"]:active,
+button[style*="background: var(--red)"]:active,
+button[onclick*="initiateCloseout"]:active,
+#closeout-btn:active {
+  transform: scaleX(0.965) scaleY(1.035) translateY(0) !important;
+  border-radius: 38% 62% 42% 58% / 58% 42% 62% 38% !important;
 }
 
 .modal-content button[style*="background:#dc2626"],
 .modal-content button[style*="background: #dc2626"],
 .modal-content button[style*="background:var(--red)"],
 .modal-content button[style*="background: var(--red)"] {
-  min-height: 34px !important;
-  padding: 0.5rem 0.8rem !important;
-  border-radius: 0.65rem !important;
-  font-size: 0.72rem !important;
+  min-height: 40px !important;
+  padding: 0.58rem 0.9rem !important;
+  border-radius: var(--radius-md) !important;
+  font-size: 0.74rem !important;
+  font-weight: 950 !important;
   line-height: 1 !important;
-  letter-spacing: 0.065em !important;
+  letter-spacing: 0.07em !important;
 }
 
 #closeout-btn {
-  min-height: 38px !important;
-  padding: 0.58rem 1rem !important;
-  border-radius: 0.75rem !important;
+  min-height: 40px !important;
+  padding: 0.62rem 1rem !important;
+  border-radius: var(--radius-md) !important;
   font-size: 0.78rem !important;
+  font-weight: 950 !important;
   letter-spacing: 0.07em !important;
 }
 
 #confirm-dialog .surface,
 #confirm-dialog > div {
-  border-color: rgba(248, 113, 113, 0.32) !important;
+  border-color: rgba(248, 113, 113, 0.34) !important;
   box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.14),
+    var(--glass-highlight),
     var(--shadow-strong),
     var(--danger-shadow-confirm) !important;
 }
 
+#confirm-dialog #confirm-yes,
+#confirm-dialog #confirm-no {
+  min-height: 42px !important;
+  border-radius: var(--radius-md) !important;
+  font-weight: 950 !important;
+  letter-spacing: 0.07em !important;
+  text-transform: uppercase;
+  transition:
+    transform var(--transition-fast),
+    border-radius var(--transition-medium),
+    border-color var(--transition-medium),
+    box-shadow var(--transition-medium),
+    background var(--transition-medium) !important;
+  will-change: transform, border-radius;
+}
+
 #confirm-dialog #confirm-yes {
   background: var(--danger-bg) !important;
+  color: #ffffff !important;
   border-color: var(--danger-border) !important;
+  box-shadow: var(--glass-highlight), var(--danger-shadow) !important;
+}
+
+#confirm-dialog #confirm-yes:hover {
+  background: var(--danger-bg-strong) !important;
+  border-color: var(--danger-border-hover) !important;
+  box-shadow: var(--glass-highlight), var(--danger-shadow), 0 0 14px rgba(239, 68, 68, 0.22) !important;
 }
 
 #confirm-dialog #confirm-no {
   background: var(--btn-neutral-gradient) !important;
   color: var(--text) !important;
   border-color: var(--glass-border) !important;
+  box-shadow: var(--glass-highlight), var(--shadow-soft) !important;
+}
+
+#confirm-dialog #confirm-no:hover {
+  border-color: var(--glass-border-strong) !important;
+  box-shadow: var(--glass-highlight), var(--shadow-medium), var(--shadow-glow-blue) !important;
+}
+
+#confirm-dialog #confirm-yes:active,
+#confirm-dialog #confirm-no:active {
+  transform: scaleX(0.965) scaleY(1.035) translateY(0) !important;
+  border-radius: 38% 62% 42% 58% / 58% 42% 62% 38% !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  button[style*="background:#dc2626"],
+  button[style*="background: #dc2626"],
+  button[style*="background:var(--red)"],
+  button[style*="background: var(--red)"],
+  button[onclick*="initiateCloseout"],
+  #closeout-btn,
+  #confirm-dialog #confirm-yes,
+  #confirm-dialog #confirm-no {
+    transform: none !important;
+    border-radius: var(--radius-md) !important;
+  }
 }

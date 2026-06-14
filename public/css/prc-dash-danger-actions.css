@@ -8,6 +8,11 @@
   --danger-border-hover: rgba(252, 165, 165, 0.72);
   --danger-shadow: 0 8px 20px rgba(127, 29, 29, 0.26);
   --danger-shadow-confirm: 0 0 24px rgba(239, 68, 68, 0.34);
+  --confirm-bg: rgba(0, 230, 118, 0.12);
+  --confirm-bg-hover: rgba(0, 230, 118, 0.22);
+  --confirm-border: rgba(0, 230, 118, 0.50);
+  --confirm-border-hover: rgba(0, 230, 118, 0.80);
+  --confirm-text: #a9ffce;
 }
 
 .theme-light {
@@ -17,28 +22,94 @@
   --danger-border-hover: rgba(185, 28, 28, 0.60);
   --danger-shadow: 0 6px 14px rgba(127, 29, 29, 0.16);
   --danger-shadow-confirm: 0 0 20px rgba(185, 28, 28, 0.24);
+  --confirm-bg: rgba(22, 163, 74, 0.12);
+  --confirm-bg-hover: rgba(22, 163, 74, 0.20);
+  --confirm-border: rgba(21, 128, 61, 0.36);
+  --confirm-border-hover: rgba(21, 128, 61, 0.58);
+  --confirm-text: #14532d;
+}
+
+.action-btn-tactical,
+.action-btn-destructive,
+.action-btn-confirm {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-height: 40px !important;
+  padding: 0.62rem 1rem !important;
+  border-radius: var(--radius-md) !important;
+  font-size: 0.78rem !important;
+  font-weight: 950 !important;
+  line-height: 1 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.07em !important;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition:
+    transform var(--transition-fast),
+    border-radius var(--transition-medium),
+    border-color var(--transition-medium),
+    box-shadow var(--transition-medium),
+    background var(--transition-medium),
+    color var(--transition-medium) !important;
+  will-change: transform, border-radius;
+}
+
+.action-btn-destructive {
+  background: rgba(255, 74, 74, 0.12) !important;
+  border-color: rgba(255, 74, 74, 0.50) !important;
+  color: #ff9e9e !important;
+  box-shadow: var(--glass-highlight), 0 4px 12px rgba(255, 74, 74, 0.10) !important;
+}
+
+.action-btn-destructive:hover,
+.action-btn-destructive:focus-visible {
+  background: rgba(255, 74, 74, 0.22) !important;
+  border-color: rgba(255, 74, 74, 0.80) !important;
+  color: #ffffff !important;
+  box-shadow: var(--glass-highlight), 0 0 14px rgba(255, 74, 74, 0.30) !important;
+}
+
+.action-btn-confirm {
+  background: var(--confirm-bg) !important;
+  border-color: var(--confirm-border) !important;
+  color: var(--confirm-text) !important;
+  box-shadow: var(--glass-highlight), 0 4px 12px rgba(0, 230, 118, 0.08) !important;
+}
+
+.action-btn-confirm:hover,
+.action-btn-confirm:focus-visible {
+  background: var(--confirm-bg-hover) !important;
+  border-color: var(--confirm-border-hover) !important;
+  color: #ffffff !important;
+  box-shadow: var(--glass-highlight), 0 0 14px rgba(0, 230, 118, 0.22) !important;
 }
 
 button[style*="background:#dc2626"],
 button[style*="background: #dc2626"],
 button[style*="background:var(--red)"],
 button[style*="background: var(--red)"],
+button[onclick*="delete"],
+button[onclick*="Delete"],
+button[onclick*="remove"],
+button[onclick*="Remove"],
 button[onclick*="initiateCloseout"],
 #closeout-btn {
-  background: var(--danger-bg) !important;
-  color: #ffffff !important;
-  border: 1px solid var(--danger-border) !important;
+  background: rgba(255, 74, 74, 0.12) !important;
+  color: #ff9e9e !important;
+  border: 1px solid rgba(255, 74, 74, 0.50) !important;
   border-radius: var(--radius-md) !important;
   box-shadow:
     var(--glass-highlight),
-    var(--danger-shadow) !important;
+    0 4px 12px rgba(255, 74, 74, 0.10) !important;
   text-shadow: 0 1px 10px rgba(0,0,0,0.30);
   transition:
     transform var(--transition-fast),
     border-radius var(--transition-medium),
     border-color var(--transition-medium),
     box-shadow var(--transition-medium),
-    background var(--transition-medium) !important;
+    background var(--transition-medium),
+    color var(--transition-medium) !important;
   will-change: transform, border-radius;
 }
 
@@ -46,14 +117,18 @@ button[style*="background:#dc2626"]:hover,
 button[style*="background: #dc2626"]:hover,
 button[style*="background:var(--red)"]:hover,
 button[style*="background: var(--red)"]:hover,
+button[onclick*="delete"]:hover,
+button[onclick*="Delete"]:hover,
+button[onclick*="remove"]:hover,
+button[onclick*="Remove"]:hover,
 button[onclick*="initiateCloseout"]:hover,
 #closeout-btn:hover {
-  background: var(--danger-bg-strong) !important;
-  border-color: var(--danger-border-hover) !important;
+  background: rgba(255, 74, 74, 0.22) !important;
+  border-color: rgba(255, 74, 74, 0.80) !important;
+  color: #ffffff !important;
   box-shadow:
     var(--glass-highlight),
-    var(--danger-shadow),
-    0 0 14px rgba(239, 68, 68, 0.22) !important;
+    0 0 14px rgba(255, 74, 74, 0.30) !important;
   transform: translateY(-1px);
 }
 
@@ -61,8 +136,15 @@ button[style*="background:#dc2626"]:active,
 button[style*="background: #dc2626"]:active,
 button[style*="background:var(--red)"]:active,
 button[style*="background: var(--red)"]:active,
+button[onclick*="delete"]:active,
+button[onclick*="Delete"]:active,
+button[onclick*="remove"]:active,
+button[onclick*="Remove"]:active,
 button[onclick*="initiateCloseout"]:active,
-#closeout-btn:active {
+#closeout-btn:active,
+.action-btn-tactical:active,
+.action-btn-destructive:active,
+.action-btn-confirm:active {
   transform: scaleX(0.965) scaleY(1.035) translateY(0) !important;
   border-radius: 38% 62% 42% 58% / 58% 42% 62% 38% !important;
 }
@@ -110,21 +192,23 @@ button[onclick*="initiateCloseout"]:active,
     border-radius var(--transition-medium),
     border-color var(--transition-medium),
     box-shadow var(--transition-medium),
-    background var(--transition-medium) !important;
+    background var(--transition-medium),
+    color var(--transition-medium) !important;
   will-change: transform, border-radius;
 }
 
 #confirm-dialog #confirm-yes {
-  background: var(--danger-bg) !important;
-  color: #ffffff !important;
-  border-color: var(--danger-border) !important;
-  box-shadow: var(--glass-highlight), var(--danger-shadow) !important;
+  background: var(--confirm-bg) !important;
+  color: var(--confirm-text) !important;
+  border-color: var(--confirm-border) !important;
+  box-shadow: var(--glass-highlight), 0 4px 12px rgba(0, 230, 118, 0.10) !important;
 }
 
 #confirm-dialog #confirm-yes:hover {
-  background: var(--danger-bg-strong) !important;
-  border-color: var(--danger-border-hover) !important;
-  box-shadow: var(--glass-highlight), var(--danger-shadow), 0 0 14px rgba(239, 68, 68, 0.22) !important;
+  background: var(--confirm-bg-hover) !important;
+  border-color: var(--confirm-border-hover) !important;
+  color: #ffffff !important;
+  box-shadow: var(--glass-highlight), 0 0 14px rgba(0, 230, 118, 0.22) !important;
 }
 
 #confirm-dialog #confirm-no {
@@ -183,10 +267,17 @@ body #page-squadron.gate-squadron-page .gate-squadron-shell .gate-squadron-subti
   button[style*="background: #dc2626"],
   button[style*="background:var(--red)"],
   button[style*="background: var(--red)"],
+  button[onclick*="delete"],
+  button[onclick*="Delete"],
+  button[onclick*="remove"],
+  button[onclick*="Remove"],
   button[onclick*="initiateCloseout"],
   #closeout-btn,
   #confirm-dialog #confirm-yes,
-  #confirm-dialog #confirm-no {
+  #confirm-dialog #confirm-no,
+  .action-btn-tactical,
+  .action-btn-destructive,
+  .action-btn-confirm {
     transform: none !important;
     border-radius: var(--radius-md) !important;
   }

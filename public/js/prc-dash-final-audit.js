@@ -39,183 +39,14 @@
       .app-nav { display: flex; }
       .fullscreen-board .app-nav { display: none !important; }
 
-      #page-board .gate-dorm-card,
-      #page-squadron .gate-dorm-card {
-        display: grid !important;
-        grid-template-columns: minmax(0, 1fr) max-content !important;
-        grid-template-rows: auto auto minmax(2.75rem, 1fr) auto !important;
-        grid-template-areas:
-          'name airman'
-          'info info'
-          'status status'
-          'timer load' !important;
-        justify-items: stretch !important;
-        align-items: stretch !important;
-        column-gap: 0.85rem !important;
-        row-gap: 0.22rem !important;
-        min-height: 156px !important;
-        width: 100% !important;
-        padding: 0.78rem 0.86rem 0.72rem !important;
-        position: relative !important;
-        overflow: hidden !important;
-        text-align: left !important;
-        cursor: default !important;
-      }
-
-      #page-board .gate-dorm-name,
-      #page-squadron .gate-dorm-name {
-        grid-area: name !important;
-        justify-self: start !important;
-        align-self: start !important;
-        min-width: 0 !important;
-        max-width: 100% !important;
-        text-align: left !important;
-        font-size: clamp(1.75rem, 2.45vw, 2.7rem) !important;
-        font-weight: 950 !important;
-        letter-spacing: -0.055em !important;
-        line-height: 0.95 !important;
-        white-space: nowrap !important;
-        overflow: hidden !important;
-        text-overflow: ellipsis !important;
-      }
-
-      #page-board .gate-dorm-airman,
-      #page-squadron .gate-dorm-airman {
-        grid-area: airman !important;
-        justify-self: end !important;
-        align-self: start !important;
-        max-width: 8.75rem !important;
-        min-width: 0 !important;
-        white-space: nowrap !important;
-        overflow: hidden !important;
-        text-overflow: ellipsis !important;
-        overflow-wrap: normal !important;
-        word-break: normal !important;
-        hyphens: none !important;
-        text-align: right !important;
-        color: var(--text-muted) !important;
-        font-size: 0.62rem !important;
-        font-weight: 950 !important;
-        letter-spacing: 0.07em !important;
-        text-transform: uppercase !important;
-        line-height: 1.05 !important;
-        padding-top: 0.08rem !important;
-      }
-
-      #page-board .gate-dorm-info,
-      #page-squadron .gate-dorm-info {
-        grid-area: info !important;
-        justify-self: start !important;
-        align-self: start !important;
-        width: 100% !important;
-        max-width: 100% !important;
-        text-align: left !important;
-        color: var(--text-muted) !important;
-        font-size: 0.72rem !important;
-        font-weight: 900 !important;
-        letter-spacing: 0.08em !important;
-        line-height: 1.05 !important;
-        text-transform: uppercase !important;
-        white-space: nowrap !important;
-        overflow: hidden !important;
-        text-overflow: ellipsis !important;
-      }
-
-      #page-board .gate-dorm-status-wrap,
-      #page-squadron .gate-dorm-status-wrap {
-        grid-area: status !important;
-        justify-self: stretch !important;
-        align-self: center !important;
-        display: flex !important;
-        justify-content: center !important;
-        align-items: center !important;
-        width: 100% !important;
-        min-width: 0 !important;
-        padding: 0.48rem 0 !important;
-      }
-
-      #page-board .gate-dorm-status,
-      #page-squadron .gate-dorm-status {
-        display: inline-flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        max-width: 100% !important;
-        min-height: 1.65rem !important;
-        padding: 0.28rem 0.78rem !important;
-        border-radius: 999px !important;
-        border: 1px solid rgba(148, 163, 184, 0.26) !important;
-        background: rgba(255, 255, 255, 0.055) !important;
-        color: var(--text) !important;
-        font-size: 0.78rem !important;
-        font-weight: 950 !important;
-        letter-spacing: 0.105em !important;
-        text-transform: uppercase !important;
-        text-align: center !important;
-        line-height: 1.05 !important;
-        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
-      }
-
-      #page-board .gate-dorm-status[data-state='open'],
-      #page-squadron .gate-dorm-status[data-state='open'] {
-        border-color: rgba(34, 197, 94, 0.36) !important;
-        background: rgba(34, 197, 94, 0.12) !important;
-        color: #86efac !important;
-      }
-
-      #page-board .gate-dorm-status[data-state='closed'],
-      #page-squadron .gate-dorm-status[data-state='closed'],
-      #page-board .gate-dorm-status[data-state='empty'],
-      #page-squadron .gate-dorm-status[data-state='empty'] {
-        color: var(--text-muted) !important;
-      }
-
-      #page-board .gate-dorm-timer,
-      #page-squadron .gate-dorm-timer {
-        grid-area: timer !important;
-        justify-self: start !important;
-        align-self: end !important;
-        min-height: 2rem !important;
-        font-size: 2.15rem !important;
-        font-weight: 950 !important;
-        line-height: 0.98 !important;
-        letter-spacing: -0.045em !important;
-        font-variant-numeric: tabular-nums !important;
-        text-align: left !important;
-      }
-
-      #page-board .gate-empty-timer,
-      #page-squadron .gate-empty-timer { color: transparent !important; }
-
-      #page-board .gate-dorm-load,
-      #page-squadron .gate-dorm-load {
-        grid-area: load !important;
-        justify-self: end !important;
-        align-self: end !important;
-        font-size: 1.34rem !important;
-        font-weight: 950 !important;
-        letter-spacing: -0.045em !important;
-        line-height: 1 !important;
-        font-variant-numeric: tabular-nums !important;
-        color: var(--text) !important;
-        white-space: nowrap !important;
-        text-align: right !important;
-      }
-
-      .dorm-closed.gate-dorm-card { opacity: 0.62 !important; }
-      .fullscreen-board .gate-dorm-card { min-height: 168px !important; }
-      .fullscreen-board .gate-dorm-timer { font-size: 2.34rem !important; }
-      .theme-light .gate-dorm-status[data-state='open'] { color: #166534 !important; }
-      .theme-light .gate-dorm-status[data-state='closed'],
-      .theme-light .gate-dorm-status[data-state='empty'] { color: #64748b !important; }
-
       #page-squadron.gate-squadron-page {
-        padding: 62px 0.85rem 0.85rem !important;
+        padding: 76px 0.85rem 0.85rem !important;
         min-height: 100vh;
         overflow: hidden;
       }
 
       #page-squadron .gate-squadron-shell {
-        min-height: calc(100vh - 72px);
+        min-height: calc(100vh - 84px);
         display: flex;
         flex-direction: column;
         gap: 0.78rem;
@@ -224,15 +55,15 @@
 
       #page-squadron .gate-squadron-masthead {
         position: relative;
-        overflow: hidden;
+        overflow: visible;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        gap: 0.34rem;
         width: min(920px, calc(100vw - 2rem));
+        min-height: 74px;
         margin: 0 auto;
-        padding: 1.02rem 1.25rem 0.96rem;
+        padding: 1.18rem 1.35rem 1.08rem;
         border: 1px solid rgba(125, 211, 252, 0.18);
         border-radius: 1.15rem;
         background:
@@ -267,9 +98,16 @@
         font-size: clamp(1.02rem, 1.82vw, 1.48rem);
         font-weight: 950;
         letter-spacing: 0.18em;
-        line-height: 1.02;
+        line-height: 1.24;
         text-transform: uppercase;
         text-align: center;
+        padding: 0.06rem 0 0.04rem;
+      }
+
+      #page-squadron .gate-squadron-subtitle span {
+        display: inline-flex;
+        align-items: center;
+        min-height: 1.45em;
       }
 
       #page-squadron .gate-squadron-subtitle span:not(:last-child)::after {
@@ -382,7 +220,8 @@
       #page-board #active-buses .prc-bus-card-dept { width: 100% !important; margin-top: 0.28rem !important; padding-top: 0.28rem !important; border-top: 1px solid rgba(255,255,255,0.18) !important; font-size: 0.72rem !important; font-weight: 950 !important; color: var(--text-muted) !important; }
 
       @media (max-width: 768px) {
-        #page-squadron .gate-squadron-masthead { width: 100%; padding: 0.88rem 0.85rem 0.78rem; }
+        #page-squadron.gate-squadron-page { padding-top: 72px !important; }
+        #page-squadron .gate-squadron-masthead { width: 100%; min-height: 66px; padding: 0.96rem 0.9rem 0.86rem; }
         #page-squadron .gate-squadron-subtitle { font-size: 0.92rem; letter-spacing: 0.12em; }
         #page-squadron .gate-squadron-header { width: 100%; border-radius: 1rem; flex-wrap: wrap; }
         #page-squadron .gate-squadron-metric { flex: 1 1 160px; justify-content: center; }
@@ -419,14 +258,6 @@
     return String(dorm.phase || 'OPEN').trim() || 'OPEN';
   }
 
-  function getDormNameColor(dorm) {
-    const currentLoad = n(dorm.current_load);
-    const maxLoad = n(dorm.max_load);
-    if (dorm.state === 'empty' || dorm.state === 'closed') return 'var(--text-muted)';
-    if (maxLoad > 0 && currentLoad >= maxLoad) return 'var(--green)';
-    return 'var(--text)';
-  }
-
   function getDormSignature(dorms) {
     return dorms.map(dorm => [
       dorm.__backendId,
@@ -446,54 +277,46 @@
     ].join('|')).join('~');
   }
 
-  function cardStyle() {
-    return [
-      'display:grid !important',
-      'grid-template-columns:minmax(0,1fr) max-content !important',
-      'grid-template-rows:auto auto minmax(2.75rem,1fr) auto !important',
-      "grid-template-areas:'name airman' 'info info' 'status status' 'timer load' !important",
-      'justify-items:stretch !important',
-      'align-items:stretch !important',
-      'column-gap:0.85rem !important',
-      'row-gap:0.22rem !important',
-      'min-height:156px !important',
-      'width:100% !important',
-      'padding:0.78rem 0.86rem 0.72rem !important',
-      'position:relative !important',
-      'overflow:hidden !important',
-      'text-align:left !important',
-      'cursor:default !important'
-    ].join(';');
+  function getLoadRatio(dorm) {
+    const current = n(dorm.current_load);
+    const max = n(dorm.max_load);
+    const width = max > 0 ? Math.min((current / max) * 100, 100) : 0;
+    return { current, max, width, isFull: max > 0 && current === max, isOver: max > 0 && current > max };
   }
 
   function buildGateDormCard(dorm) {
+    const load = getLoadRatio(dorm);
+    const state = String(dorm.state || 'empty').toLowerCase();
     const borderClass = dorm.sex === 'female' ? 'border-female' : (dorm.band === 'true' ? 'border-band' : '');
-    const closedClass = dorm.state === 'closed' ? 'dorm-closed' : '';
+    const closedClass = state === 'closed' ? 'dorm-closed' : '';
+    const progressClass = load.isOver ? 'is-over' : (load.isFull ? 'is-full' : '');
     const info = [escapeText(dorm.sdq), escapeText(dorm.section), escapeText(dorm.inter_sec)].filter(Boolean).join(' · ');
     const status = getDormStatusLabel(dorm);
-    const nameColor = getDormNameColor(dorm);
 
-    let timerHtml = `<div class="gate-dorm-timer gate-empty-timer" style="grid-area:timer;justify-self:start;align-self:end;min-height:2rem;font-size:2.15rem;font-weight:950;line-height:.98;letter-spacing:-.045em;font-variant-numeric:tabular-nums;text-align:left;color:transparent;">00:00</div>`;
+    let timerHtml = '<div class="gate-dorm-timer gate-empty-timer">00:00</div>';
 
-    if (dorm.state === 'open' && dorm.opened_at) {
+    if (state === 'open' && dorm.opened_at) {
       const timer = typeof getElapsedTimer === 'function' ? getElapsedTimer(dorm.opened_at) : { text: '00:00' };
-      timerHtml = `<div class="gate-dorm-timer timer-display" data-opened="${escapeText(dorm.opened_at)}" data-dorm-id="${escapeText(dorm.__backendId)}" style="grid-area:timer;justify-self:start;align-self:end;min-height:2rem;font-size:2.15rem;font-weight:950;line-height:.98;letter-spacing:-.045em;font-variant-numeric:tabular-nums;text-align:left;">${escapeText(timer.text)}</div>`;
+      timerHtml = `<div class="gate-dorm-timer timer-display" data-opened="${escapeText(dorm.opened_at)}" data-dorm-id="${escapeText(dorm.__backendId)}">${escapeText(timer.text)}</div>`;
     }
 
-    if (dorm.state === 'closed' && dorm.closed_timer) {
-      timerHtml = `<div class="gate-dorm-timer text-muted" style="grid-area:timer;justify-self:start;align-self:end;min-height:2rem;font-size:2.15rem;font-weight:950;line-height:.98;letter-spacing:-.045em;font-variant-numeric:tabular-nums;text-align:left;">${escapeText(dorm.closed_timer)}</div>`;
+    if (state === 'closed' && dorm.closed_timer) {
+      timerHtml = `<div class="gate-dorm-timer text-muted">${escapeText(dorm.closed_timer)}</div>`;
     }
 
     return `
-      <div class="dorm-card gate-dorm-card ${borderClass} ${closedClass}" style="${cardStyle()}">
-        <div class="gate-dorm-name" style="grid-area:name;justify-self:start;align-self:start;min-width:0;max-width:100%;text-align:left;font-size:clamp(1.75rem,2.45vw,2.7rem);font-weight:950;letter-spacing:-.055em;line-height:.95;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:${nameColor};">${escapeText(dorm.dorm_name || '')}</div>
-        <div class="gate-dorm-airman" style="grid-area:airman;justify-self:end;align-self:start;max-width:8.75rem;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:right;color:var(--text-muted);font-size:.62rem;font-weight:950;letter-spacing:.07em;text-transform:uppercase;line-height:1.05;padding-top:.08rem;">${escapeText(dorm.assigned_airman || '')}</div>
-        <div class="gate-dorm-info" style="grid-area:info;justify-self:start;align-self:start;width:100%;max-width:100%;text-align:left;color:var(--text-muted);font-size:.72rem;font-weight:900;letter-spacing:.08em;line-height:1.05;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${info || '&nbsp;'}</div>
-        <div class="gate-dorm-status-wrap" style="grid-area:status;justify-self:stretch;align-self:center;display:flex;justify-content:center;align-items:center;width:100%;min-width:0;padding:.48rem 0;">
-          <div class="gate-dorm-status" data-state="${escapeText(dorm.state || '')}">${escapeText(status)}</div>
+      <div class="dorm-card tactical-glass-card gate-dorm-card gate-dorm-state-${escapeText(state)} ${borderClass} ${closedClass} ${progressClass}" data-state="${escapeText(state)}">
+        <div class="gate-dorm-name">${escapeText(dorm.dorm_name || '')}</div>
+        <div class="gate-dorm-airman">${escapeText(dorm.assigned_airman || '')}</div>
+        <div class="gate-dorm-info">${info || '&nbsp;'}</div>
+        <div class="gate-dorm-status-wrap">
+          <div class="gate-dorm-status" data-state="${escapeText(state)}">${escapeText(status)}</div>
         </div>
         ${timerHtml}
-        <div class="gate-dorm-load" style="grid-area:load;justify-self:end;align-self:end;font-size:1.34rem;font-weight:950;letter-spacing:-.045em;line-height:1;font-variant-numeric:tabular-nums;color:var(--text);white-space:nowrap;text-align:right;">${n(dorm.current_load)} / ${n(dorm.max_load)}</div>
+        <div class="gate-dorm-load">${load.current} / ${load.max}</div>
+        <div class="gate-dorm-progress" aria-hidden="true">
+          <div class="gate-dorm-progress-fill" style="width:${load.width.toFixed(1)}%;"></div>
+        </div>
       </div>
     `;
   }

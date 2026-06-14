@@ -1,12 +1,16 @@
 /* PRC GATE Command Navigation Shell */
-.app-nav {
-  height: 52px !important;
-  padding: 0 0.95rem !important;
-  gap: 0.78rem;
-  justify-content: flex-start !important;
+.app-nav,
+.navbar,
+.command-header-bar {
+  display: flex !important;
   align-items: center !important;
-  overflow: hidden;
-  box-sizing: border-box;
+  justify-content: space-between !important;
+  box-sizing: border-box !important;
+  height: auto !important;
+  min-height: 60px !important;
+  padding: 8px 1rem !important;
+  gap: 0.78rem !important;
+  overflow: visible !important;
   background:
     linear-gradient(180deg, rgba(6, 14, 26, 0.94), rgba(8, 18, 31, 0.84)),
     var(--glass-bg) !important;
@@ -16,8 +20,33 @@
     var(--glass-highlight),
     0 12px 32px rgba(0, 0, 0, 0.38),
     0 0 24px rgba(56, 189, 248, 0.08) !important;
-  -webkit-backdrop-filter: blur(18px) saturate(1.35);
-  backdrop-filter: blur(18px) saturate(1.35);
+  -webkit-backdrop-filter: blur(18px) saturate(1.35) !important;
+  backdrop-filter: blur(18px) saturate(1.35) !important;
+}
+
+.app-nav {
+  position: fixed !important;
+  top: 32px !important;
+  left: 0 !important;
+  right: 0 !important;
+  z-index: 9998 !important;
+}
+
+body:not(.fullscreen-board) .page {
+  padding-top: 104px !important;
+}
+
+body:not(.fullscreen-board) #page-squadron.gate-squadron-page {
+  padding-top: 104px !important;
+}
+
+.fullscreen-board .app-nav {
+  display: none !important;
+}
+
+.fullscreen-board #page-board,
+.fullscreen-board #page-squadron.gate-squadron-page {
+  padding-top: 32px !important;
 }
 
 .app-nav::before {
@@ -28,8 +57,8 @@
   flex: 0 0 auto;
   width: 204px;
   min-width: 204px;
-  height: 38px;
-  min-height: 38px;
+  height: 40px;
+  min-height: 40px;
   padding: 0;
   margin: 0 0.1rem 0 0;
   box-sizing: border-box;
@@ -44,7 +73,9 @@
   filter: drop-shadow(0 0 12px rgba(56, 189, 248, 0.10));
 }
 
-.app-nav::after {
+.app-nav::after,
+.navbar::after,
+.command-header-bar::after {
   content: '';
   position: absolute;
   left: 0;
@@ -63,6 +94,7 @@
 }
 
 #nav-links {
+  display: flex !important;
   flex: 1 1 auto;
   min-width: 0;
   gap: 0.42rem !important;
@@ -77,6 +109,7 @@
 }
 
 .app-nav > div:last-child {
+  display: flex !important;
   flex: 0 0 auto;
   gap: 0.42rem !important;
   margin-left: auto;
@@ -85,17 +118,30 @@
   align-items: center !important;
 }
 
-.app-nav .nav-btn {
+.app-nav .nav-btn,
+.navbar button,
+.navbar a,
+.command-header-bar button,
+.command-header-bar a,
+.tactical-nav-pill,
+#fullscreen-btn,
+#sound-toggle-btn,
+#role-toggle,
+.app-nav button[aria-label='Toggle theme'] {
   position: relative;
   isolation: isolate;
-  height: 34px !important;
-  min-height: 34px !important;
-  padding: 0 0.82rem !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  height: 38px !important;
+  min-height: 38px !important;
+  padding: 0 0.88rem !important;
   border-radius: var(--radius-pill) !important;
-  font-size: 0.72rem !important;
-  line-height: 1;
-  font-weight: 900 !important;
-  letter-spacing: 0.062em;
+  font-size: 0.74rem !important;
+  line-height: 1 !important;
+  font-weight: 850 !important;
+  letter-spacing: 0.062em !important;
+  text-transform: uppercase !important;
   color: var(--text-soft) !important;
   background:
     linear-gradient(145deg, rgba(255, 255, 255, 0.092), rgba(255, 255, 255, 0.032)) !important;
@@ -103,8 +149,8 @@
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.12),
     0 5px 12px rgba(0, 0, 0, 0.18) !important;
-  -webkit-backdrop-filter: blur(14px) saturate(1.42);
-  backdrop-filter: blur(14px) saturate(1.42);
+  -webkit-backdrop-filter: blur(14px) saturate(1.42) !important;
+  backdrop-filter: blur(14px) saturate(1.42) !important;
   transition:
     transform var(--transition-fast),
     border-radius var(--transition-medium),
@@ -115,7 +161,11 @@
   will-change: transform, border-radius;
 }
 
-.app-nav .nav-btn::before {
+.app-nav .nav-btn::before,
+#fullscreen-btn::before,
+#sound-toggle-btn::before,
+#role-toggle::before,
+.app-nav button[aria-label='Toggle theme']::before {
   content: '';
   position: absolute;
   inset: 1px;
@@ -127,7 +177,15 @@
   z-index: -1;
 }
 
-.app-nav .nav-btn:hover {
+.app-nav .nav-btn:hover,
+.navbar button:hover,
+.navbar a:hover,
+.command-header-bar button:hover,
+.command-header-bar a:hover,
+#fullscreen-btn:hover,
+#sound-toggle-btn:hover,
+#role-toggle:hover,
+.app-nav button[aria-label='Toggle theme']:hover {
   color: var(--text) !important;
   background:
     linear-gradient(145deg, rgba(56, 189, 248, 0.15), rgba(255, 255, 255, 0.045)) !important;
@@ -140,16 +198,32 @@
 }
 
 .app-nav .nav-btn:hover::before,
-.app-nav .nav-btn.active::before {
+.app-nav .nav-btn.active::before,
+#fullscreen-btn:hover::before,
+#sound-toggle-btn:hover::before,
+#role-toggle:hover::before,
+.app-nav button[aria-label='Toggle theme']:hover::before {
   opacity: 1;
 }
 
-.app-nav .nav-btn:active {
+.app-nav .nav-btn:active,
+#fullscreen-btn:active,
+#sound-toggle-btn:active,
+#role-toggle:active,
+.app-nav button[aria-label='Toggle theme']:active {
   transform: scaleX(0.965) scaleY(1.035) translateY(0) !important;
   border-radius: 38% 62% 42% 58% / 58% 42% 62% 38% !important;
 }
 
-.app-nav .nav-btn:focus-visible {
+.app-nav .nav-btn:focus-visible,
+.navbar button:focus-visible,
+.navbar a:focus-visible,
+.command-header-bar button:focus-visible,
+.command-header-bar a:focus-visible,
+#fullscreen-btn:focus-visible,
+#sound-toggle-btn:focus-visible,
+#role-toggle:focus-visible,
+.app-nav button[aria-label='Toggle theme']:focus-visible {
   outline: none !important;
   box-shadow:
     var(--focus-ring),
@@ -157,11 +231,18 @@
     0 0 16px rgba(56, 189, 248, 0.18) !important;
 }
 
-.app-nav .nav-btn.active {
+.app-nav .nav-btn.active,
+.navbar button.active,
+.navbar button.is-active,
+.navbar .current-page,
+.command-header-bar button.active,
+.command-header-bar button.is-active,
+.command-header-bar .current-page {
   color: #ffffff !important;
   background:
     linear-gradient(135deg, rgba(29, 78, 216, 0.58), rgba(56, 189, 248, 0.22)) !important;
   border-color: rgba(125, 211, 252, 0.58) !important;
+  font-weight: 950 !important;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.20),
     inset 0 -2px 0 rgba(56, 189, 248, 0.76),
@@ -175,11 +256,11 @@
 }
 
 #week-group-display {
-  min-height: 32px;
-  height: 32px;
+  min-height: 38px;
+  height: 38px;
   display: inline-flex;
   align-items: center;
-  padding: 0 0.72rem;
+  padding: 0 0.82rem;
   border: 1px solid rgba(34, 197, 94, 0.28);
   border-radius: var(--radius-pill);
   color: var(--text);
@@ -188,6 +269,7 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.10),
     0 0 14px rgba(34, 197, 94, 0.08);
   letter-spacing: 0.07em;
+  font-weight: 900;
   white-space: nowrap;
 }
 
@@ -206,24 +288,15 @@
     0 0 16px rgba(239, 68, 68, 0.18) !important;
 }
 
-#fullscreen-btn,
-#sound-toggle-btn,
-#role-toggle {
-  height: 34px !important;
-  min-height: 34px !important;
-  padding: 0 0.66rem !important;
-  font-size: 0.64rem !important;
-}
-
 .app-nav button[aria-label='Toggle theme'] {
-  width: 34px;
-  min-width: 34px;
-  height: 34px !important;
-  min-height: 34px !important;
+  width: 38px;
+  min-width: 38px;
   padding: 0 !important;
 }
 
-.theme-light .app-nav {
+.theme-light .app-nav,
+.theme-light .navbar,
+.theme-light .command-header-bar {
   background:
     linear-gradient(180deg, rgba(236, 244, 250, 0.96), rgba(215, 228, 238, 0.90)),
     var(--glass-bg) !important;
@@ -242,7 +315,14 @@
   box-shadow: none !important;
 }
 
-.theme-light .app-nav .nav-btn {
+.theme-light .app-nav .nav-btn,
+.theme-light .navbar button,
+.theme-light .navbar a,
+.theme-light .command-header-bar button,
+.theme-light .command-header-bar a,
+.theme-light #fullscreen-btn,
+.theme-light #sound-toggle-btn,
+.theme-light .app-nav button[aria-label='Toggle theme'] {
   color: #334155 !important;
   background: rgba(255, 255, 255, 0.66) !important;
   border-color: rgba(100, 116, 139, 0.22) !important;
@@ -251,7 +331,14 @@
     0 4px 10px rgba(15, 23, 42, 0.075) !important;
 }
 
-.theme-light .app-nav .nav-btn:hover {
+.theme-light .app-nav .nav-btn:hover,
+.theme-light .navbar button:hover,
+.theme-light .navbar a:hover,
+.theme-light .command-header-bar button:hover,
+.theme-light .command-header-bar a:hover,
+.theme-light #fullscreen-btn:hover,
+.theme-light #sound-toggle-btn:hover,
+.theme-light .app-nav button[aria-label='Toggle theme']:hover {
   color: #0f172a !important;
   background: rgba(255, 255, 255, 0.82) !important;
   border-color: rgba(2, 132, 199, 0.32) !important;
@@ -261,7 +348,13 @@
     0 0 12px rgba(2, 132, 199, 0.10) !important;
 }
 
-.theme-light .app-nav .nav-btn.active {
+.theme-light .app-nav .nav-btn.active,
+.theme-light .navbar button.active,
+.theme-light .navbar button.is-active,
+.theme-light .navbar .current-page,
+.theme-light .command-header-bar button.active,
+.theme-light .command-header-bar button.is-active,
+.theme-light .command-header-bar .current-page {
   color: #0f172a !important;
   background: linear-gradient(135deg, rgba(2, 132, 199, 0.20), rgba(255, 255, 255, 0.86)) !important;
   border-color: rgba(2, 132, 199, 0.38) !important;
@@ -287,14 +380,19 @@
   .app-nav::before {
     width: 142px;
     min-width: 142px;
-    height: 34px;
-    min-height: 34px;
+    height: 36px;
+    min-height: 36px;
     background-size: contain !important;
   }
 
   .app-nav {
-    gap: 0.52rem;
-    padding: 0 0.58rem !important;
+    gap: 0.52rem !important;
+    padding: 7px 0.58rem !important;
+    min-height: 58px !important;
+  }
+
+  body:not(.fullscreen-board) .page {
+    padding-top: 100px !important;
   }
 
   .app-nav > div:last-child {
@@ -321,8 +419,13 @@
 @media (prefers-reduced-motion: reduce) {
   .app-nav .nav-btn,
   .app-nav .nav-btn:hover,
-  .app-nav .nav-btn:active {
+  .app-nav .nav-btn:active,
+  #fullscreen-btn,
+  #sound-toggle-btn,
+  #role-toggle,
+  .app-nav button[aria-label='Toggle theme'] {
     transform: none !important;
     border-radius: var(--radius-pill) !important;
+    transition-duration: 0.01ms !important;
   }
 }

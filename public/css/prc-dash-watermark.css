@@ -1,15 +1,15 @@
-/* PRC GATE Watermark / Background Tune */
+/* PRC GATE tactical mesh background and watermark only */
 body::before {
   position: fixed !important;
   inset: 0 !important;
   background-image: url('/assets/gate_emblem_large.png') !important;
   background-repeat: no-repeat !important;
   background-position: center center !important;
-  background-size: min(72vw, 980px) auto !important;
-  opacity: 0.16 !important;
+  background-size: min(74vw, 1040px) auto !important;
+  opacity: 0.135 !important;
   filter:
-    drop-shadow(0 0 22px rgba(56, 189, 248, 0.22))
-    drop-shadow(0 0 58px rgba(37, 99, 235, 0.10));
+    drop-shadow(0 0 22px rgba(56, 189, 248, 0.20))
+    drop-shadow(0 0 62px rgba(37, 99, 235, 0.10));
   mix-blend-mode: screen;
   pointer-events: none !important;
   z-index: 0 !important;
@@ -23,9 +23,11 @@ body::after {
   pointer-events: none;
   z-index: 0;
   background:
-    radial-gradient(circle at 50% 42%, rgba(56, 189, 248, 0.055), transparent 34%),
-    radial-gradient(circle at 50% 58%, rgba(15, 23, 42, 0.18), transparent 46%),
-    linear-gradient(180deg, rgba(2, 6, 23, 0.04), rgba(2, 6, 23, 0.16));
+    radial-gradient(circle at 18% 14%, rgba(56, 189, 248, 0.12), transparent 30%),
+    radial-gradient(circle at 78% 18%, rgba(99, 102, 241, 0.105), transparent 32%),
+    radial-gradient(circle at 66% 84%, rgba(20, 184, 166, 0.07), transparent 34%),
+    radial-gradient(circle at 50% 46%, rgba(125, 211, 252, 0.045), transparent 34%),
+    linear-gradient(135deg, rgba(3, 7, 18, 0.08), rgba(2, 6, 23, 0.30));
 }
 
 body > * {
@@ -34,37 +36,39 @@ body > * {
 }
 
 .theme-light::before {
-  opacity: 0.055 !important;
+  opacity: 0.052 !important;
   filter:
     drop-shadow(0 0 14px rgba(2, 132, 199, 0.08))
-    grayscale(0.15);
+    grayscale(0.12);
   mix-blend-mode: multiply;
 }
 
 .theme-light::after {
   background:
-    radial-gradient(circle at 50% 42%, rgba(2, 132, 199, 0.035), transparent 34%),
-    radial-gradient(circle at 50% 58%, rgba(255, 255, 255, 0.38), transparent 48%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(226, 232, 240, 0.08));
+    radial-gradient(circle at 18% 14%, rgba(56, 189, 248, 0.16), transparent 30%),
+    radial-gradient(circle at 78% 18%, rgba(37, 99, 235, 0.08), transparent 32%),
+    radial-gradient(circle at 66% 84%, rgba(20, 184, 166, 0.055), transparent 34%),
+    radial-gradient(circle at 50% 48%, rgba(255, 255, 255, 0.38), transparent 48%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(226, 232, 240, 0.09));
 }
 
 .fullscreen-board::before {
   background-size: min(78vw, 1120px) auto !important;
-  opacity: 0.14 !important;
+  opacity: 0.125 !important;
 }
 
 .fullscreen-board.theme-light::before,
 .theme-light.fullscreen-board::before {
-  opacity: 0.045 !important;
+  opacity: 0.04 !important;
 }
 
 @media (max-width: 768px) {
   body::before {
     background-size: 92vw auto !important;
-    opacity: 0.11 !important;
+    opacity: 0.095 !important;
   }
 
   .theme-light::before {
-    opacity: 0.04 !important;
+    opacity: 0.035 !important;
   }
 }

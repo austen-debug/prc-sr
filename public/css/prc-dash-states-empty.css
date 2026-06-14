@@ -106,21 +106,34 @@
 }
 
 #page-board .gate-dorm-name,
-#page-squadron .gate-dorm-name {
+#page-squadron .gate-dorm-name,
+.dorm-id-text {
   grid-area: name !important;
   justify-self: start !important;
   align-self: start !important;
-  min-width: 0 !important;
+  display: inline-block !important;
+  min-width: max-content !important;
+  width: max-content !important;
   max-width: 100% !important;
+  flex-shrink: 0 !important;
   color: var(--text) !important;
   font-size: clamp(2.05rem, 2.85vw, 3.25rem) !important;
   font-weight: 950 !important;
   letter-spacing: -0.066em !important;
-  line-height: 0.94 !important;
+  line-height: 1 !important;
   white-space: nowrap !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  padding-right: 0.5rem !important;
   text-shadow: 0 1px 20px rgba(0, 0, 0, 0.38);
+}
+
+.dorm-card-header {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: flex-start !important;
+  width: 100% !important;
+  overflow: visible !important;
 }
 
 #page-board .gate-dorm-airman,

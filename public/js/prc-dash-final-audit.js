@@ -232,7 +232,7 @@
         gap: 0.34rem;
         width: min(920px, calc(100vw - 2rem));
         margin: 0 auto;
-        padding: 0.82rem 1.25rem 0.72rem;
+        padding: 1.02rem 1.25rem 0.96rem;
         border: 1px solid rgba(125, 211, 252, 0.18);
         border-radius: 1.15rem;
         background:
@@ -257,31 +257,24 @@
         box-shadow: 0 0 14px rgba(56, 189, 248, 0.24);
       }
 
-      #page-squadron .gate-squadron-emblem {
-        width: min(460px, 72vw);
-        height: 44px;
-        background: url('/assets/gate_emblem_small.png') no-repeat center center / contain;
-        filter: drop-shadow(0 0 12px rgba(56, 189, 248, 0.16));
-      }
-
       #page-squadron .gate-squadron-subtitle {
         display: flex;
         flex-wrap: wrap;
         align-items: center;
         justify-content: center;
-        gap: 0.52rem;
-        color: var(--text-muted);
-        font-size: 0.68rem;
+        gap: 0.72rem;
+        color: var(--text-soft);
+        font-size: clamp(1.02rem, 1.82vw, 1.48rem);
         font-weight: 950;
-        letter-spacing: 0.17em;
-        line-height: 1.05;
+        letter-spacing: 0.18em;
+        line-height: 1.02;
         text-transform: uppercase;
         text-align: center;
       }
 
       #page-squadron .gate-squadron-subtitle span:not(:last-child)::after {
         content: '•';
-        margin-left: 0.52rem;
+        margin-left: 0.72rem;
         color: rgba(125, 211, 252, 0.52);
       }
 
@@ -389,8 +382,8 @@
       #page-board #active-buses .prc-bus-card-dept { width: 100% !important; margin-top: 0.28rem !important; padding-top: 0.28rem !important; border-top: 1px solid rgba(255,255,255,0.18) !important; font-size: 0.72rem !important; font-weight: 950 !important; color: var(--text-muted) !important; }
 
       @media (max-width: 768px) {
-        #page-squadron .gate-squadron-masthead { width: 100%; padding: 0.72rem 0.85rem 0.62rem; }
-        #page-squadron .gate-squadron-emblem { width: min(360px, 82vw); height: 38px; }
+        #page-squadron .gate-squadron-masthead { width: 100%; padding: 0.88rem 0.85rem 0.78rem; }
+        #page-squadron .gate-squadron-subtitle { font-size: 0.92rem; letter-spacing: 0.12em; }
         #page-squadron .gate-squadron-header { width: 100%; border-radius: 1rem; flex-wrap: wrap; }
         #page-squadron .gate-squadron-metric { flex: 1 1 160px; justify-content: center; }
         #page-squadron .dorm-dashboard { grid-template-columns: 1fr; overflow-y: auto; }
@@ -543,7 +536,6 @@
         <main id="page-squadron" class="page gate-squadron-page" role="main" aria-label="Squadron Board">
           <div class="gate-squadron-shell">
             <section class="gate-squadron-masthead" aria-label="Squadron Board header">
-              <div class="gate-squadron-emblem" aria-hidden="true"></div>
               <div class="gate-squadron-subtitle">
                 <span>Pfingston Reception Center</span>
                 <span>Squadron Board</span>

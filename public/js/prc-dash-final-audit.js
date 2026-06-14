@@ -5,6 +5,8 @@
   let squadronPageReady = false;
   let navPatched = false;
   let renderAllPatched = false;
+  let mobileNavReady = false;
+  let brandingObserverReady = false;
   let boardDormSignature = '';
   let squadronDormSignature = '';
 
@@ -28,6 +30,19 @@
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return '—';
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+  }
+
+  function ensureDocumentIdentity() {
+    document.title = 'GATE — Gateway Arrival Tracking Environment | Pfingston Reception Center';
+    document.documentElement.setAttribute('lang', 'en');
+    const viewport = document.querySelector('meta[name="viewport"]');
+    if (viewport) viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, viewport-fit=cover');
+    if (!document.querySelector('meta[name="description"]')) {
+      const meta = document.createElement('meta');
+      meta.name = 'description';
+      meta.content = 'U.S. Air Force Basic Military Training — Arrival Tracking Command Shell';
+      document.head.appendChild(meta);
+    }
   }
 
   function ensureStyles() {
@@ -127,11 +142,8 @@
         padding: 0.44rem;
         border: 1px solid rgba(148, 163, 184, 0.16);
         border-radius: 999px;
-        background:
-          linear-gradient(145deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.025));
-        box-shadow:
-          inset 0 1px 0 rgba(255, 255, 255, 0.11),
-          0 8px 20px rgba(0, 0, 0, 0.16);
+        background: linear-gradient(145deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.025));
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.11), 0 8px 20px rgba(0, 0, 0, 0.16);
         -webkit-backdrop-filter: blur(16px) saturate(1.12);
         backdrop-filter: blur(16px) saturate(1.12);
       }
@@ -168,18 +180,13 @@
         white-space: nowrap;
       }
 
-      #page-squadron .dorm-dashboard {
-        flex: 1 1 auto;
-        min-height: 0;
-      }
+      #page-squadron .dorm-dashboard { flex: 1 1 auto; min-height: 0; }
 
       .theme-light #page-squadron .gate-squadron-masthead,
       .theme-light #page-squadron .gate-squadron-header {
         background: linear-gradient(145deg, rgba(255, 255, 255, 0.76), rgba(255, 255, 255, 0.46));
         border-color: rgba(2, 132, 199, 0.16);
-        box-shadow:
-          inset 0 1px 0 rgba(255, 255, 255, 0.80),
-          0 8px 20px rgba(15, 23, 42, 0.08);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.80), 0 8px 20px rgba(15, 23, 42, 0.08);
       }
 
       .theme-light #page-squadron .gate-squadron-metric {
@@ -390,6 +397,106 @@
     squadronPageReady = true;
   }
 
+  function ensureResponsiveCommandShell() {
+    const nav = document.querySelector('.app-nav');
+    const menu = document.getElementById('nav-links');
+    if (!nav || !menu) return;
+
+    nav.classList.add('command-header-bar');
+    nav.setAttribute('role', 'banner');
+    menu.id = 'main-nav-menu';
+    menu.classList.add('nav-group-left');
+    menu.setAttribute('role', 'navigation');
+    menu.setAttribute('aria-label', 'Main Operational Navigation');
+
+    const rightGroup = nav.querySelector(':scope > div:last-child');
+    if (rightGroup) {
+      rightGroup.classList.add('nav-group-right');
+      rightGroup.setAttribute('role', 'complementary');
+      rightGroup.setAttribute('aria-label', 'System Identity Control');
+    }
+
+    if (!document.getElementById('mobile-menu-trigger')) {
+      const trigger = document.createElement('button');
+      trigger.id = 'mobile-menu-trigger';
+      trigger.type = 'button';
+      trigger.className = 'tactical-nav-pill mobile-only-control';
+      trigger.setAttribute('aria-label', 'Toggle Operational Navigation Menu');
+      trigger.setAttribute('aria-haspopup', 'true');
+      trigger.setAttribute('aria-expanded', 'false');
+      trigger.setAttribute('aria-controls', 'main-nav-menu');
+      trigger.innerHTML = '<span>Menu</span><span class="menu-arrow-indicator" aria-hidden="true">▾</span>';
+      nav.insertBefore(trigger, menu);
+    }
+
+    const trigger = document.getElementById('mobile-menu-trigger');
+    if (!trigger || mobileNavReady) return;
+
+    let isOpen = false;
+    const setMenuState = state => {
+      isOpen = Boolean(state);
+      trigger.setAttribute('aria-expanded', String(isOpen));
+      menu.classList.toggle('mobile-dropdown-active', isOpen);
+    };
+
+    trigger.addEventListener('click', event => {
+      event.stopPropagation();
+      setMenuState(!isOpen);
+    });
+
+    menu.addEventListener('click', event => {
+      if (event.target.closest('button, a')) window.setTimeout(() => setMenuState(false), 80);
+    });
+
+    document.addEventListener('click', event => {
+      if (isOpen && !menu.contains(event.target) && !trigger.contains(event.target)) setMenuState(false);
+    });
+
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape' && isOpen) {
+        setMenuState(false);
+        trigger.focus({ preventScroll: true });
+      }
+    });
+
+    mobileNavReady = true;
+  }
+
+  function scrubLegacyTerminology() {
+    if (!document.body) return;
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
+      acceptNode(node) {
+        const parent = node.parentElement;
+        if (!parent) return NodeFilter.FILTER_REJECT;
+        if (['SCRIPT', 'STYLE', 'TEXTAREA'].includes(parent.tagName)) return NodeFilter.FILTER_REJECT;
+        return /prc\s?dash|dashboard/i.test(node.nodeValue || '') ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP;
+      }
+    });
+
+    let node;
+    while ((node = walker.nextNode())) {
+      node.nodeValue = node.nodeValue
+        .replace(/prc\s?dash/gi, 'GATE')
+        .replace(/dashboard/gi, 'Status Board');
+    }
+  }
+
+  function ensureBrandingObserver() {
+    if (brandingObserverReady || !document.body || typeof MutationObserver === 'undefined') return;
+    scrubLegacyTerminology();
+    let queued = false;
+    const observer = new MutationObserver(() => {
+      if (queued) return;
+      queued = true;
+      window.requestAnimationFrame(() => {
+        queued = false;
+        scrubLegacyTerminology();
+      });
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+    brandingObserverReady = true;
+  }
+
   function patchNavigationForSquadronBoard() {
     try {
       if (typeof PAGE_LABELS !== 'undefined') PAGE_LABELS.squadron = 'Squadron Board';
@@ -402,12 +509,15 @@
           const pages = currentRole === 'squadron'
             ? ['squadron']
             : (currentRole === 'instructor' ? PAGES_INSTRUCTOR : PAGES_AIRMAN);
-          const container = document.getElementById('nav-links');
+          const container = document.getElementById('main-nav-menu') || document.getElementById('nav-links');
           const activePage = document.querySelector('.page.active');
           const activeId = activePage ? activePage.id.replace('page-', '') : (currentRole === 'squadron' ? 'squadron' : 'board');
 
           if (container) {
-            container.innerHTML = pages.map(page => `<button class="nav-btn ${page === activeId ? 'active' : ''}" onclick="showPage('${page}')">${PAGE_LABELS[page] || page}</button>`).join('');
+            container.innerHTML = pages.map(page => `<button type="button" class="nav-btn nav-link-item ${page === activeId ? 'active active-page-state current-page' : ''}" data-page="${page}" onclick="showPage('${page}')">${PAGE_LABELS[page] || page}</button>`).join('');
+            container.querySelectorAll('button').forEach(button => {
+              button.setAttribute('aria-current', button.dataset.page === activeId ? 'page' : 'false');
+            });
           }
 
           const roleButton = document.getElementById('role-toggle');
@@ -415,8 +525,10 @@
             roleButton.textContent = currentRole === 'instructor'
               ? 'INSTRUCTOR / LOGOUT'
               : (currentRole === 'squadron' ? 'SQUADRON / LOGOUT' : 'AIRMAN / LOGOUT');
+            roleButton.setAttribute('aria-label', roleButton.textContent);
           }
 
+          ensureResponsiveCommandShell();
           if (typeof updateRoleVisibility === 'function') updateRoleVisibility();
         };
         window.buildNav = patchedBuildNav;
@@ -465,6 +577,8 @@
         const result = originalRenderAll.apply(this, args);
         renderGateDormColumns(null, { force: true });
         renderSquadronBoard({ force: true });
+        ensureResponsiveCommandShell();
+        scrubLegacyTerminology();
         return result;
       };
       window.renderAll = patchedRenderAll;
@@ -533,11 +647,14 @@
   }
 
   function runPass() {
+    ensureDocumentIdentity();
     ensureStyles();
     ensureSquadronPage();
     patchNavigationForSquadronBoard();
     patchDormRenderers();
     patchRenderAllForBoards();
+    ensureResponsiveCommandShell();
+    ensureBrandingObserver();
     try { keepNavigationRecoverable(); } catch (error) { console.warn('PRC GATE nav recovery failed:', error); }
     try { renderGateDormColumns(); } catch (error) { console.warn('PRC GATE Status Board render failed:', error); }
     try { renderSquadronBoard(); } catch (error) { console.warn('PRC GATE Squadron Board render failed:', error); }

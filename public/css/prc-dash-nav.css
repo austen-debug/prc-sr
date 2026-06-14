@@ -1,4 +1,8 @@
 /* PRC GATE Command Navigation Shell */
+.mobile-only-control {
+  display: none !important;
+}
+
 .app-nav,
 .navbar,
 .command-header-bar {
@@ -93,7 +97,9 @@ body:not(.fullscreen-board) #page-squadron.gate-squadron-page {
   box-shadow: 0 0 14px rgba(56, 189, 248, 0.42);
 }
 
-#nav-links {
+#main-nav-menu,
+#nav-links,
+.nav-group-left {
   display: flex !important;
   flex: 1 1 auto;
   min-width: 0;
@@ -104,11 +110,13 @@ body:not(.fullscreen-board) #page-squadron.gate-squadron-page {
   scrollbar-width: none;
 }
 
+#main-nav-menu::-webkit-scrollbar,
 #nav-links::-webkit-scrollbar {
   display: none;
 }
 
-.app-nav > div:last-child {
+.app-nav > div:last-child,
+.nav-group-right {
   display: flex !important;
   flex: 0 0 auto;
   gap: 0.42rem !important;
@@ -165,7 +173,8 @@ body:not(.fullscreen-board) #page-squadron.gate-squadron-page {
 #fullscreen-btn::before,
 #sound-toggle-btn::before,
 #role-toggle::before,
-.app-nav button[aria-label='Toggle theme']::before {
+.app-nav button[aria-label='Toggle theme']::before,
+#mobile-menu-trigger::before {
   content: '';
   position: absolute;
   inset: 1px;
@@ -185,7 +194,8 @@ body:not(.fullscreen-board) #page-squadron.gate-squadron-page {
 #fullscreen-btn:hover,
 #sound-toggle-btn:hover,
 #role-toggle:hover,
-.app-nav button[aria-label='Toggle theme']:hover {
+.app-nav button[aria-label='Toggle theme']:hover,
+#mobile-menu-trigger:hover {
   color: var(--text) !important;
   background:
     linear-gradient(145deg, rgba(56, 189, 248, 0.15), rgba(255, 255, 255, 0.045)) !important;
@@ -202,7 +212,9 @@ body:not(.fullscreen-board) #page-squadron.gate-squadron-page {
 #fullscreen-btn:hover::before,
 #sound-toggle-btn:hover::before,
 #role-toggle:hover::before,
-.app-nav button[aria-label='Toggle theme']:hover::before {
+.app-nav button[aria-label='Toggle theme']:hover::before,
+#mobile-menu-trigger:hover::before,
+#mobile-menu-trigger[aria-expanded='true']::before {
   opacity: 1;
 }
 
@@ -210,7 +222,8 @@ body:not(.fullscreen-board) #page-squadron.gate-squadron-page {
 #fullscreen-btn:active,
 #sound-toggle-btn:active,
 #role-toggle:active,
-.app-nav button[aria-label='Toggle theme']:active {
+.app-nav button[aria-label='Toggle theme']:active,
+#mobile-menu-trigger:active {
   transform: scaleX(0.965) scaleY(1.035) translateY(0) !important;
   border-radius: 38% 62% 42% 58% / 58% 42% 62% 38% !important;
 }
@@ -223,15 +236,19 @@ body:not(.fullscreen-board) #page-squadron.gate-squadron-page {
 #fullscreen-btn:focus-visible,
 #sound-toggle-btn:focus-visible,
 #role-toggle:focus-visible,
-.app-nav button[aria-label='Toggle theme']:focus-visible {
-  outline: none !important;
+.app-nav button[aria-label='Toggle theme']:focus-visible,
+#mobile-menu-trigger:focus-visible {
+  outline: 3px solid #00a3ff !important;
+  outline-offset: 2px !important;
   box-shadow:
-    var(--focus-ring),
+    0 0 0 6px rgba(0, 163, 255, 0.25),
     inset 0 1px 0 rgba(255, 255, 255, 0.18),
     0 0 16px rgba(56, 189, 248, 0.18) !important;
 }
 
 .app-nav .nav-btn.active,
+.app-nav .nav-btn.active-page-state,
+.app-nav .nav-btn.current-page,
 .navbar button.active,
 .navbar button.is-active,
 .navbar .current-page,
@@ -251,8 +268,28 @@ body:not(.fullscreen-board) #page-squadron.gate-squadron-page {
   transform: none !important;
 }
 
-.app-nav .nav-btn.active::after {
-  content: none !important;
+.app-nav .nav-btn.active::after { content: none !important; }
+
+#mobile-menu-trigger {
+  gap: 0.38rem;
+}
+
+#mobile-menu-trigger[aria-expanded='true'] {
+  color: #ffffff !important;
+  border-color: rgba(125, 211, 252, 0.58) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.20),
+    0 0 20px rgba(56, 189, 248, 0.18) !important;
+}
+
+.menu-arrow-indicator {
+  display: inline-block;
+  line-height: 1;
+  transition: transform var(--transition-fast);
+}
+
+#mobile-menu-trigger[aria-expanded='true'] .menu-arrow-indicator {
+  transform: rotate(180deg);
 }
 
 #week-group-display {
@@ -322,7 +359,8 @@ body:not(.fullscreen-board) #page-squadron.gate-squadron-page {
 .theme-light .command-header-bar a,
 .theme-light #fullscreen-btn,
 .theme-light #sound-toggle-btn,
-.theme-light .app-nav button[aria-label='Toggle theme'] {
+.theme-light .app-nav button[aria-label='Toggle theme'],
+.theme-light #mobile-menu-trigger {
   color: #334155 !important;
   background: rgba(255, 255, 255, 0.66) !important;
   border-color: rgba(100, 116, 139, 0.22) !important;
@@ -338,7 +376,8 @@ body:not(.fullscreen-board) #page-squadron.gate-squadron-page {
 .theme-light .command-header-bar a:hover,
 .theme-light #fullscreen-btn:hover,
 .theme-light #sound-toggle-btn:hover,
-.theme-light .app-nav button[aria-label='Toggle theme']:hover {
+.theme-light .app-nav button[aria-label='Toggle theme']:hover,
+.theme-light #mobile-menu-trigger:hover {
   color: #0f172a !important;
   background: rgba(255, 255, 255, 0.82) !important;
   border-color: rgba(2, 132, 199, 0.32) !important;
@@ -349,6 +388,8 @@ body:not(.fullscreen-board) #page-squadron.gate-squadron-page {
 }
 
 .theme-light .app-nav .nav-btn.active,
+.theme-light .app-nav .nav-btn.active-page-state,
+.theme-light .app-nav .nav-btn.current-page,
 .theme-light .navbar button.active,
 .theme-light .navbar button.is-active,
 .theme-light .navbar .current-page,
@@ -376,43 +417,184 @@ body:not(.fullscreen-board) #page-squadron.gate-squadron-page {
   border-color: rgba(185, 28, 28, 0.20) !important;
 }
 
-@media (max-width: 980px) {
-  .app-nav::before {
-    width: 142px;
-    min-width: 142px;
-    height: 36px;
-    min-height: 36px;
-    background-size: contain !important;
+@media (max-width: 991px) {
+  .mobile-only-control {
+    display: inline-flex !important;
   }
 
   .app-nav {
+    padding: 10px 0.78rem !important;
+    min-height: 62px !important;
     gap: 0.52rem !important;
-    padding: 7px 0.58rem !important;
-    min-height: 58px !important;
   }
 
-  body:not(.fullscreen-board) .page {
-    padding-top: 100px !important;
+  .app-nav::before {
+    width: 136px;
+    min-width: 136px;
+    height: 36px;
+    min-height: 36px;
   }
 
-  .app-nav > div:last-child {
+  body:not(.fullscreen-board) .page,
+  body:not(.fullscreen-board) #page-squadron.gate-squadron-page {
+    padding-top: 106px !important;
+  }
+
+  #main-nav-menu,
+  #nav-links,
+  .nav-group-left {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    position: absolute !important;
+    top: calc(100% + 2px) !important;
+    left: 8px !important;
+    right: 8px !important;
+    width: calc(100% - 16px) !important;
+    max-height: min(74vh, 520px) !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    background:
+      radial-gradient(circle at 20% 0%, rgba(56, 189, 248, 0.13), transparent 38%),
+      rgba(8, 16, 32, 0.98) !important;
+    -webkit-backdrop-filter: blur(20px) saturate(1.55) !important;
+    backdrop-filter: blur(20px) saturate(1.55) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    border-radius: var(--radius-xl) !important;
+    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.72), 0 0 25px rgba(0, 163, 255, 0.12) !important;
+    padding: 10px !important;
+    gap: 6px !important;
+    box-sizing: border-box !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    transform: translateY(-8px) !important;
+    transition: opacity 180ms cubic-bezier(0.16, 1, 0.3, 1), transform 180ms cubic-bezier(0.16, 1, 0.3, 1), visibility 180ms !important;
+    pointer-events: none !important;
+    z-index: 100000 !important;
+  }
+
+  #main-nav-menu.mobile-dropdown-active,
+  #nav-links.mobile-dropdown-active,
+  .nav-group-left.mobile-dropdown-active {
+    opacity: 1 !important;
+    visibility: visible !important;
+    transform: translateY(8px) !important;
+    pointer-events: auto !important;
+  }
+
+  #main-nav-menu .nav-btn,
+  #nav-links .nav-btn,
+  .nav-group-left a,
+  .nav-group-left button {
+    width: 100% !important;
+    min-height: 48px !important;
+    height: auto !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    padding: 12px 20px !important;
+    border-radius: var(--radius-md) !important;
+    font-size: 1rem !important;
+    box-sizing: border-box !important;
+    background: rgba(255, 255, 255, 0.025) !important;
+    border: 1px solid rgba(255, 255, 255, 0.055) !important;
+  }
+
+  #main-nav-menu .active-page-state,
+  #main-nav-menu .current-page,
+  #nav-links .active-page-state,
+  #nav-links .current-page,
+  .nav-group-left .active-page-state,
+  .nav-group-left .current-page {
+    background: var(--glass-bg-strong) !important;
+    border-color: rgba(0, 163, 255, 0.42) !important;
+    color: var(--text) !important;
+  }
+
+  .app-nav > div:last-child,
+  .nav-group-right {
+    gap: 0.3rem !important;
     padding-left: 0.44rem;
-    gap: 0.30rem !important;
   }
 
-  .app-nav .nav-btn,
-  #fullscreen-btn,
-  #sound-toggle-btn,
-  #role-toggle {
-    padding: 0 0.52rem !important;
-    font-size: 0.62rem !important;
-  }
-}
-
-@media (max-width: 760px) {
   #week-group-display,
   #sound-toggle-btn {
     display: none !important;
+  }
+
+  #fullscreen-btn,
+  #role-toggle,
+  .app-nav button[aria-label='Toggle theme'] {
+    min-height: 38px !important;
+    height: 38px !important;
+    font-size: 0.6rem !important;
+    padding: 0 0.5rem !important;
+  }
+
+  .app-nav button[aria-label='Toggle theme'] {
+    width: 38px !important;
+    min-width: 38px !important;
+    padding: 0 !important;
+  }
+}
+
+@media (max-width: 767px) {
+  .board-header,
+  .metrics-ribbon-container,
+  .summary-bar {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 0.68rem !important;
+    width: 100% !important;
+  }
+
+  #page-board .dorm-dashboard,
+  #page-squadron .dorm-dashboard,
+  .status-board-grid,
+  .board-columns-container,
+  .squadron-board-body {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 1rem !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    overflow-y: visible !important;
+  }
+
+  #active-buses {
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 0.25rem;
+  }
+}
+
+@media (min-width: 700px) and (max-width: 1024px) and (orientation: landscape) {
+  .fullscreen-board #page-board,
+  .fullscreen-board #page-squadron.gate-squadron-page {
+    padding-top: 18px !important;
+  }
+
+  .fullscreen-board #page-board .board-header {
+    grid-template-columns: 1fr 1fr 1.6fr !important;
+    gap: 0.55rem !important;
+    padding: 0.55rem !important;
+  }
+
+  .fullscreen-board #page-board .dorm-dashboard,
+  .fullscreen-board #page-squadron .dorm-dashboard,
+  .status-board-grid,
+  .board-columns-container {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 0.6rem !important;
+    width: 100% !important;
+  }
+
+  .fullscreen-board #page-board .gate-dorm-card,
+  .fullscreen-board #page-squadron .gate-dorm-card {
+    min-height: 132px !important;
+    padding: 0.8rem 0.9rem !important;
   }
 }
 
@@ -423,9 +605,19 @@ body:not(.fullscreen-board) #page-squadron.gate-squadron-page {
   #fullscreen-btn,
   #sound-toggle-btn,
   #role-toggle,
-  .app-nav button[aria-label='Toggle theme'] {
+  .app-nav button[aria-label='Toggle theme'],
+  #mobile-menu-trigger,
+  #main-nav-menu,
+  #nav-links,
+  .nav-group-left {
     transform: none !important;
     border-radius: var(--radius-pill) !important;
     transition-duration: 0.01ms !important;
+  }
+
+  #main-nav-menu.mobile-dropdown-active,
+  #nav-links.mobile-dropdown-active,
+  .nav-group-left.mobile-dropdown-active {
+    transform: none !important;
   }
 }

@@ -209,36 +209,151 @@
       .theme-light .gate-dorm-status[data-state='empty'] { color: #64748b !important; }
 
       #page-squadron.gate-squadron-page {
-        padding-top: 80px;
-        padding-bottom: 0.75rem;
+        padding: 62px 0.85rem 0.85rem !important;
         min-height: 100vh;
         overflow: hidden;
       }
 
-      .gate-squadron-title {
+      #page-squadron .gate-squadron-shell {
+        min-height: calc(100vh - 72px);
+        display: flex;
+        flex-direction: column;
+        gap: 0.78rem;
+        position: relative;
+      }
+
+      #page-squadron .gate-squadron-masthead {
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.34rem;
+        width: min(920px, calc(100vw - 2rem));
+        margin: 0 auto;
+        padding: 0.82rem 1.25rem 0.72rem;
+        border: 1px solid rgba(125, 211, 252, 0.18);
+        border-radius: 1.15rem;
+        background:
+          radial-gradient(circle at 50% 0%, rgba(56, 189, 248, 0.13), transparent 46%),
+          linear-gradient(145deg, rgba(255, 255, 255, 0.088), rgba(255, 255, 255, 0.028));
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, 0.13),
+          0 10px 26px rgba(0, 0, 0, 0.20),
+          0 0 24px rgba(56, 189, 248, 0.06);
+        -webkit-backdrop-filter: blur(18px) saturate(1.12);
+        backdrop-filter: blur(18px) saturate(1.12);
+      }
+
+      #page-squadron .gate-squadron-masthead::after {
+        content: '';
+        position: absolute;
+        left: 12%;
+        right: 12%;
+        bottom: 0;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(125, 211, 252, 0.58), rgba(34, 197, 94, 0.20), transparent);
+        box-shadow: 0 0 14px rgba(56, 189, 248, 0.24);
+      }
+
+      #page-squadron .gate-squadron-emblem {
+        width: min(460px, 72vw);
+        height: 44px;
+        background: url('/assets/gate_emblem_small.png') no-repeat center center / contain;
+        filter: drop-shadow(0 0 12px rgba(56, 189, 248, 0.16));
+      }
+
+      #page-squadron .gate-squadron-subtitle {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: center;
+        gap: 0.52rem;
+        color: var(--text-muted);
+        font-size: 0.68rem;
+        font-weight: 950;
+        letter-spacing: 0.17em;
+        line-height: 1.05;
+        text-transform: uppercase;
+        text-align: center;
+      }
+
+      #page-squadron .gate-squadron-subtitle span:not(:last-child)::after {
+        content: '•';
+        margin-left: 0.52rem;
+        color: rgba(125, 211, 252, 0.52);
+      }
+
+      #page-squadron .gate-squadron-header {
         display: flex;
         align-items: center;
-        justify-content: space-between;
-        gap: 1rem;
-        padding: 0.25rem 0.75rem 0;
+        justify-content: center;
+        gap: 0.62rem;
+        width: fit-content;
+        max-width: calc(100vw - 2rem);
+        margin: 0 auto;
+        padding: 0.44rem;
+        border: 1px solid rgba(148, 163, 184, 0.16);
+        border-radius: 999px;
+        background:
+          linear-gradient(145deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.025));
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, 0.11),
+          0 8px 20px rgba(0, 0, 0, 0.16);
+        -webkit-backdrop-filter: blur(16px) saturate(1.12);
+        backdrop-filter: blur(16px) saturate(1.12);
       }
 
-      .gate-squadron-title h2,
-      .gate-squadron-title .gate-system-label {
-        margin: 0;
-        color: var(--text-muted);
-        font-size: 0.74rem;
-        font-weight: 950;
-        letter-spacing: 0.16em;
-        text-transform: uppercase;
-      }
-
-      .gate-squadron-header {
+      #page-squadron .gate-squadron-metric {
         display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 0.75rem;
-        padding: 0.75rem;
-        flex-shrink: 0;
+        grid-template-columns: auto auto;
+        align-items: baseline;
+        gap: 0.42rem;
+        min-width: 0;
+        padding: 0.45rem 0.74rem;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.085);
+        background: rgba(255, 255, 255, 0.045);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+      }
+
+      #page-squadron .gate-squadron-metric-label {
+        color: var(--text-muted);
+        font-size: 0.62rem;
+        font-weight: 950;
+        letter-spacing: 0.115em;
+        text-transform: uppercase;
+        white-space: nowrap;
+      }
+
+      #page-squadron .gate-squadron-metric-value {
+        color: var(--text);
+        font-size: clamp(1.25rem, 2.15vw, 1.92rem);
+        font-weight: 950;
+        letter-spacing: -0.055em;
+        line-height: 1;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+      }
+
+      #page-squadron .dorm-dashboard {
+        flex: 1 1 auto;
+        min-height: 0;
+      }
+
+      .theme-light #page-squadron .gate-squadron-masthead,
+      .theme-light #page-squadron .gate-squadron-header {
+        background: linear-gradient(145deg, rgba(255, 255, 255, 0.76), rgba(255, 255, 255, 0.46));
+        border-color: rgba(2, 132, 199, 0.16);
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, 0.80),
+          0 8px 20px rgba(15, 23, 42, 0.08);
+      }
+
+      .theme-light #page-squadron .gate-squadron-metric {
+        background: rgba(255, 255, 255, 0.56);
+        border-color: rgba(100, 116, 139, 0.14);
       }
 
       .prc-active-buses-v3 #active-buses,
@@ -274,7 +389,10 @@
       #page-board #active-buses .prc-bus-card-dept { width: 100% !important; margin-top: 0.28rem !important; padding-top: 0.28rem !important; border-top: 1px solid rgba(255,255,255,0.18) !important; font-size: 0.72rem !important; font-weight: 950 !important; color: var(--text-muted) !important; }
 
       @media (max-width: 768px) {
-        .gate-squadron-header { grid-template-columns: 1fr; }
+        #page-squadron .gate-squadron-masthead { width: 100%; padding: 0.72rem 0.85rem 0.62rem; }
+        #page-squadron .gate-squadron-emblem { width: min(360px, 82vw); height: 38px; }
+        #page-squadron .gate-squadron-header { width: 100%; border-radius: 1rem; flex-wrap: wrap; }
+        #page-squadron .gate-squadron-metric { flex: 1 1 160px; justify-content: center; }
         #page-squadron .dorm-dashboard { grid-template-columns: 1fr; overflow-y: auto; }
       }
     `;
@@ -423,19 +541,33 @@
     if (!document.getElementById('page-squadron')) {
       boardPage.insertAdjacentHTML('afterend', `
         <main id="page-squadron" class="page gate-squadron-page" role="main" aria-label="Squadron Board">
-          <div class="gate-squadron-title">
-            <h2>Squadron Board</h2>
-            <div class="gate-system-label">PRC GATE</div>
-          </div>
-          <div class="gate-squadron-header">
-            <div class="metric-block"><div class="text-xs uppercase tracking-wider font-medium text-muted">Arrived</div><div id="squadron-metric-arrived" class="text-2xl font-black font-tabular mt-1">0</div></div>
-            <div class="metric-block"><div class="text-xs uppercase tracking-wider font-medium text-muted">Expected</div><div id="squadron-metric-expected" class="text-2xl font-black font-tabular mt-1">0</div></div>
-            <div class="metric-block"><div class="text-xs uppercase tracking-wider font-medium text-muted">Local</div><div id="squadron-metric-local" class="text-2xl font-black font-tabular mt-1">--:--</div></div>
-          </div>
-          <div class="dorm-dashboard">
-            <div class="dorm-column"><div class="dorm-col-header">Empty</div><div id="squadron-col-empty" class="dorm-col-content"></div></div>
-            <div class="dorm-column"><div class="dorm-col-header">Open</div><div id="squadron-col-open" class="dorm-col-content"></div></div>
-            <div class="dorm-column"><div class="dorm-col-header">Closed</div><div id="squadron-col-closed" class="dorm-col-content"></div></div>
+          <div class="gate-squadron-shell">
+            <section class="gate-squadron-masthead" aria-label="Squadron Board header">
+              <div class="gate-squadron-emblem" aria-hidden="true"></div>
+              <div class="gate-squadron-subtitle">
+                <span>Pfingston Reception Center</span>
+                <span>Squadron Board</span>
+              </div>
+            </section>
+            <section class="gate-squadron-header" aria-label="Squadron Board metrics">
+              <div class="gate-squadron-metric">
+                <div class="gate-squadron-metric-label">Arrived</div>
+                <div id="squadron-metric-arrived" class="gate-squadron-metric-value">0</div>
+              </div>
+              <div class="gate-squadron-metric">
+                <div class="gate-squadron-metric-label">Expected</div>
+                <div id="squadron-metric-expected" class="gate-squadron-metric-value">0</div>
+              </div>
+              <div class="gate-squadron-metric">
+                <div class="gate-squadron-metric-label">Local</div>
+                <div id="squadron-metric-local" class="gate-squadron-metric-value">--:--</div>
+              </div>
+            </section>
+            <div class="dorm-dashboard">
+              <div class="dorm-column"><div class="dorm-col-header">Empty</div><div id="squadron-col-empty" class="dorm-col-content"></div></div>
+              <div class="dorm-column"><div class="dorm-col-header">Open</div><div id="squadron-col-open" class="dorm-col-content"></div></div>
+              <div class="dorm-column"><div class="dorm-col-header">Closed</div><div id="squadron-col-closed" class="dorm-col-content"></div></div>
+            </div>
           </div>
         </main>
       `);

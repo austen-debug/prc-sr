@@ -633,3 +633,45 @@ body:not(.fullscreen-board) #page-squadron.gate-squadron-page {
     transform: none !important;
   }
 }
+
+/* ======================================================================
+   PHASE 5.2: NAV DESKTOP TRUNCATION & GHOST BOX ELIMINATION
+   ====================================================================== */
+#mobile-menu-trigger.mobile-only-control {
+  display: none !important;
+}
+
+.command-header-bar nav a,
+.command-header-bar nav button,
+.navbar a,
+.navbar button,
+#main-nav-menu .nav-btn,
+#nav-links .nav-btn {
+  background-image: none !important;
+  outline: none !important;
+}
+
+.navbar button.active,
+.navbar button.is-active,
+.navbar .current-page,
+.command-header-bar .active-page-state,
+.command-header-bar .current-page,
+#main-nav-menu .active-page-state,
+#main-nav-menu .current-page,
+#nav-links .active-page-state,
+#nav-links .current-page,
+[href="#status"].active-page-state {
+  color: #ffffff !important;
+  background: rgba(0, 163, 255, 0.14) !important;
+  border: 1px solid rgba(0, 191, 255, 0.60) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.20),
+    0 0 16px rgba(0, 163, 255, 0.30) !important;
+  text-shadow: 0 0 8px rgba(0, 163, 255, 0.40) !important;
+}
+
+@media (max-width: 991px) {
+  #mobile-menu-trigger.mobile-only-control {
+    display: inline-flex !important;
+  }
+}

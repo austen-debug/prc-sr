@@ -256,16 +256,21 @@ body:not(.fullscreen-board) #page-squadron.gate-squadron-page {
 .command-header-bar button.is-active,
 .command-header-bar .current-page {
   color: #ffffff !important;
-  background:
-    linear-gradient(135deg, rgba(29, 78, 216, 0.58), rgba(56, 189, 248, 0.22)) !important;
-  border-color: rgba(125, 211, 252, 0.58) !important;
+  background: rgba(0, 163, 255, 0.14) !important;
+  border: 1px solid rgba(0, 191, 255, 0.60) !important;
   font-weight: 950 !important;
+  text-shadow: 0 0 8px rgba(0, 163, 255, 0.40) !important;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.20),
-    inset 0 -2px 0 rgba(56, 189, 248, 0.76),
-    0 6px 18px rgba(0, 0, 0, 0.24),
-    0 0 20px rgba(56, 189, 248, 0.20) !important;
+    0 0 16px rgba(0, 163, 255, 0.30),
+    0 6px 18px rgba(0, 0, 0, 0.20) !important;
   transform: none !important;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    color 0.2s ease,
+    text-shadow 0.2s ease !important;
 }
 
 .app-nav .nav-btn.active::after { content: none !important; }
@@ -276,10 +281,12 @@ body:not(.fullscreen-board) #page-squadron.gate-squadron-page {
 
 #mobile-menu-trigger[aria-expanded='true'] {
   color: #ffffff !important;
-  border-color: rgba(125, 211, 252, 0.58) !important;
+  background: rgba(0, 163, 255, 0.14) !important;
+  border: 1px solid rgba(0, 191, 255, 0.60) !important;
+  text-shadow: 0 0 8px rgba(0, 163, 255, 0.40) !important;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.20),
-    0 0 20px rgba(56, 189, 248, 0.18) !important;
+    0 0 16px rgba(0, 163, 255, 0.30) !important;
 }
 
 .menu-arrow-indicator {
@@ -396,12 +403,13 @@ body:not(.fullscreen-board) #page-squadron.gate-squadron-page {
 .theme-light .command-header-bar button.active,
 .theme-light .command-header-bar button.is-active,
 .theme-light .command-header-bar .current-page {
-  color: #0f172a !important;
-  background: linear-gradient(135deg, rgba(2, 132, 199, 0.20), rgba(255, 255, 255, 0.86)) !important;
-  border-color: rgba(2, 132, 199, 0.38) !important;
+  color: #ffffff !important;
+  background: rgba(0, 163, 255, 0.18) !important;
+  border: 1px solid rgba(0, 132, 214, 0.58) !important;
+  text-shadow: 0 0 8px rgba(0, 132, 214, 0.36) !important;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.92),
-    inset 0 -2px 0 rgba(2, 132, 199, 0.64),
+    inset 0 1px 0 rgba(255, 255, 255, 0.72),
+    0 0 16px rgba(0, 132, 214, 0.22),
     0 5px 12px rgba(15, 23, 42, 0.10) !important;
 }
 
@@ -506,9 +514,13 @@ body:not(.fullscreen-board) #page-squadron.gate-squadron-page {
   #nav-links .current-page,
   .nav-group-left .active-page-state,
   .nav-group-left .current-page {
-    background: var(--glass-bg-strong) !important;
-    border-color: rgba(0, 163, 255, 0.42) !important;
-    color: var(--text) !important;
+    background: rgba(0, 163, 255, 0.14) !important;
+    border: 1px solid rgba(0, 191, 255, 0.60) !important;
+    color: #ffffff !important;
+    text-shadow: 0 0 8px rgba(0, 163, 255, 0.40) !important;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.20),
+      0 0 16px rgba(0, 163, 255, 0.30) !important;
   }
 
   .app-nav > div:last-child,

@@ -145,6 +145,39 @@ button[onclick*="initiateCloseout"]:active,
   border-radius: 38% 62% 42% 58% / 58% 42% 62% 38% !important;
 }
 
+/* Squadron Board masthead vertical safety: prevents high-letter clipping at TV/browser zoom levels. */
+body #page-squadron.gate-squadron-page {
+  padding-top: 76px !important;
+}
+
+body #page-squadron.gate-squadron-page .gate-squadron-shell .gate-squadron-masthead {
+  min-height: 74px !important;
+  padding: 1.18rem 1.35rem 1.08rem !important;
+  overflow: visible !important;
+}
+
+body #page-squadron.gate-squadron-page .gate-squadron-shell .gate-squadron-subtitle {
+  line-height: 1.24 !important;
+  padding: 0.06rem 0 0.04rem !important;
+}
+
+body #page-squadron.gate-squadron-page .gate-squadron-shell .gate-squadron-subtitle span {
+  display: inline-flex !important;
+  align-items: center !important;
+  min-height: 1.45em !important;
+}
+
+@media (max-width: 768px) {
+  body #page-squadron.gate-squadron-page {
+    padding-top: 72px !important;
+  }
+
+  body #page-squadron.gate-squadron-page .gate-squadron-shell .gate-squadron-masthead {
+    min-height: 66px !important;
+    padding: 0.96rem 0.9rem 0.86rem !important;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   button[style*="background:#dc2626"],
   button[style*="background: #dc2626"],

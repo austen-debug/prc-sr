@@ -282,3 +282,71 @@ body #page-squadron.gate-squadron-page .gate-squadron-shell .gate-squadron-subti
     border-radius: var(--radius-md) !important;
   }
 }
+
+/* ======================================================================
+   PHASE 5.3: NAV GLOW RECOVERY / LAST-LOADED OVERRIDE
+   Loaded after prc-dash-nav.css to neutralize legacy nav wrapper clipping.
+   ====================================================================== */
+#mobile-menu-trigger.mobile-only-control {
+  display: none !important;
+}
+
+@media (min-width: 992px) {
+  .command-header-bar nav,
+  .command-header-bar .nav-group-left,
+  .app-nav .nav-group-left,
+  #main-nav-menu.nav-group-left,
+  #nav-links.nav-group-left,
+  .nav-links-wrapper {
+    overflow: visible !important;
+    background: transparent !important;
+    background-image: none !important;
+    border: none !important;
+    box-shadow: none !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+  }
+}
+
+.command-header-bar nav a,
+.command-header-bar nav button,
+.command-header-bar .nav-group-left a,
+.command-header-bar .nav-group-left button,
+.nav-group-left a,
+.nav-group-left button,
+.navbar a,
+.navbar button,
+#main-nav-menu .nav-btn,
+#nav-links .nav-btn {
+  margin: 0 !important;
+  box-sizing: border-box !important;
+  position: relative !important;
+  background-image: none !important;
+  outline: none !important;
+}
+
+.command-header-bar .active-page-state,
+.command-header-bar .current-page,
+[href="#status"].active-page-state,
+.navbar button.active,
+.navbar .current-page,
+#main-nav-menu .active-page-state,
+#main-nav-menu .current-page,
+#nav-links .active-page-state,
+#nav-links .current-page {
+  z-index: 5 !important;
+  color: #ffffff !important;
+  background: rgba(0, 163, 255, 0.14) !important;
+  border: 1px solid rgba(0, 191, 255, 0.60) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.20),
+    0 0 16px rgba(0, 163, 255, 0.30) !important;
+  text-shadow: 0 0 8px rgba(0, 163, 255, 0.40) !important;
+}
+
+@media (max-width: 991px) {
+  #mobile-menu-trigger.mobile-only-control {
+    display: inline-flex !important;
+  }
+}

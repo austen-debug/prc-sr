@@ -364,6 +364,118 @@
   box-shadow: var(--glass-highlight), var(--shadow-soft), 0 0 0 1px rgba(56, 189, 248, 0.26), var(--shadow-glow-blue) !important;
 }
 
+.log-table-container,
+.arrivals-log-wrapper,
+#page-airport .surface:has(table),
+#page-archives .surface:has(table),
+#archive-history .surface,
+#airport-bus-log-body {
+  background: var(--glass-bg) !important;
+  border: 1px solid var(--glass-border) !important;
+  border-radius: var(--radius-xl) !important;
+  box-shadow: var(--glass-highlight), var(--shadow-soft), var(--shadow-glow-blue) !important;
+  overflow: hidden;
+}
+
+.log-table-container,
+.arrivals-log-wrapper,
+#page-airport .surface:has(table),
+#page-archives .surface:has(table) {
+  padding: 1rem !important;
+}
+
+.tactical-grid-table,
+#page-airport table,
+#page-archives table,
+#archive-history table {
+  width: 100% !important;
+  border-collapse: separate !important;
+  border-spacing: 0 6px !important;
+  margin-top: 0.5rem !important;
+}
+
+.tactical-grid-table th,
+#page-airport table th,
+#page-archives table th,
+#archive-history table th {
+  color: var(--board-secondary-text) !important;
+  font-weight: 800 !important;
+  font-size: clamp(0.78rem, 0.9vw, 0.95rem) !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.08em !important;
+  padding: 0.78rem 1rem !important;
+  text-align: left !important;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.08) !important;
+  background: transparent !important;
+  white-space: nowrap !important;
+}
+
+.tactical-grid-table td,
+#page-airport table td,
+#page-archives table td,
+#archive-history table td {
+  background: rgba(255, 255, 255, 0.028) !important;
+  color: var(--text) !important;
+  font-size: clamp(0.86rem, 1vw, 1.08rem) !important;
+  font-weight: 700 !important;
+  padding: 0.82rem 1rem !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.035) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.035) !important;
+  transition: background var(--transition-medium), color var(--transition-medium) !important;
+  vertical-align: middle !important;
+}
+
+.tactical-grid-table tr td:first-child,
+#page-airport table tr td:first-child,
+#page-archives table tr td:first-child,
+#archive-history table tr td:first-child {
+  border-top-left-radius: var(--radius-md) !important;
+  border-bottom-left-radius: var(--radius-md) !important;
+  border-left: 1px solid rgba(255, 255, 255, 0.055) !important;
+}
+
+.tactical-grid-table tr td:last-child,
+#page-airport table tr td:last-child,
+#page-archives table tr td:last-child,
+#archive-history table tr td:last-child {
+  border-top-right-radius: var(--radius-md) !important;
+  border-bottom-right-radius: var(--radius-md) !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.055) !important;
+}
+
+.tactical-grid-table tr:hover td,
+#page-airport table tr:hover td,
+#page-archives table tr:hover td,
+#archive-history table tr:hover td {
+  background: rgba(255, 255, 255, 0.065) !important;
+  color: #ffffff !important;
+}
+
+.count-badge-pill,
+#page-airport table td:nth-child(4),
+#page-airport table td:nth-child(5),
+#page-airport table td:nth-child(6),
+#archive-history table td:nth-child(2),
+#archive-history table td:nth-child(3),
+#archive-history table td:nth-child(4) {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !important;
+  font-variant-numeric: tabular-nums !important;
+  font-weight: 850 !important;
+}
+
+.count-badge-pill {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-width: 2.1rem;
+  padding: 0.24rem 0.62rem;
+  border-radius: var(--radius-pill);
+  background: rgba(0, 163, 255, 0.12);
+  border: 1px solid rgba(0, 163, 255, 0.40);
+  color: #e0f3ff;
+  box-shadow: 0 0 12px rgba(0, 163, 255, 0.14);
+}
+
 .proc-card span.text-xs.font-bold.uppercase,
 #airport-bus-log-body span.text-xs.font-bold.uppercase,
 .bus-badge {
@@ -525,7 +637,12 @@
   min-height: 120px;
 }
 
-.theme-light .tactical-glass-card {
+.theme-light .tactical-glass-card,
+.theme-light .log-table-container,
+.theme-light .arrivals-log-wrapper,
+.theme-light #page-airport .surface:has(table),
+.theme-light #page-archives .surface:has(table),
+.theme-light #archive-history .surface {
   background:
     radial-gradient(circle at 18% 0%, rgba(2, 132, 199, 0.075), transparent 34%),
     linear-gradient(145deg, rgba(255,255,255,0.86), rgba(255,255,255,0.58)) !important;
@@ -533,6 +650,14 @@
   box-shadow:
     inset 0 1px 0 rgba(255,255,255,0.88),
     0 8px 22px rgba(15, 23, 42, 0.10) !important;
+}
+
+.theme-light #page-airport table td,
+.theme-light #page-archives table td,
+.theme-light #archive-history table td {
+  background: rgba(15, 23, 42, 0.035) !important;
+  color: #0f172a !important;
+  border-color: rgba(100, 116, 139, 0.14) !important;
 }
 
 .theme-light #page-board .gate-dorm-name,
@@ -578,7 +703,10 @@
   #page-board .gate-dorm-card,
   #page-squadron .gate-dorm-card,
   #page-board .gate-dorm-progress-fill,
-  #page-squadron .gate-dorm-progress-fill {
+  #page-squadron .gate-dorm-progress-fill,
+  #page-airport table td,
+  #page-archives table td,
+  #archive-history table td {
     transition: none !important;
   }
 }

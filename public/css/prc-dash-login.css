@@ -14,7 +14,7 @@
   background-repeat: no-repeat;
   background-position: center center;
   background-size: min(82vw, 1080px) auto;
-  opacity: 0.14;
+  opacity: 0.13;
   pointer-events: none;
   z-index: 0;
   filter:
@@ -75,12 +75,12 @@
   justify-content: center;
   align-items: center;
   width: 100%;
-  min-height: 34px;
-  padding: 0.45rem 0.65rem;
+  min-height: 36px;
+  padding: 0.48rem 0.72rem;
   border-radius: var(--radius-md);
   background: var(--btn-green-gradient);
   color: #ffffff;
-  font-size: 0.7rem;
+  font-size: 0.72rem;
   font-weight: 950;
   letter-spacing: 0.12em;
   text-align: center;
@@ -142,7 +142,7 @@
   margin: 0.24rem 0 0;
   color: var(--text-soft);
   font-size: 0.78rem;
-  font-weight: 800;
+  font-weight: 850;
   letter-spacing: 0.055em;
   line-height: 1.15;
   text-transform: uppercase;
@@ -153,23 +153,23 @@
   align-items: center;
   justify-content: center;
   margin: 0.52rem 0 0;
-  min-height: 26px;
-  padding: 0.28rem 0.72rem;
-  border-radius: 999px;
-  border: 1px solid rgba(125, 211, 252, 0.24);
-  background: rgba(56, 189, 248, 0.09);
+  min-height: 28px;
+  padding: 0.3rem 0.76rem;
+  border-radius: var(--radius-pill);
+  border: 1px solid rgba(125, 211, 252, 0.26);
+  background: rgba(56, 189, 248, 0.10);
   color: var(--text-soft);
-  font-size: 0.68rem;
+  font-size: 0.7rem;
   font-weight: 950;
   letter-spacing: 0.13em;
   line-height: 1;
   text-transform: uppercase;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 0 14px rgba(56, 189, 248, 0.08);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.09), 0 0 14px rgba(56, 189, 248, 0.09);
 }
 
 .login-form label {
   color: var(--text-soft);
-  font-size: 0.75rem;
+  font-size: 0.76rem;
   font-weight: 900;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -177,15 +177,16 @@
 
 .login-form input {
   width: 100%;
-  min-height: 46px;
-  padding: 0.75rem 0.9rem;
+  min-height: 48px;
+  padding: 0.78rem 0.92rem;
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-md);
   background: var(--glass-bg-soft);
   color: var(--text);
+  font-weight: 650;
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 6px 18px rgba(0,0,0,0.10);
-  -webkit-backdrop-filter: blur(var(--glass-blur));
-  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.35);
+  backdrop-filter: blur(var(--glass-blur)) saturate(1.35);
 }
 
 .login-form input:focus {
@@ -195,34 +196,47 @@
 }
 
 .login-button {
-  min-height: 48px;
+  min-height: 52px;
   width: 100%;
-  border: 1px solid rgba(255,255,255,0.22);
+  border: 1px solid rgba(255,255,255,0.24);
   border-radius: var(--radius-md);
   background: var(--btn-green-gradient);
   color: #ffffff;
-  font-size: 0.92rem;
+  font-size: 0.96rem;
   font-weight: 950;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.09em;
   text-transform: uppercase;
   box-shadow: var(--glass-highlight), var(--shadow-soft), var(--shadow-glow-green);
-  transition: transform var(--transition-fast), box-shadow var(--transition-medium), opacity var(--transition-fast);
+  transition:
+    transform var(--transition-fast),
+    border-radius var(--transition-medium),
+    border-color var(--transition-medium),
+    box-shadow var(--transition-medium),
+    opacity var(--transition-fast);
+  will-change: transform, border-radius;
 }
 
 .login-button:hover {
   transform: translateY(-1px);
+  border-color: rgba(255,255,255,0.36);
   box-shadow: var(--glass-highlight), var(--shadow-medium), var(--shadow-glow-green);
 }
 
 .login-button:active {
-  transform: translateY(0) scale(0.985);
+  transform: scaleX(0.965) scaleY(1.035) translateY(0) !important;
+  border-radius: 38% 62% 42% 58% / 58% 42% 62% 38% !important;
+}
+
+.login-button:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring), var(--glass-highlight), var(--shadow-medium), var(--shadow-glow-green) !important;
 }
 
 .login-footer-note {
   margin-top: 1rem;
   color: var(--text-muted);
-  font-size: 0.7rem;
-  font-weight: 700;
+  font-size: 0.72rem;
+  font-weight: 750;
   letter-spacing: 0.06em;
   text-align: center;
   text-transform: uppercase;
@@ -261,5 +275,14 @@
 
   .login-title {
     font-size: clamp(2.65rem, 15vw, 4.35rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-button,
+  .login-button:hover,
+  .login-button:active {
+    transform: none !important;
+    border-radius: var(--radius-md) !important;
   }
 }

@@ -8,6 +8,136 @@ const UI_STYLESHEETS = [
   '<link rel="stylesheet" href="/css/prc-dash-danger-actions.css">'
 ];
 
+const UI_INLINE_ASSETS = [
+  `<style id="gate-mobile-nav-access-fix">
+@media (max-width: 991px) {
+  .app-nav.command-header-bar,
+  .app-nav {
+    display: grid !important;
+    grid-template-columns: minmax(78px, 112px) minmax(0, 1fr) !important;
+    grid-template-areas:
+      "brand menu"
+      "tools tools" !important;
+    align-items: center !important;
+    gap: 8px !important;
+    min-height: 146px !important;
+    height: auto !important;
+    padding: 10px 12px 12px !important;
+    overflow: visible !important;
+  }
+
+  .app-nav::before {
+    grid-area: brand !important;
+    width: min(28vw, 112px) !important;
+    min-width: 78px !important;
+    height: 42px !important;
+    min-height: 42px !important;
+    justify-self: start !important;
+    align-self: center !important;
+  }
+
+  #mobile-menu-trigger.mobile-only-control {
+    grid-area: menu !important;
+    display: inline-flex !important;
+    justify-self: end !important;
+    width: auto !important;
+    min-width: 108px !important;
+    max-width: 138px !important;
+    height: 42px !important;
+    min-height: 42px !important;
+    padding: 0 0.86rem !important;
+  }
+
+  .app-nav > div:last-child,
+  .app-nav .nav-group-right {
+    grid-area: tools !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 44px !important;
+    gap: 6px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border-left: 0 !important;
+    overflow: visible !important;
+    align-items: center !important;
+  }
+
+  #role-toggle {
+    grid-column: 1 / -1 !important;
+    width: 100% !important;
+    max-width: none !important;
+  }
+
+  #fullscreen-btn,
+  #sound-toggle-btn,
+  .app-nav button[aria-label='Toggle theme'] {
+    display: inline-flex !important;
+    height: 40px !important;
+    min-height: 40px !important;
+    min-width: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+    box-sizing: border-box !important;
+    justify-content: center !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+
+  #fullscreen-btn,
+  #sound-toggle-btn {
+    padding: 0 0.58rem !important;
+    font-size: 0.66rem !important;
+    letter-spacing: 0.055em !important;
+  }
+
+  .app-nav button[aria-label='Toggle theme'] {
+    width: 44px !important;
+    min-width: 44px !important;
+    padding: 0 !important;
+    justify-self: end !important;
+  }
+
+  #week-group-display {
+    display: none !important;
+  }
+
+  #main-nav-menu,
+  #nav-links,
+  .nav-group-left {
+    top: calc(100% + 6px) !important;
+  }
+
+  body:not(.fullscreen-board) .page,
+  body:not(.fullscreen-board) #page-squadron.gate-squadron-page {
+    padding-top: 190px !important;
+  }
+}
+
+@media (max-width: 420px) {
+  .app-nav.command-header-bar,
+  .app-nav {
+    grid-template-columns: 94px minmax(0, 1fr) !important;
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+  }
+
+  .app-nav::before {
+    width: 94px !important;
+    min-width: 94px !important;
+  }
+
+  #mobile-menu-trigger.mobile-only-control {
+    min-width: 104px !important;
+    max-width: 126px !important;
+    padding-left: 0.72rem !important;
+    padding-right: 0.72rem !important;
+  }
+}
+</style>`
+];
+
 const UI_HEAD_SCRIPTS = [
   '<script src="/js/prc-dash-runtime-fixes.js" defer></script>',
   '<script src="/js/prc-dash-sat-arrivals.js" defer></script>',
@@ -226,6 +356,11 @@ function extractUrl(assetTag, attributeName) {
   return match ? match[1] : '';
 }
 
+function extractId(assetTag) {
+  const match = assetTag.match(/id="([^"]+)"/);
+  return match ? match[1] : '';
+}
+
 function applyNativeFunctionReplacements(html) {
   if (!html.includes('function printArchiveSpreadsheet()')) return html;
 
@@ -241,12 +376,17 @@ function applyUiAssets(html) {
     return href && !html.includes(href);
   });
 
+  const inlineAssetsToAdd = UI_INLINE_ASSETS.filter(asset => {
+    const id = extractId(asset);
+    return id ? !html.includes(`id="${id}"`) : !html.includes(asset);
+  });
+
   const scriptsToAdd = UI_HEAD_SCRIPTS.filter(script => {
     const src = extractUrl(script, 'src');
     return src && !html.includes(src);
   });
 
-  const assetsToAdd = [...linksToAdd, ...scriptsToAdd];
+  const assetsToAdd = [...linksToAdd, ...inlineAssetsToAdd, ...scriptsToAdd];
   let nextHtml = applyNativeFunctionReplacements(html);
 
   if (assetsToAdd.length === 0) {

@@ -1,4 +1,4 @@
-/* PRC DASH Login Screen */
+/* PRC GATE Login Screen */
 .login-page {
   font-family: 'DM Sans', sans-serif;
   color: var(--text);
@@ -10,13 +10,17 @@
   content: '';
   position: fixed;
   inset: 0;
-  background-image: url('/assets/prc-logo-blue.png');
+  background-image: url('/assets/gate_emblem_large.png');
   background-repeat: no-repeat;
   background-position: center center;
-  background-size: min(78vw, 920px) auto;
-  opacity: 0.18;
+  background-size: min(82vw, 1080px) auto;
+  opacity: 0.14;
   pointer-events: none;
   z-index: 0;
+  filter:
+    drop-shadow(0 0 22px rgba(56, 189, 248, 0.18))
+    drop-shadow(0 0 58px rgba(37, 99, 235, 0.08));
+  mix-blend-mode: screen;
 }
 
 .login-page::after {
@@ -35,7 +39,7 @@
   position: relative;
   z-index: 1;
   width: 100%;
-  max-width: 460px;
+  max-width: 500px;
 }
 
 .login-card {
@@ -83,6 +87,14 @@
   box-shadow: var(--glass-highlight), var(--shadow-soft), var(--shadow-glow-green);
 }
 
+.login-brand-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.28rem;
+  padding: 0.15rem 0.2rem 0;
+}
+
 .login-brand-mark {
   display: inline-flex;
   justify-content: center;
@@ -101,11 +113,12 @@
 }
 
 .login-title {
-  font-size: clamp(2.1rem, 7vw, 3.15rem);
+  margin: 0;
+  font-size: clamp(3rem, 12vw, 5.25rem);
   font-weight: 950;
-  line-height: 0.95;
-  letter-spacing: -0.08em;
-  text-shadow: 0 1px 24px rgba(56, 189, 248, 0.20);
+  line-height: 0.86;
+  letter-spacing: -0.105em;
+  text-shadow: 0 1px 28px rgba(56, 189, 248, 0.24);
 }
 
 .login-subtitle {
@@ -113,6 +126,45 @@
   font-size: 0.9rem;
   font-weight: 700;
   letter-spacing: 0.03em;
+}
+
+.login-system-name {
+  margin: 0.42rem 0 0;
+  color: var(--text);
+  font-size: clamp(0.95rem, 3.4vw, 1.18rem);
+  font-weight: 950;
+  letter-spacing: 0.065em;
+  line-height: 1.05;
+  text-transform: uppercase;
+}
+
+.login-org-line {
+  margin: 0.24rem 0 0;
+  color: var(--text-soft);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.055em;
+  line-height: 1.15;
+  text-transform: uppercase;
+}
+
+.login-beta-line {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0.52rem 0 0;
+  min-height: 26px;
+  padding: 0.28rem 0.72rem;
+  border-radius: 999px;
+  border: 1px solid rgba(125, 211, 252, 0.24);
+  background: rgba(56, 189, 248, 0.09);
+  color: var(--text-soft);
+  font-size: 0.68rem;
+  font-weight: 950;
+  letter-spacing: 0.13em;
+  line-height: 1;
+  text-transform: uppercase;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 0 14px rgba(56, 189, 248, 0.08);
 }
 
 .login-form label {
@@ -181,11 +233,19 @@
 }
 
 .theme-light .login-page::before {
-  opacity: 0.10;
+  opacity: 0.06;
+  mix-blend-mode: multiply;
+  filter: grayscale(0.15) drop-shadow(0 0 14px rgba(2, 132, 199, 0.08));
 }
 
 .theme-light .login-title {
   text-shadow: 0 1px 18px rgba(255,255,255,0.72);
+}
+
+.theme-light .login-beta-line {
+  color: #075985;
+  background: rgba(2, 132, 199, 0.08);
+  border-color: rgba(2, 132, 199, 0.18);
 }
 
 .theme-light .login-brand-mark {
@@ -197,5 +257,9 @@
 @media (max-width: 520px) {
   .login-card {
     padding: 1.35rem;
+  }
+
+  .login-title {
+    font-size: clamp(2.65rem, 15vw, 4.35rem);
   }
 }

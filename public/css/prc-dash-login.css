@@ -40,9 +40,12 @@
   z-index: 1;
   width: 100%;
   max-width: 500px;
+  padding-top: max(0px, env(safe-area-inset-top));
+  padding-bottom: max(0px, env(safe-area-inset-bottom));
 }
 
-.login-card {
+.login-card,
+.login-card-surface {
   position: relative;
   overflow: hidden;
   background: var(--glass-bg-strong);
@@ -54,7 +57,8 @@
   backdrop-filter: blur(var(--glass-blur-strong)) saturate(1.18);
 }
 
-.login-card::before {
+.login-card::before,
+.login-card-surface::before {
   content: '';
   position: absolute;
   inset: 0;
@@ -65,7 +69,8 @@
   opacity: 0.76;
 }
 
-.login-card > * {
+.login-card > *,
+.login-card-surface > * {
   position: relative;
   z-index: 1;
 }
@@ -189,10 +194,12 @@
   backdrop-filter: blur(var(--glass-blur)) saturate(1.35);
 }
 
-.login-form input:focus {
-  outline: none;
+.login-form input:focus,
+.login-form input:focus-visible {
+  outline: 3px solid #00a3ff !important;
+  outline-offset: 2px !important;
   border-color: var(--glass-border-strong);
-  box-shadow: var(--focus-ring), inset 0 1px 0 rgba(255,255,255,0.12);
+  box-shadow: 0 0 0 6px rgba(0, 163, 255, 0.25), inset 0 1px 0 rgba(255,255,255,0.12) !important;
 }
 
 .login-button {
@@ -228,8 +235,9 @@
 }
 
 .login-button:focus-visible {
-  outline: none;
-  box-shadow: var(--focus-ring), var(--glass-highlight), var(--shadow-medium), var(--shadow-glow-green) !important;
+  outline: 3px solid #00a3ff !important;
+  outline-offset: 2px !important;
+  box-shadow: 0 0 0 6px rgba(0, 163, 255, 0.25), var(--glass-highlight), var(--shadow-medium), var(--shadow-glow-green) !important;
 }
 
 .login-footer-note {
@@ -269,20 +277,31 @@
 }
 
 @media (max-width: 520px) {
-  .login-card {
+  .login-card,
+  .login-card-surface {
     padding: 1.35rem;
   }
 
   .login-title {
     font-size: clamp(2.65rem, 15vw, 4.35rem);
   }
+
+  .login-org-line,
+  .login-footer-note {
+    font-size: 0.68rem;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .login-button,
   .login-button:hover,
-  .login-button:active {
+  .login-button:active,
+  .login-card,
+  .login-card-surface {
     transform: none !important;
     border-radius: var(--radius-md) !important;
+    transition: none !important;
+    animation: none !important;
+    filter: none !important;
   }
 }

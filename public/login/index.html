@@ -10,6 +10,16 @@
   <link rel="stylesheet" href="/css/prc-dash-login.css">
 </head>
 <body class="login-page min-h-screen flex items-center justify-center px-4">
+  <svg xmlns="http://www.w3.org/2000/svg" style="position:absolute;width:0;height:0;overflow:hidden;" aria-hidden="true" focusable="false">
+    <defs>
+      <filter id="gate-liquid-filter" color-interpolation-filters="sRGB">
+        <feGaussianBlur in="SourceGraphic" stdDeviation="7" result="blur" />
+        <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -8" result="goo" />
+        <feComposite in="SourceGraphic" in2="goo" operator="atop" />
+      </filter>
+    </defs>
+  </svg>
+
   <main class="login-shell">
     <section class="login-card">
       <div class="text-center mb-6">
@@ -36,7 +46,7 @@
           <input id="password" name="password" type="password" autocomplete="current-password" required>
         </div>
 
-        <button type="submit" class="login-button">
+        <button type="submit" class="login-button gate-liquid-ready">
           Login
         </button>
 

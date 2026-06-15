@@ -1,0 +1,164 @@
+/* PRC GATE compact desktop navigation override
+   Tightens desktop/laptop command bar spacing without changing mobile menu behavior. */
+@media (min-width: 992px) {
+  .app-nav.command-header-bar,
+  .app-nav {
+    gap: 6px !important;
+    min-height: 54px !important;
+    height: 54px !important;
+    padding: 0.42rem 0.58rem !important;
+    overflow: hidden !important;
+  }
+
+  .app-nav::before,
+  .command-header-bar::before {
+    width: 154px !important;
+    min-width: 154px !important;
+    height: 34px !important;
+    min-height: 34px !important;
+    margin-right: 0.18rem !important;
+    flex: 0 0 154px !important;
+  }
+
+  .command-header-bar nav,
+  .command-header-bar .nav-group-left,
+  .app-nav .nav-group-left,
+  #main-nav-menu.nav-group-left,
+  #nav-links.nav-group-left {
+    gap: 4px !important;
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+  }
+
+  .command-header-bar .nav-group-right,
+  .app-nav .nav-group-right,
+  .app-nav > div:last-child {
+    gap: 5px !important;
+    flex: 0 1 auto !important;
+    min-width: 0 !important;
+    padding-left: 0.36rem !important;
+    margin-left: 0.24rem !important;
+  }
+
+  .command-header-bar .nav-btn,
+  .command-header-bar nav button,
+  .command-header-bar .nav-group-left button,
+  #main-nav-menu .nav-btn,
+  #nav-links .nav-btn {
+    min-width: 0 !important;
+    min-height: 38px !important;
+    height: 38px !important;
+    padding: 0 0.64rem !important;
+    border-radius: 999px !important;
+    font-size: 0.72rem !important;
+    line-height: 0.94 !important;
+    letter-spacing: 0.035em !important;
+    white-space: normal !important;
+  }
+
+  #role-toggle,
+  #fullscreen-btn,
+  #sound-toggle-btn,
+  .app-nav button[aria-label='Toggle theme'] {
+    min-height: 38px !important;
+    height: 38px !important;
+    border-radius: 999px !important;
+    font-size: 0.70rem !important;
+    line-height: 1 !important;
+    letter-spacing: 0.035em !important;
+  }
+
+  #role-toggle {
+    max-width: 170px !important;
+    padding: 0 0.74rem !important;
+    white-space: nowrap !important;
+  }
+
+  #fullscreen-btn,
+  #sound-toggle-btn {
+    max-width: 132px !important;
+    padding: 0 0.62rem !important;
+    white-space: nowrap !important;
+  }
+
+  .app-nav button[aria-label='Toggle theme'] {
+    width: 42px !important;
+    min-width: 42px !important;
+    max-width: 42px !important;
+    padding: 0 !important;
+    flex: 0 0 42px !important;
+  }
+}
+
+@media (min-width: 992px) and (max-width: 1360px) {
+  .app-nav.command-header-bar,
+  .app-nav {
+    gap: 4px !important;
+    padding-left: 0.44rem !important;
+    padding-right: 0.44rem !important;
+  }
+
+  .app-nav::before,
+  .command-header-bar::before {
+    width: 128px !important;
+    min-width: 128px !important;
+    flex-basis: 128px !important;
+  }
+
+  .command-header-bar nav,
+  .command-header-bar .nav-group-left,
+  .app-nav .nav-group-left,
+  #main-nav-menu.nav-group-left,
+  #nav-links.nav-group-left {
+    gap: 3px !important;
+  }
+
+  .command-header-bar .nav-btn,
+  .command-header-bar nav button,
+  .command-header-bar .nav-group-left button,
+  #main-nav-menu .nav-btn,
+  #nav-links .nav-btn {
+    height: 36px !important;
+    min-height: 36px !important;
+    padding: 0 0.50rem !important;
+    font-size: 0.66rem !important;
+    letter-spacing: 0.025em !important;
+  }
+
+  .command-header-bar .nav-group-right,
+  .app-nav .nav-group-right,
+  .app-nav > div:last-child {
+    gap: 4px !important;
+    padding-left: 0.24rem !important;
+    margin-left: 0.16rem !important;
+  }
+
+  #role-toggle,
+  #fullscreen-btn,
+  #sound-toggle-btn,
+  .app-nav button[aria-label='Toggle theme'] {
+    height: 36px !important;
+    min-height: 36px !important;
+    font-size: 0.64rem !important;
+    letter-spacing: 0.025em !important;
+  }
+
+  #role-toggle {
+    max-width: 152px !important;
+    padding: 0 0.58rem !important;
+  }
+
+  #fullscreen-btn,
+  #sound-toggle-btn {
+    max-width: 112px !important;
+    padding: 0 0.50rem !important;
+  }
+
+  .app-nav button[aria-label='Toggle theme'] {
+    width: 38px !important;
+    min-width: 38px !important;
+    max-width: 38px !important;
+    flex-basis: 38px !important;
+  }
+}

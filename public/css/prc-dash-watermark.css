@@ -1,4 +1,28 @@
 /* PRC GATE tactical mesh background and watermark only */
+:root {
+  --gate-canvas-base: #050c1a;
+  --gate-canvas-depth: radial-gradient(circle at 50% 30%, #0c1933 0%, #050c1a 100%);
+}
+
+html,
+body {
+  min-height: 100%;
+  background-color: #050c1a !important;
+  background-image: radial-gradient(circle at 50% 30%, #0c1933 0%, #050c1a 100%) !important;
+  background-attachment: fixed !important;
+}
+
+body {
+  min-height: 100vh;
+}
+
+.app-container,
+#app-root,
+main,
+.page {
+  background-color: transparent !important;
+}
+
 body::before {
   position: fixed !important;
   inset: 0 !important;
@@ -6,14 +30,11 @@ body::before {
   background-repeat: no-repeat !important;
   background-position: center center !important;
   background-size: min(74vw, 1040px) auto !important;
-  opacity: 0.135 !important;
-  filter:
-    drop-shadow(0 0 22px rgba(56, 189, 248, 0.20))
-    drop-shadow(0 0 62px rgba(37, 99, 235, 0.10));
+  opacity: 0.125 !important;
+  filter: drop-shadow(0 0 22px rgba(56, 189, 248, 0.18));
   mix-blend-mode: screen;
   pointer-events: none !important;
   z-index: 0 !important;
-  transform: translateZ(0);
 }
 
 body::after {
@@ -23,23 +44,27 @@ body::after {
   pointer-events: none;
   z-index: 0;
   background:
-    radial-gradient(circle at 18% 14%, rgba(56, 189, 248, 0.12), transparent 30%),
-    radial-gradient(circle at 78% 18%, rgba(99, 102, 241, 0.105), transparent 32%),
-    radial-gradient(circle at 66% 84%, rgba(20, 184, 166, 0.07), transparent 34%),
-    radial-gradient(circle at 50% 46%, rgba(125, 211, 252, 0.045), transparent 34%),
-    linear-gradient(135deg, rgba(3, 7, 18, 0.08), rgba(2, 6, 23, 0.30));
+    radial-gradient(circle at 50% 30%, rgba(56, 189, 248, 0.14), transparent 32%),
+    radial-gradient(circle at 18% 14%, rgba(14, 165, 233, 0.10), transparent 30%),
+    radial-gradient(circle at 78% 18%, rgba(59, 130, 246, 0.09), transparent 34%),
+    linear-gradient(180deg, rgba(5, 12, 26, 0.12), rgba(5, 12, 26, 0.34));
 }
 
-body > * {
-  position: relative;
-  z-index: 1;
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-corner {
+  background: #050c1a !important;
+}
+
+.scroll-mask-gradient,
+.shading-layer {
+  background: transparent !important;
+  background-image: none !important;
+  box-shadow: none !important;
 }
 
 .theme-light::before {
   opacity: 0.052 !important;
-  filter:
-    drop-shadow(0 0 14px rgba(2, 132, 199, 0.08))
-    grayscale(0.12);
+  filter: drop-shadow(0 0 14px rgba(2, 132, 199, 0.08)) grayscale(0.12);
   mix-blend-mode: multiply;
 }
 
@@ -54,7 +79,7 @@ body > * {
 
 .fullscreen-board::before {
   background-size: min(78vw, 1120px) auto !important;
-  opacity: 0.125 !important;
+  opacity: 0.115 !important;
 }
 
 .fullscreen-board.theme-light::before,
@@ -65,7 +90,7 @@ body > * {
 @media (max-width: 768px) {
   body::before {
     background-size: 92vw auto !important;
-    opacity: 0.095 !important;
+    opacity: 0.09 !important;
   }
 
   .theme-light::before {

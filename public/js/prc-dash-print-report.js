@@ -2,6 +2,8 @@
 // Isolated print/report helpers. Reads existing app data only; does not alter APIs or data flows.
 (function () {
   const RECEIVING_DATE_STORAGE_PREFIX = 'gate_receiving_start_date_';
+  const RECEIVING_NIGHT_START_HOUR = 15;
+  const RECEIVING_NIGHT_END_HOUR = 6;
   let uiReady = false;
   let dataSdkPatched = false;
 
@@ -58,6 +60,43 @@
     return `${year}-${month}-${day}`;
   }
 
+  function dateAtHour(key, hour) {
+    if (!key) return null;
+    const paddedHour = String(hour).padStart(2, '0');
+    const date = new Date(`${key}T${paddedHour}:00:00`);
+    return Number.isNaN(date.getTime()) ? null : date;
+  }
+
+  function parseTimestamp(value) {
+    if (!value) return null;
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? null : date;
+  }
+
+  function buildReceivingNightWindow(startDateKey, nightIndex) {
+    if (!startDateKey) return null;
+    const startKey = addDays(startDateKey, nightIndex);
+    const endKey = addDays(startDateKey, nightIndex + 1);
+    const start = dateAtHour(startKey, RECEIVING_NIGHT_START_HOUR);
+    const end = dateAtHour(endKey, RECEIVING_NIGHT_END_HOUR);
+    if (!start || !end) return null;
+    return { labelDate: startKey, start, end };
+  }
+
+  function timestampInWindow(timestamp, window) {
+    if (!timestamp || !window) return false;
+    const date = parseTimestamp(timestamp);
+    if (!date) return false;
+    return date.getTime() >= window.start.getTime() && date.getTime() <= window.end.getTime();
+  }
+
+  function firstValidTimestamp(values) {
+    for (const value of values) {
+      if (parseTimestamp(value)) return value;
+    }
+    return '';
+  }
+
   function formatReportDate(key) {
     if (!key) return '';
     const date = new Date(`${key}T00:00:00`);
@@ -97,67 +136,71 @@
 
     const activityDates = [];
     (dormData || []).forEach(d => {
-      const key = dateKey(d.closed_at || d.close_time || d.updated_at);
+      const key = dateKey(d.closed_at || d.close_time || d.updated_at || d.processed_at);
       if (key) activityDates.push(key);
     });
     (busData || []).forEach(b => {
-      const key = dateKey(b.arrived_at || b.departed_at || b.created_at);
+      const key = dateKey(b.arrived_at || b.departed_at || b.created_at || b.updated_at);
       if (key) activityDates.push(key);
     });
 
     return activityDates.sort()[0] || '';
   }
 
-  function getDormProcessedDate(dorm) {
-    return dateKey(dorm.closed_at || dorm.close_time || dorm.updated_at || dorm.processed_at || '');
+  function getDormProcessedTimestamp(dorm) {
+    return firstValidTimestamp([dorm.closed_at, dorm.close_time, dorm.processed_at, dorm.updated_at]);
   }
 
-  function getBusActivityDate(bus) {
-    return dateKey(bus.arrived_at || bus.departed_at || bus.created_at || '');
+  function getBusActivityTimestamp(bus) {
+    return firstValidTimestamp([bus.arrived_at, bus.departed_at, bus.created_at, bus.updated_at]);
   }
 
   function buildNightStatement({ processedToday, expectedTotal, processedTotal, naturalizationToday, naturalizationTotal, spaceForceToday, spaceForceTotal }) {
-    return `Today, the PRC processed ${processedToday} trainees out of ${expectedTotal} expected for a total of ${processedTotal} processed. ${naturalizationToday} trainees requested U.S. naturalization for a total of ${naturalizationTotal}. ${spaceForceToday} Space Force trainees were processed for a total of ${spaceForceTotal}.`;
+    return `Tonight, the PRC processed ${processedToday} of the ${expectedTotal} projected trainees for a total of ${processedTotal}. ${naturalizationToday} trainees requested U.S. naturalization for a total of ${naturalizationTotal}. ${spaceForceToday} Space Force trainees were processed for a total of ${spaceForceTotal}.`;
   }
 
   function buildReceivingNightSummary({ dormData, busData, receivingStartDate }) {
     const dorms = Array.isArray(dormData) ? dormData : [];
     const buses = Array.isArray(busData) ? busData : [];
     const startDate = getReceivingStartDate(dorms, buses, receivingStartDate);
-    const nightOneDate = startDate;
-    const nightTwoDate = startDate ? addDays(startDate, 1) : '';
+    const nightOneWindow = buildReceivingNightWindow(startDate, 0);
+    const nightTwoWindow = buildReceivingNightWindow(startDate, 1);
+    const nightOneDate = nightOneWindow ? nightOneWindow.labelDate : startDate;
+    const nightTwoDate = nightTwoWindow ? nightTwoWindow.labelDate : (startDate ? addDays(startDate, 1) : '');
     const expectedTotal = dorms.reduce((sum, dorm) => sum + n(dorm.max_load), 0);
 
-    function processedForDate(key) {
-      if (!key) return 0;
+    function processedForWindow(window) {
+      if (!window) return 0;
       return dorms
-        .filter(dorm => getDormProcessedDate(dorm) === key)
+        .filter(dorm => timestampInWindow(getDormProcessedTimestamp(dorm), window))
         .reduce((sum, dorm) => sum + n(dorm.current_load ?? dorm.loaded), 0);
     }
 
-    function natForDate(key) {
-      if (!key) return 0;
+    function natForWindow(window) {
+      if (!window) return 0;
       return buses
-        .filter(bus => getBusActivityDate(bus) === key)
+        .filter(bus => timestampInWindow(getBusActivityTimestamp(bus), window))
         .reduce((sum, bus) => sum + n(bus.nat_count), 0);
     }
 
-    function sfForDate(key) {
-      if (!key) return 0;
+    function sfForWindow(window) {
+      if (!window) return 0;
       return buses
-        .filter(bus => getBusActivityDate(bus) === key)
+        .filter(bus => timestampInWindow(getBusActivityTimestamp(bus), window))
         .reduce((sum, bus) => sum + n(bus.space_force_count), 0);
     }
 
-    const nightOneProcessed = processedForDate(nightOneDate);
-    const nightTwoProcessed = processedForDate(nightTwoDate);
-    const nightOneNat = natForDate(nightOneDate);
-    const nightTwoNat = natForDate(nightTwoDate);
-    const nightOneSf = sfForDate(nightOneDate);
-    const nightTwoSf = sfForDate(nightTwoDate);
+    const nightOneProcessed = processedForWindow(nightOneWindow);
+    const nightTwoProcessed = processedForWindow(nightTwoWindow);
+    const nightOneNat = natForWindow(nightOneWindow);
+    const nightTwoNat = natForWindow(nightTwoWindow);
+    const nightOneSf = sfForWindow(nightOneWindow);
+    const nightTwoSf = sfForWindow(nightTwoWindow);
 
     const nightOne = {
       date: nightOneDate,
+      windowStart: nightOneWindow ? nightOneWindow.start.toISOString() : '',
+      windowEnd: nightOneWindow ? nightOneWindow.end.toISOString() : '',
       processedToday: nightOneProcessed,
       processedTotal: nightOneProcessed,
       naturalizationToday: nightOneNat,
@@ -180,6 +223,8 @@
     const hasNightTwoActivity = Boolean(nightTwoProcessed || nightTwoNat || nightTwoSf);
     const nightTwo = {
       date: nightTwoDate,
+      windowStart: nightTwoWindow ? nightTwoWindow.start.toISOString() : '',
+      windowEnd: nightTwoWindow ? nightTwoWindow.end.toISOString() : '',
       processedToday: nightTwoProcessed,
       processedTotal: nightOneProcessed + nightTwoProcessed,
       naturalizationToday: nightTwoNat,

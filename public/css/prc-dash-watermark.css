@@ -128,3 +128,215 @@ body.theme-light.fullscreen-board::before,
     opacity: 0.035 !important;
   }
 }
+
+/* ======================================================================
+   PHASE 5.6: INPUT PAGE MATRIX ALIGNMENT & GRID CLEANUP
+   ====================================================================== */
+:root {
+  --input-matrix-grid: minmax(110px, 1.08fr) minmax(110px, 1fr) minmax(150px, 1.34fr) minmax(160px, 1.48fr) 132px 60px minmax(122px, 1.12fr) 32px;
+  --input-matrix-gap: 10px;
+}
+
+#page-input {
+  overflow: hidden !important;
+}
+
+#page-input > .flex-shrink-0:first-of-type {
+  background: rgba(5, 12, 26, 0.34) !important;
+  border-bottom: 1px solid rgba(125, 211, 252, 0.16) !important;
+  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.04) !important;
+}
+
+#page-input #wg-batch-input {
+  min-height: 44px !important;
+  background: rgba(180, 198, 228, 0.16) !important;
+  border: 1px solid rgba(180, 198, 228, 0.28) !important;
+  border-radius: 0.78rem !important;
+  color: var(--text) !important;
+  font-weight: 800 !important;
+}
+
+#batch-grid-wrapper {
+  padding: 0.85rem 1rem 1rem !important;
+  background: transparent !important;
+}
+
+#batch-grid-wrapper > div {
+  min-width: max(960px, 100%) !important;
+  width: 100% !important;
+}
+
+#batch-grid-wrapper > div > div:first-child,
+#batch-rows-container > div {
+  display: grid !important;
+  grid-template-columns: var(--input-matrix-grid) !important;
+  gap: var(--input-matrix-gap) !important;
+  align-items: center !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+#batch-grid-wrapper > div > div:first-child {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 12 !important;
+  margin-bottom: 0.45rem !important;
+  padding: 0.42rem 0.14rem 0.5rem !important;
+  background:
+    linear-gradient(180deg, rgba(5, 12, 26, 0.96), rgba(5, 12, 26, 0.84)) !important;
+  border-bottom: 1px solid rgba(125, 211, 252, 0.16) !important;
+  box-shadow: 0 9px 18px rgba(0, 0, 0, 0.24) !important;
+  -webkit-backdrop-filter: blur(10px) saturate(1.20) !important;
+  backdrop-filter: blur(10px) saturate(1.20) !important;
+}
+
+#batch-grid-wrapper > div > div:first-child > div {
+  min-width: 0 !important;
+  color: #b4c6e4 !important;
+  font-size: 0.62rem !important;
+  font-weight: 950 !important;
+  letter-spacing: 0.105em !important;
+  line-height: 1 !important;
+  text-align: left !important;
+  text-transform: uppercase !important;
+  white-space: nowrap !important;
+}
+
+#batch-grid-wrapper > div > div:first-child > div:nth-child(6),
+#batch-grid-wrapper > div > div:first-child > div:nth-child(8) {
+  text-align: center !important;
+}
+
+#batch-rows-container {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0.32rem !important;
+}
+
+#batch-rows-container > div {
+  min-height: 36px !important;
+  padding: 0.1rem 0.14rem !important;
+  border-radius: 0.62rem !important;
+  background: transparent !important;
+  transition: background 0.14s ease, box-shadow 0.14s ease !important;
+}
+
+#batch-rows-container > div:hover,
+#batch-rows-container > div:focus-within {
+  background: rgba(255, 255, 255, 0.025) !important;
+  box-shadow: inset 0 0 0 1px rgba(125, 211, 252, 0.08) !important;
+}
+
+#batch-rows-container > div > input:not([type="checkbox"]),
+#batch-rows-container > div > select {
+  width: 100% !important;
+  min-width: 0 !important;
+  height: 34px !important;
+  min-height: 34px !important;
+  box-sizing: border-box !important;
+  padding: 0 0.72rem !important;
+  border: 1px solid rgba(180, 198, 228, 0.22) !important;
+  border-radius: 0.58rem !important;
+  background: rgba(180, 198, 228, 0.135) !important;
+  color: var(--text) !important;
+  font-size: 0.82rem !important;
+  font-weight: 750 !important;
+  line-height: 1 !important;
+  outline: none !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+}
+
+#batch-rows-container > div > input:not([type="checkbox"]):focus,
+#batch-rows-container > div > select:focus {
+  border-color: rgba(0, 191, 255, 0.62) !important;
+  box-shadow:
+    0 0 0 2px rgba(0, 163, 255, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.10) !important;
+}
+
+#batch-rows-container > div > label {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 60px !important;
+  min-width: 60px !important;
+  height: 34px !important;
+  min-height: 34px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  justify-self: center !important;
+}
+
+#batch-rows-container .batch-band {
+  width: 16px !important;
+  height: 16px !important;
+  min-width: 16px !important;
+  min-height: 16px !important;
+  margin: 0 !important;
+  accent-color: #38bdf8;
+}
+
+#batch-rows-container .batch-load {
+  font-variant-numeric: tabular-nums !important;
+}
+
+#batch-rows-container > div > button[onclick*="clearBatchRow"] {
+  width: 32px !important;
+  min-width: 32px !important;
+  height: 34px !important;
+  min-height: 34px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  justify-self: end !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 0.5rem !important;
+  border: 1px solid transparent !important;
+  background: transparent !important;
+  color: #ff8a8a !important;
+  font-size: 1rem !important;
+  font-weight: 950 !important;
+  line-height: 1 !important;
+}
+
+#batch-rows-container > div > button[onclick*="clearBatchRow"]:hover,
+#batch-rows-container > div > button[onclick*="clearBatchRow"]:focus-visible {
+  background: rgba(255, 74, 74, 0.12) !important;
+  border-color: rgba(255, 74, 74, 0.42) !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 12px rgba(255, 74, 74, 0.22) !important;
+}
+
+body.theme-light #page-input #wg-batch-input,
+.theme-light #page-input #wg-batch-input,
+body.theme-light #batch-rows-container > div > input:not([type="checkbox"]),
+body.theme-light #batch-rows-container > div > select,
+.theme-light #batch-rows-container > div > input:not([type="checkbox"]),
+.theme-light #batch-rows-container > div > select {
+  background: rgba(255, 255, 255, 0.72) !important;
+  border-color: rgba(100, 116, 139, 0.24) !important;
+  color: #0f172a !important;
+}
+
+body.theme-light #batch-grid-wrapper > div > div:first-child,
+.theme-light #batch-grid-wrapper > div > div:first-child {
+  background: linear-gradient(180deg, rgba(238, 243, 248, 0.96), rgba(238, 243, 248, 0.84)) !important;
+  border-bottom-color: rgba(2, 132, 199, 0.14) !important;
+}
+
+body.theme-light #batch-grid-wrapper > div > div:first-child > div,
+.theme-light #batch-grid-wrapper > div > div:first-child > div {
+  color: #53657a !important;
+}
+
+@media (max-width: 767px) {
+  #batch-grid-wrapper {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  #batch-grid-wrapper > div {
+    min-width: 960px !important;
+  }
+}

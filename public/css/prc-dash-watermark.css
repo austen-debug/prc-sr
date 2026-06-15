@@ -23,6 +23,23 @@ main,
   background-color: transparent !important;
 }
 
+.app-nav::before,
+.command-header-bar::before {
+  background: url('/assets/gate_submark_white.png') no-repeat center center / contain !important;
+  width: 180px !important;
+  min-width: 180px !important;
+  height: 40px !important;
+  min-height: 40px !important;
+  margin-right: 0.35rem !important;
+}
+
+body.theme-light .app-nav::before,
+.theme-light .app-nav::before,
+body.theme-light .command-header-bar::before,
+.theme-light .command-header-bar::before {
+  background: url('/assets/gate_submark_blue.png') no-repeat center center / contain !important;
+}
+
 body::before {
   position: fixed !important;
   inset: 0 !important;
@@ -92,6 +109,14 @@ body.theme-light.fullscreen-board::before,
 }
 
 @media (max-width: 768px) {
+  .app-nav::before,
+  .command-header-bar::before {
+    width: min(28vw, 112px) !important;
+    min-width: 78px !important;
+    height: 42px !important;
+    min-height: 42px !important;
+  }
+
   body::before {
     background-size: 92vw auto !important;
     opacity: 0.09 !important;

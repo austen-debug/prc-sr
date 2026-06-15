@@ -26,7 +26,7 @@ main,
 body::before {
   position: fixed !important;
   inset: 0 !important;
-  background-image: url('/assets/gate_emblem_large.png') !important;
+  background-image: url('/assets/gate_emblem_white.png') !important;
   background-repeat: no-repeat !important;
   background-position: center center !important;
   background-size: min(74vw, 1040px) auto !important;
@@ -62,13 +62,16 @@ body::after {
   box-shadow: none !important;
 }
 
-.theme-light::before {
+body.theme-light::before,
+.theme-light body::before {
+  background-image: url('/assets/gate_emblem_blue.png') !important;
   opacity: 0.052 !important;
   filter: drop-shadow(0 0 14px rgba(2, 132, 199, 0.08)) grayscale(0.12);
   mix-blend-mode: multiply;
 }
 
-.theme-light::after {
+body.theme-light::after,
+.theme-light body::after {
   background:
     radial-gradient(circle at 18% 14%, rgba(56, 189, 248, 0.16), transparent 30%),
     radial-gradient(circle at 78% 18%, rgba(37, 99, 235, 0.08), transparent 32%),
@@ -82,8 +85,9 @@ body::after {
   opacity: 0.115 !important;
 }
 
-.fullscreen-board.theme-light::before,
-.theme-light.fullscreen-board::before {
+body.theme-light.fullscreen-board::before,
+.theme-light body.fullscreen-board::before {
+  background-image: url('/assets/gate_emblem_blue.png') !important;
   opacity: 0.04 !important;
 }
 
@@ -93,7 +97,9 @@ body::after {
     opacity: 0.09 !important;
   }
 
-  .theme-light::before {
+  body.theme-light::before,
+  .theme-light body::before {
+    background-image: url('/assets/gate_emblem_blue.png') !important;
     opacity: 0.035 !important;
   }
 }

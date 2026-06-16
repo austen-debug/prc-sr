@@ -3,7 +3,7 @@
 (function () {
   const RECEIVING_DATE_STORAGE_PREFIX = 'gate_receiving_start_date_';
   const RECEIVING_NIGHT_START_HOUR = 15;
-  const RECEIVING_NIGHT_END_HOUR = 6;
+  const RECEIVING_NIGHT_END_HOUR = 15;
   let uiReady = false;
   let dataSdkPatched = false;
 
@@ -87,7 +87,7 @@
     if (!timestamp || !window) return false;
     const date = parseTimestamp(timestamp);
     if (!date) return false;
-    return date.getTime() >= window.start.getTime() && date.getTime() <= window.end.getTime();
+    return date.getTime() >= window.start.getTime() && date.getTime() < window.end.getTime();
   }
 
   function firstValidTimestamp(values) {

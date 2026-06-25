@@ -148,7 +148,8 @@ const UI_HEAD_SCRIPTS = [
   '<script src="/js/prc-dash-local-bus-edit.js" defer></script>',
   '<script src="/js/prc-dash-print-report.js" defer></script>',
   '<script src="/js/prc-dash-receiving-summary-window-fix.js" defer></script>',
-  '<script src="/js/prc-dash-processing-loaded-summary.js" defer></script>'
+  '<script src="/js/prc-dash-processing-loaded-summary.js" defer></script>',
+  '<script src="/js/prc-dash-current-summary-live-records.js" defer></script>'
 ];
 
 function jsonResponse(data, status = 200) {

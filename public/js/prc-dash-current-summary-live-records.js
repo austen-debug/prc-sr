@@ -180,19 +180,20 @@
     return Array.isArray(result.records) ? result.records : [];
   }
 
-  function renderCurrentReport(payload) {
+  function renderCurrentReport(payload, targetWindow) {
     const dormRows = rows(payload.dorms, d => `
       <tr><td class="strong">${esc(d.name || d.dorm_name || '')}</td><td>${esc(d.assigned_airman || '')}</td><td>${esc(d.sdq || '')}</td><td>${esc(d.section || '')}</td><td>${esc(d.inter_sec || '')}</td><td>${esc(d.sex || '')}</td><td>${esc(d.band === 'true' ? 'YES' : '')}</td><td class="num">${esc(d.current_load ?? d.loaded ?? 0)}</td><td class="num">${esc(d.max_load ?? 0)}</td><td>${fmtDateTime(d.opened_at || d.open_time)}</td><td>${fmtDateTime(d.closed_at || d.close_time)}</td><td>${esc(d.closed_timer || d.elapsed || '')}</td></tr>`, 12);
     const busRows = rows(payload.buses, b => `
       <tr><td>${esc(b.bus_type || '')}</td><td class="strong">${esc(b.bus_id || '')}</td><td>${esc(b.originating_destination || b.destination || '')}</td><td class="num">${esc(b.otw_count || 0)}</td><td class="num">${esc(b.female_count || 0)}</td><td class="num">${esc(b.nat_count || 0)}</td><td class="num">${esc(b.space_force_count || 0)}</td><td>${fmtDateTime(b.departed_at || b.created_at)}</td><td>${fmtDateTime(b.arrived_at)}</td><td>${esc(b.status || '')}</td></tr>`, 10);
     const notes = payload.dorms.filter(d => String(d.notes || '').trim()).map(d => `<div class="note-item"><div class="note-title">${esc(d.name || d.dorm_name || 'Dorm')}</div><div>${esc(d.notes || '')}</div></div>`).join('') || '<div class="empty-row">No dorm notes recorded.</div>';
 
-    const w = window.open('', '_blank');
+    const w = targetWindow || window.open('', '_blank');
     if (!w) {
       alert('Unable to open the print report. Allow pop-ups for this site and try again.');
       return;
     }
 
+    w.document.open();
     w.document.write(`<!doctype html><html><head><title>${esc(payload.weekGroup)} GATE Receiving Current Summary</title><style>
       :root{--ink:#0f172a;--muted:#475569;--line:#cbd5e1;--header:#0f172a;--soft:#f8fafc;--green:#166534}*{box-sizing:border-box}body{font-family:Arial,Helvetica,sans-serif;color:var(--ink);margin:24px;background:#fff}.classification{display:flex;justify-content:center;align-items:center;min-height:28px;background:var(--green);color:#fff;font-size:11px;font-weight:900;letter-spacing:.12em;text-transform:uppercase;border:1px solid #14532d}.no-print{margin:12px 0;padding:9px 16px;border:1px solid #94a3b8;border-radius:8px;background:#0f172a;color:#fff;font-weight:900;letter-spacing:.04em;cursor:pointer}.report-header{display:flex;justify-content:space-between;gap:24px;padding:18px 0 14px;border-bottom:2px solid var(--header);margin-bottom:14px}.title-block h1{margin:0;font-size:28px;letter-spacing:-.035em;text-transform:uppercase}.subtitle{margin-top:4px;color:var(--muted);font-size:12px;font-weight:900;letter-spacing:.055em;text-transform:uppercase}.meta{min-width:285px;border:1px solid var(--line);background:var(--soft);padding:10px;font-size:11px}.meta-row{display:flex;justify-content:space-between;gap:10px;margin-bottom:5px}.meta-row:last-child{margin-bottom:0}.meta-label{color:var(--muted);font-weight:900;text-transform:uppercase}.meta-value{font-weight:900;text-align:right}.summary{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin:14px 0 18px}.box{border:1px solid var(--line);background:#f8fafc;padding:10px;min-height:70px}.label{color:var(--muted);font-size:9px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}.value{margin-top:5px;font-size:23px;font-weight:900;letter-spacing:-.05em}h2{margin:18px 0 8px;padding-bottom:4px;border-bottom:1px solid var(--line);font-size:15px;text-transform:uppercase;letter-spacing:.06em}table{width:100%;border-collapse:collapse;margin-top:8px;font-size:10px;page-break-inside:auto}th,td{border:1px solid var(--line);padding:5px 6px;text-align:left;vertical-align:top}th{background:#e2e8f0;color:#0f172a;font-size:9px;text-transform:uppercase;letter-spacing:.045em}tr:nth-child(even) td{background:#f8fafc}.strong{font-weight:900}.num{text-align:right;font-variant-numeric:tabular-nums}.empty-row{text-align:center;color:var(--muted);padding:14px}.receiving-summary{border:1px solid var(--line);background:#f8fafc;padding:12px;margin:10px 0 16px}.night{padding:8px 0;border-bottom:1px solid #e2e8f0}.night:last-child{border-bottom:none}.night-title{font-weight:900;text-transform:uppercase;letter-spacing:.05em;font-size:11px;margin-bottom:4px}.night-date{color:var(--muted);font-weight:800;margin-left:5px}.night-text{font-size:12px;line-height:1.45;font-weight:700}.notes-section{margin-top:12px;border:1px solid var(--line);background:#f8fafc;padding:10px}.note-item{padding:7px 0;border-bottom:1px solid #e2e8f0;font-size:11px}.note-item:last-child{border-bottom:none}.note-title{font-weight:900;margin-bottom:2px}.footer{margin-top:22px;padding-top:8px;border-top:2px solid var(--header);color:var(--muted);font-size:10px;display:flex;justify-content:space-between;gap:18px}@media print{body{margin:10mm}.no-print{display:none}.classification,.box,th,tr:nth-child(even) td,.notes-section,.receiving-summary,.meta{print-color-adjust:exact;-webkit-print-color-adjust:exact}h2{page-break-after:avoid}tr,.night{page-break-inside:avoid}}
     </style></head><body>
@@ -209,9 +210,20 @@
     w.focus();
   }
 
-  async function printLiveCurrentSummary() {
+  async function printLiveCurrentSummary(preOpenedWindow) {
     const weekGroup = getActiveWeekGroup();
+    const reportWindow = preOpenedWindow || window.open('', '_blank');
+
+    if (!reportWindow) {
+      alert('Unable to open the print report. Allow pop-ups for this site and try again.');
+      return;
+    }
+
+    reportWindow.document.write('<!doctype html><html><head><title>Loading Current Summary</title></head><body style="font-family:Arial,sans-serif;padding:24px;">Loading current summary records...</body></html>');
+    reportWindow.document.close();
+
     if (!weekGroup) {
+      reportWindow.close();
       alert('Initialize or select a Week Group before printing a current summary.');
       return;
     }
@@ -239,9 +251,12 @@
         receivingSummary: buildReceivingSummary(dorms, buses, receivingStartDate)
       };
 
-      renderCurrentReport(payload);
+      renderCurrentReport(payload, reportWindow);
     } catch (error) {
       console.error('Current summary report failed:', error);
+      reportWindow.document.open();
+      reportWindow.document.write('<!doctype html><html><body style="font-family:Arial,sans-serif;padding:24px;"><h1>Current Summary Failed</h1><p>Unable to load live records. Refresh the GATE page and try again.</p></body></html>');
+      reportWindow.document.close();
       alert('Current summary report failed to load live records. Refresh the page and try again.');
     }
   }
@@ -253,7 +268,8 @@
     event.preventDefault();
     event.stopPropagation();
     event.stopImmediatePropagation();
-    printLiveCurrentSummary();
+    const reportWindow = window.open('', '_blank');
+    printLiveCurrentSummary(reportWindow);
   }, true);
 
   window.printLiveCurrentSummaryReport = printLiveCurrentSummary;

@@ -11,8 +11,38 @@
     try { return typeof getActiveWG === 'function' ? getActiveWG() : ''; } catch (_) { return ''; }
   }
 
+  function getRecordsSafe(type) {
+    try { return typeof getRecords === 'function' ? getRecords(type) : []; } catch (_) { return []; }
+  }
+
   function getDormRecordsSafe() {
-    try { return typeof getRecords === 'function' ? getRecords('dorm') : []; } catch (_) { return []; }
+    return getRecordsSafe('dorm');
+  }
+
+  function getSoundEventRecordsSafe() {
+    return getRecordsSafe('sound_event');
+  }
+
+  function parseEventDetails(event) {
+    try { return JSON.parse(event.details || '{}'); } catch (_) { return {}; }
+  }
+
+  function getOvertimeDormIdFromEvent(event) {
+    if (!event || event.sound_key !== 'overtime') return '';
+    const details = parseEventDetails(event);
+    return String(details.dorm_id || '').trim();
+  }
+
+  function hasOvertimeSoundEvent(dormId) {
+    const targetDormId = String(dormId || '').trim();
+    if (!targetDormId) return false;
+
+    const activeWeekGroup = getActiveWeekGroupSafe();
+    return getSoundEventRecordsSafe().some(event => (
+      event.week_group === activeWeekGroup &&
+      event.sound_key === 'overtime' &&
+      getOvertimeDormIdFromEvent(event) === targetDormId
+    ));
   }
 
   function getElapsedTimerSafe(openedAt) {
@@ -48,22 +78,35 @@
     });
   }
 
+  async function markDormOvertimeSent(dorm) {
+    if (!dorm || dorm.overtime_sound_sent === 'true') return null;
+    if (!window.dataSdk || typeof window.dataSdk.update !== 'function') return null;
+
+    return window.dataSdk.update({
+      ...dorm,
+      overtime_sound_sent: 'true',
+      overtime_sound_at: dorm.overtime_sound_at || new Date().toISOString()
+    });
+  }
+
   async function triggerOvertimeSoundOnce(dormId) {
     if (!dormId || localOvertimeInProgress.has(dormId)) return;
 
     const dorm = getDormRecordsSafe().find(record => record.__backendId === dormId);
-    if (!dorm || dorm.state !== 'open' || dorm.overtime_sound_sent === 'true') return;
+    if (!dorm || dorm.state !== 'open') return;
 
     localOvertimeInProgress.add(dormId);
 
     try {
-      const result = await window.dataSdk.update({
-        ...dorm,
-        overtime_sound_sent: 'true',
-        overtime_sound_at: new Date().toISOString()
-      });
+      if (hasOvertimeSoundEvent(dormId)) {
+        await markDormOvertimeSent(dorm);
+        return;
+      }
 
-      if (result && result.isOk && result.overtime_sound_transitioned === true) {
+      const result = await markDormOvertimeSent(dorm);
+      if (!result || !result.isOk) return;
+
+      if (!hasOvertimeSoundEvent(dormId) && typeof createSoundEvent === 'function') {
         await createSoundEvent('overtime', {
           dorm_id: dormId,
           dorm_name: dorm.dorm_name || '',
@@ -77,7 +120,6 @@
 
   async function auditOpenDormsForOvertime() {
     if (auditInProgress || !window.dataSdk || typeof window.dataSdk.update !== 'function') return;
-    if (typeof createSoundEvent !== 'function') return;
 
     auditInProgress = true;
 
@@ -88,18 +130,50 @@
       const now = Date.now();
       const openDorms = getDormRecordsSafe().filter(dorm => {
         if (!dorm || dorm.week_group !== activeWeekGroup) return false;
-        if (dorm.state !== 'open' || dorm.overtime_sound_sent === 'true' || !dorm.opened_at) return false;
+        if (dorm.state !== 'open' || !dorm.opened_at) return false;
 
         const openedMs = new Date(dorm.opened_at).getTime();
         return Number.isFinite(openedMs) && now - openedMs >= OVERTIME_THRESHOLD_MS;
       });
 
       for (const dorm of openDorms) {
+        if (dorm.overtime_sound_sent === 'true' && hasOvertimeSoundEvent(dorm.__backendId)) continue;
         await triggerOvertimeSoundOnce(dorm.__backendId);
       }
     } finally {
       auditInProgress = false;
     }
+  }
+
+  function processSoundEventsDeduped() {
+    const activeWeekGroup = getActiveWeekGroupSafe();
+    const overtimeDormsSeen = new Set();
+
+    const events = getSoundEventRecordsSafe()
+      .filter(event => event.week_group === activeWeekGroup)
+      .sort((a, b) => new Date(a.created_at || 0) - new Date(b.created_at || 0));
+
+    for (const event of events) {
+      const id = event.__backendId;
+      if (!id) continue;
+
+      const overtimeDormId = getOvertimeDormIdFromEvent(event);
+      const isDuplicateOvertime = overtimeDormId && overtimeDormsSeen.has(overtimeDormId);
+      if (overtimeDormId) overtimeDormsSeen.add(overtimeDormId);
+
+      if (playedSoundEventIds.has(id)) continue;
+
+      const eventTime = new Date(event.created_at || '').getTime();
+      if (!Number.isFinite(eventTime) || eventTime < soundEventBaseline || isDuplicateOvertime) {
+        playedSoundEventIds.add(id);
+        continue;
+      }
+
+      playOperationalSound(event.sound_key);
+      playedSoundEventIds.add(id);
+    }
+
+    if (typeof savePlayedSoundEventIds === 'function') savePlayedSoundEventIds();
   }
 
   function patchTimerAndOvertimeFunctions() {
@@ -109,6 +183,9 @@
 
       window.triggerOvertimeSoundIfNeeded = triggerOvertimeSoundOnce;
       try { triggerOvertimeSoundIfNeeded = triggerOvertimeSoundOnce; } catch (_) {}
+
+      window.processSoundEvents = processSoundEventsDeduped;
+      try { processSoundEvents = processSoundEventsDeduped; } catch (_) {}
 
       try {
         if (typeof timerInterval !== 'undefined' && timerInterval) {

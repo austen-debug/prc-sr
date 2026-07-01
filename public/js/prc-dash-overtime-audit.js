@@ -45,6 +45,42 @@
     ));
   }
 
+  function ensureTimerPillSpacingStyles() {
+    if (document.getElementById('prc-gate-timer-pill-spacing')) return;
+
+    const style = document.createElement('style');
+    style.id = 'prc-gate-timer-pill-spacing';
+    style.textContent = `
+      #page-board .timer-display.timer-yellow,
+      #page-board .timer-display.timer-red,
+      #page-board .timer-display.timer-flash,
+      #page-squadron .timer-display.timer-yellow,
+      #page-squadron .timer-display.timer-red,
+      #page-squadron .timer-display.timer-flash {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        box-sizing: border-box !important;
+        width: auto !important;
+        min-width: 6.2ch !important;
+        max-width: 100% !important;
+        padding: 0.12em 0.34em 0.14em !important;
+        line-height: 0.96 !important;
+        letter-spacing: -0.045em !important;
+        white-space: nowrap !important;
+      }
+
+      #page-board .timer-display.timer-red,
+      #page-board .timer-display.timer-flash,
+      #page-squadron .timer-display.timer-red,
+      #page-squadron .timer-display.timer-flash {
+        border-radius: var(--radius-pill) !important;
+      }
+    `;
+
+    document.head.appendChild(style);
+  }
+
   function getElapsedTimerSafe(openedAt) {
     if (typeof getElapsedTimer === 'function') return getElapsedTimer(openedAt);
 
@@ -178,6 +214,8 @@
 
   function patchTimerAndOvertimeFunctions() {
     try {
+      ensureTimerPillSpacingStyles();
+
       window.updateTimers = updateTimersVisualOnly;
       try { updateTimers = updateTimersVisualOnly; } catch (_) {}
 

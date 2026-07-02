@@ -62,12 +62,26 @@
         justify-content: center !important;
         box-sizing: border-box !important;
         width: auto !important;
-        min-width: 6.2ch !important;
+        min-width: 6.35ch !important;
         max-width: 100% !important;
-        padding: 0.12em 0.34em 0.14em !important;
-        line-height: 0.96 !important;
+        min-height: 1.28em !important;
+        padding: 0.18em 0.36em 0.16em !important;
+        line-height: 1 !important;
         letter-spacing: -0.045em !important;
         white-space: nowrap !important;
+        font-variant-numeric: tabular-nums !important;
+        vertical-align: middle !important;
+      }
+
+      #page-board .timer-display.timer-yellow::before,
+      #page-board .timer-display.timer-red::before,
+      #page-board .timer-display.timer-flash::before,
+      #page-squadron .timer-display.timer-yellow::before,
+      #page-squadron .timer-display.timer-red::before,
+      #page-squadron .timer-display.timer-flash::before {
+        content: '' !important;
+        width: 0 !important;
+        min-width: 0 !important;
       }
 
       #page-board .timer-display.timer-red,

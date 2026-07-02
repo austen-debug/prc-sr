@@ -1,8 +1,8 @@
 // PRC GATE access-control validation
-// Client-side UI/UX guard layer for instructor-only actions. Does not change auth/session/API behavior.
+// Client-side UI/UX guard layer for instructor-only actions. Styles live in /css/prc-dash-modal-systems.css.
 (function () {
   let started = false;
-  let stylesReady = false;
+  let passScheduled = false;
 
   const INSTRUCTOR_PAGES = new Set(['airport', 'input', 'archives']);
   const GUARDED_FUNCTIONS = [
@@ -23,49 +23,6 @@
 
   function isInstructor() {
     return currentRoleSafe() === 'instructor';
-  }
-
-  function ensureStyles() {
-    if (stylesReady || document.getElementById('prc-gate-access-control-styles')) return;
-    const style = document.createElement('style');
-    style.id = 'prc-gate-access-control-styles';
-    style.textContent = `
-      .gate-access-denied-toast {
-        position: fixed !important;
-        left: 50% !important;
-        bottom: 1.25rem !important;
-        transform: translateX(-50%) !important;
-        z-index: calc(var(--z-modal-window, 600) + 80) !important;
-        max-width: min(92vw, 420px) !important;
-        padding: 0.72rem 0.92rem !important;
-        border: 1px solid rgba(248, 113, 113, 0.44) !important;
-        border-radius: var(--radius-lg, 18px) !important;
-        background: rgba(127, 29, 29, 0.86) !important;
-        color: #fff !important;
-        box-shadow: var(--gate-shadow-strong, 0 20px 44px rgba(0,0,0,0.34)) !important;
-        -webkit-backdrop-filter: blur(18px) saturate(1.18) !important;
-        backdrop-filter: blur(18px) saturate(1.18) !important;
-        font-size: 0.78rem !important;
-        font-weight: 900 !important;
-        line-height: 1.18 !important;
-        letter-spacing: 0.055em !important;
-        text-align: center !important;
-        text-transform: uppercase !important;
-      }
-
-      body.gate-airman-role #page-airport,
-      body.gate-airman-role #page-input,
-      body.gate-airman-role #page-archives,
-      body.gate-airman-role #closeout-btn,
-      body.gate-airman-role #airport-bus-edit-modal,
-      body.gate-airman-role #dorm-edit-modal,
-      body.gate-airman-role #archive-edit-modal,
-      body.gate-airman-role #gate-processing-context-menu {
-        display: none !important;
-      }
-    `;
-    document.head.appendChild(style);
-    stylesReady = true;
   }
 
   function showDenied(message = 'Instructor access required.') {
@@ -236,21 +193,44 @@
   }
 
   function runPass() {
-    ensureStyles();
+    passScheduled = false;
     patchShowPage();
     GUARDED_FUNCTIONS.forEach(guardFunction);
     enforcePageAccess();
     normalizeInstructorHints();
   }
 
+  function schedulePass() {
+    if (passScheduled) return;
+    passScheduled = true;
+    requestAnimationFrame(runPass);
+  }
+
+  function observeAccessTargets() {
+    const observer = new MutationObserver(schedulePass);
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['class', 'onclick', 'oncontextmenu']
+    });
+  }
+
   function start() {
     if (started) return;
     started = true;
     document.addEventListener('submit', blockInstructorOnlySubmit, true);
-    document.addEventListener('click', blockInstructorOnlyClick, true);
+    document.addEventListener('click', event => {
+      blockInstructorOnlyClick(event);
+      schedulePass();
+    }, true);
     document.addEventListener('contextmenu', blockInstructorOnlyContextMenu, true);
-    runPass();
-    setInterval(runPass, 350);
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape') schedulePass();
+    }, true);
+    window.addEventListener('resize', schedulePass, true);
+    observeAccessTargets();
+    schedulePass();
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);

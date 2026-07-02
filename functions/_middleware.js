@@ -142,6 +142,15 @@ const UI_INLINE_ASSETS = [
     padding-right: 0.68rem !important;
   }
 }
+</style>`,
+  `<style id="gate-squadron-board-airman-scope">
+#page-squadron .gate-dorm-airman {
+  visibility: hidden !important;
+}
+
+#page-squadron .gate-auditorium-location {
+  display: none !important;
+}
 </style>`
 ];
 

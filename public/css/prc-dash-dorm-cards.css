@@ -11,6 +11,8 @@
   --gate-dorm-meta-font: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --gate-dorm-chip-height: 1.22rem;
   --gate-dorm-banner-height: 1.38rem;
+  --gate-board-stable-bg: rgba(7, 17, 31, 0.76);
+  --gate-board-stable-border: rgba(148, 163, 184, 0.26);
 }
 
 /* Suppress duplicate/animated glass overlays that caused white flashing on Status Board blocks. */
@@ -27,7 +29,12 @@
 #page-board #active-buses .prc-bus-card::before,
 #page-board #active-buses .prc-bus-card::after,
 #page-board #active-buses .bus-badge::before,
-#page-board #active-buses .bus-badge::after {
+#page-board #active-buses .bus-badge::after,
+#page-board .tactical-glass-card::before,
+#page-board .tactical-glass-card::after,
+#page-squadron .tactical-glass-card::before,
+#page-squadron .tactical-glass-card::after {
+  content: none !important;
   animation: none !important;
   transition: none !important;
   opacity: 0 !important;
@@ -68,6 +75,16 @@
 #page-board #active-buses .bus-badge {
   -webkit-backdrop-filter: none !important;
   backdrop-filter: none !important;
+  background: var(--gate-board-stable-bg) !important;
+  border-color: var(--gate-board-stable-border) !important;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.28) !important;
+}
+
+#page-board .gate-dorm-card.border-female,
+#page-board .dorm-card.border-female,
+#page-squadron .gate-dorm-card.border-female,
+#page-squadron .dorm-card.border-female {
+  border-color: rgba(255, 59, 48, 0.86) !important;
 }
 
 /* Status Board + Squadron Board card structure */
@@ -172,13 +189,13 @@
   align-items: center !important;
   justify-content: center !important;
   min-height: var(--gate-dorm-banner-height) !important;
-  width: auto !important;
-  max-width: none !important;
-  margin: calc(-1 * var(--gate-dorm-card-pad-y)) calc(-1 * var(--gate-dorm-card-pad-x)) 0 !important;
-  padding: 0.38rem 0.8rem 0.34rem !important;
-  border-top-left-radius: inherit !important;
-  border-top-right-radius: inherit !important;
-  border-bottom: 1px solid rgba(255,255,255,0.12) !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 0 0.08rem 0 !important;
+  padding: 0.34rem 0.8rem 0.3rem !important;
+  border-radius: calc(var(--radius-md, 0.82rem) - 4px) calc(var(--radius-md, 0.82rem) - 4px) 0 0 !important;
+  border: 1px solid transparent !important;
+  border-bottom-width: 1px !important;
   font-size: 0.64rem !important;
   font-weight: 950 !important;
   letter-spacing: 0.11em !important;
@@ -188,20 +205,19 @@
   white-space: nowrap !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
+  box-shadow: none !important;
 }
 
 .gate-dorm-top-banner.banner-band {
-  background: rgba(34, 197, 94, 0.20) !important;
-  border-bottom-color: rgba(34, 197, 94, 0.52) !important;
+  background: rgba(34, 197, 94, 0.22) !important;
+  border-color: rgba(34, 197, 94, 0.42) !important;
   color: #d7ffe4 !important;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.11), 0 0 18px rgba(34,197,94,0.10) !important;
 }
 
 .gate-dorm-top-banner.banner-space-force {
-  background: rgba(69, 202, 255, 0.18) !important;
-  border-bottom-color: rgba(69, 202, 255, 0.60) !important;
+  background: rgba(69, 202, 255, 0.20) !important;
+  border-color: rgba(69, 202, 255, 0.48) !important;
   color: #e5fbff !important;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.11), 0 0 18px rgba(69,202,255,0.14) !important;
 }
 
 /* Processing keeps compact internal chips. Status/Squadron chips are replaced by banners. */
@@ -305,13 +321,11 @@
 #page-board .dorm-card.border-female,
 #page-squadron .gate-dorm-card.border-female,
 #page-squadron .dorm-card.border-female {
-  border-color: rgba(255, 59, 48, 0.82) !important;
+  border-color: rgba(255, 59, 48, 0.86) !important;
   box-shadow:
-    var(--gate-glass-edge, var(--glass-highlight)),
-    var(--gate-shadow-soft, var(--shadow-soft)),
+    0 10px 26px rgba(0, 0, 0, 0.28),
     inset 4px 0 0 var(--gate-flag-female-red),
-    0 0 0 1px rgba(255, 59, 48, 0.24),
-    0 0 18px rgba(255, 59, 48, 0.14) !important;
+    0 0 0 1px rgba(255, 59, 48, 0.24) !important;
 }
 
 /* Status/timer/load alignment */
@@ -480,6 +494,15 @@
   color: #78350f !important;
 }
 
+.theme-light #page-board .gate-dorm-card,
+.theme-light #page-board .dorm-card,
+.theme-light #page-board .metric-block,
+.theme-light #page-board #active-buses .prc-bus-card,
+.theme-light #page-board #active-buses .bus-badge {
+  background: rgba(248, 250, 252, 0.92) !important;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08) !important;
+}
+
 .theme-light .border-female,
 .theme-light .border-female.border-band,
 .theme-light .border-female.border-space-force,
@@ -490,8 +513,7 @@
 .theme-light #page-squadron .dorm-card.border-female {
   border-color: rgba(220, 38, 38, 0.64) !important;
   box-shadow:
-    var(--gate-glass-edge, var(--glass-highlight)),
-    var(--gate-shadow-soft, var(--shadow-soft)),
+    0 8px 20px rgba(15, 23, 42, 0.08),
     inset 4px 0 0 #dc2626,
     0 0 0 1px rgba(220, 38, 38, 0.18) !important;
 }

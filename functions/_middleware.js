@@ -142,48 +142,6 @@ const UI_INLINE_ASSETS = [
     padding-right: 0.68rem !important;
   }
 }
-</style>`,
-  `<style id="gate-squadron-board-card-scope">
-#page-squadron .gate-dorm-card,
-#page-squadron .dorm-card {
-  grid-template-columns: minmax(0, 1fr) minmax(6rem, max-content) !important;
-  grid-template-rows: auto auto auto minmax(2.16rem, 1fr) auto 5px !important;
-  grid-template-areas:
-    "banner banner"
-    "name name"
-    "info info"
-    "status status"
-    "timer load"
-    "progress progress" !important;
-}
-
-#page-squadron .gate-dorm-airman,
-#page-squadron .gate-auditorium-location {
-  display: none !important;
-}
-
-#page-squadron .gate-dorm-info {
-  grid-area: info !important;
-  justify-self: start !important;
-  align-self: start !important;
-  max-width: 100% !important;
-}
-
-@media (max-width: 760px) {
-  #page-squadron .gate-dorm-card,
-  #page-squadron .dorm-card {
-    grid-template-columns: minmax(0, 1fr) !important;
-    grid-template-rows: auto auto auto auto auto auto 5px !important;
-    grid-template-areas:
-      "banner"
-      "name"
-      "info"
-      "status"
-      "timer"
-      "load"
-      "progress" !important;
-  }
-}
 </style>`
 ];
 

@@ -65,20 +65,34 @@
         --gate-flag-space-force-bluebird: #45caff;
       }
 
+      #page-board .gate-dorm-card,
+      #page-squadron .gate-dorm-card {
+        grid-template-rows: auto auto auto minmax(2.35rem, 1fr) auto 5px !important;
+        grid-template-areas:
+          "name airman"
+          "info info"
+          "flags flags"
+          "status status"
+          "timer load"
+          "progress progress" !important;
+      }
+
       .gate-dorm-flags {
         display: flex !important;
         flex-wrap: wrap !important;
         gap: 0.28rem !important;
         align-items: center !important;
         justify-content: flex-start !important;
-        margin-top: 0.36rem !important;
-        min-height: 1.25rem !important;
+        min-height: 1.24rem !important;
       }
 
       .gate-dorm-card .gate-dorm-flags {
-        grid-area: info !important;
-        align-self: end !important;
-        margin-top: 1.38rem !important;
+        grid-area: flags !important;
+        align-self: start !important;
+        justify-self: start !important;
+        margin-top: 0 !important;
+        max-width: 100% !important;
+        overflow: hidden !important;
       }
 
       .proc-card .gate-dorm-flags {
@@ -216,11 +230,23 @@
     });
   }
 
+  function getDormFromCard(card, fallback) {
+    const onclick = card?.getAttribute?.('onclick') || '';
+    const contextmenu = card?.getAttribute?.('oncontextmenu') || '';
+    const idMatch = onclick.match(/openDormModal\('([^']+)'\)/) || contextmenu.match(/openDormEditModal\([^,]+,\s*'([^']+)'\)/);
+    const id = idMatch ? idMatch[1] : '';
+    if (id) {
+      const match = activeDorms().find(dorm => dorm.__backendId === id);
+      if (match) return match;
+    }
+    return fallback || null;
+  }
+
   function validateProcessingCards() {
     const grid = document.getElementById('proc-dorm-grid');
     if (!grid) return;
     const dorms = activeDorms();
-    grid.querySelectorAll('.proc-card').forEach((card, index) => setFlags(card, dorms[index]));
+    grid.querySelectorAll('.proc-card').forEach((card, index) => setFlags(card, getDormFromCard(card, dorms[index])));
   }
 
   function ensureEditSpaceForceField() {

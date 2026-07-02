@@ -112,3 +112,29 @@
   position: relative !important;
   z-index: var(--z-page-content, 100) !important;
 }
+
+/* Archives */
+#page-archives {
+  position: relative !important;
+  z-index: var(--z-page-content, 100) !important;
+  background: transparent !important;
+}
+
+#page-archives .surface,
+#page-archives #archive-history > * {
+  background: var(--gate-glass-bg) !important;
+  border-color: var(--gate-glass-border) !important;
+  box-shadow: var(--gate-glass-edge), var(--gate-shadow-soft) !important;
+  -webkit-backdrop-filter: blur(var(--gate-glass-blur)) saturate(1.35) !important;
+  backdrop-filter: blur(var(--gate-glass-blur)) saturate(1.35) !important;
+}
+
+#page-archives thead,
+#page-archives tfoot {
+  background: var(--gate-glass-bg-soft) !important;
+}
+
+#page-archives th,
+#page-archives td {
+  border-color: var(--gate-glass-border) !important;
+}

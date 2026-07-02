@@ -150,6 +150,7 @@ const UI_HEAD_SCRIPTS = [
   '<script src="/js/prc-dash-dorm-reopen.js" defer></script>',
   '<script src="/js/prc-dash-final-audit.js" defer></script>',
   '<script src="/js/prc-dash-dorm-flag-validation.js" defer></script>',
+  '<script src="/js/prc-dash-auditorium-location.js" defer></script>',
   '<script src="/js/prc-dash-local-bus-edit.js" defer></script>',
   '<script src="/js/prc-dash-print-report.js" defer></script>',
   '<script src="/js/prc-dash-receiving-windows.js" defer></script>',

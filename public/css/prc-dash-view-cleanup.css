@@ -31,3 +31,33 @@
 #page-board .dorm-col-header {
   color: var(--text-soft) !important;
 }
+
+/* Airport */
+#page-airport,
+#page-airport .surface,
+#page-airport table {
+  position: relative !important;
+  z-index: var(--z-page-content, 100) !important;
+}
+
+#page-airport {
+  background: transparent !important;
+}
+
+#page-airport .surface {
+  background: var(--gate-glass-bg) !important;
+  border-color: var(--gate-glass-border) !important;
+  box-shadow: var(--gate-glass-edge), var(--gate-shadow-soft) !important;
+  -webkit-backdrop-filter: blur(var(--gate-glass-blur)) saturate(1.35) !important;
+  backdrop-filter: blur(var(--gate-glass-blur)) saturate(1.35) !important;
+}
+
+#page-airport thead,
+#page-airport tfoot {
+  background: var(--gate-glass-bg-soft) !important;
+}
+
+#page-airport th,
+#page-airport td {
+  border-color: var(--gate-glass-border) !important;
+}

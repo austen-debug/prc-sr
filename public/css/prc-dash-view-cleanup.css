@@ -87,3 +87,28 @@
   background: var(--gate-glass-bg-strong) !important;
   border-color: var(--gate-glass-border) !important;
 }
+
+/* Processing */
+#page-processing {
+  position: relative !important;
+  z-index: var(--z-page-content, 100) !important;
+  background: transparent !important;
+}
+
+#page-processing > .px-4.py-3 {
+  background: var(--gate-glass-bg-soft) !important;
+  border-bottom: 1px solid var(--gate-glass-border) !important;
+  box-shadow: var(--gate-glass-edge), var(--gate-shadow-soft) !important;
+  -webkit-backdrop-filter: blur(var(--gate-glass-blur)) saturate(1.28) !important;
+  backdrop-filter: blur(var(--gate-glass-blur)) saturate(1.28) !important;
+}
+
+#page-processing .proc-card {
+  background: var(--gate-glass-bg) !important;
+  border-color: var(--gate-glass-border) !important;
+}
+
+#proc-dorm-grid {
+  position: relative !important;
+  z-index: var(--z-page-content, 100) !important;
+}

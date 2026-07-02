@@ -4,6 +4,7 @@
   let started = false;
   let sdkPatched = false;
   let batchPatched = false;
+  let passScheduled = false;
 
   const WINDOW_FIELDS = [
     ['receiving_day_one_start', 'RECEIVING DAY ONE START DATE / TIME'],
@@ -61,7 +62,7 @@
   function setWindowFieldValues(values) {
     WINDOW_FIELDS.forEach(([key]) => {
       const el = document.getElementById(key);
-      if (el && values[key]) el.value = values[key];
+      if (el && values[key] && !el.matches(':focus')) el.value = values[key];
     });
   }
 
@@ -88,10 +89,16 @@
     setWindowFieldValues(parseWindowsFromStorage());
 
     WINDOW_FIELDS.forEach(([key]) => {
-      document.getElementById(key)?.addEventListener('change', () => saveWindowValues());
+      document.getElementById(key)?.addEventListener('change', () => {
+        saveWindowValues();
+        schedulePass();
+      });
     });
 
-    wgInput.addEventListener('change', () => setWindowFieldValues(parseWindowsFromStorage(wgInput.value.trim())));
+    wgInput.addEventListener('change', () => {
+      setWindowFieldValues(parseWindowsFromStorage(wgInput.value.trim()));
+      schedulePass();
+    });
   }
 
   function ensureArchiveWindowInputs() {
@@ -217,6 +224,7 @@
         const patchedInit = function patchedInitBatchGrid(...args) {
           const result = originalInit.apply(this, args);
           ensureBatchSpaceForceUi();
+          schedulePass();
           return result;
         };
         window.initBatchGrid = patchedInit;
@@ -229,6 +237,7 @@
           const result = originalClear.apply(this, arguments);
           if (Array.isArray(batchRows) && batchRows[index]) batchRows[index].space_force = false;
           ensureBatchSpaceForceUi();
+          schedulePass();
           return result;
         };
         window.clearBatchRow = patchedClear;
@@ -243,6 +252,7 @@
       if (Array.isArray(batchRows) && Number.isFinite(index) && batchRows[index]) {
         batchRows[index].space_force = target.checked;
       }
+      schedulePass();
     }, true);
 
     batchPatched = true;
@@ -367,8 +377,9 @@
       const archive = getAllDataSafe().find(r => r.type === 'archive' && r.__backendId === id);
       if (archive) WINDOW_FIELDS.forEach(([key]) => {
         const el = document.getElementById(`archive-edit-${key}`);
-        if (el) el.value = archive[key] || '';
+        if (el && !el.matches(':focus')) el.value = archive[key] || '';
       });
+      schedulePass();
       return result;
     };
     patched.__receivingWindowsPatched = true;
@@ -377,6 +388,7 @@
   }
 
   function runPass() {
+    passScheduled = false;
     ensureReceivingWindowInputs();
     ensureArchiveWindowInputs();
     ensureBatchSpaceForceUi();
@@ -386,11 +398,45 @@
     window.printArchiveSpreadsheet = printArchiveSpreadsheetPatched;
   }
 
+  function schedulePass() {
+    if (passScheduled) return;
+    passScheduled = true;
+    requestAnimationFrame(runPass);
+  }
+
+  function observeReceivingSurfaces() {
+    if (typeof MutationObserver === 'undefined' || !document.body) return;
+    const observer = new MutationObserver(mutations => {
+      const shouldSchedule = mutations.some(mutation => {
+        if (mutation.type === 'childList') return true;
+        if (mutation.type === 'attributes') {
+          const target = mutation.target;
+          if (!target?.closest) return false;
+          return Boolean(target.closest('#page-input, #archive-edit-modal, #batch-grid-wrapper, #batch-rows-container'));
+        }
+        return false;
+      });
+      if (shouldSchedule) schedulePass();
+    });
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['class', 'data-row']
+    });
+  }
+
   function start() {
     if (started) return;
     started = true;
-    runPass();
-    setInterval(runPass, 750);
+    document.addEventListener('click', event => {
+      if (event.target?.closest?.('#page-input, #archive-edit-modal')) schedulePass();
+    }, true);
+    document.addEventListener('change', event => {
+      if (event.target?.closest?.('#page-input, #archive-edit-modal, #batch-rows-container')) schedulePass();
+    }, true);
+    observeReceivingSurfaces();
+    schedulePass();
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);

@@ -138,3 +138,26 @@
 #page-archives td {
   border-color: var(--gate-glass-border) !important;
 }
+
+/* Squadron Board */
+#page-squadron {
+  position: relative !important;
+  z-index: var(--z-page-content, 100) !important;
+  background: transparent !important;
+}
+
+#page-squadron .gate-squadron-header,
+#page-squadron .gate-squadron-content,
+#page-squadron .surface,
+#page-squadron .dorm-card,
+#page-squadron .proc-card {
+  background: var(--gate-glass-bg) !important;
+  border-color: var(--gate-glass-border) !important;
+  box-shadow: var(--gate-glass-edge), var(--gate-shadow-soft) !important;
+  -webkit-backdrop-filter: blur(var(--gate-glass-blur)) saturate(1.35) !important;
+  backdrop-filter: blur(var(--gate-glass-blur)) saturate(1.35) !important;
+}
+
+#page-squadron .gate-squadron-header {
+  background: var(--gate-glass-bg-soft) !important;
+}

@@ -1,0 +1,72 @@
+/* PRC GATE Login View Cleanup
+   CSS-only alignment to global Liquid Glass tokens. */
+.login-page {
+  background-color: var(--bg) !important;
+  background-image: var(--bg-gradient) !important;
+}
+
+.login-page::after {
+  background:
+    linear-gradient(rgba(56, 189, 248, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(37, 99, 235, 0.035) 1px, transparent 1px),
+    radial-gradient(circle at 50% 52%, transparent 0 20%, rgba(2, 6, 23, 0.20) 52%, rgba(2, 6, 23, 0.54) 100%) !important;
+  background-size: 4px 4px, 4px 4px, auto !important;
+}
+
+.login-shell {
+  z-index: var(--z-page-content, 100) !important;
+}
+
+.login-card,
+.login-card-surface {
+  background: var(--gate-glass-bg-strong) !important;
+  border-color: var(--gate-glass-border-strong) !important;
+  border-radius: var(--radius-xl) !important;
+  box-shadow: var(--gate-glass-edge), var(--gate-shadow-strong), var(--shadow-glow-blue) !important;
+  -webkit-backdrop-filter: blur(var(--gate-glass-blur-strong)) saturate(1.22) !important;
+  backdrop-filter: blur(var(--gate-glass-blur-strong)) saturate(1.22) !important;
+}
+
+.login-card::before,
+.login-card-surface::before {
+  background:
+    radial-gradient(circle at 50% 0%, rgba(125, 211, 252, 0.20), transparent 36%),
+    linear-gradient(135deg, rgba(255,255,255,0.18), transparent 26%) !important;
+}
+
+.login-form input {
+  background: var(--gate-glass-bg-soft) !important;
+  border-color: var(--gate-glass-border) !important;
+  color: var(--text) !important;
+}
+
+.login-form input:focus,
+.login-form input:focus-visible,
+.login-button:focus-visible {
+  outline: none !important;
+  box-shadow: var(--focus-ring), var(--gate-glass-edge) !important;
+}
+
+.login-button {
+  background: var(--btn-green-gradient) !important;
+  border-color: rgba(255,255,255,0.24) !important;
+  box-shadow: var(--gate-glass-edge), var(--gate-shadow-soft), var(--shadow-glow-green) !important;
+}
+
+.theme-light .login-page::before {
+  opacity: 0.15 !important;
+}
+
+.theme-light .login-page::after {
+  background:
+    linear-gradient(rgba(56, 189, 248, 0.075) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(37, 99, 235, 0.06) 1px, transparent 1px),
+    radial-gradient(circle at 50% 52%, transparent 0 25%, rgba(186, 230, 253, 0.16) 58%, rgba(226, 232, 240, 0.24) 100%) !important;
+  background-size: 4px 4px, 4px 4px, auto !important;
+}
+
+.theme-light .login-card,
+.theme-light .login-card-surface {
+  background: var(--gate-glass-bg) !important;
+  border-color: var(--gate-glass-border) !important;
+}

@@ -10,9 +10,11 @@
     style.id = 'prc-gate-dorm-block-polish-styles';
     style.textContent = `
       :root {
-        --gate-dorm-card-min: clamp(176px, 16.8vh, 238px);
-        --gate-dorm-card-pad-y: clamp(0.92rem, 1.05vw, 1.25rem);
-        --gate-dorm-card-pad-x: clamp(1rem, 1.22vw, 1.42rem);
+        --gate-dorm-card-min: clamp(178px, 16.8vh, 238px);
+        --gate-dorm-card-pad-y: clamp(0.96rem, 1.08vw, 1.26rem);
+        --gate-dorm-card-pad-x: clamp(1.02rem, 1.22vw, 1.42rem);
+        --gate-dorm-meta-font: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        --gate-dorm-chip-height: 1.22rem;
       }
 
       #page-board .gate-dorm-card,
@@ -21,13 +23,15 @@
         min-height: var(--gate-dorm-card-min) !important;
         padding: var(--gate-dorm-card-pad-y) var(--gate-dorm-card-pad-x) !important;
         row-gap: 0.38rem !important;
-        column-gap: 0.82rem !important;
+        column-gap: 0.84rem !important;
         box-sizing: border-box !important;
+        isolation: isolate !important;
+        font-family: var(--gate-dorm-meta-font) !important;
       }
 
       #page-board .gate-dorm-card {
-        grid-template-columns: minmax(0, 1fr) minmax(5.25rem, max-content) !important;
-        grid-template-rows: auto auto auto minmax(2.22rem, 1fr) auto 5px !important;
+        grid-template-columns: minmax(0, 1fr) minmax(5.35rem, max-content) !important;
+        grid-template-rows: auto auto auto minmax(2.26rem, 1fr) auto 5px !important;
         grid-template-areas:
           "name airman"
           "info info"
@@ -38,8 +42,8 @@
       }
 
       #page-squadron .gate-dorm-card {
-        grid-template-columns: minmax(0, 1fr) minmax(4.75rem, max-content) !important;
-        grid-template-rows: auto auto auto minmax(2.22rem, 1fr) auto 5px !important;
+        grid-template-columns: minmax(0, 1fr) minmax(4.8rem, max-content) !important;
+        grid-template-rows: auto auto auto minmax(2.26rem, 1fr) auto 5px !important;
         grid-template-areas:
           "name airman"
           "info info"
@@ -58,7 +62,8 @@
         max-width: 100% !important;
         overflow: hidden !important;
         text-overflow: ellipsis !important;
-        font-size: clamp(1.82rem, 2.44vw, 3.05rem) !important;
+        font-size: clamp(1.84rem, 2.42vw, 3.02rem) !important;
+        font-weight: 950 !important;
         letter-spacing: -0.052em !important;
         line-height: 0.96 !important;
         padding-right: 0.25rem !important;
@@ -66,28 +71,55 @@
 
       #page-board .gate-dorm-airman,
       #page-squadron .gate-dorm-airman {
-        max-width: min(9.5rem, 30vw) !important;
-        font-size: clamp(0.62rem, 0.66vw, 0.76rem) !important;
-        letter-spacing: 0.065em !important;
+        display: inline-flex !important;
+        grid-area: airman !important;
+        align-items: center !important;
+        justify-content: flex-end !important;
+        justify-self: end !important;
+        align-self: start !important;
+        max-width: min(9.65rem, 30vw) !important;
+        min-height: 1.18rem !important;
+        padding: 0.08rem 0.04rem !important;
+        color: var(--board-secondary-text, var(--text-muted)) !important;
+        font-size: clamp(0.6rem, 0.64vw, 0.74rem) !important;
+        font-weight: 850 !important;
+        letter-spacing: 0.072em !important;
         line-height: 1.05 !important;
+        text-align: right !important;
+        text-transform: uppercase !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
       }
 
       #page-board .gate-dorm-info,
       #page-squadron .gate-dorm-info {
         min-width: 0 !important;
-        font-size: clamp(0.66rem, 0.74vw, 0.86rem) !important;
+        max-width: 100% !important;
+        color: var(--board-secondary-text, var(--text-muted)) !important;
+        font-size: clamp(0.66rem, 0.72vw, 0.84rem) !important;
+        font-weight: 800 !important;
         letter-spacing: 0.072em !important;
         line-height: 1.08 !important;
+        text-transform: uppercase !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
       }
 
       #page-board .gate-dorm-flags,
       #page-squadron .gate-dorm-flags {
         grid-area: flags !important;
+        display: flex !important;
+        flex-wrap: wrap !important;
+        gap: 0.28rem !important;
         min-width: 0 !important;
         max-width: 100% !important;
+        min-height: var(--gate-dorm-chip-height) !important;
         overflow: hidden !important;
         align-self: start !important;
         justify-self: start !important;
+        align-items: center !important;
         margin: 0 !important;
       }
 
@@ -95,6 +127,7 @@
         grid-area: location !important;
         justify-self: end !important;
         align-self: start !important;
+        width: fit-content !important;
         max-width: min(9.75rem, 100%) !important;
         margin: 0 !important;
       }
@@ -103,10 +136,30 @@
         display: none !important;
       }
 
+      .gate-dorm-flag-chip,
+      .gate-auditorium-location {
+        min-height: var(--gate-dorm-chip-height) !important;
+        max-height: var(--gate-dorm-chip-height) !important;
+        max-width: 100% !important;
+        padding: 0 0.52rem !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+        font-size: 0.56rem !important;
+        font-weight: 950 !important;
+        line-height: 1 !important;
+        letter-spacing: 0.075em !important;
+        text-transform: uppercase !important;
+      }
+
       #page-board .gate-dorm-status-wrap,
       #page-squadron .gate-dorm-status-wrap {
-        padding: 0.42rem 0 0.36rem !important;
+        padding: 0.42rem 0 0.34rem !important;
         min-width: 0 !important;
+        align-self: center !important;
       }
 
       #page-board .gate-dorm-status,
@@ -115,6 +168,7 @@
         min-height: 1.62rem !important;
         padding: 0.28rem 0.74rem !important;
         font-size: clamp(0.64rem, 0.66vw, 0.78rem) !important;
+        font-weight: 950 !important;
         letter-spacing: 0.095em !important;
         white-space: nowrap !important;
         overflow: hidden !important;
@@ -124,7 +178,8 @@
       #page-board .gate-dorm-timer,
       #page-squadron .gate-dorm-timer {
         min-width: 0 !important;
-        font-size: clamp(1.68rem, 2.58vw, 3.08rem) !important;
+        align-self: end !important;
+        font-size: clamp(1.68rem, 2.56vw, 3.04rem) !important;
         letter-spacing: -0.045em !important;
         line-height: 0.98 !important;
       }
@@ -132,7 +187,8 @@
       #page-board .gate-dorm-load,
       #page-squadron .gate-dorm-load {
         min-width: 0 !important;
-        font-size: clamp(1.12rem, 1.52vw, 1.96rem) !important;
+        align-self: end !important;
+        font-size: clamp(1.12rem, 1.5vw, 1.92rem) !important;
         letter-spacing: -0.035em !important;
         line-height: 0.98 !important;
       }
@@ -150,17 +206,23 @@
         display: flex !important;
         flex-direction: column !important;
         min-width: 0 !important;
-        min-height: clamp(164px, 14.6vw, 226px) !important;
-        padding: clamp(0.86rem, 1vw, 1.12rem) !important;
+        min-height: clamp(166px, 14.6vw, 226px) !important;
+        padding: clamp(0.9rem, 1vw, 1.12rem) !important;
         gap: 0.28rem !important;
         overflow: hidden !important;
         box-sizing: border-box !important;
+        font-family: var(--gate-dorm-meta-font) !important;
+      }
+
+      #page-processing .proc-card > * {
+        min-width: 0 !important;
       }
 
       #page-processing .proc-card > .flex.justify-between.items-start {
         min-width: 0 !important;
-        margin-bottom: 0.1rem !important;
+        margin-bottom: 0.12rem !important;
         gap: 0.74rem !important;
+        align-items: flex-start !important;
       }
 
       #page-processing .proc-card > .flex.justify-between.items-start > .font-black.text-3xl {
@@ -187,6 +249,7 @@
         text-overflow: ellipsis !important;
         white-space: nowrap !important;
         font-size: clamp(0.64rem, 0.72vw, 0.78rem) !important;
+        font-weight: 850 !important;
         letter-spacing: 0.07em !important;
         line-height: 1.08 !important;
       }
@@ -195,8 +258,9 @@
         display: flex !important;
         flex-wrap: wrap !important;
         gap: 0.28rem !important;
-        margin: 0.28rem 0 0 !important;
-        min-height: 1.18rem !important;
+        margin: 0.3rem 0 0 !important;
+        min-height: var(--gate-dorm-chip-height) !important;
+        align-items: center !important;
       }
 
       #page-processing .proc-card .gate-auditorium-location {
@@ -207,7 +271,7 @@
       }
 
       #page-processing .proc-card > .text-xl.font-black.font-tabular {
-        margin-top: 0.28rem !important;
+        margin-top: 0.3rem !important;
         font-size: clamp(1.16rem, 1.45vw, 1.62rem) !important;
         letter-spacing: -0.026em !important;
         line-height: 1 !important;
@@ -224,18 +288,14 @@
         font-size: clamp(1.54rem, 1.95vw, 2.18rem) !important;
         letter-spacing: -0.042em !important;
         line-height: 1 !important;
-      }
-
-      .gate-dorm-flag-chip,
-      .gate-auditorium-location {
-        max-width: 100% !important;
+        font-variant-numeric: tabular-nums !important;
       }
 
       @media (max-width: 1200px) {
         #page-board .gate-dorm-card,
         #page-squadron .gate-dorm-card {
           min-height: clamp(168px, 18vh, 226px) !important;
-          padding: 0.9rem 1rem !important;
+          padding: 0.92rem 1rem !important;
         }
 
         #page-board .gate-dorm-card {
@@ -289,6 +349,7 @@
         #page-board .gate-dorm-airman,
         #page-squadron .gate-dorm-airman {
           justify-self: start !important;
+          justify-content: flex-start !important;
           text-align: left !important;
           max-width: 100% !important;
         }

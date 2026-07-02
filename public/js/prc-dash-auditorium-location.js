@@ -1,12 +1,11 @@
 // PRC GATE Auditorium Location support
-// Adds dorm-level auditorium_location config through the Processing modal.
-// Renders on Status Board and Processing page only; intentionally excludes Squadron Board.
+// Behavior-only layer. Canonical styles live in /css/prc-dash-dorm-cards.css and /css/prc-dash-modal-systems.css.
 (function () {
   let started = false;
-  let stylesReady = false;
   let modalPatched = false;
   let savePatched = false;
   let keyPatched = false;
+  let passScheduled = false;
 
   function esc(value) {
     if (typeof escapeHtml === 'function') return escapeHtml(value);
@@ -37,78 +36,6 @@
 
   function normalizeLocation(value) {
     return String(value ?? '').trim().toUpperCase();
-  }
-
-  function ensureStyles() {
-    if (stylesReady || document.getElementById('prc-gate-auditorium-location-styles')) return;
-
-    const style = document.createElement('style');
-    style.id = 'prc-gate-auditorium-location-styles';
-    style.textContent = `
-      .gate-auditorium-field {
-        margin-top: 0.75rem !important;
-      }
-
-      .gate-airman-location-grid {
-        display: grid !important;
-        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto !important;
-        gap: 0.5rem !important;
-        align-items: end !important;
-      }
-
-      .gate-auditorium-location {
-        display: inline-flex !important;
-        align-items: center !important;
-        justify-content: flex-start !important;
-        max-width: 100% !important;
-        min-height: 1.18rem !important;
-        padding: 0.16rem 0.48rem !important;
-        border-radius: 999px !important;
-        border: 1px solid rgba(251, 191, 36, 0.42) !important;
-        background: rgba(251, 191, 36, 0.12) !important;
-        color: #fde68a !important;
-        font-size: 0.58rem !important;
-        font-weight: 950 !important;
-        line-height: 1 !important;
-        letter-spacing: 0.075em !important;
-        text-transform: uppercase !important;
-        white-space: nowrap !important;
-        overflow: hidden !important;
-        text-overflow: ellipsis !important;
-        box-shadow: inset 0 1px 0 rgba(255,255,255,0.12), 0 3px 10px rgba(0,0,0,0.12) !important;
-      }
-
-      #page-board .gate-auditorium-location {
-        grid-area: flags !important;
-        justify-self: end !important;
-        align-self: start !important;
-        max-width: min(48%, 9rem) !important;
-      }
-
-      #page-processing .gate-auditorium-location,
-      .proc-card .gate-auditorium-location {
-        margin-top: 0.5rem !important;
-      }
-
-      #page-squadron .gate-auditorium-location {
-        display: none !important;
-      }
-
-      .theme-light .gate-auditorium-location {
-        background: rgba(254, 243, 199, 0.72) !important;
-        border-color: rgba(217, 119, 6, 0.28) !important;
-        color: #78350f !important;
-      }
-
-      @media (max-width: 640px) {
-        .gate-airman-location-grid {
-          grid-template-columns: minmax(0, 1fr) !important;
-        }
-      }
-    `;
-
-    document.head.appendChild(style);
-    stylesReady = true;
   }
 
   function ensureAuditoriumInput() {
@@ -259,7 +186,7 @@
   }
 
   function runPass() {
-    ensureStyles();
+    passScheduled = false;
     ensureAuditoriumInput();
     patchOpenDormModal();
     patchSaveAssignedAirman();
@@ -269,11 +196,31 @@
     suppressSquadronLocations();
   }
 
+  function schedulePass() {
+    if (passScheduled) return;
+    passScheduled = true;
+    requestAnimationFrame(runPass);
+  }
+
+  function observeRenderTargets() {
+    const observer = new MutationObserver(schedulePass);
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['class', 'onclick', 'oncontextmenu']
+    });
+  }
+
   function start() {
     if (started) return;
     started = true;
-    runPass();
-    setInterval(runPass, 350);
+    document.addEventListener('click', schedulePass, true);
+    document.addEventListener('input', event => {
+      if (event.target && event.target.id === 'modal-auditorium-input') schedulePass();
+    }, true);
+    observeRenderTargets();
+    schedulePass();
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);

@@ -185,15 +185,24 @@ body.gate-modal-open {
   background: rgba(248, 113, 113, 0.12) !important;
 }
 
-/* Dorm banner edge correction. This stylesheet loads after dorm-cards.css. */
+/* Dorm card final geometry. This stylesheet loads after dorm-cards.css. */
+#page-board .gate-dorm-card.border-female,
+#page-board .dorm-card.border-female,
+#page-squadron .gate-dorm-card.border-female,
+#page-squadron .dorm-card.border-female {
+  border-color: rgba(255, 59, 48, 0.90) !important;
+  box-shadow:
+    0 10px 26px rgba(0, 0, 0, 0.28),
+    0 0 0 1px rgba(255, 59, 48, 0.30) !important;
+}
+
 #page-board .gate-dorm-card.border-female .gate-dorm-top-banner,
 #page-board .dorm-card.border-female .gate-dorm-top-banner,
 #page-squadron .gate-dorm-card.border-female .gate-dorm-top-banner,
 #page-squadron .dorm-card.border-female .gate-dorm-top-banner {
-  margin-left: calc(6px - var(--gate-dorm-card-pad-x)) !important;
-  border-left: 0 !important;
-  border-top-left-radius: 0 !important;
-  border-bottom-left-radius: 0 !important;
+  margin: calc(1px - var(--gate-dorm-card-pad-y)) calc(1px - var(--gate-dorm-card-pad-x)) 0 !important;
+  border-left: 1px solid transparent !important;
+  border-radius: calc(var(--radius-lg, 1rem) - 2px) calc(var(--radius-lg, 1rem) - 2px) 0 0 !important;
 }
 
 /* Mobile modal and mobile access rules */

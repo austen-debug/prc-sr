@@ -1,0 +1,271 @@
+/* PRC GATE Modal + Mobile System Contract
+   Canonical styling for modal fit, mobile-safe forms, processing context menu,
+   access-denied toast, and role-based UI hiding. */
+
+/* Access-control UI feedback */
+.gate-access-denied-toast {
+  position: fixed !important;
+  left: 50% !important;
+  bottom: 1.25rem !important;
+  transform: translateX(-50%) !important;
+  z-index: calc(var(--z-modal-window, 600) + 80) !important;
+  max-width: min(92vw, 420px) !important;
+  padding: 0.72rem 0.92rem !important;
+  border: 1px solid rgba(248, 113, 113, 0.44) !important;
+  border-radius: var(--radius-lg, 18px) !important;
+  background: rgba(127, 29, 29, 0.86) !important;
+  color: #fff !important;
+  box-shadow: var(--gate-shadow-strong, 0 20px 44px rgba(0,0,0,0.34)) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(1.18) !important;
+  backdrop-filter: blur(18px) saturate(1.18) !important;
+  font-size: 0.78rem !important;
+  font-weight: 900 !important;
+  line-height: 1.18 !important;
+  letter-spacing: 0.055em !important;
+  text-align: center !important;
+  text-transform: uppercase !important;
+}
+
+body.gate-airman-role #page-airport,
+body.gate-airman-role #page-input,
+body.gate-airman-role #page-archives,
+body.gate-airman-role #closeout-btn,
+body.gate-airman-role #airport-bus-edit-modal,
+body.gate-airman-role #dorm-edit-modal,
+body.gate-airman-role #archive-edit-modal,
+body.gate-airman-role #gate-processing-context-menu {
+  display: none !important;
+}
+
+/* Modal fit and scroll behavior */
+body.gate-modal-open {
+  overflow: hidden !important;
+}
+
+.confirm-overlay {
+  overflow-y: auto !important;
+  overscroll-behavior: contain !important;
+}
+
+.confirm-overlay > .modal-content,
+#confirm-dialog > .surface,
+#confirm-dialog > div {
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.modal-content > .flex.justify-between.items-center.mb-4 {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 2 !important;
+  background: linear-gradient(180deg, var(--gate-glass-bg-strong), rgba(15, 23, 42, 0.72)) !important;
+  -webkit-backdrop-filter: blur(var(--gate-glass-blur, 16px)) saturate(1.12) !important;
+  backdrop-filter: blur(var(--gate-glass-blur, 16px)) saturate(1.12) !important;
+}
+
+.modal-content form,
+.modal-content .space-y-4 {
+  min-width: 0 !important;
+}
+
+.modal-content input,
+.modal-content select,
+.modal-content textarea,
+.modal-content button {
+  min-width: 0 !important;
+}
+
+.modal-content input,
+.modal-content select {
+  min-height: 2.65rem !important;
+}
+
+.modal-content textarea {
+  max-height: 34dvh !important;
+  resize: vertical !important;
+}
+
+.modal-content button {
+  min-height: 2.6rem !important;
+}
+
+.modal-content .flex.gap-2,
+.modal-content .flex.gap-3 {
+  flex-wrap: wrap !important;
+}
+
+.modal-content .flex.gap-2 > button,
+.modal-content .flex.gap-3 > button {
+  min-width: min(100%, 8rem) !important;
+}
+
+.gate-edit-record-grid {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+  gap: 0.5rem !important;
+}
+
+.gate-edit-record-grid input {
+  text-transform: uppercase !important;
+}
+
+.gate-airman-location-grid {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto !important;
+  gap: 0.5rem !important;
+  align-items: end !important;
+}
+
+/* Processing instructor context menu */
+.gate-processing-context-menu {
+  position: fixed !important;
+  z-index: calc(var(--z-modal-window, 600) + 40) !important;
+  width: min(86vw, 260px) !important;
+  padding: 0.42rem !important;
+  border: 1px solid var(--gate-glass-border-strong, rgba(255,255,255,0.18)) !important;
+  border-radius: var(--radius-lg, 18px) !important;
+  background:
+    radial-gradient(circle at 18% 0%, rgba(56, 189, 248, 0.16), transparent 42%),
+    var(--gate-glass-bg-strong, rgba(15,23,42,0.92)) !important;
+  box-shadow: var(--gate-glass-edge, inset 0 1px 0 rgba(255,255,255,0.12)), var(--gate-shadow-strong, 0 18px 40px rgba(0,0,0,0.34)) !important;
+  -webkit-backdrop-filter: blur(var(--gate-glass-blur-strong, 22px)) saturate(1.22) !important;
+  backdrop-filter: blur(var(--gate-glass-blur-strong, 22px)) saturate(1.22) !important;
+}
+
+.gate-processing-context-title {
+  padding: 0.42rem 0.52rem 0.5rem !important;
+  border-bottom: 1px solid var(--gate-glass-border, rgba(255,255,255,0.12)) !important;
+  color: var(--text, #fff) !important;
+  font-size: 0.72rem !important;
+  font-weight: 950 !important;
+  line-height: 1.05 !important;
+  letter-spacing: 0.075em !important;
+  text-transform: uppercase !important;
+}
+
+.gate-processing-context-subtitle {
+  display: block !important;
+  margin-top: 0.22rem !important;
+  color: var(--text-muted, #94a3b8) !important;
+  font-size: 0.58rem !important;
+  font-weight: 850 !important;
+  letter-spacing: 0.06em !important;
+}
+
+.gate-processing-context-action {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 0.7rem !important;
+  width: 100% !important;
+  margin-top: 0.32rem !important;
+  padding: 0.58rem 0.62rem !important;
+  border: 1px solid transparent !important;
+  border-radius: var(--radius-md, 14px) !important;
+  background: transparent !important;
+  color: var(--text, #fff) !important;
+  font-size: 0.72rem !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.055em !important;
+  text-align: left !important;
+  text-transform: uppercase !important;
+  cursor: pointer !important;
+}
+
+.gate-processing-context-action:hover,
+.gate-processing-context-action:focus-visible {
+  border-color: rgba(125, 211, 252, 0.46) !important;
+  background: rgba(56, 189, 248, 0.14) !important;
+  outline: none !important;
+}
+
+.gate-processing-context-action.danger:hover,
+.gate-processing-context-action.danger:focus-visible {
+  border-color: rgba(248, 113, 113, 0.52) !important;
+  background: rgba(248, 113, 113, 0.12) !important;
+}
+
+/* Mobile modal and mobile access rules */
+@media (max-width: 760px) {
+  .confirm-overlay {
+    align-items: flex-start !important;
+    justify-content: center !important;
+    padding:
+      max(0.75rem, env(safe-area-inset-top))
+      0.75rem
+      max(0.75rem, env(safe-area-inset-bottom)) !important;
+  }
+
+  .confirm-overlay > .modal-content,
+  #confirm-dialog > .surface,
+  #confirm-dialog > div {
+    width: calc(100vw - 1.5rem) !important;
+    max-width: calc(100vw - 1.5rem) !important;
+    max-height: calc(100dvh - max(1.5rem, env(safe-area-inset-top) + env(safe-area-inset-bottom))) !important;
+    margin: 0 auto !important;
+    border-radius: 18px !important;
+  }
+
+  .modal-content > .flex.justify-between.items-center.mb-4 {
+    margin: -0.15rem -0.15rem 0.85rem !important;
+    padding: 0.2rem 0.2rem 0.72rem !important;
+  }
+
+  .modal-content h2,
+  .modal-content h3 {
+    max-width: calc(100% - 2.25rem) !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    font-size: 1.05rem !important;
+    line-height: 1.05 !important;
+  }
+
+  .modal-content .grid,
+  .modal-content .grid.grid-cols-2,
+  .modal-content .grid.grid-cols-3,
+  .modal-content .grid.grid-cols-4,
+  .modal-content .gate-edit-record-grid,
+  .modal-content .gate-airman-location-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .modal-content .flex.gap-2 > button,
+  .modal-content .flex.gap-3 > button,
+  .modal-content form > .flex button {
+    flex: 1 1 100% !important;
+    width: 100% !important;
+  }
+
+  #archive-edit-modal textarea {
+    max-height: 24dvh !important;
+  }
+
+  .gate-processing-context-menu {
+    left: 0.75rem !important;
+    right: 0.75rem !important;
+    bottom: max(0.75rem, env(safe-area-inset-bottom)) !important;
+    top: auto !important;
+    width: auto !important;
+    max-width: none !important;
+    border-radius: 20px !important;
+    padding: 0.54rem !important;
+  }
+
+  .gate-processing-context-action {
+    min-height: 2.85rem !important;
+    padding: 0.72rem 0.78rem !important;
+    font-size: 0.76rem !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .gate-edit-record-grid,
+  .gate-airman-location-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+
+body.gate-touch-access-mode #processing-edit-hint:not(.hidden)::after {
+  content: ' Long-press a dorm card for instructor actions on mobile.';
+}

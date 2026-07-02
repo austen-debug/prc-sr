@@ -1,11 +1,11 @@
 // PRC GATE Processing page instructor context menu
-// Adds a clean right-click action menu for Processing dorm cards and exposes all dorm-level correction fields.
+// Behavior-only layer. Canonical styles live in /css/prc-dash-modal-systems.css.
 (function () {
   let started = false;
-  let stylesReady = false;
   let menuEl = null;
   let sdkPatched = false;
   let editOpenPatched = false;
+  let passScheduled = false;
 
   function esc(value) {
     if (typeof escapeHtml === 'function') return escapeHtml(value);
@@ -35,101 +35,6 @@
 
   function normalizeUpper(value) {
     return String(value ?? '').trim().toUpperCase();
-  }
-
-  function ensureStyles() {
-    if (stylesReady || document.getElementById('prc-gate-processing-context-menu-styles')) return;
-
-    const style = document.createElement('style');
-    style.id = 'prc-gate-processing-context-menu-styles';
-    style.textContent = `
-      .gate-processing-context-menu {
-        position: fixed !important;
-        z-index: calc(var(--z-modal-window, 600) + 40) !important;
-        width: min(86vw, 260px) !important;
-        padding: 0.42rem !important;
-        border: 1px solid var(--gate-glass-border-strong, rgba(255,255,255,0.18)) !important;
-        border-radius: var(--radius-lg, 18px) !important;
-        background:
-          radial-gradient(circle at 18% 0%, rgba(56, 189, 248, 0.16), transparent 42%),
-          var(--gate-glass-bg-strong, rgba(15,23,42,0.92)) !important;
-        box-shadow: var(--gate-glass-edge, inset 0 1px 0 rgba(255,255,255,0.12)), var(--gate-shadow-strong, 0 18px 40px rgba(0,0,0,0.34)) !important;
-        -webkit-backdrop-filter: blur(var(--gate-glass-blur-strong, 22px)) saturate(1.22) !important;
-        backdrop-filter: blur(var(--gate-glass-blur-strong, 22px)) saturate(1.22) !important;
-      }
-
-      .gate-processing-context-title {
-        padding: 0.42rem 0.52rem 0.5rem !important;
-        border-bottom: 1px solid var(--gate-glass-border, rgba(255,255,255,0.12)) !important;
-        color: var(--text, #fff) !important;
-        font-size: 0.72rem !important;
-        font-weight: 950 !important;
-        line-height: 1.05 !important;
-        letter-spacing: 0.075em !important;
-        text-transform: uppercase !important;
-      }
-
-      .gate-processing-context-subtitle {
-        display: block !important;
-        margin-top: 0.22rem !important;
-        color: var(--text-muted, #94a3b8) !important;
-        font-size: 0.58rem !important;
-        font-weight: 850 !important;
-        letter-spacing: 0.06em !important;
-      }
-
-      .gate-processing-context-action {
-        display: flex !important;
-        align-items: center !important;
-        justify-content: space-between !important;
-        gap: 0.7rem !important;
-        width: 100% !important;
-        margin-top: 0.32rem !important;
-        padding: 0.58rem 0.62rem !important;
-        border: 1px solid transparent !important;
-        border-radius: var(--radius-md, 14px) !important;
-        background: transparent !important;
-        color: var(--text, #fff) !important;
-        font-size: 0.72rem !important;
-        font-weight: 900 !important;
-        letter-spacing: 0.055em !important;
-        text-align: left !important;
-        text-transform: uppercase !important;
-        cursor: pointer !important;
-      }
-
-      .gate-processing-context-action:hover,
-      .gate-processing-context-action:focus-visible {
-        border-color: rgba(125, 211, 252, 0.46) !important;
-        background: rgba(56, 189, 248, 0.14) !important;
-        outline: none !important;
-      }
-
-      .gate-processing-context-action.danger:hover,
-      .gate-processing-context-action.danger:focus-visible {
-        border-color: rgba(248, 113, 113, 0.52) !important;
-        background: rgba(248, 113, 113, 0.12) !important;
-      }
-
-      .gate-edit-record-grid {
-        display: grid !important;
-        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
-        gap: 0.5rem !important;
-      }
-
-      .gate-edit-record-grid input {
-        text-transform: uppercase !important;
-      }
-
-      @media (max-width: 640px) {
-        .gate-edit-record-grid {
-          grid-template-columns: minmax(0, 1fr) !important;
-        }
-      }
-    `;
-
-    document.head.appendChild(style);
-    stylesReady = true;
   }
 
   function ensureMenu() {
@@ -292,7 +197,7 @@
   }
 
   function runPass() {
-    ensureStyles();
+    passScheduled = false;
     ensureMenu();
     ensureEditRecordFields();
     patchEditOpen();
@@ -302,12 +207,29 @@
     if (editModal && !editModal.classList.contains('hidden')) syncEditRecordFields();
   }
 
+  function schedulePass() {
+    if (passScheduled) return;
+    passScheduled = true;
+    requestAnimationFrame(runPass);
+  }
+
+  function observeModalTargets() {
+    const observer = new MutationObserver(schedulePass);
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['class']
+    });
+  }
+
   function start() {
     if (started) return;
     started = true;
     document.addEventListener('contextmenu', handleProcessingContext, true);
     document.addEventListener('click', event => {
       if (!event.target?.closest?.('#gate-processing-context-menu')) hideMenu();
+      schedulePass();
     }, true);
     document.addEventListener('keydown', event => {
       if (event.key === 'Escape') hideMenu();
@@ -316,10 +238,13 @@
         if (focused?.classList?.contains('gate-processing-context-action')) focused.click();
       }
     }, true);
+    document.addEventListener('input', event => {
+      if (event.target?.matches?.('#edit-assigned-airman, #edit-auditorium-location')) schedulePass();
+    }, true);
     window.addEventListener('scroll', hideMenu, true);
-    window.addEventListener('resize', hideMenu, true);
-    runPass();
-    setInterval(runPass, 500);
+    window.addEventListener('resize', () => { hideMenu(); schedulePass(); }, true);
+    observeModalTargets();
+    schedulePass();
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);

@@ -1,6 +1,7 @@
 // PRC GATE archive edit / print action reliability
 (function () {
   let started = false;
+  let passScheduled = false;
   let originalPrintArchive = null;
 
   function getAllDataSafe() {
@@ -77,6 +78,7 @@
 
     const modal = document.getElementById('archive-edit-modal');
     if (modal) modal.classList.remove('hidden');
+    schedulePass();
   }
 
   function getCardArchiveId(card) {
@@ -152,6 +154,7 @@
   }
 
   function runPass() {
+    passScheduled = false;
     window.openArchiveEditModal = openArchiveEditor;
     if (!originalPrintArchive && typeof window.printArchiveSpreadsheet === 'function' && window.printArchiveSpreadsheet !== printArchiveReport) {
       originalPrintArchive = window.printArchiveSpreadsheet;
@@ -161,11 +164,45 @@
     bindArchivePrintButton();
   }
 
+  function schedulePass() {
+    if (passScheduled) return;
+    passScheduled = true;
+    requestAnimationFrame(runPass);
+  }
+
+  function observeArchiveSurfaces() {
+    if (typeof MutationObserver === 'undefined' || !document.body) return;
+    const observer = new MutationObserver(mutations => {
+      const shouldSchedule = mutations.some(mutation => {
+        if (mutation.type === 'childList') return true;
+        if (mutation.type === 'attributes') {
+          const target = mutation.target;
+          if (!target?.closest) return false;
+          return Boolean(target.closest('#archive-history, #archive-edit-modal'));
+        }
+        return false;
+      });
+      if (shouldSchedule) schedulePass();
+    });
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['class', 'oncontextmenu']
+    });
+  }
+
   function start() {
     if (started) return;
     started = true;
-    runPass();
-    window.setInterval(runPass, 500);
+    document.addEventListener('click', event => {
+      if (event.target?.closest?.('#archive-history, #archive-edit-modal')) schedulePass();
+    }, true);
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Enter' || event.key === 'Escape') schedulePass();
+    }, true);
+    observeArchiveSurfaces();
+    schedulePass();
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);

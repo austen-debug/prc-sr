@@ -34,6 +34,42 @@
   pointer-events: none !important;
 }
 
+/* Status Board is a display surface, not an interactive liquid layer. Keep it visually stable. */
+#page-board .gate-dorm-card,
+#page-board .dorm-card,
+#page-board .metric-block,
+#page-board #active-buses .prc-bus-card,
+#page-board #active-buses .bus-badge,
+#page-squadron .gate-dorm-card,
+#page-squadron .dorm-card {
+  animation: none !important;
+  transition: none !important;
+  transform: none !important;
+  will-change: auto !important;
+  backface-visibility: hidden !important;
+  -webkit-backface-visibility: hidden !important;
+  contain: paint !important;
+}
+
+#page-board .gate-dorm-card:hover,
+#page-board .dorm-card:hover,
+#page-board .metric-block:hover,
+#page-board #active-buses .prc-bus-card:hover,
+#page-board #active-buses .bus-badge:hover,
+#page-squadron .gate-dorm-card:hover,
+#page-squadron .dorm-card:hover {
+  transform: none !important;
+}
+
+#page-board .gate-dorm-card,
+#page-board .dorm-card,
+#page-board .metric-block,
+#page-board #active-buses .prc-bus-card,
+#page-board #active-buses .bus-badge {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
 /* Status Board + Squadron Board card structure */
 #page-board .gate-dorm-card,
 #page-squadron .gate-dorm-card,

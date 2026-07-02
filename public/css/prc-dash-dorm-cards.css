@@ -5,12 +5,12 @@
   --gate-flag-female-red: #ff3b30;
   --gate-flag-band-green: #22c55e;
   --gate-flag-space-force-bluebird: #45caff;
-  --gate-dorm-card-min: clamp(184px, 16.8vh, 244px);
+  --gate-dorm-card-min: clamp(196px, 17.8vh, 258px);
   --gate-dorm-card-pad-y: clamp(0.96rem, 1.08vw, 1.26rem);
   --gate-dorm-card-pad-x: clamp(1.02rem, 1.22vw, 1.42rem);
   --gate-dorm-meta-font: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --gate-dorm-chip-height: 1.22rem;
-  --gate-dorm-banner-height: 1.38rem;
+  --gate-dorm-banner-height: clamp(1.95rem, 1.7vw, 2.28rem);
   --gate-board-stable-bg: rgba(7, 17, 31, 0.76);
   --gate-board-stable-border: rgba(148, 163, 184, 0.26);
 }
@@ -96,7 +96,7 @@
   min-width: 0 !important;
   min-height: var(--gate-dorm-card-min) !important;
   padding: var(--gate-dorm-card-pad-y) var(--gate-dorm-card-pad-x) !important;
-  row-gap: 0.34rem !important;
+  row-gap: 0.42rem !important;
   column-gap: 0.84rem !important;
   box-sizing: border-box !important;
   isolation: isolate !important;
@@ -189,16 +189,16 @@
   align-items: center !important;
   justify-content: center !important;
   min-height: var(--gate-dorm-banner-height) !important;
-  width: 100% !important;
-  max-width: 100% !important;
-  margin: 0 0 0.08rem 0 !important;
-  padding: 0.34rem 0.8rem 0.3rem !important;
-  border-radius: calc(var(--radius-md, 0.82rem) - 4px) calc(var(--radius-md, 0.82rem) - 4px) 0 0 !important;
+  width: auto !important;
+  max-width: none !important;
+  margin: calc(1px - var(--gate-dorm-card-pad-y)) calc(1px - var(--gate-dorm-card-pad-x)) 0 !important;
+  padding: 0.5rem 0.95rem 0.46rem !important;
+  border-radius: calc(var(--radius-lg, 1rem) - 2px) calc(var(--radius-lg, 1rem) - 2px) 0 0 !important;
   border: 1px solid transparent !important;
   border-bottom-width: 1px !important;
-  font-size: 0.64rem !important;
+  font-size: clamp(0.78rem, 0.82vw, 0.94rem) !important;
   font-weight: 950 !important;
-  letter-spacing: 0.11em !important;
+  letter-spacing: 0.14em !important;
   line-height: 1 !important;
   text-transform: uppercase !important;
   text-align: center !important;
@@ -209,14 +209,14 @@
 }
 
 .gate-dorm-top-banner.banner-band {
-  background: rgba(34, 197, 94, 0.22) !important;
-  border-color: rgba(34, 197, 94, 0.42) !important;
+  background: rgba(34, 197, 94, 0.28) !important;
+  border-color: rgba(34, 197, 94, 0.56) !important;
   color: #d7ffe4 !important;
 }
 
 .gate-dorm-top-banner.banner-space-force {
-  background: rgba(69, 202, 255, 0.20) !important;
-  border-color: rgba(69, 202, 255, 0.48) !important;
+  background: rgba(69, 202, 255, 0.26) !important;
+  border-color: rgba(69, 202, 255, 0.62) !important;
   color: #e5fbff !important;
 }
 
@@ -477,14 +477,14 @@
 }
 
 .theme-light .gate-dorm-top-banner.banner-band {
-  background: rgba(187, 247, 208, 0.80) !important;
-  border-bottom-color: rgba(22, 163, 74, 0.28) !important;
+  background: rgba(187, 247, 208, 0.86) !important;
+  border-color: rgba(22, 163, 74, 0.36) !important;
   color: #14532d !important;
 }
 
 .theme-light .gate-dorm-top-banner.banner-space-force {
-  background: rgba(224, 248, 255, 0.90) !important;
-  border-bottom-color: rgba(2, 132, 199, 0.28) !important;
+  background: rgba(224, 248, 255, 0.94) !important;
+  border-color: rgba(2, 132, 199, 0.36) !important;
   color: #075985 !important;
 }
 
@@ -522,8 +522,10 @@
 @media (max-width: 1200px) {
   #page-board .gate-dorm-card,
   #page-squadron .gate-dorm-card {
-    min-height: clamp(174px, 18vh, 232px) !important;
-    padding: 0.92rem 1rem !important;
+    --gate-dorm-card-pad-y: 0.92rem;
+    --gate-dorm-card-pad-x: 1rem;
+    min-height: clamp(186px, 19vh, 244px) !important;
+    padding: var(--gate-dorm-card-pad-y) var(--gate-dorm-card-pad-x) !important;
   }
 
   #page-board .gate-dorm-card,

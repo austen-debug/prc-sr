@@ -1,5 +1,6 @@
 // PRC GATE final UI/functionality safety patch
 // Consolidated Status Board / Squadron Board display helpers.
+// Behavior-only pass: no recurring visual polling.
 (function () {
   let stylesReady = false;
   let squadronPageReady = false;
@@ -7,8 +8,11 @@
   let renderAllPatched = false;
   let mobileNavReady = false;
   let brandingObserverReady = false;
+  let finalAuditObserverReady = false;
+  let passScheduled = false;
   let boardDormSignature = '';
   let squadronDormSignature = '';
+  let activeBusSignature = '';
 
   function n(value) {
     const parsed = Number(value || 0);
@@ -265,22 +269,47 @@
     return String(dorm.phase || 'OPEN').trim() || 'OPEN';
   }
 
+  function isFemaleDorm(dorm) {
+    const sex = String(dorm?.sex || '').trim().toLowerCase();
+    return sex === 'female' || sex === 'f';
+  }
+
   function getDormSignature(dorms) {
     return dorms.map(dorm => [
       dorm.__backendId,
       dorm.dorm_name,
       dorm.assigned_airman,
+      dorm.auditorium_location,
       dorm.sdq,
       dorm.section,
       dorm.inter_sec,
       dorm.sex,
       dorm.band,
+      dorm.space_force,
+      dorm.is_space_force,
       dorm.state,
       dorm.phase,
       dorm.current_load,
       dorm.max_load,
       dorm.opened_at,
       dorm.closed_timer
+    ].join('|')).join('~');
+  }
+
+  function getBusSignature(buses) {
+    return buses.map(bus => [
+      bus.__backendId,
+      bus.bus_id,
+      bus.bus_type,
+      bus.destination,
+      bus.originating_destination,
+      bus.status,
+      bus.otw_count,
+      bus.female_count,
+      bus.nat_count,
+      bus.space_force_count,
+      bus.departed_at,
+      bus.created_at
     ].join('|')).join('~');
   }
 
@@ -294,7 +323,7 @@
   function buildGateDormCard(dorm) {
     const load = getLoadRatio(dorm);
     const state = String(dorm.state || 'empty').toLowerCase();
-    const borderClass = dorm.sex === 'female' ? 'border-female' : (dorm.band === 'true' ? 'border-band' : '');
+    const borderClass = isFemaleDorm(dorm) ? 'border-female' : (dorm.band === 'true' ? 'border-band' : '');
     const closedClass = state === 'closed' ? 'dorm-closed' : '';
     const progressClass = load.isOver ? 'is-over' : (load.isFull ? 'is-full' : '');
     const info = [escapeText(dorm.sdq), escapeText(dorm.section), escapeText(dorm.inter_sec)].filter(Boolean).join(' · ');
@@ -579,6 +608,7 @@
         renderSquadronBoard({ force: true });
         ensureResponsiveCommandShell();
         scrubLegacyTerminology();
+        schedulePass();
         return result;
       };
       window.renderAll = patchedRenderAll;
@@ -607,9 +637,14 @@
     return `BUS #${String(bus.bus_id || '').trim()}`;
   }
 
-  function normalizeActiveBusCards() {
+  function normalizeActiveBusCards(options) {
     const container = document.getElementById('active-buses');
     if (!container) return;
+    const buses = getBusesForActiveWeek();
+    const signature = getBusSignature(buses);
+    if (!options?.force && signature === activeBusSignature) return;
+    activeBusSignature = signature;
+
     container.querySelectorAll('.bus-badge').forEach(button => {
       const bus = getBusFromButton(button);
       if (!bus) return;
@@ -647,6 +682,7 @@
   }
 
   function runPass() {
+    passScheduled = false;
     ensureDocumentIdentity();
     ensureStyles();
     ensureSquadronPage();
@@ -661,9 +697,51 @@
     try { normalizeActiveBusCards(); } catch (error) { console.warn('PRC GATE active bus render failed:', error); }
   }
 
+  function schedulePass() {
+    if (passScheduled) return;
+    passScheduled = true;
+    window.requestAnimationFrame(runPass);
+  }
+
+  function observeUiTargets() {
+    if (finalAuditObserverReady || typeof MutationObserver === 'undefined' || !document.body) return;
+    const observer = new MutationObserver(mutations => {
+      const shouldSchedule = mutations.some(mutation => {
+        if (mutation.type === 'childList') return true;
+        if (mutation.type === 'attributes') {
+          const target = mutation.target;
+          if (!target?.closest) return target === document.body;
+          return Boolean(target.closest('.page, .app-nav, #active-buses, .dorm-col-content'));
+        }
+        return false;
+      });
+      if (shouldSchedule) schedulePass();
+    });
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['class', 'onclick']
+    });
+    finalAuditObserverReady = true;
+  }
+
+  function bindEvents() {
+    document.addEventListener('click', schedulePass, true);
+    document.addEventListener('change', schedulePass, true);
+    document.addEventListener('input', event => {
+      const target = event.target;
+      if (target?.matches?.('input, select, textarea')) schedulePass();
+    }, true);
+    document.addEventListener('fullscreenchange', schedulePass, true);
+    document.addEventListener('visibilitychange', schedulePass, true);
+    window.addEventListener('resize', schedulePass, true);
+  }
+
   function start() {
-    runPass();
-    setInterval(runPass, 500);
+    observeUiTargets();
+    bindEvents();
+    schedulePass();
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);

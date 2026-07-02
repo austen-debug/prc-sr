@@ -191,7 +191,9 @@ body.gate-modal-open {
 #page-squadron .gate-dorm-card.border-female .gate-dorm-top-banner,
 #page-squadron .dorm-card.border-female .gate-dorm-top-banner {
   margin-left: calc(6px - var(--gate-dorm-card-pad-x)) !important;
-  border-top-left-radius: calc(var(--radius-lg, 1rem) - 6px) !important;
+  border-left: 0 !important;
+  border-top-left-radius: 0 !important;
+  border-bottom-left-radius: 0 !important;
 }
 
 /* Mobile modal and mobile access rules */

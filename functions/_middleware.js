@@ -6,6 +6,7 @@ const UI_STYLESHEETS = [
   '<link rel="stylesheet" href="/css/prc-dash-states-empty.css">',
   '<link rel="stylesheet" href="/css/prc-dash-watermark.css">',
   '<link rel="stylesheet" href="/css/prc-dash-input-layout.css">',
+  '<link rel="stylesheet" href="/css/prc-dash-view-cleanup.css">',
   '<link rel="stylesheet" href="/css/prc-dash-danger-actions.css">',
   '<link rel="stylesheet" href="/css/prc-dash-nav-compact.css">'
 ];

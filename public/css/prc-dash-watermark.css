@@ -82,8 +82,8 @@ body::after {
 body.theme-light::before,
 .theme-light body::before {
   background-image: url('/assets/gate_emblem_blue.png') !important;
-  opacity: 0.052 !important;
-  filter: drop-shadow(0 0 14px rgba(2, 132, 199, 0.08)) grayscale(0.12);
+  opacity: 0.15 !important;
+  filter: drop-shadow(0 0 14px rgba(2, 132, 199, 0.10)) grayscale(0.08);
   mix-blend-mode: multiply;
 }
 
@@ -105,7 +105,7 @@ body.theme-light::after,
 body.theme-light.fullscreen-board::before,
 .theme-light body.fullscreen-board::before {
   background-image: url('/assets/gate_emblem_blue.png') !important;
-  opacity: 0.04 !important;
+  opacity: 0.15 !important;
 }
 
 @media (max-width: 768px) {
@@ -125,7 +125,7 @@ body.theme-light.fullscreen-board::before,
   body.theme-light::before,
   .theme-light body::before {
     background-image: url('/assets/gate_emblem_blue.png') !important;
-    opacity: 0.035 !important;
+    opacity: 0.15 !important;
   }
 }
 
@@ -339,4 +339,103 @@ body.theme-light #batch-grid-wrapper > div > div:first-child > div,
   #batch-grid-wrapper > div {
     min-width: 960px !important;
   }
+}
+
+/* ======================================================================
+   PHASE 1: LIQUID GLASS DESIGN TOKENS
+   Global visual tokens only. No application logic/state changes.
+   ====================================================================== */
+:root {
+  --z-base-app: 0;
+  --z-page-content: 100;
+  --z-fixed-nav: 200;
+  --z-modal-backdrop: 500;
+  --z-modal-window: 600;
+
+  --bg: #161617;
+  --bg-soft: #0b1220;
+  --surface: rgba(22, 22, 23, 0.60);
+  --surface-alt: rgba(24, 32, 48, 0.68);
+  --surface-solid: #111827;
+  --border: rgba(255, 255, 255, 0.14);
+
+  --gate-glass-bg: rgba(22, 22, 23, 0.60);
+  --gate-glass-bg-strong: rgba(26, 32, 44, 0.72);
+  --gate-glass-bg-soft: rgba(22, 22, 23, 0.42);
+  --gate-glass-border: rgba(255, 255, 255, 0.13);
+  --gate-glass-border-strong: rgba(125, 211, 252, 0.34);
+  --gate-glass-edge: inset 0 1px 0 rgba(255, 255, 255, 0.20), inset 0 -1px 0 rgba(255, 255, 255, 0.045);
+  --gate-glass-blur: 20px;
+  --gate-glass-blur-strong: 26px;
+  --gate-shadow-soft: 0 12px 32px rgba(0, 0, 0, 0.34), 0 1px 0 rgba(255, 255, 255, 0.045);
+  --gate-shadow-medium: 0 18px 48px rgba(0, 0, 0, 0.42), 0 1px 0 rgba(255, 255, 255, 0.06);
+  --gate-shadow-strong: 0 28px 80px rgba(0, 0, 0, 0.56), 0 1px 0 rgba(255, 255, 255, 0.07);
+  --bg-gradient:
+    radial-gradient(circle at top left, rgba(56, 189, 248, 0.16), transparent 34%),
+    radial-gradient(circle at 82% 16%, rgba(37, 99, 235, 0.14), transparent 32%),
+    radial-gradient(circle at 50% 100%, rgba(14, 165, 233, 0.07), transparent 34%),
+    radial-gradient(circle at top left, #161617, #000000);
+}
+
+.theme-light {
+  --bg: #f5f7fa;
+  --bg-soft: #eef3f8;
+  --surface: rgba(255, 255, 255, 0.65);
+  --surface-alt: rgba(255, 255, 255, 0.72);
+  --surface-solid: #ffffff;
+  --border: rgba(255, 255, 255, 0.50);
+
+  --gate-glass-bg: rgba(255, 255, 255, 0.65);
+  --gate-glass-bg-strong: rgba(255, 255, 255, 0.76);
+  --gate-glass-bg-soft: rgba(255, 255, 255, 0.54);
+  --gate-glass-border: rgba(255, 255, 255, 0.50);
+  --gate-glass-border-strong: rgba(2, 132, 199, 0.26);
+  --gate-glass-edge: inset 0 1px 0 rgba(255, 255, 255, 0.92), inset 0 -1px 0 rgba(255, 255, 255, 0.34);
+  --gate-glass-blur: 20px;
+  --gate-glass-blur-strong: 28px;
+  --gate-shadow-soft: 0 12px 30px rgba(15, 23, 42, 0.10), 0 1px 0 rgba(255, 255, 255, 0.65);
+  --gate-shadow-medium: 0 18px 44px rgba(15, 23, 42, 0.14), 0 1px 0 rgba(255, 255, 255, 0.72);
+  --gate-shadow-strong: 0 28px 72px rgba(15, 23, 42, 0.20), 0 1px 0 rgba(255, 255, 255, 0.78);
+  --bg-gradient:
+    radial-gradient(circle at top left, rgba(255, 255, 255, 0.86), transparent 30%),
+    radial-gradient(circle at 18% 12%, rgba(56, 189, 248, 0.18), transparent 32%),
+    radial-gradient(circle at 82% 18%, rgba(37, 99, 235, 0.10), transparent 34%),
+    radial-gradient(circle at 50% 92%, rgba(14, 165, 233, 0.08), transparent 36%),
+    radial-gradient(circle at top left, #f5f7fa, #e4e8f0);
+}
+
+html,
+body {
+  background-color: var(--bg) !important;
+  background-image: var(--bg-gradient) !important;
+}
+
+body::after {
+  z-index: var(--z-base-app) !important;
+  background:
+    radial-gradient(circle at 50% 30%, rgba(56, 189, 248, 0.14), transparent 32%),
+    radial-gradient(circle at 18% 14%, rgba(14, 165, 233, 0.11), transparent 30%),
+    radial-gradient(circle at 78% 18%, rgba(59, 130, 246, 0.10), transparent 34%),
+    linear-gradient(180deg, rgba(8, 47, 73, 0.12), rgba(3, 7, 18, 0.32)) !important;
+}
+
+body.theme-light::after,
+.theme-light body::after {
+  background:
+    radial-gradient(circle at 18% 14%, rgba(56, 189, 248, 0.17), transparent 30%),
+    radial-gradient(circle at 78% 18%, rgba(37, 99, 235, 0.10), transparent 32%),
+    radial-gradient(circle at 66% 84%, rgba(14, 165, 233, 0.07), transparent 34%),
+    linear-gradient(135deg, rgba(239, 246, 255, 0.15), rgba(186, 230, 253, 0.08)) !important;
+}
+
+.gate-glass,
+.surface,
+.metric-block,
+.dorm-card,
+.proc-card,
+.modal-content {
+  border-color: var(--gate-glass-border) !important;
+  box-shadow: var(--gate-glass-edge), var(--gate-shadow-soft) !important;
+  -webkit-backdrop-filter: blur(var(--gate-glass-blur)) saturate(1.45) !important;
+  backdrop-filter: blur(var(--gate-glass-blur)) saturate(1.45) !important;
 }

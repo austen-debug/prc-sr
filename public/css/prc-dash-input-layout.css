@@ -1,0 +1,119 @@
+/* PRC GATE Input Page Layout Repair
+   CSS-only page cleanup. Keeps week-group initialization and data flow intact. */
+:root {
+  --input-matrix-grid: minmax(86px, 0.92fr) minmax(82px, 0.86fr) minmax(128px, 1.18fr) minmax(150px, 1.36fr) minmax(110px, 0.88fr) 58px 74px minmax(104px, 0.86fr) 36px;
+  --input-matrix-gap: clamp(6px, 0.72vw, 10px);
+  --input-matrix-min-width: 1040px;
+}
+
+#page-input {
+  min-width: 0 !important;
+}
+
+#page-input > .flex-shrink-0:first-of-type {
+  padding: clamp(0.85rem, 1vw, 1.15rem) clamp(1rem, 1.35vw, 1.45rem) !important;
+}
+
+#page-input > .flex-shrink-0:first-of-type > .flex {
+  align-items: end !important;
+  gap: clamp(1rem, 1.5vw, 1.6rem) !important;
+}
+
+#receiving-windows-panel {
+  width: 100% !important;
+  margin-top: 0.85rem !important;
+  padding: 0.82rem !important;
+  border: 1px solid var(--gate-glass-border) !important;
+  border-radius: var(--radius-lg, 1rem) !important;
+  background: var(--gate-glass-bg-soft) !important;
+  box-shadow: var(--gate-glass-edge), 0 10px 28px rgba(0, 0, 0, 0.16) !important;
+  -webkit-backdrop-filter: blur(var(--gate-glass-blur)) saturate(1.25) !important;
+  backdrop-filter: blur(var(--gate-glass-blur)) saturate(1.25) !important;
+}
+
+#receiving-windows-panel input[type="datetime-local"] {
+  min-width: 0 !important;
+  width: 100% !important;
+  height: 40px !important;
+  min-height: 40px !important;
+  padding-inline: 0.78rem !important;
+  font-size: 0.82rem !important;
+}
+
+#batch-grid-wrapper {
+  padding: clamp(0.8rem, 1vw, 1.05rem) clamp(0.9rem, 1.25vw, 1.25rem) 1.1rem !important;
+  overflow-x: auto !important;
+}
+
+#batch-grid-wrapper > div {
+  min-width: max(var(--input-matrix-min-width), 100%) !important;
+  width: 100% !important;
+}
+
+#batch-grid-wrapper > div > div:first-child,
+#batch-rows-container > div {
+  grid-template-columns: var(--input-matrix-grid) !important;
+  column-gap: var(--input-matrix-gap) !important;
+  align-items: center !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+#batch-grid-wrapper > div > div:first-child {
+  padding: 0.52rem 0.2rem 0.55rem !important;
+  border-radius: var(--radius-md, 0.82rem) var(--radius-md, 0.82rem) 0 0 !important;
+}
+
+#batch-grid-wrapper > div > div:first-child > div:nth-child(6),
+#batch-grid-wrapper > div > div:first-child > div:nth-child(7),
+#batch-grid-wrapper > div > div:first-child > div:nth-child(9) {
+  text-align: center !important;
+  justify-self: center !important;
+}
+
+#batch-grid-wrapper > div > div:first-child > div[data-sf-header="true"] {
+  max-width: 74px !important;
+  text-align: center !important;
+  white-space: normal !important;
+  line-height: 1.05 !important;
+}
+
+#batch-rows-container > div {
+  min-height: 40px !important;
+  padding: 0.16rem 0.2rem !important;
+  overflow: visible !important;
+}
+
+#batch-rows-container > div > label {
+  width: auto !important;
+  min-width: 0 !important;
+  justify-self: stretch !important;
+}
+
+#batch-rows-container .batch-band,
+#batch-rows-container .batch-space-force {
+  width: 17px !important;
+  height: 17px !important;
+  min-width: 17px !important;
+  min-height: 17px !important;
+  margin: 0 !important;
+  accent-color: var(--blue, #38bdf8) !important;
+}
+
+#batch-rows-container > div > input:not([type="checkbox"]),
+#batch-rows-container > div > select,
+#batch-rows-container > div > button[onclick*="clearBatchRow"] {
+  height: 36px !important;
+  min-height: 36px !important;
+}
+
+#batch-rows-container > div > button[onclick*="clearBatchRow"] {
+  width: 36px !important;
+  min-width: 36px !important;
+}
+
+@media (max-width: 767px) {
+  #batch-grid-wrapper > div {
+    min-width: var(--input-matrix-min-width) !important;
+  }
+}

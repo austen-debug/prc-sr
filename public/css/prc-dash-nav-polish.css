@@ -1,0 +1,159 @@
+/* PRC GATE Header / Navigation Polish
+   CSS-only UI/UX cleanup for shading, shadowing, spacing, hover, focus, and active states. */
+.app-nav,
+.command-header-bar {
+  min-height: 58px !important;
+  padding: 0.52rem 0.78rem !important;
+  gap: 0.58rem !important;
+  background:
+    linear-gradient(180deg, rgba(18, 26, 42, 0.78), rgba(6, 12, 24, 0.68)),
+    var(--gate-glass-bg-strong) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.10) !important;
+  border-bottom: 1px solid var(--gate-glass-border-strong) !important;
+  box-shadow:
+    var(--gate-glass-edge),
+    0 10px 30px rgba(0, 0, 0, 0.34),
+    0 0 22px rgba(56, 189, 248, 0.08) !important;
+  -webkit-backdrop-filter: blur(var(--gate-glass-blur-strong)) saturate(1.32) !important;
+  backdrop-filter: blur(var(--gate-glass-blur-strong)) saturate(1.32) !important;
+}
+
+.app-nav::after,
+.command-header-bar::after {
+  height: 1px !important;
+  opacity: 0.86 !important;
+  background: linear-gradient(90deg, transparent, rgba(125, 211, 252, 0.72), rgba(34, 197, 94, 0.22), transparent) !important;
+  box-shadow: 0 0 14px rgba(56, 189, 248, 0.30) !important;
+}
+
+#nav-links,
+#main-nav-menu,
+.nav-group-left {
+  gap: 0.36rem !important;
+  padding: 0.08rem 0.04rem !important;
+}
+
+.app-nav > div:last-child,
+.nav-group-right {
+  gap: 0.38rem !important;
+  padding-left: 0.52rem !important;
+  border-left: 1px solid rgba(180, 198, 228, 0.18) !important;
+}
+
+.app-nav .nav-btn,
+#fullscreen-btn,
+#sound-toggle-btn,
+#role-toggle,
+.app-nav button[aria-label='Toggle theme'] {
+  height: 38px !important;
+  min-height: 38px !important;
+  padding: 0 0.78rem !important;
+  border-radius: var(--radius-pill) !important;
+  font-size: 0.70rem !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.052em !important;
+  line-height: 1 !important;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.10), rgba(255, 255, 255, 0.035)) !important;
+  border-color: rgba(180, 198, 228, 0.22) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    0 5px 12px rgba(0, 0, 0, 0.16) !important;
+}
+
+.app-nav .nav-btn:hover,
+#fullscreen-btn:hover,
+#sound-toggle-btn:hover,
+#role-toggle:hover,
+.app-nav button[aria-label='Toggle theme']:hover,
+#mobile-menu-trigger:hover {
+  color: var(--text) !important;
+  background: linear-gradient(145deg, rgba(56, 189, 248, 0.18), rgba(255, 255, 255, 0.06)) !important;
+  border-color: rgba(125, 211, 252, 0.50) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.20),
+    0 7px 18px rgba(0, 0, 0, 0.22),
+    0 0 18px rgba(56, 189, 248, 0.18) !important;
+}
+
+.app-nav .nav-btn.active,
+.app-nav .nav-btn.active-page-state,
+.app-nav .nav-btn.current-page {
+  background: linear-gradient(145deg, rgba(0, 163, 255, 0.24), rgba(56, 189, 248, 0.12)) !important;
+  border-color: rgba(0, 191, 255, 0.68) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    0 0 18px rgba(0, 163, 255, 0.30),
+    0 7px 18px rgba(0, 0, 0, 0.20) !important;
+}
+
+#week-group-display {
+  height: 38px !important;
+  min-height: 38px !important;
+  padding: 0 0.76rem !important;
+  border-radius: var(--radius-pill) !important;
+  font-size: 0.68rem !important;
+  font-weight: 950 !important;
+  letter-spacing: 0.065em !important;
+  background: linear-gradient(145deg, rgba(34, 197, 94, 0.14), rgba(34, 197, 94, 0.06)) !important;
+  border-color: rgba(34, 197, 94, 0.32) !important;
+}
+
+.app-nav button[aria-label='Toggle theme'] {
+  width: 38px !important;
+  min-width: 38px !important;
+  padding: 0 !important;
+}
+
+.theme-light .app-nav,
+.theme-light .command-header-bar {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.74), rgba(239, 246, 255, 0.62)),
+    var(--gate-glass-bg) !important;
+  border-top-color: rgba(255, 255, 255, 0.92) !important;
+  border-bottom-color: rgba(2, 132, 199, 0.22) !important;
+  box-shadow:
+    var(--gate-glass-edge),
+    0 10px 28px rgba(15, 23, 42, 0.11),
+    0 0 16px rgba(2, 132, 199, 0.07) !important;
+}
+
+.theme-light .app-nav .nav-btn,
+.theme-light #fullscreen-btn,
+.theme-light #sound-toggle-btn,
+.theme-light #role-toggle,
+.theme-light .app-nav button[aria-label='Toggle theme'] {
+  background: rgba(255, 255, 255, 0.70) !important;
+  border-color: rgba(100, 116, 139, 0.22) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.90),
+    0 4px 10px rgba(15, 23, 42, 0.07) !important;
+}
+
+.theme-light .app-nav .nav-btn:hover,
+.theme-light #fullscreen-btn:hover,
+.theme-light #sound-toggle-btn:hover,
+.theme-light #role-toggle:hover,
+.theme-light .app-nav button[aria-label='Toggle theme']:hover {
+  background: rgba(255, 255, 255, 0.86) !important;
+  border-color: rgba(2, 132, 199, 0.34) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.96),
+    0 6px 14px rgba(15, 23, 42, 0.10),
+    0 0 14px rgba(2, 132, 199, 0.10) !important;
+}
+
+@media (min-width: 992px) and (max-width: 1360px) {
+  .app-nav,
+  .command-header-bar {
+    padding-left: 0.52rem !important;
+    padding-right: 0.52rem !important;
+  }
+
+  .app-nav .nav-btn,
+  #fullscreen-btn,
+  #sound-toggle-btn,
+  #role-toggle {
+    font-size: 0.64rem !important;
+    letter-spacing: 0.028em !important;
+  }
+}

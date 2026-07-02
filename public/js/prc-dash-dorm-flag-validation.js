@@ -1,10 +1,11 @@
 // PRC GATE dorm flag validation
-// UI/UX + dorm flag preservation only. Keeps core routing, archive math, and API paths intact.
+// Behavior-only layer for dorm flag rendering and Space Force edit preservation.
+// Canonical styles live in /css/prc-dash-dorm-cards.css.
 (function () {
   let started = false;
-  let stylesReady = false;
   let sdkPatched = false;
   let editOpenPatched = false;
+  let passScheduled = false;
 
   function n(value) {
     const parsed = Number(value || 0);
@@ -53,131 +54,6 @@
     return { female, band, spaceForce };
   }
 
-  function ensureStyles() {
-    if (stylesReady || document.getElementById('prc-gate-dorm-flag-validation-styles')) return;
-
-    const style = document.createElement('style');
-    style.id = 'prc-gate-dorm-flag-validation-styles';
-    style.textContent = `
-      :root {
-        --gate-flag-female-red: #ff3b30;
-        --gate-flag-band-green: #22c55e;
-        --gate-flag-space-force-bluebird: #45caff;
-      }
-
-      #page-board .gate-dorm-card,
-      #page-squadron .gate-dorm-card {
-        grid-template-rows: auto auto auto minmax(2.35rem, 1fr) auto 5px !important;
-        grid-template-areas:
-          "name airman"
-          "info info"
-          "flags flags"
-          "status status"
-          "timer load"
-          "progress progress" !important;
-      }
-
-      .gate-dorm-flags {
-        display: flex !important;
-        flex-wrap: wrap !important;
-        gap: 0.28rem !important;
-        align-items: center !important;
-        justify-content: flex-start !important;
-        min-height: 1.24rem !important;
-      }
-
-      .gate-dorm-card .gate-dorm-flags {
-        grid-area: flags !important;
-        align-self: start !important;
-        justify-self: start !important;
-        margin-top: 0 !important;
-        max-width: 100% !important;
-        overflow: hidden !important;
-      }
-
-      .proc-card .gate-dorm-flags {
-        margin-top: 0.5rem !important;
-      }
-
-      .gate-dorm-flag-chip {
-        display: inline-flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        min-height: 1.18rem !important;
-        padding: 0.18rem 0.5rem !important;
-        border-radius: 999px !important;
-        font-size: 0.58rem !important;
-        font-weight: 950 !important;
-        line-height: 1 !important;
-        letter-spacing: 0.075em !important;
-        text-transform: uppercase !important;
-        white-space: nowrap !important;
-        box-shadow: inset 0 1px 0 rgba(255,255,255,0.14), 0 3px 10px rgba(0,0,0,0.14) !important;
-      }
-
-      .gate-dorm-flag-chip.flag-band {
-        background: rgba(34, 197, 94, 0.18) !important;
-        border: 1px solid rgba(34, 197, 94, 0.62) !important;
-        color: #bbf7d0 !important;
-      }
-
-      .gate-dorm-flag-chip.flag-space-force {
-        background: rgba(69, 202, 255, 0.18) !important;
-        border: 1px solid rgba(69, 202, 255, 0.72) !important;
-        color: #e0f8ff !important;
-        text-shadow: 0 0 10px rgba(69, 202, 255, 0.36) !important;
-      }
-
-      .border-band,
-      .border-space-force,
-      .border-band.border-space-force {
-        border-color: var(--gate-glass-border, rgba(255,255,255,0.14)) !important;
-        box-shadow: var(--gate-glass-edge, var(--glass-highlight)), var(--gate-shadow-soft, var(--shadow-soft)) !important;
-      }
-
-      .border-female,
-      .border-female.border-band,
-      .border-female.border-space-force,
-      .border-female.border-band.border-space-force {
-        border-color: rgba(255, 59, 48, 0.78) !important;
-        box-shadow:
-          var(--gate-glass-edge, var(--glass-highlight)),
-          var(--gate-shadow-soft, var(--shadow-soft)),
-          inset 4px 0 0 var(--gate-flag-female-red),
-          0 0 0 1px rgba(255, 59, 48, 0.30),
-          0 0 20px rgba(255, 59, 48, 0.18) !important;
-      }
-
-      .theme-light .gate-dorm-flag-chip.flag-band {
-        background: rgba(187, 247, 208, 0.72) !important;
-        border-color: rgba(22, 163, 74, 0.36) !important;
-        color: #14532d !important;
-      }
-
-      .theme-light .gate-dorm-flag-chip.flag-space-force {
-        background: rgba(224, 248, 255, 0.86) !important;
-        border-color: rgba(2, 132, 199, 0.34) !important;
-        color: #075985 !important;
-        text-shadow: none !important;
-      }
-
-      .theme-light .border-female,
-      .theme-light .border-female.border-band,
-      .theme-light .border-female.border-space-force,
-      .theme-light .border-female.border-band.border-space-force {
-        border-color: rgba(220, 38, 38, 0.56) !important;
-        box-shadow:
-          var(--gate-glass-edge, var(--glass-highlight)),
-          var(--gate-shadow-soft, var(--shadow-soft)),
-          inset 4px 0 0 #dc2626,
-          0 0 0 1px rgba(220, 38, 38, 0.18) !important;
-      }
-    `;
-
-    document.head.appendChild(style);
-    stylesReady = true;
-  }
-
   function flagHtml(dorm) {
     const flags = effectiveFlags(dorm);
     const chips = [];
@@ -203,6 +79,7 @@
     const sig = `${flags.female}|${flags.band}|${flags.spaceForce}`;
     if (card.dataset.dormFlagSig === sig && (card.querySelector('.gate-dorm-flags') || (!flags.band && !flags.spaceForce))) return;
     card.dataset.dormFlagSig = sig;
+
     const existing = card.querySelector('.gate-dorm-flags');
     if (existing) existing.remove();
     const html = flagHtml(dorm);
@@ -380,7 +257,7 @@
   }
 
   function runPass() {
-    ensureStyles();
+    passScheduled = false;
     ensureEditSpaceForceField();
     patchEditOpen();
     patchDataSdkUpdate();
@@ -390,15 +267,33 @@
     updateDormModalInfo();
   }
 
+  function schedulePass() {
+    if (passScheduled) return;
+    passScheduled = true;
+    requestAnimationFrame(runPass);
+  }
+
+  function observeRenderTargets() {
+    const observer = new MutationObserver(schedulePass);
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['class', 'onclick', 'oncontextmenu']
+    });
+  }
+
   function start() {
     if (started) return;
     started = true;
     document.addEventListener('change', event => {
       if (event.target && event.target.id === 'edit-space-force') event.target.dataset.userTouched = 'true';
       enforceImpossibleFlagCombination(event);
+      schedulePass();
     }, true);
-    runPass();
-    setInterval(runPass, 350);
+    document.addEventListener('click', schedulePass, true);
+    observeRenderTargets();
+    schedulePass();
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);

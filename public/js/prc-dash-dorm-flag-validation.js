@@ -36,7 +36,8 @@
   }
 
   function isFemale(dorm) {
-    return String(dorm?.sex || '').toLowerCase() === 'female';
+    const sex = String(dorm?.sex || '').trim().toLowerCase();
+    return sex === 'female' || sex === 'f';
   }
 
   function isBand(dorm) {
@@ -62,6 +63,13 @@
     return chips.length ? `<div class="gate-dorm-flags">${chips.join('')}</div>` : '';
   }
 
+  function bannerHtml(dorm) {
+    const flags = effectiveFlags(dorm);
+    if (flags.spaceForce) return '<div class="gate-dorm-top-banner banner-space-force">Space Force</div>';
+    if (flags.band) return '<div class="gate-dorm-top-banner banner-band">Band</div>';
+    return '';
+  }
+
   function applyCardClasses(card, dorm) {
     const flags = effectiveFlags(dorm);
     card.classList.toggle('border-female', flags.female);
@@ -75,16 +83,37 @@
   function setFlags(card, dorm) {
     if (!card || !dorm) return;
     applyCardClasses(card, dorm);
+
     const flags = effectiveFlags(dorm);
-    const sig = `${flags.female}|${flags.band}|${flags.spaceForce}`;
-    if (card.dataset.dormFlagSig === sig && (card.querySelector('.gate-dorm-flags') || (!flags.band && !flags.spaceForce))) return;
+    const isBoardCard = Boolean(card.closest('#page-board, #page-squadron'));
+    const sig = `${isBoardCard ? 'banner' : 'chip'}|${flags.female}|${flags.band}|${flags.spaceForce}`;
+    const hasBoardBanner = Boolean(card.querySelector('.gate-dorm-top-banner'));
+    const hasProcFlags = Boolean(card.querySelector('.gate-dorm-flags'));
+    const shouldShowIndicator = flags.band || flags.spaceForce;
+
+    if (
+      card.dataset.dormFlagSig === sig &&
+      ((isBoardCard && (hasBoardBanner || !shouldShowIndicator)) || (!isBoardCard && (hasProcFlags || !shouldShowIndicator)))
+    ) return;
+
     card.dataset.dormFlagSig = sig;
 
-    const existing = card.querySelector('.gate-dorm-flags');
-    if (existing) existing.remove();
+    const existingFlags = card.querySelector('.gate-dorm-flags');
+    if (existingFlags) existingFlags.remove();
+
+    const existingBanner = card.querySelector('.gate-dorm-top-banner');
+    if (existingBanner) existingBanner.remove();
+
+    if (!shouldShowIndicator) return;
+
+    if (isBoardCard) {
+      const banner = bannerHtml(dorm);
+      if (banner) card.insertAdjacentHTML('afterbegin', banner);
+      return;
+    }
+
     const html = flagHtml(dorm);
     if (!html) return;
-
     const info = card.querySelector('.gate-dorm-info') || card.querySelector('.text-xs.text-muted.font-bold.uppercase') || card.querySelector('.text-xl.font-black.font-tabular');
     if (info) info.insertAdjacentHTML('afterend', html);
     else card.insertAdjacentHTML('beforeend', html);

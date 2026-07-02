@@ -244,10 +244,24 @@
       }
 
       @media (max-width: 760px) {
-        #page-board .gate-dorm-card,
+        #page-board .gate-dorm-card {
+          grid-template-columns: minmax(0, 1fr) !important;
+          grid-template-rows: auto auto auto auto auto auto auto auto 5px !important;
+          grid-template-areas:
+            "name"
+            "airman"
+            "info"
+            "flags"
+            "location"
+            "status"
+            "timer"
+            "load"
+            "progress" !important;
+        }
+
         #page-squadron .gate-dorm-card {
           grid-template-columns: minmax(0, 1fr) !important;
-          grid-template-rows: auto auto auto auto auto auto 5px !important;
+          grid-template-rows: auto auto auto auto auto auto auto 5px !important;
           grid-template-areas:
             "name"
             "airman"
@@ -255,14 +269,21 @@
             "flags"
             "status"
             "timer"
+            "load"
             "progress" !important;
         }
 
         #page-board .gate-auditorium-location {
-          grid-area: flags !important;
+          grid-area: location !important;
           justify-self: start !important;
-          margin-top: 1.34rem !important;
+          margin-top: 0 !important;
           max-width: 100% !important;
+        }
+
+        #page-board .gate-dorm-load,
+        #page-squadron .gate-dorm-load {
+          justify-self: start !important;
+          text-align: left !important;
         }
 
         #page-board .gate-dorm-airman,

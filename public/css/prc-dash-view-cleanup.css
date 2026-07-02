@@ -1,2 +1,33 @@
-/* PRC GATE Phase 3 View Cleanup
-   CSS-only page/view normalization. No application state, routing, or API logic changes. */
+/* PRC GATE Phase 3 View Cleanup */
+
+/* Status Board */
+#page-board {
+  position: relative !important;
+  z-index: var(--z-page-content, 100) !important;
+  background: transparent !important;
+}
+
+#page-board .board-header,
+#page-board .dorm-dashboard {
+  position: relative !important;
+  z-index: var(--z-page-content, 100) !important;
+}
+
+#page-board .board-header > *,
+#page-board .dorm-dashboard > * {
+  min-width: 0 !important;
+}
+
+#page-board .metric-block,
+#page-board .dorm-card,
+#page-board .dorm-col-header {
+  background: var(--gate-glass-bg) !important;
+  border-color: var(--gate-glass-border) !important;
+  box-shadow: var(--gate-glass-edge), var(--gate-shadow-soft) !important;
+  -webkit-backdrop-filter: blur(var(--gate-glass-blur)) saturate(1.45) !important;
+  backdrop-filter: blur(var(--gate-glass-blur)) saturate(1.45) !important;
+}
+
+#page-board .dorm-col-header {
+  color: var(--text-soft) !important;
+}

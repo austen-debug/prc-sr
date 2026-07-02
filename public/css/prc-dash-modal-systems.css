@@ -205,6 +205,238 @@ body.gate-modal-open {
   border-radius: calc(var(--radius-lg, 1rem) - 2px) calc(var(--radius-lg, 1rem) - 2px) 0 0 !important;
 }
 
+/* Processing dorm modal command layout */
+#dorm-modal .modal-content {
+  width: min(92vw, 560px) !important;
+  max-width: min(92vw, 560px) !important;
+  padding: 1.18rem !important;
+  gap: 0 !important;
+  border-radius: 1.25rem !important;
+  overflow: hidden !important;
+}
+
+#dorm-modal .modal-content > .flex.justify-between.items-center.mb-4 {
+  position: relative !important;
+  top: auto !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  min-height: 4.15rem !important;
+  margin: -0.24rem -0.24rem 0.75rem !important;
+  padding: 0.82rem 0.95rem !important;
+  border: 1px solid rgba(148, 163, 184, 0.20) !important;
+  border-radius: 1rem !important;
+  background:
+    linear-gradient(135deg, rgba(15, 23, 42, 0.76), rgba(30, 41, 59, 0.46)) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.10) !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+#dorm-modal #modal-dorm-name {
+  margin: 0 !important;
+  padding: 0 !important;
+  max-width: calc(100% - 3rem) !important;
+  overflow: hidden !important;
+  color: var(--text) !important;
+  font-size: clamp(2rem, 4.2vw, 2.7rem) !important;
+  font-weight: 950 !important;
+  line-height: 0.92 !important;
+  letter-spacing: -0.045em !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+#dorm-modal .modal-content > .flex.justify-between.items-center.mb-4 > button {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 2.35rem !important;
+  height: 2.35rem !important;
+  min-height: 2.35rem !important;
+  border: 0 !important;
+  border-radius: var(--radius-pill) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: var(--text-muted) !important;
+  font-size: 1.65rem !important;
+  line-height: 1 !important;
+}
+
+#dorm-modal #modal-dorm-info {
+  margin: 0 0 1rem !important;
+  padding: 0.55rem 0.7rem !important;
+  border: 1px solid rgba(148, 163, 184, 0.12) !important;
+  border-radius: 0.82rem !important;
+  background: rgba(15, 23, 42, 0.24) !important;
+  color: var(--text-muted) !important;
+  font-size: 0.78rem !important;
+  font-weight: 800 !important;
+  line-height: 1.25 !important;
+}
+
+#dorm-modal .modal-content label,
+#dorm-modal #modal-phase-section > .text-xs,
+#dorm-modal #modal-load-section > .text-xs {
+  margin-bottom: 0.48rem !important;
+  color: var(--text-muted) !important;
+  font-size: 0.72rem !important;
+  font-weight: 950 !important;
+  letter-spacing: 0.085em !important;
+}
+
+#dorm-modal .gate-airman-location-grid {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 78px !important;
+  gap: 0.5rem !important;
+  align-items: stretch !important;
+}
+
+#dorm-modal #modal-airman-input,
+#dorm-modal #modal-auditorium-input {
+  width: 100% !important;
+  min-height: 2.75rem !important;
+  padding: 0.72rem 0.82rem !important;
+  border-radius: 0.78rem !important;
+  font-size: 0.78rem !important;
+  font-weight: 850 !important;
+  letter-spacing: 0.02em !important;
+}
+
+#dorm-modal .gate-airman-location-grid > button {
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 2.75rem !important;
+  padding: 0 0.8rem !important;
+  border-radius: 0.78rem !important;
+  font-size: 0.74rem !important;
+  letter-spacing: 0.04em !important;
+}
+
+#dorm-modal #modal-phase-section,
+#dorm-modal #modal-load-section {
+  margin-bottom: 1rem !important;
+}
+
+#dorm-modal #modal-phase-buttons {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 0.55rem !important;
+}
+
+#dorm-modal .phase-btn {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-height: 3.08rem !important;
+  width: 100% !important;
+  padding: 0.78rem 0.82rem !important;
+  border-radius: 0.88rem !important;
+  background: linear-gradient(145deg, rgba(51, 65, 85, 0.72), rgba(30, 41, 59, 0.58)) !important;
+  border-color: rgba(148, 163, 184, 0.26) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.10), 0 8px 18px rgba(0,0,0,0.16) !important;
+  color: var(--text) !important;
+  font-size: 0.88rem !important;
+  font-weight: 950 !important;
+  line-height: 1.04 !important;
+  letter-spacing: 0.035em !important;
+  text-align: center !important;
+}
+
+#dorm-modal .phase-btn.selected {
+  background: linear-gradient(135deg, rgba(21, 128, 61, 0.92), rgba(34, 197, 94, 0.72)) !important;
+  border-color: rgba(134, 239, 172, 0.34) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.14), 0 0 0 1px rgba(34,197,94,0.18), 0 10px 22px rgba(34,197,94,0.12) !important;
+}
+
+#dorm-modal #modal-load-section > .flex.items-center.justify-center.gap-4 {
+  display: grid !important;
+  grid-template-columns: 3rem 3rem minmax(6.6rem, 1fr) 3rem 3rem !important;
+  gap: 0.55rem !important;
+  align-items: center !important;
+  justify-items: center !important;
+  margin-bottom: 0.7rem !important;
+}
+
+#dorm-modal .load-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 3rem !important;
+  height: 3rem !important;
+  min-width: 3rem !important;
+  min-height: 3rem !important;
+  padding: 0 !important;
+  border-radius: 999px !important;
+  background: linear-gradient(145deg, rgba(51, 65, 85, 0.72), rgba(30, 41, 59, 0.58)) !important;
+  border-color: rgba(148, 163, 184, 0.28) !important;
+  color: var(--text) !important;
+  font-size: 1rem !important;
+  font-weight: 950 !important;
+  line-height: 1 !important;
+  letter-spacing: -0.03em !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.10), 0 8px 18px rgba(0,0,0,0.16) !important;
+}
+
+#dorm-modal #modal-load-section .text-center {
+  width: 100% !important;
+  display: grid !important;
+  justify-items: center !important;
+}
+
+#dorm-modal #modal-load-input {
+  width: min(100%, 7.1rem) !important;
+  min-height: 4.15rem !important;
+  padding: 0.3rem 0.55rem !important;
+  border-radius: 0.9rem !important;
+  color: var(--text) !important;
+  font-size: clamp(2rem, 6vw, 2.65rem) !important;
+  line-height: 1 !important;
+  font-weight: 950 !important;
+  text-align: center !important;
+}
+
+#dorm-modal #modal-load-max {
+  margin-top: 0.32rem !important;
+  font-size: 0.86rem !important;
+  font-weight: 800 !important;
+}
+
+#dorm-modal #modal-load-section > .flex.gap-2.justify-center {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+  gap: 0.55rem !important;
+  width: min(100%, 17rem) !important;
+  margin: 0 auto !important;
+}
+
+#dorm-modal #modal-load-section > .flex.gap-2.justify-center > button {
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 2.85rem !important;
+  border-radius: 0.82rem !important;
+  font-size: 0.86rem !important;
+  letter-spacing: 0.04em !important;
+}
+
+#dorm-modal #modal-action-section {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin-top: 0.72rem !important;
+  padding-top: 0.8rem !important;
+  border-top: 1px solid rgba(148, 163, 184, 0.12) !important;
+}
+
+#dorm-modal #modal-action-section button {
+  min-width: min(100%, 9rem) !important;
+  min-height: 2.7rem !important;
+  padding: 0.72rem 1rem !important;
+  border-radius: 0.86rem !important;
+  font-size: 0.78rem !important;
+  letter-spacing: 0.055em !important;
+}
+
 /* Mobile modal and mobile access rules */
 @media (max-width: 760px) {
   .confirm-overlay {
@@ -248,6 +480,26 @@ body.gate-modal-open {
   .modal-content .gate-edit-record-grid,
   .modal-content .gate-airman-location-grid {
     grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  #dorm-modal .gate-airman-location-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  #dorm-modal #modal-phase-buttons {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  #dorm-modal #modal-load-section > .flex.items-center.justify-center.gap-4 {
+    grid-template-columns: 2.65rem 2.65rem minmax(5.4rem, 1fr) 2.65rem 2.65rem !important;
+    gap: 0.38rem !important;
+  }
+
+  #dorm-modal .load-btn {
+    width: 2.65rem !important;
+    height: 2.65rem !important;
+    min-width: 2.65rem !important;
+    min-height: 2.65rem !important;
   }
 
   .modal-content .flex.gap-2 > button,

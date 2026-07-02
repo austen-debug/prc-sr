@@ -185,6 +185,15 @@ body.gate-modal-open {
   background: rgba(248, 113, 113, 0.12) !important;
 }
 
+/* Dorm banner edge correction. This stylesheet loads after dorm-cards.css. */
+#page-board .gate-dorm-card.border-female .gate-dorm-top-banner,
+#page-board .dorm-card.border-female .gate-dorm-top-banner,
+#page-squadron .gate-dorm-card.border-female .gate-dorm-top-banner,
+#page-squadron .dorm-card.border-female .gate-dorm-top-banner {
+  margin-left: calc(6px - var(--gate-dorm-card-pad-x)) !important;
+  border-top-left-radius: calc(var(--radius-lg, 1rem) - 6px) !important;
+}
+
 /* Mobile modal and mobile access rules */
 @media (max-width: 760px) {
   .confirm-overlay {

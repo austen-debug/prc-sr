@@ -8,6 +8,7 @@
   ];
 
   let started = false;
+  let passScheduled = false;
 
   function getAllDataSafe() {
     try { return Array.isArray(allData) ? allData : []; } catch (_) { return []; }
@@ -40,7 +41,7 @@
 
     WINDOW_FIELDS.forEach(([key]) => {
       const input = document.getElementById(`archive-edit-${key}`);
-      if (input) input.value = archive[key] || input.value || '';
+      if (input && !input.matches(':focus')) input.value = archive[key] || input.value || '';
     });
   }
 
@@ -66,6 +67,7 @@
       ensureArchiveWindowInputs();
       const archive = getAllDataSafe().find(record => record && record.type === 'archive' && record.__backendId === id);
       fillArchiveWindowInputs(archive);
+      schedulePass();
       return result;
     };
 
@@ -75,16 +77,49 @@
   }
 
   function runPass() {
+    passScheduled = false;
     ensureArchiveWindowInputs();
     patchArchiveOpen();
     syncOpenModal();
   }
 
+  function schedulePass() {
+    if (passScheduled) return;
+    passScheduled = true;
+    requestAnimationFrame(runPass);
+  }
+
+  function observeArchiveModal() {
+    if (typeof MutationObserver === 'undefined' || !document.body) return;
+    const observer = new MutationObserver(mutations => {
+      const shouldSchedule = mutations.some(mutation => {
+        if (mutation.type === 'childList') return true;
+        if (mutation.type === 'attributes') {
+          const target = mutation.target;
+          if (!target?.closest) return false;
+          return Boolean(target.closest('#archive-edit-modal, #archive-history'));
+        }
+        return false;
+      });
+      if (shouldSchedule) schedulePass();
+    });
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['class']
+    });
+  }
+
   function start() {
     if (started) return;
     started = true;
-    runPass();
-    setInterval(runPass, 750);
+    document.addEventListener('click', schedulePass, true);
+    document.addEventListener('change', event => {
+      if (event.target?.closest?.('#archive-edit-modal')) schedulePass();
+    }, true);
+    observeArchiveModal();
+    schedulePass();
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);

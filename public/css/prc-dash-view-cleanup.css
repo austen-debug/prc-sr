@@ -61,3 +61,29 @@
 #page-airport td {
   border-color: var(--gate-glass-border) !important;
 }
+
+/* Input */
+#page-input {
+  position: relative !important;
+  z-index: var(--z-page-content, 100) !important;
+  background: transparent !important;
+}
+
+#page-input > .flex-shrink-0:first-of-type,
+#page-input > .flex-shrink-0.border-t {
+  background: var(--gate-glass-bg-soft) !important;
+  border-color: var(--gate-glass-border) !important;
+  box-shadow: var(--gate-glass-edge), var(--gate-shadow-soft) !important;
+  -webkit-backdrop-filter: blur(var(--gate-glass-blur)) saturate(1.28) !important;
+  backdrop-filter: blur(var(--gate-glass-blur)) saturate(1.28) !important;
+}
+
+#page-input #total-load-calc {
+  color: var(--text) !important;
+  text-shadow: 0 1px 18px rgba(56, 189, 248, 0.18) !important;
+}
+
+#batch-grid-wrapper > div > div:first-child {
+  background: var(--gate-glass-bg-strong) !important;
+  border-color: var(--gate-glass-border) !important;
+}

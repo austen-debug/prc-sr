@@ -10,7 +10,9 @@ const UI_STYLESHEETS = [
   '<link rel="stylesheet" href="/css/prc-dash-danger-actions.css">',
   '<link rel="stylesheet" href="/css/prc-dash-nav-compact.css">',
   '<link rel="stylesheet" href="/css/prc-dash-nav-polish.css">',
-  '<link rel="stylesheet" href="/css/prc-dash-modal-layer.css">'
+  '<link rel="stylesheet" href="/css/prc-dash-modal-layer.css">',
+  '<link rel="stylesheet" href="/css/prc-dash-dorm-cards.css">',
+  '<link rel="stylesheet" href="/css/prc-dash-modal-systems.css">'
 ];
 
 const UI_INLINE_ASSETS = [

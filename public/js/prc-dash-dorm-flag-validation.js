@@ -46,12 +46,25 @@
     return dorm && (dorm.space_force === true || dorm.space_force === 'true' || dorm.is_space_force === true || dorm.is_space_force === 'true');
   }
 
+  function effectiveFlags(dorm) {
+    const female = isFemale(dorm);
+    const spaceForce = isSpaceForce(dorm);
+    const band = !spaceForce && isBand(dorm);
+    return { female, band, spaceForce };
+  }
+
   function ensureStyles() {
     if (stylesReady || document.getElementById('prc-gate-dorm-flag-validation-styles')) return;
 
     const style = document.createElement('style');
     style.id = 'prc-gate-dorm-flag-validation-styles';
     style.textContent = `
+      :root {
+        --gate-flag-female-red: #ff3b30;
+        --gate-flag-band-green: #22c55e;
+        --gate-flag-space-force-bluebird: #45caff;
+      }
+
       .gate-dorm-flags {
         display: flex !important;
         flex-wrap: wrap !important;
@@ -77,61 +90,74 @@
         align-items: center !important;
         justify-content: center !important;
         min-height: 1.18rem !important;
-        padding: 0.18rem 0.48rem !important;
+        padding: 0.18rem 0.5rem !important;
         border-radius: 999px !important;
-        border: 1px solid rgba(180, 198, 228, 0.24) !important;
-        background: rgba(180, 198, 228, 0.08) !important;
-        color: var(--text-soft, var(--text-muted)) !important;
         font-size: 0.58rem !important;
         font-weight: 950 !important;
         line-height: 1 !important;
         letter-spacing: 0.075em !important;
         text-transform: uppercase !important;
         white-space: nowrap !important;
-        box-shadow: inset 0 1px 0 rgba(255,255,255,0.12), 0 3px 10px rgba(0,0,0,0.12) !important;
-      }
-
-      .gate-dorm-flag-chip.flag-female {
-        background: rgba(239, 68, 68, 0.14) !important;
-        border-color: rgba(248, 113, 113, 0.48) !important;
-        color: #fecaca !important;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.14), 0 3px 10px rgba(0,0,0,0.14) !important;
       }
 
       .gate-dorm-flag-chip.flag-band {
-        background: rgba(56, 189, 248, 0.14) !important;
-        border-color: rgba(56, 189, 248, 0.48) !important;
-        color: #dff4ff !important;
+        background: rgba(34, 197, 94, 0.18) !important;
+        border: 1px solid rgba(34, 197, 94, 0.62) !important;
+        color: #bbf7d0 !important;
       }
 
       .gate-dorm-flag-chip.flag-space-force {
-        background: rgba(139, 92, 246, 0.16) !important;
-        border-color: rgba(167, 139, 250, 0.52) !important;
-        color: #ede9fe !important;
+        background: rgba(69, 202, 255, 0.18) !important;
+        border: 1px solid rgba(69, 202, 255, 0.72) !important;
+        color: #e0f8ff !important;
+        text-shadow: 0 0 10px rgba(69, 202, 255, 0.36) !important;
       }
 
-      .border-space-force {
-        border-color: rgba(167, 139, 250, 0.72) !important;
-        box-shadow: var(--glass-highlight), var(--shadow-soft), 0 0 0 1px rgba(167, 139, 250, 0.30), 0 0 18px rgba(139, 92, 246, 0.22) !important;
+      .border-band,
+      .border-space-force,
+      .border-band.border-space-force {
+        border-color: var(--gate-glass-border, rgba(255,255,255,0.14)) !important;
+        box-shadow: var(--gate-glass-edge, var(--glass-highlight)), var(--gate-shadow-soft, var(--shadow-soft)) !important;
       }
 
+      .border-female,
       .border-female.border-band,
       .border-female.border-space-force,
-      .border-band.border-space-force,
       .border-female.border-band.border-space-force {
-        border-color: rgba(255, 255, 255, 0.26) !important;
+        border-color: rgba(255, 59, 48, 0.78) !important;
         box-shadow:
-          var(--glass-highlight),
-          var(--shadow-soft),
-          inset 4px 0 0 rgba(248, 113, 113, 0.95),
-          inset 8px 0 0 rgba(56, 189, 248, 0.86),
-          inset 12px 0 0 rgba(167, 139, 250, 0.78),
-          0 0 18px rgba(56, 189, 248, 0.12),
-          0 0 18px rgba(248, 113, 113, 0.11) !important;
+          var(--gate-glass-edge, var(--glass-highlight)),
+          var(--gate-shadow-soft, var(--shadow-soft)),
+          inset 4px 0 0 var(--gate-flag-female-red),
+          0 0 0 1px rgba(255, 59, 48, 0.30),
+          0 0 20px rgba(255, 59, 48, 0.18) !important;
       }
 
-      .theme-light .gate-dorm-flag-chip.flag-female { color: #7f1d1d !important; background: rgba(254, 202, 202, 0.48) !important; border-color: rgba(185, 28, 28, 0.26) !important; }
-      .theme-light .gate-dorm-flag-chip.flag-band { color: #075985 !important; background: rgba(224, 242, 254, 0.72) !important; border-color: rgba(2, 132, 199, 0.26) !important; }
-      .theme-light .gate-dorm-flag-chip.flag-space-force { color: #4c1d95 !important; background: rgba(237, 233, 254, 0.72) !important; border-color: rgba(109, 40, 217, 0.24) !important; }
+      .theme-light .gate-dorm-flag-chip.flag-band {
+        background: rgba(187, 247, 208, 0.72) !important;
+        border-color: rgba(22, 163, 74, 0.36) !important;
+        color: #14532d !important;
+      }
+
+      .theme-light .gate-dorm-flag-chip.flag-space-force {
+        background: rgba(224, 248, 255, 0.86) !important;
+        border-color: rgba(2, 132, 199, 0.34) !important;
+        color: #075985 !important;
+        text-shadow: none !important;
+      }
+
+      .theme-light .border-female,
+      .theme-light .border-female.border-band,
+      .theme-light .border-female.border-space-force,
+      .theme-light .border-female.border-band.border-space-force {
+        border-color: rgba(220, 38, 38, 0.56) !important;
+        box-shadow:
+          var(--gate-glass-edge, var(--glass-highlight)),
+          var(--gate-shadow-soft, var(--shadow-soft)),
+          inset 4px 0 0 #dc2626,
+          0 0 0 1px rgba(220, 38, 38, 0.18) !important;
+      }
     `;
 
     document.head.appendChild(style);
@@ -139,27 +165,29 @@
   }
 
   function flagHtml(dorm) {
+    const flags = effectiveFlags(dorm);
     const chips = [];
-    if (isFemale(dorm)) chips.push('<span class="gate-dorm-flag-chip flag-female">Female</span>');
-    if (isBand(dorm)) chips.push('<span class="gate-dorm-flag-chip flag-band">Band</span>');
-    if (isSpaceForce(dorm)) chips.push('<span class="gate-dorm-flag-chip flag-space-force">Space Force</span>');
+    if (flags.band) chips.push('<span class="gate-dorm-flag-chip flag-band">Band</span>');
+    if (flags.spaceForce) chips.push('<span class="gate-dorm-flag-chip flag-space-force">Space Force</span>');
     return chips.length ? `<div class="gate-dorm-flags">${chips.join('')}</div>` : '';
   }
 
   function applyCardClasses(card, dorm) {
-    card.classList.toggle('border-female', isFemale(dorm));
-    card.classList.toggle('border-band', isBand(dorm));
-    card.classList.toggle('border-space-force', isSpaceForce(dorm));
-    card.dataset.spaceForce = isSpaceForce(dorm) ? 'true' : 'false';
-    card.dataset.bandDorm = isBand(dorm) ? 'true' : 'false';
-    card.dataset.femaleDorm = isFemale(dorm) ? 'true' : 'false';
+    const flags = effectiveFlags(dorm);
+    card.classList.toggle('border-female', flags.female);
+    card.classList.toggle('border-band', flags.band);
+    card.classList.toggle('border-space-force', flags.spaceForce);
+    card.dataset.spaceForce = flags.spaceForce ? 'true' : 'false';
+    card.dataset.bandDorm = flags.band ? 'true' : 'false';
+    card.dataset.femaleDorm = flags.female ? 'true' : 'false';
   }
 
   function setFlags(card, dorm) {
     if (!card || !dorm) return;
     applyCardClasses(card, dorm);
-    const sig = `${isFemale(dorm)}|${isBand(dorm)}|${isSpaceForce(dorm)}`;
-    if (card.dataset.dormFlagSig === sig && card.querySelector('.gate-dorm-flags')) return;
+    const flags = effectiveFlags(dorm);
+    const sig = `${flags.female}|${flags.band}|${flags.spaceForce}`;
+    if (card.dataset.dormFlagSig === sig && (card.querySelector('.gate-dorm-flags') || (!flags.band && !flags.spaceForce))) return;
     card.dataset.dormFlagSig = sig;
     const existing = card.querySelector('.gate-dorm-flags');
     if (existing) existing.remove();
@@ -232,6 +260,10 @@
     if (!modal || modal.classList.contains('hidden') || !input || input.dataset.userTouched === 'true') return;
     const dorm = getEditDorm();
     input.checked = isSpaceForce(dorm);
+    if (input.checked) {
+      const bandInput = document.getElementById('edit-band');
+      if (bandInput) bandInput.checked = false;
+    }
   }
 
   function patchEditOpen() {
@@ -241,11 +273,13 @@
       const result = originalOpen.apply(this, arguments);
       ensureEditSpaceForceField();
       const input = document.getElementById('edit-space-force');
+      const bandInput = document.getElementById('edit-band');
       const dorm = getAllDataSafe().find(record => record && record.type === 'dorm' && record.__backendId === id);
       if (input) {
         input.dataset.userTouched = 'false';
         input.checked = isSpaceForce(dorm);
       }
+      if (bandInput && input?.checked) bandInput.checked = false;
       return result;
     };
     window.openDormEditModal = patchedOpen;
@@ -259,9 +293,13 @@
     window.dataSdk.update = function patchedDormFlagUpdate(payload) {
       if (payload && payload.type === 'dorm') {
         const sfInput = document.getElementById('edit-space-force');
+        const bandInput = document.getElementById('edit-band');
         const editModal = document.getElementById('dorm-edit-modal');
         if (sfInput && editModal && !editModal.classList.contains('hidden')) {
-          payload = Object.assign({}, payload, { space_force: sfInput.checked ? 'true' : 'false' });
+          payload = Object.assign({}, payload, {
+            space_force: sfInput.checked ? 'true' : 'false',
+            band: sfInput.checked ? 'false' : (bandInput && bandInput.checked ? 'true' : payload.band)
+          });
         }
       }
       return originalUpdate(payload);
@@ -276,10 +314,42 @@
     if (!modal || modal.classList.contains('hidden') || !info || !name) return;
     const dorm = activeDorms().find(record => String(record.dorm_name || '') === String(name || ''));
     if (!dorm) return;
-    const base = `${[esc(dorm.sdq), esc(dorm.section), esc(dorm.inter_sec)].filter(Boolean).join(' · ')} | ${isFemale(dorm) ? '♀ Female' : '♂ Male'}${isBand(dorm) ? ' | Band' : ''}${isSpaceForce(dorm) ? ' | Space Force' : ''} | Max: ${n(dorm.max_load)}`;
+    const flags = effectiveFlags(dorm);
+    const base = `${[esc(dorm.sdq), esc(dorm.section), esc(dorm.inter_sec)].filter(Boolean).join(' · ')} | ${flags.female ? '♀ Female' : '♂ Male'}${flags.band ? ' | Band' : ''}${flags.spaceForce ? ' | Space Force' : ''} | Max: ${n(dorm.max_load)}`;
     if (info.dataset.flagSig !== base) {
       info.innerHTML = base;
       info.dataset.flagSig = base;
+    }
+  }
+
+  function enforceImpossibleFlagCombination(event) {
+    const target = event.target;
+    if (!target || !target.classList) return;
+
+    if (target.classList.contains('batch-space-force') && target.checked) {
+      const row = target.closest('[data-row]') || target.closest('div');
+      const index = Number(target.dataset.row);
+      const bandInput = row?.querySelector?.('.batch-band');
+      if (bandInput) bandInput.checked = false;
+      if (Array.isArray(batchRows) && Number.isFinite(index) && batchRows[index]) batchRows[index].band = false;
+    }
+
+    if (target.classList.contains('batch-band') && target.checked) {
+      const row = target.closest('[data-row]') || target.closest('div');
+      const index = Number(target.dataset.row);
+      const sfInput = row?.querySelector?.('.batch-space-force');
+      if (sfInput) sfInput.checked = false;
+      if (Array.isArray(batchRows) && Number.isFinite(index) && batchRows[index]) batchRows[index].space_force = false;
+    }
+
+    if (target.id === 'edit-space-force' && target.checked) {
+      const bandInput = document.getElementById('edit-band');
+      if (bandInput) bandInput.checked = false;
+    }
+
+    if (target.id === 'edit-band' && target.checked) {
+      const sfInput = document.getElementById('edit-space-force');
+      if (sfInput) sfInput.checked = false;
     }
   }
 
@@ -299,6 +369,7 @@
     started = true;
     document.addEventListener('change', event => {
       if (event.target && event.target.id === 'edit-space-force') event.target.dataset.userTouched = 'true';
+      enforceImpossibleFlagCombination(event);
     }, true);
     runPass();
     setInterval(runPass, 350);

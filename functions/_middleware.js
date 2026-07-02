@@ -9,6 +9,7 @@ const UI_STYLESHEETS = [
   '<link rel="stylesheet" href="/css/prc-dash-view-cleanup.css">',
   '<link rel="stylesheet" href="/css/prc-dash-danger-actions.css">',
   '<link rel="stylesheet" href="/css/prc-dash-nav-compact.css">',
+  '<link rel="stylesheet" href="/css/prc-dash-nav-polish.css">',
   '<link rel="stylesheet" href="/css/prc-dash-modal-layer.css">'
 ];
 
@@ -23,19 +24,19 @@ const UI_INLINE_ASSETS = [
       "brand menu"
       "tools tools" !important;
     align-items: center !important;
-    gap: 8px !important;
-    min-height: 146px !important;
+    gap: 6px !important;
+    min-height: 124px !important;
     height: auto !important;
-    padding: 10px 12px 12px !important;
+    padding: 8px 10px 10px !important;
     overflow: visible !important;
   }
 
   .app-nav::before {
     grid-area: brand !important;
-    width: min(28vw, 112px) !important;
+    width: min(28vw, 108px) !important;
     min-width: 78px !important;
-    height: 42px !important;
-    min-height: 42px !important;
+    height: 40px !important;
+    min-height: 40px !important;
     justify-self: start !important;
     align-self: center !important;
   }
@@ -45,18 +46,18 @@ const UI_INLINE_ASSETS = [
     display: inline-flex !important;
     justify-self: end !important;
     width: auto !important;
-    min-width: 108px !important;
-    max-width: 138px !important;
-    height: 42px !important;
-    min-height: 42px !important;
-    padding: 0 0.86rem !important;
+    min-width: 104px !important;
+    max-width: 134px !important;
+    height: 40px !important;
+    min-height: 40px !important;
+    padding: 0 0.78rem !important;
   }
 
   .app-nav > div:last-child,
   .app-nav .nav-group-right {
     grid-area: tools !important;
     display: grid !important;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 44px !important;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 42px !important;
     gap: 6px !important;
     width: 100% !important;
     min-width: 0 !important;
@@ -77,8 +78,8 @@ const UI_INLINE_ASSETS = [
   #sound-toggle-btn,
   .app-nav button[aria-label='Toggle theme'] {
     display: inline-flex !important;
-    height: 40px !important;
-    min-height: 40px !important;
+    height: 38px !important;
+    min-height: 38px !important;
     min-width: 0 !important;
     width: 100% !important;
     max-width: none !important;
@@ -91,14 +92,14 @@ const UI_INLINE_ASSETS = [
 
   #fullscreen-btn,
   #sound-toggle-btn {
-    padding: 0 0.58rem !important;
-    font-size: 0.66rem !important;
-    letter-spacing: 0.055em !important;
+    padding: 0 0.54rem !important;
+    font-size: 0.64rem !important;
+    letter-spacing: 0.05em !important;
   }
 
   .app-nav button[aria-label='Toggle theme'] {
-    width: 44px !important;
-    min-width: 44px !important;
+    width: 42px !important;
+    min-width: 42px !important;
     padding: 0 !important;
     justify-self: end !important;
   }
@@ -110,33 +111,33 @@ const UI_INLINE_ASSETS = [
   #main-nav-menu,
   #nav-links,
   .nav-group-left {
-    top: calc(100% + 6px) !important;
+    top: calc(100% + 5px) !important;
   }
 
   body:not(.fullscreen-board) .page,
   body:not(.fullscreen-board) #page-squadron.gate-squadron-page {
-    padding-top: 190px !important;
+    padding-top: 166px !important;
   }
 }
 
 @media (max-width: 420px) {
   .app-nav.command-header-bar,
   .app-nav {
-    grid-template-columns: 94px minmax(0, 1fr) !important;
+    grid-template-columns: 90px minmax(0, 1fr) !important;
     padding-left: 8px !important;
     padding-right: 8px !important;
   }
 
   .app-nav::before {
-    width: 94px !important;
-    min-width: 94px !important;
+    width: 90px !important;
+    min-width: 90px !important;
   }
 
   #mobile-menu-trigger.mobile-only-control {
-    min-width: 104px !important;
-    max-width: 126px !important;
-    padding-left: 0.72rem !important;
-    padding-right: 0.72rem !important;
+    min-width: 100px !important;
+    max-width: 124px !important;
+    padding-left: 0.68rem !important;
+    padding-right: 0.68rem !important;
   }
 }
 </style>`

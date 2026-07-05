@@ -1,0 +1,421 @@
+/* PRC GATE Clean UI Pass
+   Scope: final active cleanup after unified contract.
+   Intent: one clean component geometry across light/dark without destructive recovery layers. */
+
+:root {
+  --gate-classification-height: 22px;
+  --gate-nav-height-clean: 56px;
+  --gate-shell-offset-clean: 78px;
+  --gate-clean-pad-x: 24px;
+  --gate-clean-card-radius: 8px;
+  --gate-clean-nested-radius: 4px;
+  --gate-indicator-band: #007a33;
+  --gate-indicator-female: #720522;
+  --gate-indicator-space: #2f6f9f;
+}
+
+body:not(.theme-light) {
+  --gate-indicator-space: #7dd3fc;
+  --gate-indicator-female: #ef4444;
+  --gate-watermark-opacity-clean: 0.09;
+}
+
+body.theme-light {
+  --gate-indicator-space: #0369a1;
+  --gate-indicator-female: #720522;
+  --gate-watermark-opacity-clean: 0.055;
+}
+
+/* ==========================================================================
+   1. LOCKED CLASSIFICATION BAR + HEADER
+   ========================================================================== */
+body.theme-light .security-banner-fixed,
+body:not(.theme-light) .security-banner-fixed {
+  position: fixed !important;
+  inset: 0 0 auto 0 !important;
+  height: var(--gate-classification-height) !important;
+  min-height: var(--gate-classification-height) !important;
+  max-height: var(--gate-classification-height) !important;
+  z-index: 10000 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: #007a33 !important;
+  color: #ffffff !important;
+  font-size: 0.56rem !important;
+  font-weight: 950 !important;
+  line-height: 1 !important;
+  letter-spacing: 0.11em !important;
+  box-shadow: 0 1px 0 rgba(0,0,0,0.22) !important;
+}
+
+body.theme-light .app-nav,
+body.theme-light .app-nav.command-header-bar,
+body.theme-light .command-header-bar,
+body:not(.theme-light) .app-nav,
+body:not(.theme-light) .app-nav.command-header-bar,
+body:not(.theme-light) .command-header-bar {
+  position: fixed !important;
+  inset: var(--gate-classification-height) 0 auto 0 !important;
+  width: 100% !important;
+  height: var(--gate-nav-height-clean) !important;
+  min-height: var(--gate-nav-height-clean) !important;
+  padding: 0 var(--gate-clean-pad-x) !important;
+  display: grid !important;
+  grid-template-columns: 112px minmax(0, 1fr) max-content !important;
+  grid-template-areas: 'brand nav tools' !important;
+  align-items: center !important;
+  gap: 12px !important;
+  border-top: 0 !important;
+  border-bottom: 1px solid var(--border-muted) !important;
+  background: color-mix(in srgb, var(--bg-card) 88%, transparent) !important;
+  box-shadow: 0 4px 18px rgba(0,0,0,0.16) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(1.2) !important;
+  backdrop-filter: blur(18px) saturate(1.2) !important;
+  z-index: 9999 !important;
+}
+
+body.theme-light .app-nav::before,
+body.theme-light .app-nav.command-header-bar::before,
+body.theme-light .command-header-bar::before,
+body:not(.theme-light) .app-nav::before,
+body:not(.theme-light) .app-nav.command-header-bar::before,
+body:not(.theme-light) .command-header-bar::before {
+  grid-area: brand !important;
+  width: 104px !important;
+  height: 32px !important;
+  min-height: 32px !important;
+  opacity: 0.82 !important;
+}
+
+body.theme-light .app-nav::after,
+body:not(.theme-light) .app-nav::after,
+body.theme-light .command-header-bar::after,
+body:not(.theme-light) .command-header-bar::after {
+  display: none !important;
+}
+
+body.theme-light #main-nav-menu,
+body.theme-light #nav-links,
+body.theme-light .nav-group-left,
+body:not(.theme-light) #main-nav-menu,
+body:not(.theme-light) #nav-links,
+body:not(.theme-light) .nav-group-left {
+  grid-area: nav !important;
+  min-width: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 7px !important;
+  overflow-x: auto !important;
+  scrollbar-width: none !important;
+}
+
+body.theme-light #main-nav-menu::-webkit-scrollbar,
+body.theme-light #nav-links::-webkit-scrollbar,
+body:not(.theme-light) #main-nav-menu::-webkit-scrollbar,
+body:not(.theme-light) #nav-links::-webkit-scrollbar {
+  display: none !important;
+}
+
+body.theme-light .app-nav > div:last-child,
+body.theme-light .app-nav .nav-group-right,
+body:not(.theme-light) .app-nav > div:last-child,
+body:not(.theme-light) .app-nav .nav-group-right {
+  grid-area: tools !important;
+  min-width: max-content !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 7px !important;
+  padding-left: 12px !important;
+  border-left: 1px solid var(--border-muted) !important;
+}
+
+body.theme-light .app-nav .nav-btn,
+body.theme-light .app-nav button,
+body:not(.theme-light) .app-nav .nav-btn,
+body:not(.theme-light) .app-nav button {
+  height: 34px !important;
+  min-height: 34px !important;
+  max-height: 34px !important;
+  padding: 0 13px !important;
+  border-radius: 6px !important;
+  font-size: 0.66rem !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+  transform: none !important;
+}
+
+body.theme-light:not(.fullscreen-board) .page,
+body.theme-light:not(.fullscreen-board) #page-board,
+body.theme-light:not(.fullscreen-board) #page-squadron.gate-squadron-page,
+body:not(.theme-light):not(.fullscreen-board) .page,
+body:not(.theme-light):not(.fullscreen-board) #page-board,
+body:not(.theme-light):not(.fullscreen-board) #page-squadron.gate-squadron-page {
+  padding-top: calc(var(--gate-shell-offset-clean) + 14px) !important;
+}
+
+/* ==========================================================================
+   2. BACKGROUND LOGO / WATERMARK
+   ========================================================================== */
+body.theme-light::before,
+body:not(.theme-light)::before {
+  content: '' !important;
+  display: block !important;
+  position: fixed !important;
+  inset: 0 !important;
+  pointer-events: none !important;
+  z-index: 0 !important;
+  background-repeat: no-repeat !important;
+  background-position: center 54% !important;
+  background-size: min(52vw, 820px) auto !important;
+  opacity: var(--gate-watermark-opacity-clean, 0.07) !important;
+  filter: grayscale(100%) !important;
+}
+
+body.theme-light::before {
+  background-image: url('/assets/gate_emblem_blue.png') !important;
+  mix-blend-mode: multiply !important;
+}
+
+body:not(.theme-light)::before {
+  background-image: url('/assets/gate_emblem_white.png') !important;
+  mix-blend-mode: screen !important;
+}
+
+body.theme-light .page,
+body:not(.theme-light) .page,
+body.theme-light main,
+body:not(.theme-light) main,
+body.theme-light .app-container,
+body:not(.theme-light) .app-container {
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+/* ==========================================================================
+   3. CLEAN DORM CELL STRUCTURE
+   ========================================================================== */
+body.theme-light .gate-dorm-card,
+body.theme-light .dorm-card,
+body.theme-light #page-board .gate-dorm-card,
+body.theme-light #page-squadron .gate-dorm-card,
+body:not(.theme-light) .gate-dorm-card,
+body:not(.theme-light) .dorm-card,
+body:not(.theme-light) #page-board .gate-dorm-card,
+body:not(.theme-light) #page-squadron .gate-dorm-card {
+  position: relative !important;
+  overflow: hidden !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  grid-template-rows: auto auto minmax(1.55rem, 1fr) auto auto !important;
+  row-gap: 0.24rem !important;
+  min-height: 140px !important;
+  padding: 14px 14px 14px !important;
+  border-radius: var(--gate-clean-card-radius) !important;
+  border: 1px solid var(--border-muted) !important;
+  background: var(--bg-card) !important;
+  box-shadow: var(--shadow-soft-unified) !important;
+}
+
+body.theme-light .gate-dorm-card[data-band-dorm='true'],
+body.theme-light .gate-dorm-card[data-space-force='true'],
+body.theme-light .dorm-card[data-band-dorm='true'],
+body.theme-light .dorm-card[data-space-force='true'],
+body:not(.theme-light) .gate-dorm-card[data-band-dorm='true'],
+body:not(.theme-light) .gate-dorm-card[data-space-force='true'],
+body:not(.theme-light) .dorm-card[data-band-dorm='true'],
+body:not(.theme-light) .dorm-card[data-space-force='true'] {
+  padding-top: 30px !important;
+}
+
+body.theme-light .gate-dorm-name,
+body.theme-light .dorm-id-text,
+body:not(.theme-light) .gate-dorm-name,
+body:not(.theme-light) .dorm-id-text {
+  grid-column: 1 / 2 !important;
+  grid-row: 1 / 2 !important;
+  margin-top: 0 !important;
+  align-self: start !important;
+}
+
+body.theme-light .gate-dorm-info,
+body:not(.theme-light) .gate-dorm-info {
+  grid-column: 1 / 2 !important;
+  grid-row: 2 / 3 !important;
+}
+
+body.theme-light .gate-dorm-airman,
+body:not(.theme-light) .gate-dorm-airman {
+  grid-column: 2 / 3 !important;
+  grid-row: 1 / 2 !important;
+  justify-self: end !important;
+  align-self: start !important;
+  max-width: 12ch !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+body.theme-light .gate-auditorium-location,
+body:not(.theme-light) .gate-auditorium-location {
+  grid-column: 2 / 3 !important;
+  grid-row: 2 / 3 !important;
+  justify-self: end !important;
+}
+
+body.theme-light .gate-dorm-status-wrap,
+body:not(.theme-light) .gate-dorm-status-wrap {
+  grid-column: 1 / 3 !important;
+  grid-row: 3 / 4 !important;
+  align-self: center !important;
+}
+
+body.theme-light .gate-dorm-timer,
+body:not(.theme-light) .gate-dorm-timer {
+  grid-column: 1 / 3 !important;
+  grid-row: 4 / 5 !important;
+  justify-self: start !important;
+  align-self: end !important;
+}
+
+body.theme-light .gate-dorm-load,
+body:not(.theme-light) .gate-dorm-load {
+  grid-column: 2 / 3 !important;
+  grid-row: 5 / 6 !important;
+  justify-self: end !important;
+  align-self: end !important;
+  border: 0 !important;
+  background: transparent !important;
+  padding: 0 !important;
+  min-height: 0 !important;
+}
+
+body.theme-light .gate-dorm-progress,
+body:not(.theme-light) .gate-dorm-progress {
+  grid-column: 1 / 3 !important;
+  grid-row: 5 / 6 !important;
+  align-self: end !important;
+}
+
+/* ==========================================================================
+   4. BAND / SPACE FORCE BANNERS — FULL WIDTH TOP STRIP
+   ========================================================================== */
+body.theme-light .gate-dorm-top-banner,
+body.theme-light .gate-dorm-top-banner.banner-band,
+body.theme-light .gate-dorm-top-banner.banner-space-force,
+body:not(.theme-light) .gate-dorm-top-banner,
+body:not(.theme-light) .gate-dorm-top-banner.banner-band,
+body:not(.theme-light) .gate-dorm-top-banner.banner-space-force {
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  width: 100% !important;
+  height: 22px !important;
+  min-height: 22px !important;
+  margin: 0 !important;
+  padding: 0 10px !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: var(--gate-clean-card-radius) var(--gate-clean-card-radius) 0 0 !important;
+  border: 0 !important;
+  border-bottom: 1px solid var(--border-muted) !important;
+  box-shadow: none !important;
+  font-size: 0.58rem !important;
+  font-weight: 950 !important;
+  line-height: 1 !important;
+  letter-spacing: 0.105em !important;
+  text-align: center !important;
+  text-transform: uppercase !important;
+  pointer-events: none !important;
+  z-index: 3 !important;
+}
+
+body.theme-light .gate-dorm-top-banner.banner-band,
+body:not(.theme-light) .gate-dorm-top-banner.banner-band {
+  color: var(--gate-indicator-band) !important;
+  background: color-mix(in srgb, var(--gate-indicator-band) 12%, transparent) !important;
+  border-bottom-color: color-mix(in srgb, var(--gate-indicator-band) 36%, transparent) !important;
+}
+
+body.theme-light .gate-dorm-top-banner.banner-space-force,
+body:not(.theme-light) .gate-dorm-top-banner.banner-space-force {
+  color: var(--gate-indicator-space) !important;
+  background: color-mix(in srgb, var(--gate-indicator-space) 13%, transparent) !important;
+  border-bottom-color: color-mix(in srgb, var(--gate-indicator-space) 40%, transparent) !important;
+}
+
+/* ==========================================================================
+   5. FEMALE ALERT — RING AROUND WHOLE CELL, NEVER LOAD ONLY
+   ========================================================================== */
+body.theme-light .gate-dorm-card.border-female,
+body.theme-light .dorm-card.border-female,
+body.theme-light .gate-dorm-card[data-female-dorm='true'],
+body.theme-light .dorm-card[data-female-dorm='true'],
+body:not(.theme-light) .gate-dorm-card.border-female,
+body:not(.theme-light) .dorm-card.border-female,
+body:not(.theme-light) .gate-dorm-card[data-female-dorm='true'],
+body:not(.theme-light) .dorm-card[data-female-dorm='true'] {
+  border-color: var(--gate-indicator-female) !important;
+  outline: 2px solid var(--gate-indicator-female) !important;
+  outline-offset: -2px !important;
+  box-shadow: var(--shadow-soft-unified) !important;
+}
+
+body.theme-light .gate-dorm-card.border-female:hover,
+body.theme-light .dorm-card.border-female:hover,
+body.theme-light .gate-dorm-card[data-female-dorm='true']:hover,
+body.theme-light .dorm-card[data-female-dorm='true']:hover,
+body:not(.theme-light) .gate-dorm-card.border-female:hover,
+body:not(.theme-light) .dorm-card.border-female:hover,
+body:not(.theme-light) .gate-dorm-card[data-female-dorm='true']:hover,
+body:not(.theme-light) .dorm-card[data-female-dorm='true']:hover {
+  outline-color: var(--gate-indicator-female) !important;
+  box-shadow: var(--shadow-medium-unified) !important;
+}
+
+body.theme-light .gate-dorm-card.border-female .gate-dorm-load,
+body.theme-light .dorm-card.border-female .gate-dorm-load,
+body.theme-light .gate-dorm-card[data-female-dorm='true'] .gate-dorm-load,
+body.theme-light .dorm-card[data-female-dorm='true'] .gate-dorm-load,
+body:not(.theme-light) .gate-dorm-card.border-female .gate-dorm-load,
+body:not(.theme-light) .dorm-card.border-female .gate-dorm-load,
+body:not(.theme-light) .gate-dorm-card[data-female-dorm='true'] .gate-dorm-load,
+body:not(.theme-light) .dorm-card[data-female-dorm='true'] .gate-dorm-load {
+  border: 0 !important;
+  outline: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: var(--color-text-soft) !important;
+}
+
+@media (max-width: 767px) {
+  body.theme-light .app-nav,
+  body.theme-light .app-nav.command-header-bar,
+  body.theme-light .command-header-bar,
+  body:not(.theme-light) .app-nav,
+  body:not(.theme-light) .app-nav.command-header-bar,
+  body:not(.theme-light) .command-header-bar {
+    height: auto !important;
+    min-height: 118px !important;
+    padding: 8px 14px !important;
+    grid-template-columns: minmax(0, 1fr) max-content !important;
+    grid-template-areas:
+      'brand menu'
+      'nav nav'
+      'tools tools' !important;
+  }
+
+  body.theme-light:not(.fullscreen-board) .page,
+  body.theme-light:not(.fullscreen-board) #page-board,
+  body.theme-light:not(.fullscreen-board) #page-squadron.gate-squadron-page,
+  body:not(.theme-light):not(.fullscreen-board) .page,
+  body:not(.theme-light):not(.fullscreen-board) #page-board,
+  body:not(.theme-light):not(.fullscreen-board) #page-squadron.gate-squadron-page {
+    padding-top: 154px !important;
+  }
+}

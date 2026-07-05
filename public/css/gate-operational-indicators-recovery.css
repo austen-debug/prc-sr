@@ -1,0 +1,326 @@
+/* PRC GATE Operational Indicator Recovery
+   Scope: restores required operational indicators after the unified theme contract.
+   This preserves the unified theme architecture; it only repairs functional visibility. */
+
+:root {
+  --indicator-band-color: #007a33;
+  --indicator-space-force-color: #2f6f9f;
+  --indicator-female-color: #720522;
+  --indicator-watermark-opacity: 0.075;
+}
+
+body:not(.theme-light) {
+  --indicator-space-force-color: #7dd3fc;
+  --indicator-female-color: #ef4444;
+  --indicator-watermark-opacity: 0.105;
+}
+
+body.theme-light {
+  --indicator-space-force-color: #0369a1;
+  --indicator-female-color: #720522;
+  --indicator-watermark-opacity: 0.055;
+}
+
+/* ==========================================================================
+   1. BACKGROUND LOGO / WATERMARK RECOVERY
+   ========================================================================== */
+body.theme-light::before,
+body:not(.theme-light)::before {
+  content: '' !important;
+  display: block !important;
+  position: fixed !important;
+  inset: 0 !important;
+  pointer-events: none !important;
+  z-index: 0 !important;
+  background-repeat: no-repeat !important;
+  background-position: center center !important;
+  background-size: min(58vw, 900px) auto !important;
+  opacity: var(--indicator-watermark-opacity) !important;
+  filter: grayscale(100%) !important;
+}
+
+body.theme-light::before {
+  background-image: url('/assets/gate_emblem_blue.png') !important;
+  mix-blend-mode: multiply !important;
+}
+
+body:not(.theme-light)::before {
+  background-image: url('/assets/gate_emblem_white.png') !important;
+  mix-blend-mode: screen !important;
+}
+
+.background-watermark-graphic,
+body.theme-light .background-watermark-graphic,
+body:not(.theme-light) .background-watermark-graphic {
+  display: block !important;
+  visibility: visible !important;
+  opacity: var(--indicator-watermark-opacity) !important;
+  pointer-events: none !important;
+}
+
+body.theme-light .page,
+body:not(.theme-light) .page,
+body.theme-light main,
+body:not(.theme-light) main,
+body.theme-light .app-container,
+body:not(.theme-light) .app-container {
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+body.theme-light .app-nav,
+body:not(.theme-light) .app-nav,
+body.theme-light .security-banner-fixed,
+body:not(.theme-light) .security-banner-fixed,
+body.theme-light .modal,
+body:not(.theme-light) .modal,
+body.theme-light .confirm-overlay,
+body:not(.theme-light) .confirm-overlay {
+  position: relative !important;
+}
+
+/* ==========================================================================
+   2. DORM CARD GRID SAFETY FOR OPERATIONAL TAGS
+   ========================================================================== */
+body.theme-light .gate-dorm-card,
+body.theme-light .dorm-card,
+body.theme-light #page-board .gate-dorm-card,
+body.theme-light #page-squadron .gate-dorm-card,
+body:not(.theme-light) .gate-dorm-card,
+body:not(.theme-light) .dorm-card,
+body:not(.theme-light) #page-board .gate-dorm-card,
+body:not(.theme-light) #page-squadron .gate-dorm-card {
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  grid-template-rows: auto auto auto minmax(1.6rem, 1fr) auto auto !important;
+  row-gap: 0.32rem !important;
+}
+
+body.theme-light .gate-dorm-name,
+body.theme-light .dorm-id-text,
+body:not(.theme-light) .gate-dorm-name,
+body:not(.theme-light) .dorm-id-text {
+  grid-column: 1 / 2 !important;
+  grid-row: 2 / 3 !important;
+}
+
+body.theme-light .gate-dorm-airman,
+body:not(.theme-light) .gate-dorm-airman {
+  grid-column: 2 / 3 !important;
+  grid-row: 2 / 3 !important;
+  justify-self: end !important;
+  align-self: start !important;
+  max-width: 12ch !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+body.theme-light .gate-auditorium-location,
+body:not(.theme-light) .gate-auditorium-location {
+  grid-column: 2 / 3 !important;
+  grid-row: 3 / 4 !important;
+  justify-self: end !important;
+  align-self: start !important;
+}
+
+body.theme-light .gate-dorm-info,
+body:not(.theme-light) .gate-dorm-info {
+  grid-column: 1 / 2 !important;
+  grid-row: 3 / 4 !important;
+}
+
+body.theme-light .gate-dorm-status-wrap,
+body:not(.theme-light) .gate-dorm-status-wrap {
+  grid-column: 1 / 3 !important;
+  grid-row: 4 / 5 !important;
+}
+
+body.theme-light .gate-dorm-timer,
+body:not(.theme-light) .gate-dorm-timer {
+  grid-column: 1 / 3 !important;
+  grid-row: 5 / 6 !important;
+}
+
+body.theme-light .gate-dorm-load,
+body:not(.theme-light) .gate-dorm-load,
+body.theme-light .gate-dorm-progress,
+body:not(.theme-light) .gate-dorm-progress {
+  grid-row: 6 / 7 !important;
+}
+
+/* ==========================================================================
+   3. SPACE FORCE / BAND BANNER RECOVERY
+   ========================================================================== */
+body.theme-light .gate-dorm-top-banner,
+body.theme-light .gate-dorm-top-banner.banner-band,
+body.theme-light .gate-dorm-top-banner.banner-space-force,
+body.theme-light .gate-band-banner,
+body.theme-light .gate-space-force-banner,
+body:not(.theme-light) .gate-dorm-top-banner,
+body:not(.theme-light) .gate-dorm-top-banner.banner-band,
+body:not(.theme-light) .gate-dorm-top-banner.banner-space-force,
+body:not(.theme-light) .gate-band-banner,
+body:not(.theme-light) .gate-space-force-banner {
+  display: inline-grid !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  grid-column: 1 / 3 !important;
+  grid-row: 1 / 2 !important;
+  justify-self: stretch !important;
+  align-self: start !important;
+  place-items: center !important;
+  min-height: 22px !important;
+  width: 100% !important;
+  margin: -4px 0 0 !important;
+  padding: 3px 10px !important;
+  border-radius: var(--nested-radius, 4px) !important;
+  border: 1px solid var(--border-muted) !important;
+  background: color-mix(in srgb, var(--color-text-muted) 10%, transparent) !important;
+  box-shadow: inset 0 1px 0 color-mix(in srgb, #ffffff 28%, transparent) !important;
+  color: var(--color-text-primary) !important;
+  font-size: 0.66rem !important;
+  font-weight: 950 !important;
+  line-height: 1 !important;
+  letter-spacing: 0.105em !important;
+  text-align: center !important;
+  text-transform: uppercase !important;
+  pointer-events: none !important;
+  z-index: 2 !important;
+}
+
+body.theme-light .gate-dorm-top-banner.banner-band,
+body.theme-light .gate-band-banner,
+body.theme-light .border-band .gate-dorm-top-banner,
+body:not(.theme-light) .gate-dorm-top-banner.banner-band,
+body:not(.theme-light) .gate-band-banner,
+body:not(.theme-light) .border-band .gate-dorm-top-banner {
+  color: var(--indicator-band-color) !important;
+  border-color: color-mix(in srgb, var(--indicator-band-color) 44%, transparent) !important;
+  background: color-mix(in srgb, var(--indicator-band-color) 13%, transparent) !important;
+}
+
+body.theme-light .gate-dorm-top-banner.banner-space-force,
+body.theme-light .gate-space-force-banner,
+body.theme-light .border-space-force .gate-dorm-top-banner,
+body.theme-light [data-component-type='space-force'] .gate-dorm-top-banner,
+body:not(.theme-light) .gate-dorm-top-banner.banner-space-force,
+body:not(.theme-light) .gate-space-force-banner,
+body:not(.theme-light) .border-space-force .gate-dorm-top-banner,
+body:not(.theme-light) [data-component-type='space-force'] .gate-dorm-top-banner {
+  color: var(--indicator-space-force-color) !important;
+  border-color: color-mix(in srgb, var(--indicator-space-force-color) 46%, transparent) !important;
+  background: color-mix(in srgb, var(--indicator-space-force-color) 14%, transparent) !important;
+}
+
+/* Processing cards use compact chips instead of top banners. */
+body.theme-light .gate-dorm-flags,
+body:not(.theme-light) .gate-dorm-flags {
+  display: flex !important;
+  visibility: visible !important;
+  flex-wrap: wrap !important;
+  gap: 0.34rem !important;
+  margin: 0.32rem 0 !important;
+}
+
+body.theme-light .gate-dorm-flag-chip,
+body:not(.theme-light) .gate-dorm-flag-chip {
+  display: inline-flex !important;
+  align-items: center !important;
+  min-height: 1.28rem !important;
+  padding: 0.18rem 0.46rem !important;
+  border-radius: var(--nested-radius, 4px) !important;
+  border: 1px solid var(--border-muted) !important;
+  color: var(--color-text-primary) !important;
+  background: color-mix(in srgb, var(--color-text-muted) 10%, transparent) !important;
+  font-size: 0.62rem !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.075em !important;
+  text-transform: uppercase !important;
+}
+
+body.theme-light .gate-dorm-flag-chip.flag-band,
+body:not(.theme-light) .gate-dorm-flag-chip.flag-band {
+  color: var(--indicator-band-color) !important;
+  border-color: color-mix(in srgb, var(--indicator-band-color) 44%, transparent) !important;
+  background: color-mix(in srgb, var(--indicator-band-color) 13%, transparent) !important;
+}
+
+body.theme-light .gate-dorm-flag-chip.flag-space-force,
+body:not(.theme-light) .gate-dorm-flag-chip.flag-space-force {
+  color: var(--indicator-space-force-color) !important;
+  border-color: color-mix(in srgb, var(--indicator-space-force-color) 46%, transparent) !important;
+  background: color-mix(in srgb, var(--indicator-space-force-color) 14%, transparent) !important;
+}
+
+/* ==========================================================================
+   4. FEMALE ALERT RING / CAPACITY ALERT RECOVERY
+   ========================================================================== */
+body.theme-light .gate-dorm-card.border-female,
+body.theme-light .dorm-card.border-female,
+body.theme-light .gate-dorm-card[data-female-dorm='true'],
+body.theme-light .dorm-card[data-female-dorm='true'],
+body:not(.theme-light) .gate-dorm-card.border-female,
+body:not(.theme-light) .dorm-card.border-female,
+body:not(.theme-light) .gate-dorm-card[data-female-dorm='true'],
+body:not(.theme-light) .dorm-card[data-female-dorm='true'] {
+  border-color: var(--indicator-female-color) !important;
+  box-shadow:
+    var(--shadow-soft-unified),
+    0 0 0 2px color-mix(in srgb, var(--indicator-female-color) 82%, transparent),
+    0 0 0 5px color-mix(in srgb, var(--indicator-female-color) 12%, transparent) !important;
+}
+
+body.theme-light .gate-dorm-card.border-female:hover,
+body.theme-light .dorm-card.border-female:hover,
+body.theme-light .gate-dorm-card[data-female-dorm='true']:hover,
+body.theme-light .dorm-card[data-female-dorm='true']:hover,
+body:not(.theme-light) .gate-dorm-card.border-female:hover,
+body:not(.theme-light) .dorm-card.border-female:hover,
+body:not(.theme-light) .gate-dorm-card[data-female-dorm='true']:hover,
+body:not(.theme-light) .dorm-card[data-female-dorm='true']:hover {
+  box-shadow:
+    var(--shadow-medium-unified),
+    0 0 0 2px color-mix(in srgb, var(--indicator-female-color) 90%, transparent),
+    0 0 0 6px color-mix(in srgb, var(--indicator-female-color) 16%, transparent) !important;
+}
+
+body.theme-light .gate-dorm-card.border-female .gate-dorm-load,
+body.theme-light .dorm-card.border-female .gate-dorm-load,
+body.theme-light .gate-dorm-card[data-female-dorm='true'] .gate-dorm-load,
+body.theme-light .dorm-card[data-female-dorm='true'] .gate-dorm-load,
+body:not(.theme-light) .gate-dorm-card.border-female .gate-dorm-load,
+body:not(.theme-light) .dorm-card.border-female .gate-dorm-load,
+body:not(.theme-light) .gate-dorm-card[data-female-dorm='true'] .gate-dorm-load,
+body:not(.theme-light) .dorm-card[data-female-dorm='true'] .gate-dorm-load {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-height: 1.48rem !important;
+  padding: 0.16rem 0.44rem !important;
+  border-radius: var(--nested-radius, 4px) !important;
+  border: 2px solid var(--indicator-female-color) !important;
+  color: var(--color-text-primary) !important;
+  background: color-mix(in srgb, var(--indicator-female-color) 10%, transparent) !important;
+}
+
+/* Keep state accents functional without hiding required indicators. */
+body.theme-light .gate-dorm-card.gate-dorm-state-empty,
+body.theme-light .dorm-card.gate-dorm-state-empty,
+body:not(.theme-light) .gate-dorm-card.gate-dorm-state-empty,
+body:not(.theme-light) .dorm-card.gate-dorm-state-empty {
+  border-left-color: var(--brand-red) !important;
+}
+
+body.theme-light .gate-dorm-card.gate-dorm-state-open,
+body.theme-light .dorm-card.gate-dorm-state-open,
+body:not(.theme-light) .gate-dorm-card.gate-dorm-state-open,
+body:not(.theme-light) .dorm-card.gate-dorm-state-open {
+  border-left-color: var(--color-text-muted) !important;
+}
+
+body.theme-light .gate-dorm-card.gate-dorm-state-closed,
+body.theme-light .dorm-card.gate-dorm-state-closed,
+body:not(.theme-light) .gate-dorm-card.gate-dorm-state-closed,
+body:not(.theme-light) .dorm-card.gate-dorm-state-closed {
+  border-left-color: var(--brand-green) !important;
+}

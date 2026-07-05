@@ -38,6 +38,13 @@
     );
   }
 
+  function effectiveDormFlags(dorm) {
+    const female = isFemaleDorm(dorm);
+    const spaceForce = isSpaceForceDorm(dorm);
+    const band = !spaceForce && isBandDorm(dorm);
+    return { female, band, spaceForce };
+  }
+
   function dormStatusLabel(dorm) {
     if (!dorm) return '';
     if (dorm.state === 'closed') return 'CLOSED';
@@ -69,15 +76,23 @@
     return '<div class="gate-dorm-timer gate-empty-timer">00:00</div>';
   }
 
+  function dormBannerHtml(dorm, flags = effectiveDormFlags(dorm)) {
+    if (flags.spaceForce) return '<div class="gate-dorm-top-banner banner-space-force">Space Force</div>';
+    if (flags.band) return '<div class="gate-dorm-top-banner banner-band">Band</div>';
+    return '';
+  }
+
   function dormCard(dorm, options = {}) {
     const load = dormLoad(dorm);
     const state = String(dorm?.state || 'empty').toLowerCase();
     const status = dormStatusLabel(dorm);
     const info = [esc(dorm?.sdq), esc(dorm?.section), esc(dorm?.inter_sec)].filter(Boolean).join(' · ');
-    const component = isSpaceForceDorm(dorm) ? 'space-force' : 'air-force';
+    const flagsState = effectiveDormFlags(dorm);
+    const component = flagsState.spaceForce ? 'space-force' : 'air-force';
     const flags = [
-      isFemaleDorm(dorm) ? 'border-female' : '',
-      !isSpaceForceDorm(dorm) && isBandDorm(dorm) ? 'border-band' : '',
+      flagsState.female ? 'border-female' : '',
+      flagsState.band ? 'border-band' : '',
+      flagsState.spaceForce ? 'border-space-force' : '',
       state === 'closed' ? 'dorm-closed' : '',
       load.isOver ? 'is-over' : (load.isFull ? 'is-full' : '')
     ].filter(Boolean).join(' ');
@@ -86,9 +101,11 @@
     const auditorium = options.showAuditorium && dorm?.auditorium_location
       ? `<div class="gate-auditorium-location">${esc(dorm.auditorium_location)}</div>`
       : '';
+    const banner = dormBannerHtml(dorm, flagsState);
 
     return `
-      <div class="dorm-card tactical-glass-card gate-dorm-card gate-component-dorm-card gate-dorm-state-${esc(state)} ${flags}" data-component="dorm-card" data-dorm-id="${esc(dorm?.__backendId || '')}" data-state="${esc(state)}" data-component-type="${esc(component)}">
+      <div class="dorm-card tactical-glass-card gate-dorm-card gate-component-dorm-card gate-dorm-state-${esc(state)} ${flags}" data-component="dorm-card" data-dorm-id="${esc(dorm?.__backendId || '')}" data-state="${esc(state)}" data-component-type="${esc(component)}" data-female-dorm="${flagsState.female ? 'true' : 'false'}" data-band-dorm="${flagsState.band ? 'true' : 'false'}" data-space-force="${flagsState.spaceForce ? 'true' : 'false'}">
+        ${banner}
         <div class="gate-dorm-name">${esc(dorm?.dorm_name || '')}</div>
         <div class="gate-dorm-airman">${airman}</div>
         ${auditorium}
@@ -161,8 +178,10 @@
     isFemaleDorm,
     isBandDorm,
     isSpaceForceDorm,
+    effectiveDormFlags,
     dormStatusLabel,
     dormLoad,
+    dormBannerHtml,
     dormCard,
     statusMetric,
     navButton,

@@ -1,6 +1,7 @@
 /* PRC GATE Clean UI Pass
-   Scope: final active cleanup after unified contract.
-   Intent: one clean component geometry across light/dark without destructive recovery layers. */
+   Final active UI layer after the unified contract.
+   This file owns shell locking, board card geometry, operational indicators, and watermark visibility.
+   It deliberately avoids overlay hacks that distort dorm cells. */
 
 :root {
   --gate-classification-height: 22px;
@@ -12,6 +13,7 @@
   --gate-indicator-band: #007a33;
   --gate-indicator-female: #720522;
   --gate-indicator-space: #2f6f9f;
+  --gate-watermark-opacity-clean: 0.065;
 }
 
 body:not(.theme-light) {
@@ -23,7 +25,7 @@ body:not(.theme-light) {
 body.theme-light {
   --gate-indicator-space: #0369a1;
   --gate-indicator-female: #720522;
-  --gate-watermark-opacity-clean: 0.055;
+  --gate-watermark-opacity-clean: 0.052;
 }
 
 /* ==========================================================================
@@ -194,7 +196,7 @@ body:not(.theme-light) .app-container {
 }
 
 /* ==========================================================================
-   3. CLEAN DORM CELL STRUCTURE
+   3. CLEAN DORM CELL STRUCTURE — ONE RESERVED BANNER ROW
    ========================================================================== */
 body.theme-light .gate-dorm-card,
 body.theme-light .dorm-card,
@@ -208,7 +210,7 @@ body:not(.theme-light) #page-squadron .gate-dorm-card {
   overflow: hidden !important;
   display: grid !important;
   grid-template-columns: minmax(0, 1fr) auto !important;
-  grid-template-rows: auto auto minmax(1.55rem, 1fr) auto auto !important;
+  grid-template-rows: auto auto minmax(1.6rem, 1fr) auto auto !important;
   row-gap: 0.24rem !important;
   min-height: 140px !important;
   padding: 14px 14px 14px !important;
@@ -226,81 +228,10 @@ body:not(.theme-light) .gate-dorm-card[data-band-dorm='true'],
 body:not(.theme-light) .gate-dorm-card[data-space-force='true'],
 body:not(.theme-light) .dorm-card[data-band-dorm='true'],
 body:not(.theme-light) .dorm-card[data-space-force='true'] {
-  padding-top: 30px !important;
+  grid-template-rows: 22px auto auto minmax(1.45rem, 1fr) auto auto !important;
+  padding-top: 0 !important;
 }
 
-body.theme-light .gate-dorm-name,
-body.theme-light .dorm-id-text,
-body:not(.theme-light) .gate-dorm-name,
-body:not(.theme-light) .dorm-id-text {
-  grid-column: 1 / 2 !important;
-  grid-row: 1 / 2 !important;
-  margin-top: 0 !important;
-  align-self: start !important;
-}
-
-body.theme-light .gate-dorm-info,
-body:not(.theme-light) .gate-dorm-info {
-  grid-column: 1 / 2 !important;
-  grid-row: 2 / 3 !important;
-}
-
-body.theme-light .gate-dorm-airman,
-body:not(.theme-light) .gate-dorm-airman {
-  grid-column: 2 / 3 !important;
-  grid-row: 1 / 2 !important;
-  justify-self: end !important;
-  align-self: start !important;
-  max-width: 12ch !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-  white-space: nowrap !important;
-}
-
-body.theme-light .gate-auditorium-location,
-body:not(.theme-light) .gate-auditorium-location {
-  grid-column: 2 / 3 !important;
-  grid-row: 2 / 3 !important;
-  justify-self: end !important;
-}
-
-body.theme-light .gate-dorm-status-wrap,
-body:not(.theme-light) .gate-dorm-status-wrap {
-  grid-column: 1 / 3 !important;
-  grid-row: 3 / 4 !important;
-  align-self: center !important;
-}
-
-body.theme-light .gate-dorm-timer,
-body:not(.theme-light) .gate-dorm-timer {
-  grid-column: 1 / 3 !important;
-  grid-row: 4 / 5 !important;
-  justify-self: start !important;
-  align-self: end !important;
-}
-
-body.theme-light .gate-dorm-load,
-body:not(.theme-light) .gate-dorm-load {
-  grid-column: 2 / 3 !important;
-  grid-row: 5 / 6 !important;
-  justify-self: end !important;
-  align-self: end !important;
-  border: 0 !important;
-  background: transparent !important;
-  padding: 0 !important;
-  min-height: 0 !important;
-}
-
-body.theme-light .gate-dorm-progress,
-body:not(.theme-light) .gate-dorm-progress {
-  grid-column: 1 / 3 !important;
-  grid-row: 5 / 6 !important;
-  align-self: end !important;
-}
-
-/* ==========================================================================
-   4. BAND / SPACE FORCE BANNERS — FULL WIDTH TOP STRIP
-   ========================================================================== */
 body.theme-light .gate-dorm-top-banner,
 body.theme-light .gate-dorm-top-banner.banner-band,
 body.theme-light .gate-dorm-top-banner.banner-space-force,
@@ -310,20 +241,22 @@ body:not(.theme-light) .gate-dorm-top-banner.banner-space-force {
   display: flex !important;
   visibility: visible !important;
   opacity: 1 !important;
-  position: absolute !important;
-  top: 0 !important;
-  left: 0 !important;
-  right: 0 !important;
-  width: 100% !important;
+  position: relative !important;
+  grid-column: 1 / 3 !important;
+  grid-row: 1 / 2 !important;
+  width: calc(100% + 28px) !important;
+  min-width: calc(100% + 28px) !important;
   height: 22px !important;
   min-height: 22px !important;
-  margin: 0 !important;
+  margin: 0 -14px !important;
   padding: 0 10px !important;
   align-items: center !important;
   justify-content: center !important;
-  border-radius: var(--gate-clean-card-radius) var(--gate-clean-card-radius) 0 0 !important;
+  align-self: stretch !important;
+  justify-self: stretch !important;
   border: 0 !important;
   border-bottom: 1px solid var(--border-muted) !important;
+  border-radius: var(--gate-clean-card-radius) var(--gate-clean-card-radius) 0 0 !important;
   box-shadow: none !important;
   font-size: 0.58rem !important;
   font-weight: 950 !important;
@@ -338,19 +271,175 @@ body:not(.theme-light) .gate-dorm-top-banner.banner-space-force {
 body.theme-light .gate-dorm-top-banner.banner-band,
 body:not(.theme-light) .gate-dorm-top-banner.banner-band {
   color: var(--gate-indicator-band) !important;
-  background: color-mix(in srgb, var(--gate-indicator-band) 12%, transparent) !important;
-  border-bottom-color: color-mix(in srgb, var(--gate-indicator-band) 36%, transparent) !important;
+  background: color-mix(in srgb, var(--gate-indicator-band) 13%, transparent) !important;
+  border-bottom-color: color-mix(in srgb, var(--gate-indicator-band) 40%, transparent) !important;
 }
 
 body.theme-light .gate-dorm-top-banner.banner-space-force,
 body:not(.theme-light) .gate-dorm-top-banner.banner-space-force {
   color: var(--gate-indicator-space) !important;
-  background: color-mix(in srgb, var(--gate-indicator-space) 13%, transparent) !important;
-  border-bottom-color: color-mix(in srgb, var(--gate-indicator-space) 40%, transparent) !important;
+  background: color-mix(in srgb, var(--gate-indicator-space) 14%, transparent) !important;
+  border-bottom-color: color-mix(in srgb, var(--gate-indicator-space) 42%, transparent) !important;
+}
+
+body.theme-light .gate-dorm-name,
+body.theme-light .dorm-id-text,
+body:not(.theme-light) .gate-dorm-name,
+body:not(.theme-light) .dorm-id-text {
+  grid-column: 1 / 2 !important;
+  grid-row: 1 / 2 !important;
+  margin-top: 0 !important;
+  align-self: start !important;
+}
+
+body.theme-light .gate-dorm-card[data-band-dorm='true'] .gate-dorm-name,
+body.theme-light .gate-dorm-card[data-space-force='true'] .gate-dorm-name,
+body.theme-light .dorm-card[data-band-dorm='true'] .gate-dorm-name,
+body.theme-light .dorm-card[data-space-force='true'] .gate-dorm-name,
+body:not(.theme-light) .gate-dorm-card[data-band-dorm='true'] .gate-dorm-name,
+body:not(.theme-light) .gate-dorm-card[data-space-force='true'] .gate-dorm-name,
+body:not(.theme-light) .dorm-card[data-band-dorm='true'] .gate-dorm-name,
+body:not(.theme-light) .dorm-card[data-space-force='true'] .gate-dorm-name {
+  grid-row: 2 / 3 !important;
+}
+
+body.theme-light .gate-dorm-info,
+body:not(.theme-light) .gate-dorm-info {
+  grid-column: 1 / 2 !important;
+  grid-row: 2 / 3 !important;
+}
+
+body.theme-light .gate-dorm-card[data-band-dorm='true'] .gate-dorm-info,
+body.theme-light .gate-dorm-card[data-space-force='true'] .gate-dorm-info,
+body.theme-light .dorm-card[data-band-dorm='true'] .gate-dorm-info,
+body.theme-light .dorm-card[data-space-force='true'] .gate-dorm-info,
+body:not(.theme-light) .gate-dorm-card[data-band-dorm='true'] .gate-dorm-info,
+body:not(.theme-light) .gate-dorm-card[data-space-force='true'] .gate-dorm-info,
+body:not(.theme-light) .dorm-card[data-band-dorm='true'] .gate-dorm-info,
+body:not(.theme-light) .dorm-card[data-space-force='true'] .gate-dorm-info {
+  grid-row: 3 / 4 !important;
+}
+
+body.theme-light .gate-dorm-airman,
+body:not(.theme-light) .gate-dorm-airman {
+  grid-column: 2 / 3 !important;
+  grid-row: 1 / 2 !important;
+  justify-self: end !important;
+  align-self: start !important;
+  max-width: 12ch !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+body.theme-light .gate-dorm-card[data-band-dorm='true'] .gate-dorm-airman,
+body.theme-light .gate-dorm-card[data-space-force='true'] .gate-dorm-airman,
+body.theme-light .dorm-card[data-band-dorm='true'] .gate-dorm-airman,
+body.theme-light .dorm-card[data-space-force='true'] .gate-dorm-airman,
+body:not(.theme-light) .gate-dorm-card[data-band-dorm='true'] .gate-dorm-airman,
+body:not(.theme-light) .gate-dorm-card[data-space-force='true'] .gate-dorm-airman,
+body:not(.theme-light) .dorm-card[data-band-dorm='true'] .gate-dorm-airman,
+body:not(.theme-light) .dorm-card[data-space-force='true'] .gate-dorm-airman {
+  grid-row: 2 / 3 !important;
+}
+
+body.theme-light .gate-auditorium-location,
+body:not(.theme-light) .gate-auditorium-location {
+  grid-column: 2 / 3 !important;
+  grid-row: 2 / 3 !important;
+  justify-self: end !important;
+}
+
+body.theme-light .gate-dorm-card[data-band-dorm='true'] .gate-auditorium-location,
+body.theme-light .gate-dorm-card[data-space-force='true'] .gate-auditorium-location,
+body.theme-light .dorm-card[data-band-dorm='true'] .gate-auditorium-location,
+body.theme-light .dorm-card[data-space-force='true'] .gate-auditorium-location,
+body:not(.theme-light) .gate-dorm-card[data-band-dorm='true'] .gate-auditorium-location,
+body:not(.theme-light) .gate-dorm-card[data-space-force='true'] .gate-auditorium-location,
+body:not(.theme-light) .dorm-card[data-band-dorm='true'] .gate-auditorium-location,
+body:not(.theme-light) .dorm-card[data-space-force='true'] .gate-auditorium-location {
+  grid-row: 3 / 4 !important;
+}
+
+body.theme-light .gate-dorm-status-wrap,
+body:not(.theme-light) .gate-dorm-status-wrap {
+  grid-column: 1 / 3 !important;
+  grid-row: 3 / 4 !important;
+  align-self: center !important;
+}
+
+body.theme-light .gate-dorm-card[data-band-dorm='true'] .gate-dorm-status-wrap,
+body.theme-light .gate-dorm-card[data-space-force='true'] .gate-dorm-status-wrap,
+body.theme-light .dorm-card[data-band-dorm='true'] .gate-dorm-status-wrap,
+body.theme-light .dorm-card[data-space-force='true'] .gate-dorm-status-wrap,
+body:not(.theme-light) .gate-dorm-card[data-band-dorm='true'] .gate-dorm-status-wrap,
+body:not(.theme-light) .gate-dorm-card[data-space-force='true'] .gate-dorm-status-wrap,
+body:not(.theme-light) .dorm-card[data-band-dorm='true'] .gate-dorm-status-wrap,
+body:not(.theme-light) .dorm-card[data-space-force='true'] .gate-dorm-status-wrap {
+  grid-row: 4 / 5 !important;
+}
+
+body.theme-light .gate-dorm-timer,
+body:not(.theme-light) .gate-dorm-timer {
+  grid-column: 1 / 3 !important;
+  grid-row: 4 / 5 !important;
+  justify-self: center !important;
+  align-self: end !important;
+}
+
+body.theme-light .gate-dorm-card[data-band-dorm='true'] .gate-dorm-timer,
+body.theme-light .gate-dorm-card[data-space-force='true'] .gate-dorm-timer,
+body.theme-light .dorm-card[data-band-dorm='true'] .gate-dorm-timer,
+body.theme-light .dorm-card[data-space-force='true'] .gate-dorm-timer,
+body:not(.theme-light) .gate-dorm-card[data-band-dorm='true'] .gate-dorm-timer,
+body:not(.theme-light) .gate-dorm-card[data-space-force='true'] .gate-dorm-timer,
+body:not(.theme-light) .dorm-card[data-band-dorm='true'] .gate-dorm-timer,
+body:not(.theme-light) .dorm-card[data-space-force='true'] .gate-dorm-timer {
+  grid-row: 5 / 6 !important;
+}
+
+body.theme-light .gate-dorm-load,
+body:not(.theme-light) .gate-dorm-load {
+  grid-column: 2 / 3 !important;
+  grid-row: 5 / 6 !important;
+  justify-self: end !important;
+  align-self: end !important;
+  border: 0 !important;
+  background: transparent !important;
+  padding: 0 !important;
+  min-height: 0 !important;
+}
+
+body.theme-light .gate-dorm-card[data-band-dorm='true'] .gate-dorm-load,
+body.theme-light .gate-dorm-card[data-space-force='true'] .gate-dorm-load,
+body.theme-light .dorm-card[data-band-dorm='true'] .gate-dorm-load,
+body.theme-light .dorm-card[data-space-force='true'] .gate-dorm-load,
+body:not(.theme-light) .gate-dorm-card[data-band-dorm='true'] .gate-dorm-load,
+body:not(.theme-light) .gate-dorm-card[data-space-force='true'] .gate-dorm-load,
+body:not(.theme-light) .dorm-card[data-band-dorm='true'] .gate-dorm-load,
+body:not(.theme-light) .dorm-card[data-space-force='true'] .gate-dorm-load {
+  grid-row: 6 / 7 !important;
+}
+
+body.theme-light .gate-dorm-progress,
+body:not(.theme-light) .gate-dorm-progress {
+  grid-column: 1 / 3 !important;
+  grid-row: 5 / 6 !important;
+  align-self: end !important;
+}
+
+body.theme-light .gate-dorm-card[data-band-dorm='true'] .gate-dorm-progress,
+body.theme-light .gate-dorm-card[data-space-force='true'] .gate-dorm-progress,
+body.theme-light .dorm-card[data-band-dorm='true'] .gate-dorm-progress,
+body.theme-light .dorm-card[data-space-force='true'] .gate-dorm-progress,
+body:not(.theme-light) .gate-dorm-card[data-band-dorm='true'] .gate-dorm-progress,
+body:not(.theme-light) .gate-dorm-card[data-space-force='true'] .gate-dorm-progress,
+body:not(.theme-light) .dorm-card[data-band-dorm='true'] .gate-dorm-progress {
+  grid-row: 6 / 7 !important;
 }
 
 /* ==========================================================================
-   5. FEMALE ALERT — RING AROUND WHOLE CELL, NEVER LOAD ONLY
+   4. FEMALE ALERT — RING AROUND WHOLE CELL ONLY
    ========================================================================== */
 body.theme-light .gate-dorm-card.border-female,
 body.theme-light .dorm-card.border-female,

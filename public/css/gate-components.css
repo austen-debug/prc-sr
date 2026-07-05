@@ -568,6 +568,82 @@ body:not(.fullscreen-board) #page-squadron.gate-squadron-page {
   }
 }
 
+/* Right-side header controls should move exactly like the page navigation pills. */
+.app-nav .nav-group-right .nav-btn,
+.app-nav .nav-group-right button,
+.command-header-bar .nav-group-right .nav-btn,
+.command-header-bar .nav-group-right button,
+#fullscreen-btn,
+#sound-toggle-btn,
+#role-toggle,
+.app-nav button[aria-label='Toggle theme'] {
+  transition:
+    background 150ms cubic-bezier(.2,.8,.2,1),
+    border-color 150ms cubic-bezier(.2,.8,.2,1),
+    box-shadow 150ms cubic-bezier(.2,.8,.2,1),
+    color 150ms cubic-bezier(.2,.8,.2,1),
+    transform 150ms cubic-bezier(.2,.8,.2,1) !important;
+  will-change: auto !important;
+}
+
+.app-nav .nav-group-right .nav-btn:hover,
+.app-nav .nav-group-right button:hover,
+.command-header-bar .nav-group-right .nav-btn:hover,
+.command-header-bar .nav-group-right button:hover,
+#fullscreen-btn:hover,
+#sound-toggle-btn:hover,
+#role-toggle:hover,
+.app-nav button[aria-label='Toggle theme']:hover {
+  color: var(--text, #ffffff) !important;
+  background: linear-gradient(145deg, rgba(184, 190, 199, 0.18), rgba(20, 49, 91, 0.22)) !important;
+  border-color: rgba(184, 190, 199, 0.48) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    0 7px 16px rgba(0, 0, 0, 0.18) !important;
+  transform: translateY(-1px) !important;
+  text-shadow: none !important;
+}
+
+.app-nav .nav-group-right .nav-btn:hover::before,
+.app-nav .nav-group-right button:hover::before,
+.command-header-bar .nav-group-right .nav-btn:hover::before,
+.command-header-bar .nav-group-right button:hover::before,
+#fullscreen-btn:hover::before,
+#sound-toggle-btn:hover::before,
+#role-toggle:hover::before,
+.app-nav button[aria-label='Toggle theme']:hover::before {
+  opacity: 1 !important;
+}
+
+.app-nav .nav-group-right .nav-btn:active,
+.app-nav .nav-group-right button:active,
+.command-header-bar .nav-group-right .nav-btn:active,
+.command-header-bar .nav-group-right button:active,
+#fullscreen-btn:active,
+#sound-toggle-btn:active,
+#role-toggle:active,
+.app-nav button[aria-label='Toggle theme']:active {
+  transform: translateY(0) scale(0.985) !important;
+  border-radius: var(--radius-pill, 999px) !important;
+}
+
+.theme-light .app-nav .nav-group-right .nav-btn:hover,
+.theme-light .app-nav .nav-group-right button:hover,
+.theme-light .command-header-bar .nav-group-right .nav-btn:hover,
+.theme-light .command-header-bar .nav-group-right button:hover,
+.theme-light #fullscreen-btn:hover,
+.theme-light #sound-toggle-btn:hover,
+.theme-light #role-toggle:hover,
+.theme-light .app-nav button[aria-label='Toggle theme']:hover {
+  color: #14315b !important;
+  background: rgba(255, 255, 255, 0.94) !important;
+  border-color: rgba(20, 49, 91, 0.32) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.96),
+    0 6px 14px rgba(15, 23, 42, 0.10) !important;
+  text-shadow: none !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .app-nav .nav-btn,
   .app-nav button,

@@ -1,6 +1,99 @@
 /* PRC GATE Canonical UI Stack: Layout / Pages
-   Purpose: page-level layout, input matrix layout, board/page cleanup, archive management styling, and presentation readability.
-   Legacy source modules are grouped here to preserve the verified cascade while reducing active middleware CSS entries. */
+   Purpose: page-level layout, input matrix layout, board/page cleanup, archive management styling, presentation readability, and final canvas background contract.
+   Canonical ownership: this file owns page-level background visibility after base imports. */
 
 @import url('/css/prc-dash-input-layout.css');
 @import url('/css/prc-dash-view-cleanup.css');
+
+/* Final canvas/watermark contract.
+   This intentionally overrides the original inline page body::before logo fallback. */
+html,
+body {
+  min-height: 100% !important;
+  background-color: #050c1a !important;
+  background-image: radial-gradient(circle at 50% 30%, #0c1933 0%, #050c1a 100%) !important;
+  background-attachment: fixed !important;
+}
+
+body::before {
+  content: '' !important;
+  position: fixed !important;
+  inset: 0 !important;
+  background-image: url('/assets/gate_emblem_white.png') !important;
+  background-repeat: no-repeat !important;
+  background-position: center center !important;
+  background-size: min(74vw, 1040px) auto !important;
+  opacity: 0.125 !important;
+  filter: drop-shadow(0 0 22px rgba(56, 189, 248, 0.18)) !important;
+  mix-blend-mode: screen !important;
+  pointer-events: none !important;
+  z-index: 0 !important;
+}
+
+body::after {
+  content: '' !important;
+  position: fixed !important;
+  inset: 0 !important;
+  pointer-events: none !important;
+  z-index: 0 !important;
+  background:
+    radial-gradient(circle at 50% 30%, rgba(56, 189, 248, 0.14), transparent 32%),
+    radial-gradient(circle at 18% 14%, rgba(14, 165, 233, 0.10), transparent 30%),
+    radial-gradient(circle at 78% 18%, rgba(59, 130, 246, 0.09), transparent 34%),
+    linear-gradient(180deg, rgba(5, 12, 26, 0.12), rgba(5, 12, 26, 0.34)) !important;
+}
+
+.app-container,
+#app-root,
+main,
+.page {
+  background-color: transparent !important;
+}
+
+body.theme-light,
+.theme-light body {
+  background-color: #f4f6f9 !important;
+  background-image: radial-gradient(circle at 50% 30%, #ffffff 0%, #eef2f6 100%) !important;
+}
+
+body.theme-light::before,
+.theme-light body::before {
+  background-image: url('/assets/gate_emblem_blue.png') !important;
+  opacity: 0.15 !important;
+  filter: drop-shadow(0 0 14px rgba(2, 132, 199, 0.10)) grayscale(0.08) !important;
+  mix-blend-mode: multiply !important;
+}
+
+body.theme-light::after,
+.theme-light body::after {
+  background:
+    radial-gradient(circle at 18% 14%, rgba(56, 189, 248, 0.16), transparent 30%),
+    radial-gradient(circle at 78% 18%, rgba(37, 99, 235, 0.08), transparent 32%),
+    radial-gradient(circle at 66% 84%, rgba(20, 184, 166, 0.055), transparent 34%),
+    radial-gradient(circle at 50% 48%, rgba(255, 255, 255, 0.38), transparent 48%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(226, 232, 240, 0.09)) !important;
+}
+
+.fullscreen-board::before {
+  background-size: min(78vw, 1120px) auto !important;
+  opacity: 0.115 !important;
+}
+
+body.theme-light.fullscreen-board::before,
+.theme-light body.fullscreen-board::before {
+  background-image: url('/assets/gate_emblem_blue.png') !important;
+  opacity: 0.15 !important;
+}
+
+@media (max-width: 768px) {
+  body::before {
+    background-size: 92vw auto !important;
+    opacity: 0.09 !important;
+  }
+
+  body.theme-light::before,
+  .theme-light body::before {
+    background-image: url('/assets/gate_emblem_blue.png') !important;
+    opacity: 0.15 !important;
+  }
+}

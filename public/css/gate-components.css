@@ -1,6 +1,6 @@
 /* PRC GATE Canonical UI Stack: Components / Cards / Modals / Buttons
    Purpose: danger actions, navigation polish, modal layers, dorm cards, processing modal, role/action components.
-   Legacy source modules are grouped here to preserve the verified cascade while reducing active middleware CSS entries. */
+   Canonical ownership: this file now owns the final navigation/header component contract. */
 
 @import url('/css/prc-dash-danger-actions.css');
 @import url('/css/prc-dash-nav-compact.css');
@@ -8,3 +8,574 @@
 @import url('/css/prc-dash-modal-layer.css');
 @import url('/css/prc-dash-dorm-cards.css');
 @import url('/css/prc-dash-modal-systems.css');
+
+/* ======================================================================
+   GATE CANONICAL HEADER COMPONENT 2.0
+   One glass surface / one logo lane / one nav system / one mobile pattern.
+   ====================================================================== */
+.app-nav,
+.app-nav.command-header-bar,
+.command-header-bar {
+  --gate-header-brand-width: clamp(146px, 14vw, 204px);
+  --gate-header-height: 64px;
+  --gate-header-pad-x: clamp(0.72rem, 1.15vw, 1.1rem);
+  position: fixed !important;
+  top: 32px !important;
+  left: 0 !important;
+  right: 0 !important;
+  z-index: 9998 !important;
+  display: grid !important;
+  grid-template-columns: var(--gate-header-brand-width) minmax(0, 1fr) max-content !important;
+  grid-template-areas: "brand nav tools" !important;
+  align-items: center !important;
+  gap: 0.62rem !important;
+  min-height: var(--gate-header-height) !important;
+  height: auto !important;
+  padding: 0.55rem var(--gate-header-pad-x) !important;
+  overflow: visible !important;
+  isolation: isolate !important;
+  box-sizing: border-box !important;
+  background:
+    linear-gradient(180deg, rgba(20, 49, 91, 0.84), rgba(6, 12, 24, 0.74)),
+    radial-gradient(circle at 16% 0%, rgba(184, 190, 199, 0.16), transparent 36%),
+    var(--gate-glass-bg-strong, rgba(8, 18, 31, 0.88)) !important;
+  border-top: 1px solid rgba(184, 190, 199, 0.14) !important;
+  border-bottom: 1px solid rgba(184, 190, 199, 0.26) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 14px 34px rgba(0, 0, 0, 0.34) !important;
+  -webkit-backdrop-filter: blur(var(--gate-glass-blur-strong, 24px)) saturate(1.24) !important;
+  backdrop-filter: blur(var(--gate-glass-blur-strong, 24px)) saturate(1.24) !important;
+}
+
+.app-nav::before,
+.app-nav.command-header-bar::before,
+.command-header-bar::before {
+  content: '' !important;
+  grid-area: brand !important;
+  display: block !important;
+  justify-self: start !important;
+  align-self: center !important;
+  width: var(--gate-header-brand-width) !important;
+  min-width: 0 !important;
+  height: 42px !important;
+  min-height: 42px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: url('/assets/gate_emblem_small.png') no-repeat left center / contain !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+  filter: drop-shadow(0 0 10px rgba(184, 190, 199, 0.14)) !important;
+}
+
+.app-nav::after,
+.app-nav.command-header-bar::after,
+.command-header-bar::after {
+  content: '' !important;
+  position: absolute !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  height: 1px !important;
+  pointer-events: none !important;
+  background: linear-gradient(90deg, transparent, rgba(184, 190, 199, 0.62), rgba(0, 122, 51, 0.34), transparent) !important;
+  box-shadow: none !important;
+  opacity: 0.9 !important;
+}
+
+#main-nav-menu,
+#nav-links,
+.nav-group-left {
+  grid-area: nav !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 0.38rem !important;
+  min-width: 0 !important;
+  width: 100% !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  scrollbar-width: none !important;
+  padding: 0.08rem !important;
+  margin: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+#main-nav-menu::-webkit-scrollbar,
+#nav-links::-webkit-scrollbar,
+.nav-group-left::-webkit-scrollbar {
+  display: none !important;
+}
+
+.app-nav > div:last-child,
+.app-nav .nav-group-right,
+.command-header-bar .nav-group-right {
+  grid-area: tools !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 0.38rem !important;
+  min-width: 0 !important;
+  width: auto !important;
+  margin: 0 !important;
+  padding-left: 0.58rem !important;
+  border-left: 1px solid rgba(184, 190, 199, 0.18) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.app-nav .nav-btn,
+.app-nav button,
+.command-header-bar .nav-btn,
+.command-header-bar button,
+#main-nav-menu .nav-btn,
+#nav-links .nav-btn,
+#mobile-menu-trigger,
+#fullscreen-btn,
+#sound-toggle-btn,
+#role-toggle,
+#week-group-display,
+.app-nav button[aria-label='Toggle theme'] {
+  position: relative !important;
+  isolation: isolate !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-sizing: border-box !important;
+  height: 38px !important;
+  min-height: 38px !important;
+  max-height: 38px !important;
+  min-width: 0 !important;
+  padding: 0 0.78rem !important;
+  border: 1px solid rgba(184, 190, 199, 0.23) !important;
+  border-radius: var(--radius-pill, 999px) !important;
+  background: linear-gradient(145deg, rgba(184, 190, 199, 0.13), rgba(184, 190, 199, 0.035)) !important;
+  color: var(--text-soft, #b8bec7) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 5px 12px rgba(0, 0, 0, 0.14) !important;
+  -webkit-backdrop-filter: blur(14px) saturate(1.18) !important;
+  backdrop-filter: blur(14px) saturate(1.18) !important;
+  font-size: 0.68rem !important;
+  font-weight: 900 !important;
+  line-height: 1 !important;
+  letter-spacing: 0.055em !important;
+  text-transform: uppercase !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  text-shadow: none !important;
+  transform: none !important;
+  transition:
+    background 150ms cubic-bezier(.2,.8,.2,1),
+    border-color 150ms cubic-bezier(.2,.8,.2,1),
+    box-shadow 150ms cubic-bezier(.2,.8,.2,1),
+    color 150ms cubic-bezier(.2,.8,.2,1),
+    transform 150ms cubic-bezier(.2,.8,.2,1) !important;
+  will-change: auto !important;
+}
+
+.app-nav .nav-btn::before,
+.app-nav button::before,
+.command-header-bar .nav-btn::before,
+.command-header-bar button::before,
+#mobile-menu-trigger::before {
+  content: '' !important;
+  position: absolute !important;
+  inset: 1px !important;
+  z-index: -1 !important;
+  border-radius: inherit !important;
+  pointer-events: none !important;
+  background: radial-gradient(circle at 50% 0%, rgba(184, 190, 199, 0.22), transparent 62%) !important;
+  opacity: 0 !important;
+  transition: opacity 150ms cubic-bezier(.2,.8,.2,1) !important;
+}
+
+.app-nav .nav-btn:hover,
+.app-nav button:hover,
+.command-header-bar .nav-btn:hover,
+.command-header-bar button:hover,
+#mobile-menu-trigger:hover {
+  color: var(--text, #ffffff) !important;
+  background: linear-gradient(145deg, rgba(184, 190, 199, 0.18), rgba(20, 49, 91, 0.22)) !important;
+  border-color: rgba(184, 190, 199, 0.48) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    0 7px 16px rgba(0, 0, 0, 0.18) !important;
+  transform: translateY(-1px) !important;
+}
+
+.app-nav .nav-btn:hover::before,
+.app-nav button:hover::before,
+.command-header-bar .nav-btn:hover::before,
+.command-header-bar button:hover::before,
+#mobile-menu-trigger:hover::before,
+#mobile-menu-trigger[aria-expanded='true']::before {
+  opacity: 1 !important;
+}
+
+.app-nav .nav-btn:active,
+.app-nav button:active,
+.command-header-bar .nav-btn:active,
+.command-header-bar button:active,
+#mobile-menu-trigger:active {
+  transform: translateY(0) scale(0.985) !important;
+  border-radius: var(--radius-pill, 999px) !important;
+}
+
+.app-nav .nav-btn:focus-visible,
+.app-nav button:focus-visible,
+.command-header-bar .nav-btn:focus-visible,
+.command-header-bar button:focus-visible,
+#mobile-menu-trigger:focus-visible {
+  outline: 2px solid rgba(184, 190, 199, 0.92) !important;
+  outline-offset: 2px !important;
+  box-shadow:
+    0 0 0 5px rgba(184, 190, 199, 0.20),
+    inset 0 1px 0 rgba(255, 255, 255, 0.16) !important;
+}
+
+.app-nav .nav-btn.active,
+.app-nav .nav-btn.active-page-state,
+.app-nav .nav-btn.current-page,
+.app-nav .nav-btn[aria-current='page'],
+#main-nav-menu .active-page-state,
+#main-nav-menu .current-page,
+#nav-links .active-page-state,
+#nav-links .current-page {
+  color: #ffffff !important;
+  background: linear-gradient(145deg, rgba(0, 122, 51, 0.34), rgba(20, 49, 91, 0.42)) !important;
+  border-color: rgba(0, 122, 51, 0.58) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    0 0 0 1px rgba(0, 122, 51, 0.16),
+    0 7px 16px rgba(0, 0, 0, 0.18) !important;
+  text-shadow: none !important;
+}
+
+#week-group-display {
+  color: #d8f5e3 !important;
+  background: linear-gradient(145deg, rgba(0, 122, 51, 0.22), rgba(0, 122, 51, 0.08)) !important;
+  border-color: rgba(0, 122, 51, 0.42) !important;
+  font-variant-numeric: tabular-nums !important;
+}
+
+#role-toggle {
+  color: #ffd7df !important;
+  background: linear-gradient(145deg, rgba(114, 5, 34, 0.24), rgba(114, 5, 34, 0.08)) !important;
+  border-color: rgba(114, 5, 34, 0.46) !important;
+}
+
+#role-toggle:hover {
+  color: #ffffff !important;
+  border-color: rgba(248, 113, 113, 0.52) !important;
+}
+
+.app-nav button[aria-label='Toggle theme'] {
+  width: 38px !important;
+  min-width: 38px !important;
+  padding: 0 !important;
+}
+
+#mobile-menu-trigger.mobile-only-control {
+  display: none !important;
+}
+
+body:not(.fullscreen-board) .page,
+body:not(.fullscreen-board) #page-squadron.gate-squadron-page {
+  padding-top: 108px !important;
+}
+
+.fullscreen-board .app-nav,
+.fullscreen-board .app-nav.command-header-bar {
+  display: none !important;
+}
+
+.fullscreen-board #page-board,
+.fullscreen-board #page-squadron.gate-squadron-page {
+  padding-top: 32px !important;
+}
+
+.theme-light .app-nav,
+.theme-light .app-nav.command-header-bar,
+.theme-light .command-header-bar {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(238, 243, 248, 0.76)),
+    radial-gradient(circle at 16% 0%, rgba(20, 49, 91, 0.08), transparent 36%) !important;
+  border-top-color: rgba(255, 255, 255, 0.92) !important;
+  border-bottom-color: rgba(20, 49, 91, 0.18) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.92),
+    0 10px 24px rgba(15, 23, 42, 0.10) !important;
+}
+
+.theme-light .app-nav::before,
+.theme-light .app-nav.command-header-bar::before,
+.theme-light .command-header-bar::before {
+  filter: drop-shadow(0 0 10px rgba(20, 49, 91, 0.08)) !important;
+}
+
+.theme-light .app-nav .nav-btn,
+.theme-light .app-nav button,
+.theme-light .command-header-bar .nav-btn,
+.theme-light .command-header-bar button,
+.theme-light #mobile-menu-trigger,
+.theme-light #fullscreen-btn,
+.theme-light #sound-toggle-btn,
+.theme-light #role-toggle,
+.theme-light #week-group-display,
+.theme-light .app-nav button[aria-label='Toggle theme'] {
+  color: #14315b !important;
+  background: rgba(255, 255, 255, 0.74) !important;
+  border-color: rgba(20, 49, 91, 0.16) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.92),
+    0 4px 10px rgba(15, 23, 42, 0.07) !important;
+}
+
+.theme-light .app-nav .nav-btn:hover,
+.theme-light .app-nav button:hover,
+.theme-light .command-header-bar .nav-btn:hover,
+.theme-light .command-header-bar button:hover,
+.theme-light #mobile-menu-trigger:hover {
+  color: #14315b !important;
+  background: rgba(255, 255, 255, 0.94) !important;
+  border-color: rgba(20, 49, 91, 0.32) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.96),
+    0 6px 14px rgba(15, 23, 42, 0.10) !important;
+}
+
+.theme-light .app-nav .nav-btn.active,
+.theme-light .app-nav .nav-btn.active-page-state,
+.theme-light .app-nav .nav-btn.current-page,
+.theme-light .app-nav .nav-btn[aria-current='page'],
+.theme-light #main-nav-menu .active-page-state,
+.theme-light #main-nav-menu .current-page,
+.theme-light #nav-links .active-page-state,
+.theme-light #nav-links .current-page {
+  color: #ffffff !important;
+  background: linear-gradient(145deg, #14315b, #244d80) !important;
+  border-color: rgba(20, 49, 91, 0.42) !important;
+}
+
+.theme-light #week-group-display {
+  color: #14532d !important;
+  border-color: rgba(0, 122, 51, 0.26) !important;
+}
+
+.theme-light #role-toggle {
+  color: #720522 !important;
+  border-color: rgba(114, 5, 34, 0.24) !important;
+}
+
+@media (min-width: 768px) and (max-width: 1199px) {
+  .app-nav,
+  .app-nav.command-header-bar,
+  .command-header-bar {
+    --gate-header-brand-width: clamp(126px, 15vw, 166px);
+    gap: 0.45rem !important;
+    padding-left: 0.62rem !important;
+    padding-right: 0.62rem !important;
+  }
+
+  .app-nav .nav-btn,
+  .app-nav button,
+  .command-header-bar .nav-btn,
+  .command-header-bar button,
+  #week-group-display {
+    height: 36px !important;
+    min-height: 36px !important;
+    max-height: 36px !important;
+    padding-left: 0.58rem !important;
+    padding-right: 0.58rem !important;
+    font-size: 0.60rem !important;
+    letter-spacing: 0.038em !important;
+  }
+
+  .app-nav button[aria-label='Toggle theme'] {
+    width: 36px !important;
+    min-width: 36px !important;
+  }
+}
+
+@media (max-width: 767px) {
+  .app-nav,
+  .app-nav.command-header-bar,
+  .command-header-bar {
+    --gate-header-brand-width: min(42vw, 132px);
+    grid-template-columns: var(--gate-header-brand-width) minmax(0, 1fr) !important;
+    grid-template-areas:
+      "brand menu"
+      "tools tools" !important;
+    gap: 0.42rem !important;
+    min-height: 128px !important;
+    padding: 0.5rem 0.62rem 0.58rem !important;
+  }
+
+  .app-nav::before,
+  .app-nav.command-header-bar::before,
+  .command-header-bar::before {
+    height: 38px !important;
+    min-height: 38px !important;
+  }
+
+  #mobile-menu-trigger.mobile-only-control {
+    grid-area: menu !important;
+    display: inline-flex !important;
+    justify-self: end !important;
+    width: min(34vw, 124px) !important;
+    min-width: 96px !important;
+    height: 40px !important;
+    min-height: 40px !important;
+    max-height: 40px !important;
+    padding: 0 0.72rem !important;
+    font-size: 0.68rem !important;
+  }
+
+  #main-nav-menu,
+  #nav-links,
+  .nav-group-left {
+    position: absolute !important;
+    top: calc(100% + 6px) !important;
+    left: 0.62rem !important;
+    right: 0.62rem !important;
+    z-index: 100000 !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 0.44rem !important;
+    width: auto !important;
+    max-height: min(72vh, 520px) !important;
+    padding: 0.62rem !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    border: 1px solid rgba(184, 190, 199, 0.18) !important;
+    border-radius: var(--radius-xl, 1.35rem) !important;
+    background:
+      radial-gradient(circle at 18% 0%, rgba(184, 190, 199, 0.16), transparent 38%),
+      linear-gradient(145deg, rgba(20, 49, 91, 0.96), rgba(6, 12, 24, 0.96)) !important;
+    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.62) !important;
+    -webkit-backdrop-filter: blur(22px) saturate(1.32) !important;
+    backdrop-filter: blur(22px) saturate(1.32) !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+    transform: translateY(-8px) !important;
+    transition: opacity 160ms cubic-bezier(.2,.8,.2,1), transform 160ms cubic-bezier(.2,.8,.2,1), visibility 160ms !important;
+  }
+
+  #main-nav-menu.mobile-dropdown-active,
+  #nav-links.mobile-dropdown-active,
+  .nav-group-left.mobile-dropdown-active {
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+    transform: translateY(0) !important;
+  }
+
+  #main-nav-menu .nav-btn,
+  #nav-links .nav-btn,
+  .nav-group-left .nav-btn,
+  .nav-group-left a,
+  .nav-group-left button {
+    width: 100% !important;
+    min-height: 46px !important;
+    height: 46px !important;
+    justify-content: flex-start !important;
+    padding: 0 0.95rem !important;
+    font-size: 0.86rem !important;
+    letter-spacing: 0.055em !important;
+  }
+
+  .app-nav > div:last-child,
+  .app-nav .nav-group-right,
+  .command-header-bar .nav-group-right {
+    grid-area: tools !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) 42px !important;
+    gap: 0.38rem !important;
+    width: 100% !important;
+    padding: 0 !important;
+    border-left: 0 !important;
+  }
+
+  #week-group-display {
+    display: none !important;
+  }
+
+  #role-toggle,
+  #fullscreen-btn,
+  #sound-toggle-btn,
+  .app-nav button[aria-label='Toggle theme'] {
+    width: 100% !important;
+    height: 38px !important;
+    min-height: 38px !important;
+    max-height: 38px !important;
+    padding: 0 0.42rem !important;
+    font-size: 0.55rem !important;
+    letter-spacing: 0.034em !important;
+  }
+
+  .app-nav button[aria-label='Toggle theme'] {
+    width: 42px !important;
+    min-width: 42px !important;
+    padding: 0 !important;
+    justify-self: end !important;
+  }
+
+  body:not(.fullscreen-board) .page,
+  body:not(.fullscreen-board) #page-squadron.gate-squadron-page {
+    padding-top: 168px !important;
+  }
+
+  .theme-light #main-nav-menu,
+  .theme-light #nav-links,
+  .theme-light .nav-group-left {
+    background:
+      radial-gradient(circle at 18% 0%, rgba(20, 49, 91, 0.08), transparent 38%),
+      linear-gradient(145deg, rgba(255, 255, 255, 0.98), rgba(238, 243, 248, 0.96)) !important;
+    box-shadow: 0 22px 42px rgba(15, 23, 42, 0.16) !important;
+    border-color: rgba(20, 49, 91, 0.18) !important;
+  }
+}
+
+@media (max-width: 420px) {
+  .app-nav,
+  .app-nav.command-header-bar,
+  .command-header-bar {
+    --gate-header-brand-width: 96px;
+    padding-left: 0.5rem !important;
+    padding-right: 0.5rem !important;
+  }
+
+  #mobile-menu-trigger.mobile-only-control {
+    min-width: 92px !important;
+    max-width: 112px !important;
+    padding-left: 0.58rem !important;
+    padding-right: 0.58rem !important;
+  }
+
+  #role-toggle,
+  #fullscreen-btn,
+  #sound-toggle-btn {
+    font-size: 0.50rem !important;
+    padding-left: 0.28rem !important;
+    padding-right: 0.28rem !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-nav .nav-btn,
+  .app-nav button,
+  #mobile-menu-trigger,
+  #main-nav-menu,
+  #nav-links,
+  .nav-group-left {
+    transition: none !important;
+    transform: none !important;
+  }
+}

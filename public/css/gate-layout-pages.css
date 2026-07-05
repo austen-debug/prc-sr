@@ -4,6 +4,7 @@
 
 @import url('/css/prc-dash-input-layout.css');
 @import url('/css/prc-dash-view-cleanup.css');
+@import url('/css/gate-archive-management.css');
 
 /* Final canvas/watermark contract.
    This intentionally overrides the original inline page body::before logo fallback. */

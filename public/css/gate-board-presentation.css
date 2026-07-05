@@ -1,4 +1,4 @@
-/* PRC GATE final board presentation alignment pass.
+/* PRC GATE board presentation correction.
    Scope: Status Board and Squadron Board only. */
 
 :root {
@@ -16,22 +16,15 @@
   --gate-board-timer-size: clamp(1.82rem, 2.04vw, 3rem);
   --gate-board-load-size: clamp(1.18rem, 1.18vw, 1.9rem);
   --gate-board-column-title-size: clamp(0.74rem, 0.72vw, 0.92rem);
-  --gate-board-distance-shadow: 0 1px 0 rgba(255,255,255,0.08), 0 0 16px rgba(184,190,199,0.14);
 }
 
 #page-board,
 #page-squadron.gate-squadron-page {
   --gate-current-board-top: 104px;
-  box-sizing: border-box !important;
-  min-height: 100vh !important;
-  height: 100vh !important;
+  height: auto !important;
+  min-height: calc(100vh - var(--gate-current-board-top)) !important;
   padding: var(--gate-current-board-top) var(--gate-board-safe-x) var(--gate-board-safe-y) !important;
-  overflow: hidden !important;
-}
-
-#page-board .board-header,
-#page-squadron .gate-squadron-shell {
-  gap: var(--gate-board-gap) !important;
+  overflow: visible !important;
 }
 
 #page-board .dorm-dashboard,
@@ -39,15 +32,7 @@
   display: grid !important;
   grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
   gap: var(--gate-board-column-gap) !important;
-  align-items: stretch !important;
-  min-height: 0 !important;
-}
-
-#page-board .dorm-column,
-#page-squadron .dorm-column {
-  min-width: 0 !important;
-  min-height: 0 !important;
-  border-radius: var(--gate-board-radius) !important;
+  align-items: start !important;
 }
 
 #page-board .dorm-col-content,
@@ -55,11 +40,9 @@
   display: grid !important;
   align-content: start !important;
   gap: clamp(0.5rem, 0.54vw, 0.74rem) !important;
-  min-height: 0 !important;
-  overflow-y: auto !important;
-  overflow-x: hidden !important;
+  overflow: visible !important;
+  max-height: none !important;
   padding: clamp(0.48rem, 0.52vw, 0.72rem) !important;
-  scrollbar-width: thin !important;
 }
 
 #page-board .dorm-col-header,
@@ -77,16 +60,6 @@
   line-height: 1 !important;
   letter-spacing: 0.115em !important;
   text-transform: uppercase !important;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.10) !important;
-}
-
-#page-board .metric-block,
-#page-squadron .gate-squadron-metric,
-#page-board .gate-dorm-card,
-#page-squadron .gate-dorm-card,
-#page-board .dorm-card,
-#page-squadron .dorm-card {
-  border-radius: var(--gate-board-radius) !important;
 }
 
 #page-board .gate-dorm-card,
@@ -95,6 +68,7 @@
 #page-squadron .dorm-card {
   min-height: var(--gate-board-card-min) !important;
   padding: var(--gate-board-card-pad-y) var(--gate-board-card-pad-x) !important;
+  border-radius: var(--gate-board-radius) !important;
 }
 
 #page-board .gate-dorm-name,
@@ -102,13 +76,11 @@
 #page-board .dorm-id-text,
 #page-squadron .dorm-id-text {
   font-size: var(--gate-board-name-size) !important;
-  text-shadow: var(--gate-board-distance-shadow) !important;
 }
 
 #page-board .gate-dorm-info,
 #page-squadron .gate-dorm-info {
   font-size: var(--gate-board-info-size) !important;
-  line-height: 1.08 !important;
 }
 
 #page-board .gate-dorm-status,
@@ -116,43 +88,25 @@
   min-height: clamp(1.55rem, 1.34vw, 2rem) !important;
   padding: clamp(0.28rem, 0.32vw, 0.45rem) clamp(0.68rem, 0.72vw, 0.92rem) !important;
   font-size: var(--gate-board-status-size) !important;
-  line-height: 1 !important;
 }
 
 #page-board .gate-dorm-timer,
 #page-squadron .gate-dorm-timer {
   font-size: var(--gate-board-timer-size) !important;
-  text-shadow: var(--gate-board-distance-shadow) !important;
 }
 
 #page-board .gate-dorm-load,
 #page-squadron .gate-dorm-load {
   font-size: var(--gate-board-load-size) !important;
-  text-shadow: var(--gate-board-distance-shadow) !important;
 }
 
-#page-board .gate-dorm-progress,
-#page-squadron .gate-dorm-progress {
-  height: clamp(5px, 0.32vw, 7px) !important;
-}
-
-/* Wide-but-short browser windows are not true 4K/TV surfaces. */
+/* Short ultra-wide windows are not true TV/4K presentation surfaces. */
 @media (min-width: 2560px) and (max-height: 1399px) {
   :root {
-    --gate-board-safe-x: 1rem;
-    --gate-board-safe-y: 0.78rem;
-    --gate-board-gap: 0.68rem;
-    --gate-board-column-gap: 0.86rem;
-    --gate-board-radius: 1.08rem;
     --gate-board-card-min: clamp(150px, 13.8vh, 184px);
-    --gate-board-card-pad-y: 0.82rem;
-    --gate-board-card-pad-x: 0.92rem;
     --gate-board-name-size: clamp(2.55rem, 1.85vw, 3.35rem);
-    --gate-board-info-size: clamp(0.72rem, 0.5vw, 0.86rem);
-    --gate-board-status-size: clamp(0.68rem, 0.46vw, 0.8rem);
     --gate-board-timer-size: clamp(2rem, 1.72vw, 3rem);
     --gate-board-load-size: clamp(1.3rem, 0.98vw, 1.88rem);
-    --gate-board-column-title-size: 0.8rem;
   }
 
   #page-board,
@@ -161,26 +115,11 @@
   }
 }
 
-/* True 4K requires enough vertical space. */
-@media (min-width: 2560px) and (min-height: 1400px) {
-  :root {
-    --gate-board-card-min: clamp(190px, 15.8vh, 270px);
-    --gate-board-name-size: clamp(3.1rem, 1.85vw, 4.28rem);
-    --gate-board-timer-size: clamp(2.72rem, 1.7vw, 4rem);
-    --gate-board-load-size: clamp(1.64rem, 0.96vw, 2.36rem);
-  }
-
-  #page-board,
-  #page-squadron.gate-squadron-page {
-    --gate-current-board-top: 112px;
-  }
-}
-
-/* Squadron Board limited-view header stack: tighter and aligned to board content. */
+/* Squadron Board limited-view header stack. */
 #page-squadron .gate-squadron-shell {
-  min-height: calc(100vh - var(--gate-current-board-top) - var(--gate-board-safe-y)) !important;
+  min-height: auto !important;
   display: grid !important;
-  grid-template-rows: auto auto minmax(0, 1fr) !important;
+  grid-template-rows: auto auto auto !important;
   align-content: start !important;
   gap: 0.58rem !important;
 }
@@ -194,56 +133,62 @@
   border-radius: var(--gate-board-radius) !important;
 }
 
-#page-squadron .gate-squadron-subtitle {
-  font-size: clamp(0.92rem, 0.86vw, 1.18rem) !important;
-  letter-spacing: 0.16em !important;
-  line-height: 1.1 !important;
-}
-
 #page-squadron .gate-squadron-header {
-  width: fit-content !important;
-  max-width: calc(100vw - 2rem) !important;
-  min-height: clamp(3.25rem, 3.5vw, 4.7rem) !important;
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(7.4rem, 1fr)) !important;
+  gap: 0.42rem !important;
+  width: min(540px, calc(100vw - 2rem)) !important;
+  max-width: 100% !important;
+  min-height: 0 !important;
   margin: 0 auto !important;
-  padding: 0.34rem !important;
-  border-radius: 999px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  overflow: visible !important;
 }
 
 #page-squadron .gate-squadron-metric {
-  min-height: clamp(3rem, 3.05vw, 4.1rem) !important;
-  padding: 0.56rem 0.68rem !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) max-content !important;
+  align-items: center !important;
+  gap: 0.52rem !important;
+  min-width: 0 !important;
+  min-height: 3.2rem !important;
+  padding: 0.48rem 0.72rem !important;
+  border: 1px solid rgba(184, 190, 199, 0.24) !important;
+  border-radius: 1rem !important;
+  background: linear-gradient(145deg, rgba(20, 49, 91, 0.30), rgba(8, 18, 31, 0.34)) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.10), 0 8px 18px rgba(0,0,0,0.14) !important;
+}
+
+#page-squadron .gate-squadron-metric-label {
+  min-width: 0 !important;
+  color: var(--text-soft, #b8bec7) !important;
+  font-size: clamp(0.56rem, 0.44vw, 0.68rem) !important;
+  font-weight: 950 !important;
+  letter-spacing: 0.12em !important;
+  line-height: 1 !important;
+  text-transform: uppercase !important;
+  white-space: nowrap !important;
 }
 
 #page-squadron .gate-squadron-metric-value {
-  font-size: clamp(1.05rem, 1.42vw, 1.76rem) !important;
+  color: var(--text, #ffffff) !important;
+  font-size: clamp(1.26rem, 1.22vw, 1.78rem) !important;
+  font-weight: 950 !important;
+  letter-spacing: -0.04em !important;
   line-height: 1 !important;
+  text-align: right !important;
+  font-variant-numeric: tabular-nums !important;
+  white-space: nowrap !important;
 }
 
-/* Phone/emergency access remains scroll-first. */
 @media (max-width: 767px) {
-  #page-board,
-  #page-squadron.gate-squadron-page {
-    height: auto !important;
-    min-height: 100vh !important;
-    overflow-y: auto !important;
-    overflow-x: hidden !important;
-  }
-
   #page-board .dorm-dashboard,
-  #page-squadron .dorm-dashboard {
+  #page-squadron .dorm-dashboard,
+  #page-squadron .gate-squadron-header {
     grid-template-columns: minmax(0, 1fr) !important;
   }
-
-  #page-board .dorm-col-content,
-  #page-squadron .dorm-col-content {
-    max-height: none !important;
-    overflow: visible !important;
-  }
-}
-
-/* Fullscreen presentation keeps the clean TV crop. */
-.fullscreen-board #page-board,
-.fullscreen-board #page-squadron.gate-squadron-page {
-  --gate-current-board-top: 32px;
-  padding-top: 32px !important;
 }

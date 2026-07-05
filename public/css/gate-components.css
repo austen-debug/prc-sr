@@ -1,0 +1,10 @@
+/* PRC GATE Canonical UI Stack: Components / Cards / Modals / Buttons
+   Purpose: danger actions, navigation polish, modal layers, dorm cards, processing modal, role/action components.
+   Legacy source modules are grouped here to preserve the verified cascade while reducing active middleware CSS entries. */
+
+@import url('/css/prc-dash-danger-actions.css');
+@import url('/css/prc-dash-nav-compact.css');
+@import url('/css/prc-dash-nav-polish.css');
+@import url('/css/prc-dash-modal-layer.css');
+@import url('/css/prc-dash-dorm-cards.css');
+@import url('/css/prc-dash-modal-systems.css');

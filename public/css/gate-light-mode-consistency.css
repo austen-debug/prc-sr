@@ -1,0 +1,296 @@
+/* PRC GATE Light Mode Consistency Contract
+   Scope: final light-mode override for app surfaces, board cards, modals, dorm modal, inputs, and contrast. */
+
+body.theme-light,
+.theme-light body {
+  color-scheme: light !important;
+  color: #0f172a !important;
+  background-color: #f4f6f9 !important;
+}
+
+body.theme-light {
+  --bg: #f4f6f9;
+  --bg-soft: #eef3f8;
+  --surface: rgba(255, 255, 255, 0.84);
+  --surface-alt: rgba(244, 247, 251, 0.92);
+  --surface-solid: #ffffff;
+  --text: #0f172a;
+  --text-muted: #53657a;
+  --text-soft: #14315b;
+  --border: rgba(20, 49, 91, 0.18);
+  --glass-bg: linear-gradient(145deg, rgba(255, 255, 255, 0.92), rgba(241, 246, 251, 0.74));
+  --glass-bg-strong: linear-gradient(145deg, rgba(255, 255, 255, 0.98), rgba(238, 243, 248, 0.88));
+  --glass-border: rgba(20, 49, 91, 0.18);
+  --glass-border-strong: rgba(20, 49, 91, 0.32);
+  --glass-highlight: inset 0 1px 0 rgba(255,255,255,0.98), inset 1px 0 0 rgba(255,255,255,0.62);
+  --shadow-soft: 0 10px 24px rgba(15, 23, 42, 0.10);
+  --shadow-medium: 0 16px 36px rgba(15, 23, 42, 0.14);
+  --shadow-strong: 0 26px 70px rgba(15, 23, 42, 0.22);
+  --gate-glass-bg: var(--glass-bg);
+  --gate-glass-bg-strong: var(--glass-bg-strong);
+  --gate-glass-bg-soft: rgba(255,255,255,0.74);
+  --gate-glass-border: var(--glass-border);
+  --gate-glass-border-strong: var(--glass-border-strong);
+  --gate-glass-edge: var(--glass-highlight);
+  --gate-shadow-soft: var(--shadow-soft);
+  --gate-shadow-medium: var(--shadow-medium);
+  --gate-shadow-strong: var(--shadow-strong);
+}
+
+body.theme-light .page,
+body.theme-light .app-container,
+body.theme-light main {
+  color: #0f172a !important;
+}
+
+body.theme-light .surface,
+body.theme-light .gate-glass,
+body.theme-light .metric-block,
+body.theme-light .proc-card,
+body.theme-light .dorm-column,
+body.theme-light .gate-squadron-masthead,
+body.theme-light .gate-squadron-header,
+body.theme-light .gate-archive-toolbar,
+body.theme-light .gate-archive-year,
+body.theme-light .gate-archive-month,
+body.theme-light .gate-archive-record-card,
+body.theme-light .modal-content {
+  color: #0f172a !important;
+  background: linear-gradient(145deg, rgba(255,255,255,0.94), rgba(240,245,250,0.78)) !important;
+  border-color: rgba(20, 49, 91, 0.18) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.96), 0 10px 24px rgba(15,23,42,0.10) !important;
+}
+
+body.theme-light .tactical-glass-card,
+body.theme-light .dorm-card,
+body.theme-light .gate-dorm-card,
+body.theme-light #page-board .gate-dorm-card,
+body.theme-light #page-squadron .gate-dorm-card {
+  color: #0f172a !important;
+  background:
+    radial-gradient(circle at 18% 0%, rgba(20, 49, 91, 0.055), transparent 36%),
+    linear-gradient(145deg, rgba(255,255,255,0.96), rgba(238,243,248,0.84)) !important;
+  border-color: rgba(20, 49, 91, 0.22) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.96), 0 10px 24px rgba(15,23,42,0.10) !important;
+}
+
+body.theme-light .gate-dorm-card::after,
+body.theme-light .dorm-card::after {
+  background:
+    linear-gradient(135deg, rgba(255,255,255,0.42), transparent 28%),
+    radial-gradient(circle at 88% 0%, rgba(20,49,91,0.045), transparent 36%) !important;
+}
+
+body.theme-light .gate-dorm-name,
+body.theme-light .gate-dorm-timer,
+body.theme-light .gate-dorm-load,
+body.theme-light .dorm-id-text,
+body.theme-light .metric-value,
+body.theme-light .gate-squadron-metric-value {
+  color: #0f172a !important;
+  text-shadow: none !important;
+}
+
+body.theme-light .gate-dorm-info,
+body.theme-light .gate-dorm-airman,
+body.theme-light .gate-auditorium-location,
+body.theme-light .text-muted,
+body.theme-light .gate-squadron-metric-label,
+body.theme-light .gate-archive-record-meta,
+body.theme-light .gate-archive-toolbar-copy,
+body.theme-light .gate-archive-year-count,
+body.theme-light .gate-archive-month-count {
+  color: #53657a !important;
+}
+
+body.theme-light .dorm-col-header,
+body.theme-light #page-board .dorm-col-header,
+body.theme-light #page-squadron .dorm-col-header {
+  color: #14315b !important;
+  background: linear-gradient(145deg, rgba(255,255,255,0.96), rgba(229,236,245,0.86)) !important;
+  border-color: rgba(20, 49, 91, 0.24) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.96) !important;
+}
+
+body.theme-light .gate-dorm-top-banner.gate-band-banner,
+body.theme-light .gate-band-banner {
+  color: #064e3b !important;
+  background: linear-gradient(90deg, rgba(0,122,51,0.24), rgba(0,122,51,0.12)) !important;
+  border-color: rgba(0,122,51,0.38) !important;
+}
+
+body.theme-light .gate-dorm-top-banner.gate-space-force-banner,
+body.theme-light .gate-space-force-banner {
+  color: #14315b !important;
+  background: linear-gradient(90deg, rgba(2,132,199,0.24), rgba(2,132,199,0.12)) !important;
+  border-color: rgba(2,132,199,0.36) !important;
+}
+
+body.theme-light #page-board .gate-dorm-card.border-female,
+body.theme-light #page-board .dorm-card.border-female,
+body.theme-light #page-squadron .gate-dorm-card.border-female,
+body.theme-light #page-squadron .dorm-card.border-female {
+  border-color: rgba(114, 5, 34, 0.78) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.96), 0 10px 24px rgba(15,23,42,0.10), 0 0 0 1px rgba(114,5,34,0.16) !important;
+}
+
+/* General light-mode modal surface. */
+body.theme-light .confirm-overlay {
+  background: rgba(15, 23, 42, 0.34) !important;
+}
+
+body.theme-light .confirm-overlay > .modal-content,
+body.theme-light #confirm-dialog > .surface,
+body.theme-light #confirm-dialog > div,
+body.theme-light .modal-content {
+  color: #0f172a !important;
+  background:
+    radial-gradient(circle at 18% 0%, rgba(20, 49, 91, 0.075), transparent 38%),
+    linear-gradient(145deg, rgba(255,255,255,0.98), rgba(238,243,248,0.92)) !important;
+  border: 1px solid rgba(20, 49, 91, 0.20) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.98), 0 26px 70px rgba(15,23,42,0.22) !important;
+}
+
+body.theme-light .modal-content > .flex.justify-between.items-center.mb-4 {
+  color: #0f172a !important;
+  background: linear-gradient(145deg, rgba(255,255,255,0.96), rgba(229,236,245,0.86)) !important;
+  border-color: rgba(20,49,91,0.16) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.96) !important;
+}
+
+body.theme-light .modal-content h2,
+body.theme-light .modal-content h3,
+body.theme-light .modal-content label {
+  color: #14315b !important;
+}
+
+body.theme-light .modal-content input,
+body.theme-light .modal-content select,
+body.theme-light .modal-content textarea,
+body.theme-light input,
+body.theme-light select,
+body.theme-light textarea {
+  color: #0f172a !important;
+  background: rgba(255,255,255,0.88) !important;
+  border-color: rgba(20,49,91,0.22) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.84) !important;
+}
+
+body.theme-light .modal-content input::placeholder,
+body.theme-light input::placeholder,
+body.theme-light textarea::placeholder {
+  color: rgba(83,101,122,0.74) !important;
+}
+
+/* Dorm modal: same geometry and component contract as dark mode, light palette only. */
+body.theme-light #dorm-modal .modal-content {
+  width: min(92vw, 560px) !important;
+  max-width: min(92vw, 560px) !important;
+  padding: 1.18rem !important;
+  border-radius: 1.25rem !important;
+  overflow: hidden !important;
+  color: #0f172a !important;
+  background:
+    radial-gradient(circle at 18% 0%, rgba(20,49,91,0.08), transparent 38%),
+    linear-gradient(145deg, rgba(255,255,255,0.98), rgba(238,243,248,0.92)) !important;
+  border-color: rgba(20,49,91,0.20) !important;
+}
+
+body.theme-light #dorm-modal .modal-content > .flex.justify-between.items-center.mb-4 {
+  position: relative !important;
+  top: auto !important;
+  min-height: 4.15rem !important;
+  margin: -0.24rem -0.24rem 0.75rem !important;
+  padding: 0.82rem 0.95rem !important;
+  border: 1px solid rgba(20,49,91,0.16) !important;
+  border-radius: 1rem !important;
+  background: linear-gradient(145deg, rgba(255,255,255,0.96), rgba(229,236,245,0.88)) !important;
+}
+
+body.theme-light #dorm-modal #modal-dorm-name {
+  color: #0f172a !important;
+  text-shadow: none !important;
+}
+
+body.theme-light #dorm-modal .modal-content > .flex.justify-between.items-center.mb-4 > button {
+  color: #53657a !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+body.theme-light #dorm-modal .modal-content > .flex.justify-between.items-center.mb-4 > button:hover,
+body.theme-light #dorm-modal .modal-content > .flex.justify-between.items-center.mb-4 > button:focus-visible {
+  color: #14315b !important;
+  background: rgba(20,49,91,0.08) !important;
+}
+
+body.theme-light #dorm-modal #modal-dorm-info {
+  color: #53657a !important;
+  background: rgba(255,255,255,0.68) !important;
+  border-color: rgba(20,49,91,0.14) !important;
+}
+
+body.theme-light #dorm-modal .modal-content label,
+body.theme-light #dorm-modal #modal-phase-section > .text-xs,
+body.theme-light #dorm-modal #modal-load-section > .text-xs {
+  color: #14315b !important;
+}
+
+body.theme-light #dorm-modal #modal-airman-input,
+body.theme-light #dorm-modal #modal-auditorium-input,
+body.theme-light #dorm-modal #modal-load-input {
+  color: #0f172a !important;
+  background: rgba(255,255,255,0.88) !important;
+  border-color: rgba(20,49,91,0.22) !important;
+}
+
+body.theme-light #dorm-modal .phase-btn,
+body.theme-light #dorm-modal .load-btn {
+  color: #14315b !important;
+  background: linear-gradient(145deg, rgba(255,255,255,0.92), rgba(229,236,245,0.78)) !important;
+  border-color: rgba(20,49,91,0.20) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.92), 0 6px 14px rgba(15,23,42,0.08) !important;
+}
+
+body.theme-light #dorm-modal .phase-btn:hover,
+body.theme-light #dorm-modal .load-btn:hover,
+body.theme-light #dorm-modal .phase-btn:focus-visible,
+body.theme-light #dorm-modal .load-btn:focus-visible {
+  color: #0f172a !important;
+  border-color: rgba(20,49,91,0.34) !important;
+  background: rgba(255,255,255,0.98) !important;
+}
+
+body.theme-light #dorm-modal .phase-btn.selected {
+  color: #ffffff !important;
+  background: linear-gradient(135deg, #007a33, #16a34a) !important;
+  border-color: rgba(0,122,51,0.42) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.18), 0 8px 18px rgba(0,122,51,0.18) !important;
+}
+
+body.theme-light #dorm-modal #modal-load-max,
+body.theme-light #dorm-modal #modal-action-section {
+  color: #53657a !important;
+  border-color: rgba(20,49,91,0.12) !important;
+}
+
+body.theme-light .gate-processing-context-menu {
+  color: #0f172a !important;
+  background: linear-gradient(145deg, rgba(255,255,255,0.98), rgba(238,243,248,0.92)) !important;
+  border-color: rgba(20,49,91,0.18) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.96), 0 18px 42px rgba(15,23,42,0.18) !important;
+}
+
+body.theme-light .gate-processing-context-title,
+body.theme-light .gate-processing-context-action {
+  color: #14315b !important;
+}
+
+body.theme-light .gate-processing-context-subtitle {
+  color: #53657a !important;
+}
+
+body.theme-light .gate-access-denied-toast {
+  background: rgba(114,5,34,0.92) !important;
+  color: #ffffff !important;
+}

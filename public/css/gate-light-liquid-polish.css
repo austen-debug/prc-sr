@@ -1,0 +1,191 @@
+/* PRC GATE Light Liquid Polish
+   Scope: final light-mode translucency and Squadron Board title correction. */
+
+/* Restore liquid glass in light mode. The prior light-mode rescue layer made too many surfaces solid white. */
+body.theme-light .surface,
+body.theme-light .gate-glass,
+body.theme-light .metric-block,
+body.theme-light .proc-card,
+body.theme-light .dorm-column,
+body.theme-light .gate-squadron-masthead,
+body.theme-light .gate-squadron-header,
+body.theme-light .gate-archive-toolbar,
+body.theme-light .gate-archive-year,
+body.theme-light .gate-archive-month,
+body.theme-light .gate-archive-record-card,
+body.theme-light .modal-content,
+body.theme-light .tactical-glass-card,
+body.theme-light .dorm-card,
+body.theme-light .gate-dorm-card,
+body.theme-light #page-board .gate-dorm-card,
+body.theme-light #page-squadron .gate-dorm-card {
+  color: #0f172a !important;
+  background:
+    radial-gradient(circle at 18% 0%, rgba(255,255,255,0.68), transparent 38%),
+    linear-gradient(145deg, rgba(255,255,255,0.66), rgba(238,243,248,0.42)) !important;
+  border-color: rgba(20, 49, 91, 0.18) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.74),
+    0 12px 30px rgba(15,23,42,0.10) !important;
+  -webkit-backdrop-filter: blur(22px) saturate(1.42) !important;
+  backdrop-filter: blur(22px) saturate(1.42) !important;
+}
+
+body.theme-light .surface::before,
+body.theme-light .surface::after,
+body.theme-light .metric-block::before,
+body.theme-light .metric-block::after,
+body.theme-light .dorm-card::before,
+body.theme-light .gate-dorm-card::before,
+body.theme-light .dorm-card::after,
+body.theme-light .gate-dorm-card::after {
+  pointer-events: none !important;
+}
+
+body.theme-light .gate-dorm-card::after,
+body.theme-light .dorm-card::after {
+  background:
+    linear-gradient(135deg, rgba(255,255,255,0.30), transparent 26%),
+    radial-gradient(circle at 88% 0%, rgba(20,49,91,0.035), transparent 38%) !important;
+}
+
+/* Modal overlays should dim lightly without creating a flat, opaque layer. */
+body.theme-light .confirm-overlay {
+  background:
+    radial-gradient(circle at 50% 28%, rgba(255,255,255,0.18), transparent 40%),
+    rgba(15, 23, 42, 0.16) !important;
+  -webkit-backdrop-filter: blur(7px) saturate(1.12) !important;
+  backdrop-filter: blur(7px) saturate(1.12) !important;
+}
+
+body.theme-light .confirm-overlay > .modal-content,
+body.theme-light #confirm-dialog > .surface,
+body.theme-light #confirm-dialog > div,
+body.theme-light .modal-content {
+  color: #0f172a !important;
+  background:
+    radial-gradient(circle at 16% 0%, rgba(255,255,255,0.74), transparent 42%),
+    linear-gradient(145deg, rgba(255,255,255,0.72), rgba(238,243,248,0.50)) !important;
+  border-color: rgba(20,49,91,0.20) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.80),
+    0 28px 70px rgba(15,23,42,0.22) !important;
+  -webkit-backdrop-filter: blur(26px) saturate(1.48) !important;
+  backdrop-filter: blur(26px) saturate(1.48) !important;
+}
+
+body.theme-light .modal-content > .flex.justify-between.items-center.mb-4,
+body.theme-light #dorm-modal .modal-content > .flex.justify-between.items-center.mb-4 {
+  color: #0f172a !important;
+  background:
+    radial-gradient(circle at 12% 0%, rgba(255,255,255,0.64), transparent 36%),
+    linear-gradient(145deg, rgba(255,255,255,0.66), rgba(229,236,245,0.46)) !important;
+  border-color: rgba(20,49,91,0.16) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.72) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(1.36) !important;
+  backdrop-filter: blur(18px) saturate(1.36) !important;
+}
+
+/* Dorm modal keeps the modern geometry but returns to translucent light liquid glass. */
+body.theme-light #dorm-modal .modal-content {
+  background:
+    radial-gradient(circle at 16% 0%, rgba(255,255,255,0.76), transparent 42%),
+    linear-gradient(145deg, rgba(255,255,255,0.70), rgba(238,243,248,0.48)) !important;
+  border-color: rgba(20,49,91,0.20) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(1.52) !important;
+  backdrop-filter: blur(28px) saturate(1.52) !important;
+}
+
+body.theme-light #dorm-modal #modal-dorm-info,
+body.theme-light #dorm-modal #modal-airman-input,
+body.theme-light #dorm-modal #modal-auditorium-input,
+body.theme-light #dorm-modal #modal-load-input,
+body.theme-light .modal-content input,
+body.theme-light .modal-content select,
+body.theme-light .modal-content textarea {
+  color: #0f172a !important;
+  background: rgba(255,255,255,0.56) !important;
+  border-color: rgba(20,49,91,0.18) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.62) !important;
+  -webkit-backdrop-filter: blur(14px) saturate(1.22) !important;
+  backdrop-filter: blur(14px) saturate(1.22) !important;
+}
+
+body.theme-light #dorm-modal .phase-btn,
+body.theme-light #dorm-modal .load-btn,
+body.theme-light #dorm-modal #modal-load-section > .flex.gap-2.justify-center > button,
+body.theme-light #dorm-modal #modal-action-section button {
+  color: #14315b !important;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(255,255,255,0.70), transparent 62%),
+    linear-gradient(145deg, rgba(255,255,255,0.58), rgba(229,236,245,0.36)) !important;
+  border-color: rgba(20,49,91,0.18) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.68), 0 7px 16px rgba(15,23,42,0.08) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(1.28) !important;
+  backdrop-filter: blur(16px) saturate(1.28) !important;
+}
+
+body.theme-light #dorm-modal .phase-btn.selected {
+  color: #ffffff !important;
+  background: linear-gradient(135deg, rgba(0,122,51,0.92), rgba(22,163,74,0.78)) !important;
+  border-color: rgba(0,122,51,0.46) !important;
+}
+
+/* Squadron Board title: restore command-title font behavior and stop compressed/broken text. */
+#page-squadron.gate-squadron-page .gate-squadron-masthead {
+  min-height: clamp(4.15rem, 4.4vw, 5.35rem) !important;
+  padding: clamp(0.92rem, 0.95vw, 1.25rem) clamp(1.15rem, 1.35vw, 1.75rem) !important;
+  overflow: visible !important;
+}
+
+#page-squadron.gate-squadron-page .gate-squadron-subtitle {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-wrap: wrap !important;
+  gap: 0.62rem !important;
+  color: var(--text, #ffffff) !important;
+  font-size: clamp(1.05rem, 1.08vw, 1.46rem) !important;
+  font-weight: 950 !important;
+  line-height: 1.18 !important;
+  letter-spacing: 0.20em !important;
+  text-transform: uppercase !important;
+  text-align: center !important;
+  white-space: normal !important;
+  text-shadow: 0 1px 18px rgba(0,0,0,0.24) !important;
+}
+
+#page-squadron.gate-squadron-page .gate-squadron-subtitle span {
+  display: inline-flex !important;
+  align-items: center !important;
+  min-height: 1.35em !important;
+  white-space: nowrap !important;
+}
+
+#page-squadron.gate-squadron-page .gate-squadron-subtitle span + span::before {
+  content: '•' !important;
+  margin-right: 0.62rem !important;
+  color: rgba(184,190,199,0.78) !important;
+  letter-spacing: 0 !important;
+}
+
+body.theme-light #page-squadron.gate-squadron-page .gate-squadron-subtitle {
+  color: #14315b !important;
+  text-shadow: none !important;
+}
+
+body.theme-light #page-squadron.gate-squadron-page .gate-squadron-subtitle span + span::before {
+  color: rgba(20,49,91,0.42) !important;
+}
+
+@media (max-width: 767px) {
+  #page-squadron.gate-squadron-page .gate-squadron-subtitle {
+    font-size: 0.86rem !important;
+    letter-spacing: 0.12em !important;
+    gap: 0.32rem !important;
+  }
+
+  #page-squadron.gate-squadron-page .gate-squadron-subtitle span + span::before {
+    margin-right: 0.32rem !important;
+  }
+}

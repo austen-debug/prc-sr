@@ -1,8 +1,7 @@
-// PRC GATE final UI/functionality safety patch
-// Consolidated Status Board / Squadron Board display helpers.
-// Behavior-only pass: no recurring visual polling.
+// PRC GATE component contract adapter
+// Consolidated Status Board / Squadron Board / Header component boundaries.
+// Behavior-only pass: no API calls and no save logic changes.
 (function () {
-  let stylesReady = false;
   let squadronPageReady = false;
   let navPatched = false;
   let renderAllPatched = false;
@@ -14,12 +13,17 @@
   let squadronDormSignature = '';
   let activeBusSignature = '';
 
+  function components() {
+    return window.GateComponents || null;
+  }
+
   function n(value) {
     const parsed = Number(value || 0);
     return Number.isFinite(parsed) ? parsed : 0;
   }
 
   function escapeText(value) {
+    if (components()?.esc) return components().esc(value);
     if (typeof escapeHtml === 'function') return escapeHtml(value);
     return String(value ?? '')
       .replaceAll('&', '&amp;')
@@ -49,201 +53,6 @@
     }
   }
 
-  function ensureStyles() {
-    if (stylesReady || document.getElementById('prc-gate-board-styles')) return;
-
-    const style = document.createElement('style');
-    style.id = 'prc-gate-board-styles';
-    style.textContent = `
-      .app-nav { display: flex; }
-      .fullscreen-board .app-nav { display: none !important; }
-
-      #page-squadron.gate-squadron-page {
-        padding: 76px 0.85rem 0.85rem !important;
-        min-height: 100vh;
-        overflow: hidden;
-      }
-
-      #page-squadron .gate-squadron-shell {
-        min-height: calc(100vh - 84px);
-        display: flex;
-        flex-direction: column;
-        gap: 0.78rem;
-        position: relative;
-      }
-
-      #page-squadron .gate-squadron-masthead {
-        position: relative;
-        overflow: visible;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        width: min(920px, calc(100vw - 2rem));
-        min-height: 74px;
-        margin: 0 auto;
-        padding: 1.18rem 1.35rem 1.08rem;
-        border: 1px solid rgba(125, 211, 252, 0.18);
-        border-radius: 1.15rem;
-        background:
-          radial-gradient(circle at 50% 0%, rgba(56, 189, 248, 0.13), transparent 46%),
-          linear-gradient(145deg, rgba(255, 255, 255, 0.088), rgba(255, 255, 255, 0.028));
-        box-shadow:
-          inset 0 1px 0 rgba(255, 255, 255, 0.13),
-          0 10px 26px rgba(0, 0, 0, 0.20),
-          0 0 24px rgba(56, 189, 248, 0.06);
-        -webkit-backdrop-filter: blur(18px) saturate(1.12);
-        backdrop-filter: blur(18px) saturate(1.12);
-      }
-
-      #page-squadron .gate-squadron-masthead::after {
-        content: '';
-        position: absolute;
-        left: 12%;
-        right: 12%;
-        bottom: 0;
-        height: 1px;
-        background: linear-gradient(90deg, transparent, rgba(125, 211, 252, 0.58), rgba(34, 197, 94, 0.20), transparent);
-        box-shadow: 0 0 14px rgba(56, 189, 248, 0.24);
-      }
-
-      #page-squadron .gate-squadron-subtitle {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        justify-content: center;
-        gap: 0.72rem;
-        color: var(--text-soft);
-        font-size: clamp(1.02rem, 1.82vw, 1.48rem);
-        font-weight: 950;
-        letter-spacing: 0.18em;
-        line-height: 1.24;
-        text-transform: uppercase;
-        text-align: center;
-        padding: 0.06rem 0 0.04rem;
-      }
-
-      #page-squadron .gate-squadron-subtitle span {
-        display: inline-flex;
-        align-items: center;
-        min-height: 1.45em;
-      }
-
-      #page-squadron .gate-squadron-subtitle span:not(:last-child)::after {
-        content: '•';
-        margin-left: 0.72rem;
-        color: rgba(125, 211, 252, 0.52);
-      }
-
-      #page-squadron .gate-squadron-header {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.62rem;
-        width: fit-content;
-        max-width: calc(100vw - 2rem);
-        margin: 0 auto;
-        padding: 0.44rem;
-        border: 1px solid rgba(148, 163, 184, 0.16);
-        border-radius: 999px;
-        background: linear-gradient(145deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.025));
-        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.11), 0 8px 20px rgba(0, 0, 0, 0.16);
-        -webkit-backdrop-filter: blur(16px) saturate(1.12);
-        backdrop-filter: blur(16px) saturate(1.12);
-      }
-
-      #page-squadron .gate-squadron-metric {
-        display: grid;
-        grid-template-columns: auto auto;
-        align-items: baseline;
-        gap: 0.42rem;
-        min-width: 0;
-        padding: 0.45rem 0.74rem;
-        border-radius: 999px;
-        border: 1px solid rgba(255, 255, 255, 0.085);
-        background: rgba(255, 255, 255, 0.045);
-        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
-      }
-
-      #page-squadron .gate-squadron-metric-label {
-        color: var(--text-muted);
-        font-size: 0.62rem;
-        font-weight: 950;
-        letter-spacing: 0.115em;
-        text-transform: uppercase;
-        white-space: nowrap;
-      }
-
-      #page-squadron .gate-squadron-metric-value {
-        color: var(--text);
-        font-size: clamp(1.25rem, 2.15vw, 1.92rem);
-        font-weight: 950;
-        letter-spacing: -0.055em;
-        line-height: 1;
-        font-variant-numeric: tabular-nums;
-        white-space: nowrap;
-      }
-
-      #page-squadron .dorm-dashboard { flex: 1 1 auto; min-height: 0; }
-
-      .theme-light #page-squadron .gate-squadron-masthead,
-      .theme-light #page-squadron .gate-squadron-header {
-        background: linear-gradient(145deg, rgba(255, 255, 255, 0.76), rgba(255, 255, 255, 0.46));
-        border-color: rgba(2, 132, 199, 0.16);
-        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.80), 0 8px 20px rgba(15, 23, 42, 0.08);
-      }
-
-      .theme-light #page-squadron .gate-squadron-metric {
-        background: rgba(255, 255, 255, 0.56);
-        border-color: rgba(100, 116, 139, 0.14);
-      }
-
-      .prc-active-buses-v3 #active-buses,
-      #page-board #active-buses {
-        display: flex !important;
-        flex-wrap: wrap !important;
-        gap: 0.72rem !important;
-        align-items: stretch !important;
-        align-content: flex-start !important;
-      }
-
-      #page-board #active-buses .bus-badge.prc-bus-card {
-        width: 148px !important;
-        min-width: 148px !important;
-        min-height: 146px !important;
-        padding: 0.76rem 0.84rem !important;
-        border-radius: 1.05rem !important;
-        display: flex !important;
-        flex-direction: column !important;
-        align-items: flex-start !important;
-        justify-content: center !important;
-        gap: 0.2rem !important;
-        text-align: left !important;
-        white-space: normal !important;
-        line-height: 1.04 !important;
-      }
-
-      #page-board #active-buses .prc-bus-card-title,
-      #page-board #active-buses .prc-bus-card-line,
-      #page-board #active-buses .prc-bus-card-dept { display: block !important; text-transform: uppercase; }
-      #page-board #active-buses .prc-bus-card-title { font-size: 1.08rem !important; font-weight: 950 !important; color: var(--text) !important; }
-      #page-board #active-buses .prc-bus-card-line { font-size: 0.84rem !important; font-weight: 900 !important; color: var(--text-soft, var(--text-muted)) !important; }
-      #page-board #active-buses .prc-bus-card-dept { width: 100% !important; margin-top: 0.28rem !important; padding-top: 0.28rem !important; border-top: 1px solid rgba(255,255,255,0.18) !important; font-size: 0.72rem !important; font-weight: 950 !important; color: var(--text-muted) !important; }
-
-      @media (max-width: 768px) {
-        #page-squadron.gate-squadron-page { padding-top: 72px !important; }
-        #page-squadron .gate-squadron-masthead { width: 100%; min-height: 66px; padding: 0.96rem 0.9rem 0.86rem; }
-        #page-squadron .gate-squadron-subtitle { font-size: 0.92rem; letter-spacing: 0.12em; }
-        #page-squadron .gate-squadron-header { width: 100%; border-radius: 1rem; flex-wrap: wrap; }
-        #page-squadron .gate-squadron-metric { flex: 1 1 160px; justify-content: center; }
-        #page-squadron .dorm-dashboard { grid-template-columns: 1fr; overflow-y: auto; }
-      }
-    `;
-
-    document.head.appendChild(style);
-    stylesReady = true;
-  }
-
   function getActiveWeekGroupSafe() {
     try { return typeof getActiveWG === 'function' ? getActiveWG() : ''; } catch (_) { return ''; }
   }
@@ -260,18 +69,6 @@
   function getBusesForActiveWeek() {
     const wg = getActiveWeekGroupSafe();
     return getRecordsForType('bus').filter(bus => bus.week_group === wg);
-  }
-
-  function getDormStatusLabel(dorm) {
-    if (!dorm) return '';
-    if (dorm.state === 'closed') return 'CLOSED';
-    if (dorm.state === 'empty') return 'EMPTY';
-    return String(dorm.phase || 'OPEN').trim() || 'OPEN';
-  }
-
-  function isFemaleDorm(dorm) {
-    const sex = String(dorm?.sex || '').trim().toLowerCase();
-    return sex === 'female' || sex === 'f';
   }
 
   function getDormSignature(dorms) {
@@ -313,48 +110,12 @@
     ].join('|')).join('~');
   }
 
-  function getLoadRatio(dorm) {
-    const current = n(dorm.current_load);
-    const max = n(dorm.max_load);
-    const width = max > 0 ? Math.min((current / max) * 100, 100) : 0;
-    return { current, max, width, isFull: max > 0 && current === max, isOver: max > 0 && current > max };
-  }
-
-  function buildGateDormCard(dorm) {
-    const load = getLoadRatio(dorm);
-    const state = String(dorm.state || 'empty').toLowerCase();
-    const borderClass = isFemaleDorm(dorm) ? 'border-female' : (dorm.band === 'true' ? 'border-band' : '');
-    const closedClass = state === 'closed' ? 'dorm-closed' : '';
-    const progressClass = load.isOver ? 'is-over' : (load.isFull ? 'is-full' : '');
-    const info = [escapeText(dorm.sdq), escapeText(dorm.section), escapeText(dorm.inter_sec)].filter(Boolean).join(' · ');
-    const status = getDormStatusLabel(dorm);
-
-    let timerHtml = '<div class="gate-dorm-timer gate-empty-timer">00:00</div>';
-
-    if (state === 'open' && dorm.opened_at) {
-      const timer = typeof getElapsedTimer === 'function' ? getElapsedTimer(dorm.opened_at) : { text: '00:00' };
-      timerHtml = `<div class="gate-dorm-timer timer-display" data-opened="${escapeText(dorm.opened_at)}" data-dorm-id="${escapeText(dorm.__backendId)}">${escapeText(timer.text)}</div>`;
-    }
-
-    if (state === 'closed' && dorm.closed_timer) {
-      timerHtml = `<div class="gate-dorm-timer text-muted">${escapeText(dorm.closed_timer)}</div>`;
-    }
-
-    return `
-      <div class="dorm-card tactical-glass-card gate-dorm-card gate-dorm-state-${escapeText(state)} ${borderClass} ${closedClass} ${progressClass}" data-state="${escapeText(state)}">
-        <div class="gate-dorm-name">${escapeText(dorm.dorm_name || '')}</div>
-        <div class="gate-dorm-airman">${escapeText(dorm.assigned_airman || '')}</div>
-        <div class="gate-dorm-info">${info || '&nbsp;'}</div>
-        <div class="gate-dorm-status-wrap">
-          <div class="gate-dorm-status" data-state="${escapeText(state)}">${escapeText(status)}</div>
-        </div>
-        ${timerHtml}
-        <div class="gate-dorm-load">${load.current} / ${load.max}</div>
-        <div class="gate-dorm-progress" aria-hidden="true">
-          <div class="gate-dorm-progress-fill" style="width:${load.width.toFixed(1)}%;"></div>
-        </div>
-      </div>
-    `;
+  function buildGateDormCard(dorm, options = {}) {
+    const contract = components();
+    if (contract?.dormCard) return contract.dormCard(dorm, options);
+    const name = escapeText(dorm?.dorm_name || '');
+    const state = escapeText(String(dorm?.state || 'empty').toLowerCase());
+    return `<div class="dorm-card tactical-glass-card gate-dorm-card" data-state="${state}"><div class="gate-dorm-name">${name}</div></div>`;
   }
 
   function renderGateDormColumns(dorms, options) {
@@ -368,7 +129,7 @@
       const col = document.getElementById('col-' + state);
       if (!col) return;
       const filtered = records.filter(dorm => dorm.state === state);
-      col.innerHTML = filtered.map(dorm => buildGateDormCard(dorm)).join('') || '<div class="text-muted text-xs">None</div>';
+      col.innerHTML = filtered.map(dorm => buildGateDormCard(dorm, { showAuditorium: true })).join('') || '<div class="text-muted text-xs">None</div>';
     });
   }
 
@@ -385,6 +146,12 @@
     }
   }
 
+  function statusMetricMarkup(id, label, value) {
+    const contract = components();
+    if (contract?.statusMetric) return contract.statusMetric({ id, label, value });
+    return `<div class="gate-squadron-metric"><div class="gate-squadron-metric-label">${escapeText(label)}</div><div id="${escapeText(id)}" class="gate-squadron-metric-value">${escapeText(value)}</div></div>`;
+  }
+
   function ensureSquadronPage() {
     if (squadronPageReady && document.getElementById('page-squadron')) return;
     const boardPage = document.getElementById('page-board');
@@ -392,7 +159,7 @@
 
     if (!document.getElementById('page-squadron')) {
       boardPage.insertAdjacentHTML('afterend', `
-        <main id="page-squadron" class="page gate-squadron-page" role="main" aria-label="Squadron Board">
+        <main id="page-squadron" class="page gate-squadron-page" role="main" aria-label="Squadron Board" data-component="squadron-board">
           <div class="gate-squadron-shell">
             <section class="gate-squadron-masthead" aria-label="Squadron Board header">
               <div class="gate-squadron-subtitle">
@@ -400,21 +167,12 @@
                 <span>Squadron Board</span>
               </div>
             </section>
-            <section class="gate-squadron-header" aria-label="Squadron Board metrics">
-              <div class="gate-squadron-metric">
-                <div class="gate-squadron-metric-label">Arrived</div>
-                <div id="squadron-metric-arrived" class="gate-squadron-metric-value">0</div>
-              </div>
-              <div class="gate-squadron-metric">
-                <div class="gate-squadron-metric-label">Expected</div>
-                <div id="squadron-metric-expected" class="gate-squadron-metric-value">0</div>
-              </div>
-              <div class="gate-squadron-metric">
-                <div class="gate-squadron-metric-label">Local</div>
-                <div id="squadron-metric-local" class="gate-squadron-metric-value">--:--</div>
-              </div>
+            <section class="gate-squadron-header" aria-label="Squadron Board metrics" data-component="status-metric-group">
+              ${statusMetricMarkup('squadron-metric-arrived', 'Arrived', '0')}
+              ${statusMetricMarkup('squadron-metric-expected', 'Expected', '0')}
+              ${statusMetricMarkup('squadron-metric-local', 'Local', '--:--')}
             </section>
-            <div class="dorm-dashboard">
+            <div class="dorm-dashboard" data-component="dorm-column-grid">
               <div class="dorm-column"><div class="dorm-col-header">Empty</div><div id="squadron-col-empty" class="dorm-col-content"></div></div>
               <div class="dorm-column"><div class="dorm-col-header">Open</div><div id="squadron-col-open" class="dorm-col-content"></div></div>
               <div class="dorm-column"><div class="dorm-col-header">Closed</div><div id="squadron-col-closed" class="dorm-col-content"></div></div>
@@ -428,19 +186,22 @@
 
   function ensureResponsiveCommandShell() {
     const nav = document.querySelector('.app-nav');
-    const menu = document.getElementById('nav-links');
+    const menu = document.getElementById('main-nav-menu') || document.getElementById('nav-links');
     if (!nav || !menu) return;
 
     nav.classList.add('command-header-bar');
+    nav.dataset.component = 'header-nav';
     nav.setAttribute('role', 'banner');
     menu.id = 'main-nav-menu';
     menu.classList.add('nav-group-left');
+    menu.dataset.component = 'header-nav-menu';
     menu.setAttribute('role', 'navigation');
     menu.setAttribute('aria-label', 'Main Operational Navigation');
 
     const rightGroup = nav.querySelector(':scope > div:last-child');
     if (rightGroup) {
       rightGroup.classList.add('nav-group-right');
+      rightGroup.dataset.component = 'header-system-controls';
       rightGroup.setAttribute('role', 'complementary');
       rightGroup.setAttribute('aria-label', 'System Identity Control');
     }
@@ -449,7 +210,8 @@
       const trigger = document.createElement('button');
       trigger.id = 'mobile-menu-trigger';
       trigger.type = 'button';
-      trigger.className = 'tactical-nav-pill mobile-only-control';
+      trigger.className = 'tactical-nav-pill mobile-only-control gate-component-nav-button';
+      trigger.dataset.component = 'mobile-nav-trigger';
       trigger.setAttribute('aria-label', 'Toggle Operational Navigation Menu');
       trigger.setAttribute('aria-haspopup', 'true');
       trigger.setAttribute('aria-expanded', 'false');
@@ -505,14 +267,13 @@
     let node;
     while ((node = walker.nextNode())) {
       node.nodeValue = node.nodeValue
-        .replace(/prc\s?dash/gi, 'GATE')
-        .replace(/dashboard/gi, 'Status Board');
+        .replace(/PRC\s?DASH/gi, 'PRC GATE')
+        .replace(/dashboard/gi, 'board');
     }
   }
 
   function ensureBrandingObserver() {
-    if (brandingObserverReady || !document.body || typeof MutationObserver === 'undefined') return;
-    scrubLegacyTerminology();
+    if (brandingObserverReady || typeof MutationObserver === 'undefined' || !document.body) return;
     let queued = false;
     const observer = new MutationObserver(() => {
       if (queued) return;
@@ -524,6 +285,13 @@
     });
     observer.observe(document.body, { childList: true, subtree: true });
     brandingObserverReady = true;
+  }
+
+  function navButtonMarkup(page, label, active) {
+    const contract = components();
+    if (contract?.navButton) return contract.navButton({ page, label, active });
+    const activeClass = active ? 'active active-page-state current-page' : '';
+    return `<button type="button" class="nav-btn nav-link-item ${activeClass}" data-page="${escapeText(page)}" onclick="showPage('${escapeText(page)}')">${escapeText(label || page)}</button>`;
   }
 
   function patchNavigationForSquadronBoard() {
@@ -543,10 +311,7 @@
           const activeId = activePage ? activePage.id.replace('page-', '') : (currentRole === 'squadron' ? 'squadron' : 'board');
 
           if (container) {
-            container.innerHTML = pages.map(page => `<button type="button" class="nav-btn nav-link-item ${page === activeId ? 'active active-page-state current-page' : ''}" data-page="${page}" onclick="showPage('${page}')">${PAGE_LABELS[page] || page}</button>`).join('');
-            container.querySelectorAll('button').forEach(button => {
-              button.setAttribute('aria-current', button.dataset.page === activeId ? 'page' : 'false');
-            });
+            container.innerHTML = pages.map(page => navButtonMarkup(page, PAGE_LABELS[page] || page, page === activeId)).join('');
           }
 
           const roleButton = document.getElementById('role-toggle');
@@ -594,7 +359,7 @@
       const col = document.getElementById(`squadron-col-${state}`);
       if (!col) return;
       const filtered = dorms.filter(dorm => dorm.state === state);
-      col.innerHTML = filtered.map(dorm => buildGateDormCard(dorm)).join('') || '<div class="text-muted text-xs">None</div>';
+      col.innerHTML = filtered.map(dorm => buildGateDormCard(dorm, { hideAirman: true })).join('') || '<div class="text-muted text-xs">None</div>';
     });
   }
 
@@ -658,6 +423,7 @@
       const fullSignature = `${legacySignature}|${sf}|${departed}`;
       if (button.dataset.prcFinalBusSig === fullSignature && button.querySelector('.prc-bus-card-dept')) return;
       button.classList.add('prc-bus-card');
+      button.dataset.component = 'active-bus-card';
       button.dataset.prcBusCardSig = legacySignature;
       button.dataset.prcFinalBusSig = fullSignature;
       button.title = `Confirm arrival: ${title} – ${otw} OTW | ${females} FEMALE | ${nat} NAT | ${sf} SPACE FORCE | DEPT ${departed}`;
@@ -684,12 +450,12 @@
   function runPass() {
     passScheduled = false;
     ensureDocumentIdentity();
-    ensureStyles();
     ensureSquadronPage();
     patchNavigationForSquadronBoard();
     patchDormRenderers();
     patchRenderAllForBoards();
     ensureResponsiveCommandShell();
+    components()?.processingDormModalContract?.();
     ensureBrandingObserver();
     try { keepNavigationRecoverable(); } catch (error) { console.warn('PRC GATE nav recovery failed:', error); }
     try { renderGateDormColumns(); } catch (error) { console.warn('PRC GATE Status Board render failed:', error); }
@@ -711,7 +477,7 @@
         if (mutation.type === 'attributes') {
           const target = mutation.target;
           if (!target?.closest) return target === document.body;
-          return Boolean(target.closest('.page, .app-nav, #active-buses, .dorm-col-content'));
+          return Boolean(target.closest('.page, .app-nav, #active-buses, .dorm-col-content, #dorm-modal'));
         }
         return false;
       });
@@ -721,7 +487,7 @@
       childList: true,
       subtree: true,
       attributes: true,
-      attributeFilter: ['class', 'onclick']
+      attributeFilter: ['class', 'onclick', 'data-component']
     });
     finalAuditObserverReady = true;
   }

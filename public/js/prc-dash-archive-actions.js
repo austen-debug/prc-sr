@@ -4,6 +4,7 @@
   let passScheduled = false;
   let originalPrintArchive = null;
   let archiveViewSignature = '';
+  let archiveSearchTerm = '';
 
   function getAllDataSafe() {
     try { return Array.isArray(allData) ? allData : []; } catch (_) { return []; }
@@ -73,6 +74,11 @@
     return Number.isNaN(parsed.getTime()) ? new Date(0) : parsed;
   }
 
+  function archiveYearLabel(archive) {
+    const date = archiveTime(archive);
+    return date.getTime() > 0 ? String(date.getFullYear()) : 'Unknown';
+  }
+
   function monthName(date) {
     return date.toLocaleString([], { month: 'long' });
   }
@@ -80,6 +86,36 @@
   function setField(id, value) {
     const field = document.getElementById(id);
     if (field) field.value = value;
+  }
+
+  function archiveTotals(records) {
+    return records.reduce((totals, record) => {
+      totals.records += 1;
+      totals.dorms += n(record.dorm_count);
+      totals.buses += n(record.bus_count);
+      totals.arrived += n(record.total_arrived);
+      totals.female += n(record.female_total);
+      totals.nat += n(record.nat_total);
+      return totals;
+    }, { records: 0, dorms: 0, buses: 0, arrived: 0, female: 0, nat: 0 });
+  }
+
+  function archiveYearCount(records) {
+    return new Set(records.map(archiveYearLabel)).size;
+  }
+
+  function archiveSummaryLabel(totals) {
+    return `${totals.records} Record${totals.records === 1 ? '' : 's'} · ${totals.arrived} Arrived · ${totals.dorms} Dorms`;
+  }
+
+  function normalizedSearch() {
+    return String(archiveSearchTerm || '').trim().toLowerCase();
+  }
+
+  function filterArchiveRecords(records) {
+    const term = normalizedSearch();
+    if (!term) return records;
+    return records.filter(record => String(record.week_group || '').toLowerCase().includes(term));
   }
 
   function openArchiveEditor(event, id) {
@@ -113,27 +149,32 @@
     schedulePass();
   }
 
-  function archiveSignature(records) {
-    return records.map(record => [
-      record.__backendId,
-      record.week_group,
-      record.archived_at,
-      record.dorm_count,
-      record.bus_count,
-      record.total_arrived,
-      record.female_total,
-      record.nat_total
-    ].join('|')).join('~');
+  function archiveSignature(records, visibleRecords) {
+    return [
+      normalizedSearch(),
+      records.length,
+      visibleRecords.length,
+      records.map(record => [
+        record.__backendId,
+        record.week_group,
+        record.archived_at,
+        record.dorm_count,
+        record.bus_count,
+        record.total_arrived,
+        record.female_total,
+        record.nat_total
+      ].join('|')).join('~')
+    ].join('::');
   }
 
   function groupArchives(records) {
     const years = new Map();
     records.forEach(record => {
       const date = archiveTime(record);
-      const year = date.getFullYear() || 'Unknown';
-      const monthIndex = Number.isFinite(date.getTime()) && date.getTime() > 0 ? date.getMonth() : 12;
-      const monthLabel = monthIndex === 12 ? 'Unscheduled' : monthName(date);
-      const yearKey = String(year);
+      const validDate = date.getTime() > 0;
+      const yearKey = validDate ? String(date.getFullYear()) : 'Unknown';
+      const monthIndex = validDate ? date.getMonth() : -1;
+      const monthLabel = validDate ? monthName(date) : 'Unscheduled';
       const monthKey = `${String(monthIndex).padStart(2, '0')}|${monthLabel}`;
 
       if (!years.has(yearKey)) years.set(yearKey, new Map());
@@ -165,45 +206,114 @@
     `;
   }
 
+  function archiveToolbar(records, visibleRecords) {
+    const totals = archiveTotals(visibleRecords.length ? visibleRecords : records);
+    const copy = normalizedSearch()
+      ? `${visibleRecords.length} of ${records.length} Week Groups shown · ${archiveYearCount(visibleRecords)} Year${archiveYearCount(visibleRecords) === 1 ? '' : 's'}`
+      : `${records.length} Week Groups · ${archiveYearCount(records)} Year${archiveYearCount(records) === 1 ? '' : 's'} · ${totals.arrived} Arrived`;
+
+    return `
+      <section class="gate-archive-toolbar" aria-label="Archive search and summary">
+        <div>
+          <span class="gate-archive-toolbar-title">Archive Management</span>
+          <span class="gate-archive-toolbar-copy">${esc(copy)}</span>
+        </div>
+        <label class="gate-archive-search-wrap" for="gate-archive-search">
+          <span class="gate-archive-search-label">Search Week Group</span>
+          <input id="gate-archive-search" type="search" autocomplete="off" spellcheck="false" placeholder="Type week group..." value="${esc(archiveSearchTerm)}">
+        </label>
+        <button id="gate-archive-clear-search" type="button" class="gate-archive-clear-search" ${normalizedSearch() ? '' : 'disabled'}>Clear</button>
+      </section>
+    `;
+  }
+
+  function archiveEmptyState(title, copy) {
+    return `
+      <div class="gate-archive-empty">
+        <span>
+          <span class="gate-archive-empty-title">${esc(title)}</span>
+          <span class="gate-archive-empty-copy">${esc(copy)}</span>
+        </span>
+      </div>
+    `;
+  }
+
   function renderArchiveManagementView() {
     const container = document.getElementById('archive-history');
     if (!container) return;
 
+    const activeSearch = document.getElementById('gate-archive-search');
+    const searchHadFocus = activeSearch === document.activeElement;
+    const selectionStart = searchHadFocus ? activeSearch.selectionStart : null;
+    if (activeSearch) archiveSearchTerm = activeSearch.value;
+
     const records = archiveRecords();
-    const signature = archiveSignature(records);
+    const visibleRecords = filterArchiveRecords(records);
+    const signature = archiveSignature(records, visibleRecords);
     if (container.dataset.archiveManagerReady === 'true' && archiveViewSignature === signature) return;
     archiveViewSignature = signature;
     container.dataset.archiveManagerReady = 'true';
     container.className = 'gate-archive-manager';
 
     if (!records.length) {
-      container.innerHTML = '<div class="gate-archive-empty">No archived week groups.</div>';
+      container.innerHTML = archiveEmptyState('No Archived Week Groups', 'Archives will appear here after a week group is closed and archived.');
       return;
     }
 
-    const grouped = groupArchives(records);
-    const years = Array.from(grouped.entries()).sort((a, b) => Number(b[0]) - Number(a[0]));
+    if (!visibleRecords.length) {
+      container.innerHTML = archiveToolbar(records, visibleRecords) + archiveEmptyState('No Matching Week Groups', 'Clear the filter or search a different week group.');
+      restoreArchiveSearchFocus(searchHadFocus, selectionStart);
+      return;
+    }
 
-    container.innerHTML = years.map(([year, months], yearIndex) => {
+    const grouped = groupArchives(visibleRecords);
+    const years = Array.from(grouped.entries()).sort((a, b) => {
+      if (a[0] === 'Unknown') return 1;
+      if (b[0] === 'Unknown') return -1;
+      return Number(b[0]) - Number(a[0]);
+    });
+
+    container.innerHTML = archiveToolbar(records, visibleRecords) + years.map(([year, months], yearIndex) => {
       const monthEntries = Array.from(months.entries()).sort((a, b) => b[0].localeCompare(a[0]));
-      const yearCount = monthEntries.reduce((sum, [, list]) => sum + list.length, 0);
+      const yearRecords = monthEntries.flatMap(([, list]) => list);
+      const yearTotals = archiveTotals(yearRecords);
       return `
         <details class="gate-archive-year" ${yearIndex === 0 ? 'open' : ''}>
-          <summary><span>${esc(year)}</span><span class="gate-archive-year-count">${yearCount} Record${yearCount === 1 ? '' : 's'}</span></summary>
-          ${monthEntries.map(([monthKey, list], monthIndex) => {
-            const label = monthKey.split('|')[1];
-            return `
-              <details class="gate-archive-month" ${yearIndex === 0 && monthIndex === 0 ? 'open' : ''}>
-                <summary><span>${esc(label)}</span><span class="gate-archive-month-count">${list.length} Week Group${list.length === 1 ? '' : 's'}</span></summary>
-                <div class="gate-archive-record-list">
-                  ${list.map(archiveRecordCard).join('')}
-                </div>
-              </details>
-            `;
-          }).join('')}
+          <summary>
+            <span class="gate-archive-year-title-row"><span class="gate-archive-disclosure" aria-hidden="true">›</span><span class="gate-archive-year-title">${esc(year)}</span></span>
+            <span class="gate-archive-year-count">${esc(archiveSummaryLabel(yearTotals))}</span>
+          </summary>
+          <div class="gate-archive-year-body">
+            ${monthEntries.map(([monthKey, list], monthIndex) => {
+              const label = monthKey.split('|')[1];
+              const monthTotals = archiveTotals(list);
+              return `
+                <details class="gate-archive-month" ${yearIndex === 0 && monthIndex === 0 ? 'open' : ''}>
+                  <summary>
+                    <span class="gate-archive-month-title-row"><span class="gate-archive-disclosure" aria-hidden="true">›</span><span class="gate-archive-month-title">${esc(label)}</span></span>
+                    <span class="gate-archive-month-count">${esc(archiveSummaryLabel(monthTotals))}</span>
+                  </summary>
+                  <div class="gate-archive-record-list">
+                    ${list.map(archiveRecordCard).join('')}
+                  </div>
+                </details>
+              `;
+            }).join('')}
+          </div>
         </details>
       `;
     }).join('');
+
+    restoreArchiveSearchFocus(searchHadFocus, selectionStart);
+  }
+
+  function restoreArchiveSearchFocus(shouldFocus, selectionStart) {
+    if (!shouldFocus) return;
+    const input = document.getElementById('gate-archive-search');
+    if (!input) return;
+    input.focus({ preventScroll: true });
+    const position = Number.isFinite(selectionStart) ? selectionStart : input.value.length;
+    try { input.setSelectionRange(position, position); } catch (_) {}
   }
 
   function getCardArchiveId(card) {
@@ -212,6 +322,57 @@
     const attr = card.getAttribute('oncontextmenu') || '';
     const match = attr.match(/openArchiveEditModal\(event,\s*['"]([^'"]+)['"]\)/);
     return match ? match[1] : '';
+  }
+
+  function bindArchiveToolbar() {
+    const input = document.getElementById('gate-archive-search');
+    if (input && input.dataset.archiveSearchBound !== 'true') {
+      input.dataset.archiveSearchBound = 'true';
+      input.addEventListener('input', () => {
+        archiveSearchTerm = input.value;
+        archiveViewSignature = '';
+        schedulePass();
+      });
+      input.addEventListener('keydown', event => {
+        if (event.key === 'Escape' && input.value) {
+          event.preventDefault();
+          archiveSearchTerm = '';
+          input.value = '';
+          archiveViewSignature = '';
+          schedulePass();
+        }
+      });
+    }
+
+    const clear = document.getElementById('gate-archive-clear-search');
+    if (clear && clear.dataset.archiveClearBound !== 'true') {
+      clear.dataset.archiveClearBound = 'true';
+      clear.addEventListener('click', event => {
+        event.preventDefault();
+        archiveSearchTerm = '';
+        archiveViewSignature = '';
+        schedulePass();
+      });
+    }
+  }
+
+  function bindArchiveDisclosureKeyboard() {
+    document.querySelectorAll('#archive-history details > summary').forEach(summary => {
+      if (summary.dataset.archiveDisclosureBound === 'true') return;
+      summary.dataset.archiveDisclosureBound = 'true';
+      summary.addEventListener('keydown', event => {
+        const details = summary.parentElement;
+        if (!details || details.tagName !== 'DETAILS') return;
+        if (event.key === 'ArrowRight') {
+          event.preventDefault();
+          details.open = true;
+        }
+        if (event.key === 'ArrowLeft') {
+          event.preventDefault();
+          details.open = false;
+        }
+      });
+    });
   }
 
   function bindArchiveCards() {
@@ -289,6 +450,8 @@
     }
     window.printArchiveSpreadsheet = printArchiveReport;
     renderArchiveManagementView();
+    bindArchiveToolbar();
+    bindArchiveDisclosureKeyboard();
     bindArchiveCards();
     bindArchivePrintButton();
   }

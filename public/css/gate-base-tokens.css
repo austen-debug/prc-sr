@@ -1,0 +1,8 @@
+/* PRC GATE Canonical UI Stack: Base / Tokens
+   Purpose: root visual system, tactical glass foundation, nav base, empty states, watermark, and existing background/input matrix baseline.
+   Legacy source modules are grouped here to preserve the verified cascade while reducing active middleware CSS entries. */
+
+@import url('/css/liquid-command.css');
+@import url('/css/prc-dash-nav.css');
+@import url('/css/prc-dash-states-empty.css');
+@import url('/css/prc-dash-watermark.css');

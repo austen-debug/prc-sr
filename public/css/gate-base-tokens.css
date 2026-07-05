@@ -1,8 +1,354 @@
 /* PRC GATE Canonical UI Stack: Base / Tokens
-   Purpose: root visual system, tactical glass foundation, nav base, empty states, watermark, and existing background/input matrix baseline.
-   Legacy source modules are grouped here to preserve the verified cascade while reducing active middleware CSS entries. */
+   Purpose: root visual system, tactical glass foundation, nav base, state badges, empty states, watermark, and existing background/input matrix baseline.
+   Canonical ownership: edit this file for base/token/state imports instead of adding middleware stylesheets. */
 
 @import url('/css/liquid-command.css');
 @import url('/css/prc-dash-nav.css');
-@import url('/css/prc-dash-states-empty.css');
+
+/* PRC GATE State Badges, Operational Board Cards, and Empty States */
+:root {
+  --badge-muted-bg: rgba(180, 198, 228, 0.08);
+  --badge-muted-border: rgba(180, 198, 228, 0.35);
+  --badge-muted-text: #d2e0f8;
+  --badge-open-bg: rgba(0, 230, 118, 0.12);
+  --badge-open-border: rgba(0, 230, 118, 0.60);
+  --badge-open-text: #b9ffd8;
+  --badge-closed-bg: rgba(180, 198, 228, 0.08);
+  --badge-closed-border: rgba(180, 198, 228, 0.35);
+  --badge-closed-text: #d2e0f8;
+  --badge-empty-bg: rgba(56, 189, 248, 0.08);
+  --badge-empty-border: rgba(125, 211, 252, 0.28);
+  --badge-empty-text: #c8e8ff;
+  --badge-enroute-bg: rgba(56, 189, 248, 0.18);
+  --badge-enroute-border: rgba(56, 189, 248, 0.42);
+  --badge-enroute-text: #e0f2fe;
+  --badge-arrived-bg: rgba(34, 197, 94, 0.18);
+  --badge-arrived-border: rgba(34, 197, 94, 0.42);
+  --badge-arrived-text: #dcfce7;
+  --badge-overtime-bg: rgba(255, 74, 74, 0.15);
+  --badge-overtime-border: rgba(255, 74, 74, 0.60);
+  --badge-overtime-text: #ff8a8a;
+  --board-secondary-text: #b4c6e4;
+  --board-progress-track: rgba(255, 255, 255, 0.07);
+  --board-progress-fill: linear-gradient(90deg, #00a3ff, #0066ff);
+  --board-progress-full: linear-gradient(90deg, #00e676, #22c55e);
+  --board-progress-alert: linear-gradient(90deg, #ff4a4a, #ff8a8a);
+}
+
+.theme-light {
+  --badge-muted-bg: rgba(100, 116, 139, 0.11);
+  --badge-muted-border: rgba(100, 116, 139, 0.28);
+  --badge-muted-text: #334155;
+  --badge-open-bg: rgba(22, 163, 74, 0.14);
+  --badge-open-border: rgba(21, 128, 61, 0.38);
+  --badge-open-text: #14532d;
+  --badge-closed-bg: rgba(100, 116, 139, 0.10);
+  --badge-closed-border: rgba(100, 116, 139, 0.28);
+  --badge-closed-text: #334155;
+  --badge-empty-bg: rgba(2, 132, 199, 0.10);
+  --badge-empty-border: rgba(2, 132, 199, 0.24);
+  --badge-empty-text: #075985;
+  --badge-enroute-bg: rgba(2, 132, 199, 0.13);
+  --badge-enroute-border: rgba(2, 132, 199, 0.30);
+  --badge-enroute-text: #075985;
+  --badge-arrived-bg: rgba(22, 163, 74, 0.14);
+  --badge-arrived-border: rgba(21, 128, 61, 0.34);
+  --badge-arrived-text: #14532d;
+  --badge-overtime-bg: rgba(220, 38, 38, 0.18);
+  --badge-overtime-border: rgba(185, 28, 28, 0.42);
+  --badge-overtime-text: #7f1d1d;
+  --board-secondary-text: #475569;
+  --board-progress-track: rgba(15, 23, 42, 0.10);
+}
+
+.tactical-glass-card {
+  background:
+    radial-gradient(circle at 18% 0%, rgba(125, 211, 252, 0.075), transparent 34%),
+    linear-gradient(145deg, rgba(10, 20, 30, 0.58), rgba(8, 16, 28, 0.42)) !important;
+  border: 1px solid rgba(198, 214, 232, 0.18) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    inset 1px 0 0 rgba(255, 255, 255, 0.055),
+    0 12px 32px rgba(0, 0, 0, 0.42),
+    0 0 15px rgba(0, 150, 255, 0.06) !important;
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.48);
+  backdrop-filter: blur(var(--glass-blur)) saturate(1.48);
+}
+
+#page-board .gate-dorm-card,
+#page-squadron .gate-dorm-card {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) max-content !important;
+  grid-template-rows: auto auto minmax(2.65rem, 1fr) auto 5px !important;
+  grid-template-areas:
+    "name airman"
+    "info info"
+    "status status"
+    "timer load"
+    "progress progress" !important;
+  column-gap: 1rem !important;
+  row-gap: 0.32rem !important;
+  align-items: stretch !important;
+  justify-items: stretch !important;
+  min-height: clamp(154px, 15.8vh, 214px) !important;
+  padding: clamp(1rem, 1.24vw, 1.36rem) clamp(1.1rem, 1.42vw, 1.55rem) !important;
+  border-radius: var(--radius-lg) !important;
+  position: relative !important;
+  overflow: hidden !important;
+  text-align: left !important;
+  cursor: default !important;
+  gap: 0.34rem !important;
+}
+
+#page-board .gate-dorm-card::after,
+#page-squadron .gate-dorm-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.09), transparent 28%),
+    radial-gradient(circle at 88% 0%, rgba(56, 189, 248, 0.06), transparent 36%);
+}
+
+#page-board .gate-dorm-name,
+#page-squadron .gate-dorm-name,
+.dorm-id-text {
+  grid-area: name !important;
+  justify-self: start !important;
+  align-self: start !important;
+  display: inline-block !important;
+  min-width: max-content !important;
+  width: max-content !important;
+  max-width: 100% !important;
+  flex-shrink: 0 !important;
+  color: var(--text) !important;
+  font-size: clamp(2.05rem, 2.85vw, 3.25rem) !important;
+  font-weight: 950 !important;
+  letter-spacing: -0.066em !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  padding-right: 0.5rem !important;
+  text-shadow: 0 1px 20px rgba(0, 0, 0, 0.38);
+}
+
+.dorm-card-header {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: flex-start !important;
+  width: 100% !important;
+  overflow: visible !important;
+}
+
+#page-board .gate-dorm-airman,
+#page-squadron .gate-dorm-airman {
+  grid-area: airman !important;
+  justify-self: end !important;
+  align-self: start !important;
+  max-width: 10rem !important;
+  min-width: 0 !important;
+  color: var(--board-secondary-text) !important;
+  font-size: clamp(0.66rem, 0.72vw, 0.82rem) !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.075em !important;
+  line-height: 1.08 !important;
+  text-align: right !important;
+  text-transform: uppercase !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  padding-top: 0.08rem !important;
+}
+
+#page-board .gate-dorm-info,
+#page-squadron .gate-dorm-info {
+  grid-area: info !important;
+  justify-self: start !important;
+  align-self: start !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  color: var(--board-secondary-text) !important;
+  font-size: clamp(0.78rem, 0.88vw, 0.98rem) !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.085em !important;
+  line-height: 1.08 !important;
+  text-align: left !important;
+  text-transform: uppercase !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+#page-board .gate-dorm-status-wrap,
+#page-squadron .gate-dorm-status-wrap {
+  grid-area: status !important;
+  justify-self: stretch !important;
+  align-self: center !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  padding: 0.54rem 0 0.44rem !important;
+}
+
+#page-board .gate-dorm-status,
+#page-squadron .gate-dorm-status {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-height: 1.8rem !important;
+  max-width: 100% !important;
+  padding: 0.34rem 0.9rem !important;
+  border-radius: var(--radius-pill) !important;
+  border: 1px solid var(--badge-muted-border) !important;
+  background: var(--badge-muted-bg) !important;
+  color: var(--badge-muted-text) !important;
+  font-size: clamp(0.72rem, 0.74vw, 0.88rem) !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.115em !important;
+  line-height: 1 !important;
+  text-align: center !important;
+  text-transform: uppercase !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.10),
+    0 0 14px rgba(180, 198, 228, 0.10) !important;
+}
+
+#page-board .gate-dorm-status[data-state="open"],
+#page-squadron .gate-dorm-status[data-state="open"] {
+  background: var(--badge-open-bg) !important;
+  border-color: var(--badge-open-border) !important;
+  color: var(--badge-open-text) !important;
+  text-shadow: 0 0 8px rgba(0, 230, 118, 0.40);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.10),
+    0 0 16px rgba(34, 197, 94, 0.20) !important;
+}
+
+#page-board .gate-dorm-status[data-state="closed"],
+#page-squadron .gate-dorm-status[data-state="closed"] {
+  background: var(--badge-closed-bg) !important;
+  border-color: var(--badge-closed-border) !important;
+  color: var(--badge-closed-text) !important;
+}
+
+#page-board .gate-dorm-status[data-state="empty"],
+#page-squadron .gate-dorm-status[data-state="empty"] {
+  background: var(--badge-empty-bg) !important;
+  border-color: var(--badge-empty-border) !important;
+  color: var(--badge-empty-text) !important;
+}
+
+#page-board .gate-dorm-timer,
+#page-squadron .gate-dorm-timer {
+  grid-area: timer !important;
+  justify-self: start !important;
+  align-self: end !important;
+  color: var(--text) !important;
+  font-size: clamp(1.82rem, 2.6vw, 3.1rem) !important;
+  font-weight: 950 !important;
+  letter-spacing: -0.045em !important;
+  line-height: 1 !important;
+  font-variant-numeric: tabular-nums !important;
+}
+
+#page-board .gate-dorm-load,
+#page-squadron .gate-dorm-load {
+  grid-area: load !important;
+  justify-self: end !important;
+  align-self: end !important;
+  color: var(--text) !important;
+  font-size: clamp(1.28rem, 1.6vw, 2.12rem) !important;
+  font-weight: 950 !important;
+  letter-spacing: -0.03em !important;
+  line-height: 1 !important;
+  font-variant-numeric: tabular-nums !important;
+  white-space: nowrap !important;
+}
+
+#page-board .gate-dorm-progress,
+#page-squadron .gate-dorm-progress {
+  grid-area: progress !important;
+  align-self: end !important;
+  height: 5px !important;
+  width: 100% !important;
+  overflow: hidden !important;
+  border-radius: 999px !important;
+  background: var(--board-progress-track) !important;
+}
+
+#page-board .gate-dorm-progress > div,
+#page-squadron .gate-dorm-progress > div {
+  height: 100% !important;
+  border-radius: inherit !important;
+  background: var(--board-progress-fill) !important;
+}
+
+#page-board .gate-dorm-progress > div[data-full="true"],
+#page-squadron .gate-dorm-progress > div[data-full="true"] {
+  background: var(--board-progress-full) !important;
+}
+
+#page-board .gate-dorm-progress > div[data-alert="true"],
+#page-squadron .gate-dorm-progress > div[data-alert="true"] {
+  background: var(--board-progress-alert) !important;
+}
+
+.empty-state-panel {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-height: 220px !important;
+  padding: 2rem !important;
+  border: 1px dashed rgba(180, 198, 228, 0.26) !important;
+  border-radius: var(--radius-xl) !important;
+  color: var(--text-muted) !important;
+  text-align: center !important;
+  background: rgba(180, 198, 228, 0.035) !important;
+}
+
+.empty-state-panel .empty-state-title {
+  color: var(--text) !important;
+  font-size: 1.05rem !important;
+  font-weight: 950 !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+}
+
+.empty-state-panel .empty-state-copy {
+  max-width: 32rem !important;
+  margin-top: 0.45rem !important;
+  color: var(--text-muted) !important;
+  font-size: 0.82rem !important;
+  line-height: 1.45 !important;
+}
+
+@media (max-width: 760px) {
+  #page-board .gate-dorm-card,
+  #page-squadron .gate-dorm-card {
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-areas:
+      "name"
+      "airman"
+      "info"
+      "status"
+      "timer"
+      "load"
+      "progress" !important;
+  }
+
+  #page-board .gate-dorm-airman,
+  #page-squadron .gate-dorm-airman,
+  #page-board .gate-dorm-load,
+  #page-squadron .gate-dorm-load {
+    justify-self: start !important;
+    text-align: left !important;
+  }
+}
+
 @import url('/css/prc-dash-watermark.css');

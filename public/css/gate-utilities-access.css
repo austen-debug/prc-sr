@@ -1,6 +1,7 @@
 @import url('/css/gate-board-presentation.css');
 @import url('/css/gate-theme-unified-contract.css');
 @import url('/css/gate-operational-indicators-recovery.css');
+@import url('/css/gate-ui-stabilization-hotfix.css');
 
 #page-squadron .gate-dorm-airman {
   visibility: hidden !important;

@@ -10,6 +10,7 @@ const UI_STYLESHEETS = [
 const UI_INLINE_ASSETS = [];
 
 const UI_HEAD_SCRIPTS = [
+  '<script src="/js/gate-component-contracts.js" defer></script>',
   '<script src="/js/prc-dash-runtime-fixes.js" defer></script>',
   '<script src="/js/prc-dash-sat-arrivals.js" defer></script>',
   '<script src="/js/prc-dash-space-force.js" defer></script>',

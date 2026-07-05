@@ -1,0 +1,383 @@
+/* PRC GATE Archive Management visual system.
+   Scope: Archive page, archive year/month manager, archive record cards, and archive edit modal. */
+
+#page-archives .gate-archive-manager {
+  display: grid !important;
+  gap: 0.88rem !important;
+}
+
+.gate-archive-toolbar {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(18rem, 28rem) auto !important;
+  align-items: center !important;
+  gap: 0.72rem !important;
+  min-height: 4.6rem !important;
+  padding: 0.82rem 0.95rem !important;
+  border: 1px solid rgba(184, 190, 199, 0.20) !important;
+  border-radius: var(--radius-xl) !important;
+  background: linear-gradient(145deg, rgba(20, 49, 91, 0.30), rgba(8, 18, 31, 0.34)) !important;
+  box-shadow: var(--gate-glass-edge), var(--gate-shadow-soft) !important;
+  -webkit-backdrop-filter: blur(var(--gate-glass-blur)) saturate(1.35) !important;
+  backdrop-filter: blur(var(--gate-glass-blur)) saturate(1.35) !important;
+}
+
+.gate-archive-toolbar-title {
+  display: block !important;
+  color: var(--text) !important;
+  font-size: 0.96rem !important;
+  font-weight: 950 !important;
+  letter-spacing: 0.09em !important;
+  line-height: 1.08 !important;
+  text-transform: uppercase !important;
+}
+
+.gate-archive-toolbar-copy {
+  display: block !important;
+  margin-top: 0.18rem !important;
+  color: var(--text-muted) !important;
+  font-size: 0.72rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.045em !important;
+  line-height: 1.25 !important;
+  text-transform: uppercase !important;
+}
+
+.gate-archive-search-wrap {
+  display: grid !important;
+  gap: 0.28rem !important;
+  min-width: 0 !important;
+}
+
+.gate-archive-search-label {
+  color: var(--text-soft) !important;
+  font-size: 0.62rem !important;
+  font-weight: 950 !important;
+  letter-spacing: 0.11em !important;
+  line-height: 1 !important;
+  text-transform: uppercase !important;
+}
+
+#gate-archive-search {
+  width: 100% !important;
+  min-height: 2.55rem !important;
+  padding: 0.52rem 0.76rem !important;
+  border: 1px solid rgba(184, 190, 199, 0.22) !important;
+  border-radius: var(--radius-lg) !important;
+  background: rgba(8, 16, 28, 0.36) !important;
+  color: var(--text) !important;
+  font-size: 0.82rem !important;
+  font-weight: 850 !important;
+  letter-spacing: 0.04em !important;
+  outline: none !important;
+}
+
+#gate-archive-search:focus-visible {
+  border-color: rgba(184, 190, 199, 0.62) !important;
+  box-shadow: 0 0 0 4px rgba(184, 190, 199, 0.14) !important;
+}
+
+.gate-archive-clear-search {
+  align-self: end !important;
+  min-height: 2.55rem !important;
+  padding: 0 0.88rem !important;
+  border: 1px solid rgba(184, 190, 199, 0.22) !important;
+  border-radius: var(--radius-pill) !important;
+  background: rgba(184, 190, 199, 0.08) !important;
+  color: var(--text-soft) !important;
+  font-size: 0.68rem !important;
+  font-weight: 950 !important;
+  letter-spacing: 0.075em !important;
+  text-transform: uppercase !important;
+}
+
+.gate-archive-clear-search:hover,
+.gate-archive-clear-search:focus-visible {
+  color: var(--text) !important;
+  border-color: rgba(184, 190, 199, 0.44) !important;
+  background: rgba(20, 49, 91, 0.24) !important;
+}
+
+.gate-archive-empty {
+  display: grid !important;
+  place-items: center !important;
+  min-height: 14rem !important;
+  padding: 2rem !important;
+  border: 1px dashed rgba(184, 190, 199, 0.28) !important;
+  border-radius: var(--radius-xl) !important;
+  background: rgba(184, 190, 199, 0.045) !important;
+  color: var(--text-muted) !important;
+  text-align: center !important;
+}
+
+.gate-archive-empty-title {
+  display: block !important;
+  color: var(--text) !important;
+  font-size: 1rem !important;
+  font-weight: 950 !important;
+  letter-spacing: 0.1em !important;
+  text-transform: uppercase !important;
+}
+
+.gate-archive-empty-copy {
+  display: block !important;
+  max-width: 34rem !important;
+  margin-top: 0.42rem !important;
+  color: var(--text-muted) !important;
+  font-size: 0.8rem !important;
+  line-height: 1.45 !important;
+}
+
+.gate-archive-year {
+  border: 1px solid rgba(184, 190, 199, 0.24) !important;
+  border-radius: var(--radius-xl) !important;
+  overflow: hidden !important;
+  background: linear-gradient(145deg, rgba(20, 49, 91, 0.26), rgba(8, 18, 31, 0.32)) !important;
+}
+
+.gate-archive-year > summary,
+.gate-archive-month > summary {
+  list-style: none !important;
+  cursor: pointer !important;
+  user-select: none !important;
+}
+
+.gate-archive-year > summary::-webkit-details-marker,
+.gate-archive-month > summary::-webkit-details-marker {
+  display: none !important;
+}
+
+.gate-archive-year > summary {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  align-items: center !important;
+  gap: 1rem !important;
+  min-height: 4.05rem !important;
+  padding: 0.86rem 1rem !important;
+  border-bottom: 1px solid rgba(184, 190, 199, 0.14) !important;
+}
+
+.gate-archive-year-title-row,
+.gate-archive-month-title-row {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.55rem !important;
+  min-width: 0 !important;
+}
+
+.gate-archive-disclosure {
+  display: inline-grid !important;
+  place-items: center !important;
+  width: 1.45rem !important;
+  height: 1.45rem !important;
+  flex: 0 0 auto !important;
+  border: 1px solid rgba(184, 190, 199, 0.22) !important;
+  border-radius: 999px !important;
+  background: rgba(184, 190, 199, 0.07) !important;
+  color: var(--text-soft) !important;
+  font-size: 0.72rem !important;
+  line-height: 1 !important;
+  transform: rotate(0deg) !important;
+  transition: transform 140ms cubic-bezier(.2,.8,.2,1), border-color 140ms cubic-bezier(.2,.8,.2,1) !important;
+}
+
+.gate-archive-year[open] > summary .gate-archive-disclosure,
+.gate-archive-month[open] > summary .gate-archive-disclosure {
+  transform: rotate(90deg) !important;
+  border-color: rgba(0, 122, 51, 0.44) !important;
+}
+
+.gate-archive-year-title,
+.gate-archive-month-title {
+  min-width: 0 !important;
+  color: var(--text) !important;
+  font-size: 1rem !important;
+  font-weight: 950 !important;
+  letter-spacing: 0.095em !important;
+  line-height: 1.05 !important;
+  text-transform: uppercase !important;
+}
+
+.gate-archive-year-count,
+.gate-archive-month-count {
+  color: var(--text-soft) !important;
+  font-size: 0.68rem !important;
+  font-weight: 950 !important;
+  letter-spacing: 0.08em !important;
+  line-height: 1.15 !important;
+  text-align: right !important;
+  text-transform: uppercase !important;
+}
+
+.gate-archive-year-body {
+  display: grid !important;
+  gap: 0.72rem !important;
+  padding: 0.82rem !important;
+}
+
+.gate-archive-month {
+  min-height: 3.35rem !important;
+  margin: 0 !important;
+  border: 1px solid rgba(184, 190, 199, 0.18) !important;
+  border-radius: var(--radius-lg) !important;
+  overflow: hidden !important;
+  background: rgba(184, 190, 199, 0.045) !important;
+}
+
+.gate-archive-month > summary {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  align-items: center !important;
+  gap: 1rem !important;
+  min-height: 3.35rem !important;
+  padding: 0.72rem 0.82rem !important;
+}
+
+.gate-archive-month[open] > summary {
+  border-bottom: 1px solid rgba(184, 190, 199, 0.12) !important;
+  background: rgba(20, 49, 91, 0.16) !important;
+}
+
+.gate-archive-month-title {
+  font-size: 0.84rem !important;
+  letter-spacing: 0.085em !important;
+}
+
+.gate-archive-record-list {
+  display: grid !important;
+  gap: 0.54rem !important;
+  padding: 0.78rem 0.82rem 0.82rem !important;
+  background: rgba(0, 0, 0, 0.08) !important;
+}
+
+.gate-archive-record-card {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  gap: 0.72rem !important;
+  align-items: center !important;
+  min-height: 4.25rem !important;
+  padding: 0.78rem 0.84rem !important;
+  border: 1px solid rgba(184, 190, 199, 0.20) !important;
+  border-radius: var(--radius-md) !important;
+  background: rgba(8, 16, 28, 0.36) !important;
+  cursor: pointer !important;
+  text-align: left !important;
+}
+
+.gate-archive-record-card:hover,
+.gate-archive-record-card:focus-visible {
+  outline: none !important;
+  border-color: rgba(184, 190, 199, 0.52) !important;
+  background: rgba(20, 49, 91, 0.28) !important;
+  box-shadow: 0 0 0 4px rgba(184, 190, 199, 0.10) !important;
+}
+
+.gate-archive-record-title {
+  display: block !important;
+  color: var(--text) !important;
+  font-size: 0.92rem !important;
+  font-weight: 950 !important;
+  letter-spacing: 0.055em !important;
+  line-height: 1.08 !important;
+}
+
+.gate-archive-record-meta {
+  display: block !important;
+  margin-top: 0.18rem !important;
+  color: var(--text-muted) !important;
+  font-size: 0.68rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.05em !important;
+  text-transform: uppercase !important;
+}
+
+.gate-archive-record-stats {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  justify-content: flex-end !important;
+  gap: 0.35rem !important;
+}
+
+.gate-archive-stat-pill {
+  padding: 0.26rem 0.46rem !important;
+  border: 1px solid rgba(184, 190, 199, 0.20) !important;
+  border-radius: var(--radius-pill) !important;
+  color: var(--text-soft) !important;
+  font-size: 0.62rem !important;
+  font-weight: 950 !important;
+  letter-spacing: 0.06em !important;
+  text-transform: uppercase !important;
+}
+
+#archive-edit-modal .modal-content {
+  width: min(94vw, 980px) !important;
+  max-width: min(94vw, 980px) !important;
+  max-height: min(88vh, 920px) !important;
+  overflow: auto !important;
+  padding: 1.15rem !important;
+  border-radius: var(--radius-xl) !important;
+  background: linear-gradient(145deg, rgba(8, 16, 28, 0.96), rgba(20, 49, 91, 0.78)) !important;
+  border: 1px solid rgba(184, 190, 199, 0.22) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.12), 0 24px 60px rgba(0,0,0,0.42) !important;
+}
+
+#archive-edit-modal .modal-content > .flex.justify-between.items-center.mb-4 {
+  min-height: 3.5rem !important;
+  margin-bottom: 0.95rem !important;
+  padding: 0.7rem 0.82rem !important;
+  border: 1px solid rgba(184, 190, 199, 0.16) !important;
+  border-radius: var(--radius-lg) !important;
+  background: rgba(184, 190, 199, 0.07) !important;
+}
+
+#archive-edit-modal h2 {
+  color: var(--text) !important;
+  font-size: 1rem !important;
+  letter-spacing: 0.075em !important;
+  text-transform: uppercase !important;
+}
+
+#archive-edit-modal input,
+#archive-edit-modal textarea {
+  min-height: 2.55rem !important;
+  border-color: rgba(184, 190, 199, 0.22) !important;
+  border-radius: var(--radius-md) !important;
+  background: rgba(8, 16, 28, 0.34) !important;
+  color: var(--text) !important;
+}
+
+#archive-edit-modal textarea {
+  min-height: 10rem !important;
+  resize: vertical !important;
+}
+
+.theme-light #gate-archive-search,
+.theme-light .gate-archive-record-card,
+.theme-light #archive-edit-modal input,
+.theme-light #archive-edit-modal textarea {
+  background: rgba(255,255,255,0.74) !important;
+  border-color: rgba(20, 49, 91, 0.16) !important;
+  color: #0f172a !important;
+}
+
+.theme-light #archive-edit-modal .modal-content {
+  background: linear-gradient(145deg, rgba(255,255,255,0.96), rgba(242,246,251,0.88)) !important;
+  border-color: rgba(20, 49, 91, 0.18) !important;
+  color: var(--text) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.96), 0 24px 60px rgba(15,23,42,0.18) !important;
+}
+
+@media (max-width: 760px) {
+  .gate-archive-toolbar,
+  .gate-archive-record-card {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .gate-archive-record-stats {
+    justify-content: flex-start !important;
+  }
+
+  #archive-edit-modal .modal-content {
+    width: min(96vw, 980px) !important;
+    max-height: 88vh !important;
+  }
+}

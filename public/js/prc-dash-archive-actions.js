@@ -1,8 +1,9 @@
-// PRC GATE archive edit / print action reliability
+// PRC GATE archive edit / print action reliability + archive management view
 (function () {
   let started = false;
   let passScheduled = false;
   let originalPrintArchive = null;
+  let archiveViewSignature = '';
 
   function getAllDataSafe() {
     try { return Array.isArray(allData) ? allData : []; } catch (_) { return []; }
@@ -14,6 +15,21 @@
 
   function setEditArchiveIdSafe(id) {
     try { editArchiveId = id; } catch (_) { window.editArchiveId = id; }
+  }
+
+  function esc(value) {
+    if (typeof escapeHtml === 'function') return escapeHtml(value);
+    return String(value ?? '')
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#039;');
+  }
+
+  function n(value) {
+    const parsed = Number(value || 0);
+    return Number.isFinite(parsed) ? parsed : 0;
   }
 
   function safeJsonPrettyLocal(value, fallback = []) {
@@ -43,6 +59,22 @@
 
   function getArchive(id) {
     return getAllDataSafe().find(record => record && record.type === 'archive' && record.__backendId === id);
+  }
+
+  function archiveRecords() {
+    return getAllDataSafe()
+      .filter(record => record && record.type === 'archive')
+      .sort((a, b) => archiveTime(b).getTime() - archiveTime(a).getTime());
+  }
+
+  function archiveTime(archive) {
+    const raw = archive?.archived_at || archive?.created_at || archive?.updated_at || '';
+    const parsed = new Date(raw);
+    return Number.isNaN(parsed.getTime()) ? new Date(0) : parsed;
+  }
+
+  function monthName(date) {
+    return date.toLocaleString([], { month: 'long' });
   }
 
   function setField(id, value) {
@@ -81,14 +113,109 @@
     schedulePass();
   }
 
+  function archiveSignature(records) {
+    return records.map(record => [
+      record.__backendId,
+      record.week_group,
+      record.archived_at,
+      record.dorm_count,
+      record.bus_count,
+      record.total_arrived,
+      record.female_total,
+      record.nat_total
+    ].join('|')).join('~');
+  }
+
+  function groupArchives(records) {
+    const years = new Map();
+    records.forEach(record => {
+      const date = archiveTime(record);
+      const year = date.getFullYear() || 'Unknown';
+      const monthIndex = Number.isFinite(date.getTime()) && date.getTime() > 0 ? date.getMonth() : 12;
+      const monthLabel = monthIndex === 12 ? 'Unscheduled' : monthName(date);
+      const yearKey = String(year);
+      const monthKey = `${String(monthIndex).padStart(2, '0')}|${monthLabel}`;
+
+      if (!years.has(yearKey)) years.set(yearKey, new Map());
+      const months = years.get(yearKey);
+      if (!months.has(monthKey)) months.set(monthKey, []);
+      months.get(monthKey).push(record);
+    });
+    return years;
+  }
+
+  function archiveRecordCard(record) {
+    const id = esc(record.__backendId || '');
+    const date = archiveTime(record);
+    const dateText = date.getTime() > 0 ? date.toLocaleString([], { month: 'short', day: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'No archive timestamp';
+    return `
+      <button type="button" class="gate-archive-record-card" data-archive-id="${id}" title="Open archived week group">
+        <span>
+          <span class="gate-archive-record-title">${esc(record.week_group || 'Archived Week Group')}</span>
+          <span class="gate-archive-record-meta">Archived ${esc(dateText)}</span>
+        </span>
+        <span class="gate-archive-record-stats" aria-label="Archive statistics">
+          <span class="gate-archive-stat-pill">${n(record.dorm_count)} Dorms</span>
+          <span class="gate-archive-stat-pill">${n(record.bus_count)} Buses</span>
+          <span class="gate-archive-stat-pill">${n(record.total_arrived)} Arrived</span>
+          <span class="gate-archive-stat-pill">${n(record.female_total)} Female</span>
+          <span class="gate-archive-stat-pill">${n(record.nat_total)} NAT</span>
+        </span>
+      </button>
+    `;
+  }
+
+  function renderArchiveManagementView() {
+    const container = document.getElementById('archive-history');
+    if (!container) return;
+
+    const records = archiveRecords();
+    const signature = archiveSignature(records);
+    if (container.dataset.archiveManagerReady === 'true' && archiveViewSignature === signature) return;
+    archiveViewSignature = signature;
+    container.dataset.archiveManagerReady = 'true';
+    container.className = 'gate-archive-manager';
+
+    if (!records.length) {
+      container.innerHTML = '<div class="gate-archive-empty">No archived week groups.</div>';
+      return;
+    }
+
+    const grouped = groupArchives(records);
+    const years = Array.from(grouped.entries()).sort((a, b) => Number(b[0]) - Number(a[0]));
+
+    container.innerHTML = years.map(([year, months], yearIndex) => {
+      const monthEntries = Array.from(months.entries()).sort((a, b) => b[0].localeCompare(a[0]));
+      const yearCount = monthEntries.reduce((sum, [, list]) => sum + list.length, 0);
+      return `
+        <details class="gate-archive-year" ${yearIndex === 0 ? 'open' : ''}>
+          <summary><span>${esc(year)}</span><span class="gate-archive-year-count">${yearCount} Record${yearCount === 1 ? '' : 's'}</span></summary>
+          ${monthEntries.map(([monthKey, list], monthIndex) => {
+            const label = monthKey.split('|')[1];
+            return `
+              <details class="gate-archive-month" ${yearIndex === 0 && monthIndex === 0 ? 'open' : ''}>
+                <summary><span>${esc(label)}</span><span class="gate-archive-month-count">${list.length} Week Group${list.length === 1 ? '' : 's'}</span></summary>
+                <div class="gate-archive-record-list">
+                  ${list.map(archiveRecordCard).join('')}
+                </div>
+              </details>
+            `;
+          }).join('')}
+        </details>
+      `;
+    }).join('');
+  }
+
   function getCardArchiveId(card) {
+    if (!card) return '';
+    if (card.dataset.archiveId) return card.dataset.archiveId;
     const attr = card.getAttribute('oncontextmenu') || '';
     const match = attr.match(/openArchiveEditModal\(event,\s*['"]([^'"]+)['"]\)/);
     return match ? match[1] : '';
   }
 
   function bindArchiveCards() {
-    document.querySelectorAll('#archive-history [oncontextmenu*="openArchiveEditModal"]').forEach(card => {
+    document.querySelectorAll('#archive-history [data-archive-id], #archive-history [oncontextmenu*="openArchiveEditModal"]').forEach(card => {
       if (card.dataset.archiveActionBound === 'true') return;
       const id = getCardArchiveId(card);
       if (!id) return;
@@ -97,11 +224,12 @@
       card.dataset.archiveId = id;
       card.setAttribute('role', 'button');
       card.setAttribute('tabindex', '0');
-      card.title = 'Right-click, double-click, or press Enter to edit archived week group';
+      card.title = 'Open archived week group';
       card.addEventListener('contextmenu', event => openArchiveEditor(event, id), true);
       card.addEventListener('dblclick', event => openArchiveEditor(event, id), true);
+      card.addEventListener('click', event => openArchiveEditor(event, id), true);
       card.addEventListener('keydown', event => {
-        if (event.key === 'Enter') openArchiveEditor(event, id);
+        if (event.key === 'Enter' || event.key === ' ') openArchiveEditor(event, id);
       }, true);
     });
   }
@@ -160,6 +288,7 @@
       originalPrintArchive = window.printArchiveSpreadsheet;
     }
     window.printArchiveSpreadsheet = printArchiveReport;
+    renderArchiveManagementView();
     bindArchiveCards();
     bindArchivePrintButton();
   }
@@ -188,7 +317,7 @@
       childList: true,
       subtree: true,
       attributes: true,
-      attributeFilter: ['class', 'oncontextmenu']
+      attributeFilter: ['class', 'open', 'data-archive-id']
     });
   }
 

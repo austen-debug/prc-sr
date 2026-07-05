@@ -1,0 +1,6 @@
+/* PRC GATE Canonical UI Stack: Layout / Pages
+   Purpose: page-level layout, input matrix layout, board/page cleanup, archive management styling, and presentation readability.
+   Legacy source modules are grouped here to preserve the verified cascade while reducing active middleware CSS entries. */
+
+@import url('/css/prc-dash-input-layout.css');
+@import url('/css/prc-dash-view-cleanup.css');

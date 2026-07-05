@@ -1,4 +1,56 @@
-/* PRC GATE Phase 3 View Cleanup */
+/* PRC GATE Phase 3 View Cleanup + UI Perfection Contracts */
+:root {
+  --gate-architectural-silver: #b8bec7;
+  --gate-government-navy: #14315b;
+  --gate-unclassified-green: #007a33;
+  --gate-patriot-red: #720522;
+  --green: var(--gate-unclassified-green);
+  --green-bright: #00a447;
+  --red: var(--gate-patriot-red);
+  --red-bright: #a20d2a;
+  --blue: var(--gate-government-navy);
+  --blue-deep: #081b37;
+  --text-soft: var(--gate-architectural-silver);
+  --gate-board-readable-shadow: 0 1px 0 rgba(255,255,255,0.08), 0 0 18px rgba(184,190,199,0.12);
+  --btn-green-gradient: linear-gradient(135deg, #005f29 0%, var(--gate-unclassified-green) 58%, #0aa247 100%);
+  --btn-blue-gradient: linear-gradient(135deg, #081b37 0%, var(--gate-government-navy) 62%, #2a5d96 100%);
+  --btn-red-gradient: linear-gradient(135deg, #420215 0%, var(--gate-patriot-red) 64%, #a20d2a 100%);
+}
+
+.theme-light {
+  --green: var(--gate-unclassified-green);
+  --green-bright: #008f3c;
+  --red: var(--gate-patriot-red);
+  --red-bright: #9b1430;
+  --blue: var(--gate-government-navy);
+  --blue-deep: #0d274c;
+  --text-soft: #334155;
+  --btn-green-gradient: linear-gradient(135deg, #00642b 0%, var(--gate-unclassified-green) 58%, #2fbf6a 100%);
+  --btn-blue-gradient: linear-gradient(135deg, #0c264a 0%, var(--gate-government-navy) 62%, #5b7da9 100%);
+  --btn-red-gradient: linear-gradient(135deg, #520318 0%, var(--gate-patriot-red) 64%, #b42a45 100%);
+}
+
+.page,
+.surface,
+.metric-block,
+.dorm-card,
+.proc-card,
+.modal-content,
+input,
+select,
+textarea,
+button {
+  text-rendering: geometricPrecision !important;
+  -webkit-font-smoothing: antialiased !important;
+}
+
+.page label,
+.page th,
+.page .text-xs.uppercase,
+.page .dorm-col-header {
+  color: var(--text-soft) !important;
+  letter-spacing: 0.075em !important;
+}
 
 /* Status Board */
 #page-board {
@@ -30,6 +82,19 @@
 
 #page-board .dorm-col-header {
   color: var(--text-soft) !important;
+}
+
+#page-board .metric-block .text-5xl,
+#page-board .metric-block .text-4xl,
+#page-board .gate-dorm-name,
+#page-board .gate-dorm-timer,
+#page-board .gate-dorm-load {
+  text-shadow: var(--gate-board-readable-shadow) !important;
+}
+
+#page-board .gate-dorm-card,
+#page-board .dorm-card {
+  letter-spacing: 0.012em !important;
 }
 
 /* Airport */
@@ -80,7 +145,7 @@
 
 #page-input #total-load-calc {
   color: var(--text) !important;
-  text-shadow: 0 1px 18px rgba(56, 189, 248, 0.18) !important;
+  text-shadow: 0 1px 18px rgba(184, 190, 199, 0.18) !important;
 }
 
 #batch-grid-wrapper > div > div:first-child {
@@ -106,6 +171,22 @@
 #page-processing .proc-card {
   background: var(--gate-glass-bg) !important;
   border-color: var(--gate-glass-border) !important;
+  isolation: isolate !important;
+  contain: paint !important;
+}
+
+#page-processing .proc-card:hover,
+#page-processing .proc-card:focus-within {
+  transform: translateY(-1px) !important;
+  border-color: rgba(184, 190, 199, 0.42) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.12), 0 12px 26px rgba(0,0,0,0.20) !important;
+}
+
+#page-processing .proc-card::before,
+#page-processing .proc-card::after {
+  animation: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
 }
 
 #proc-dorm-grid {
@@ -127,6 +208,133 @@
   box-shadow: var(--gate-glass-edge), var(--gate-shadow-soft) !important;
   -webkit-backdrop-filter: blur(var(--gate-glass-blur)) saturate(1.35) !important;
   backdrop-filter: blur(var(--gate-glass-blur)) saturate(1.35) !important;
+}
+
+#archive-history.gate-archive-manager {
+  display: grid !important;
+  gap: 0.82rem !important;
+}
+
+.gate-archive-year {
+  border: 1px solid var(--gate-glass-border) !important;
+  border-radius: var(--radius-xl) !important;
+  overflow: hidden !important;
+  background: var(--gate-glass-bg) !important;
+  box-shadow: var(--gate-glass-edge), var(--gate-shadow-soft) !important;
+}
+
+.gate-archive-year > summary {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 1rem !important;
+  cursor: pointer !important;
+  padding: 0.95rem 1rem !important;
+  color: var(--text) !important;
+  font-size: 1.08rem !important;
+  font-weight: 950 !important;
+  letter-spacing: 0.055em !important;
+  text-transform: uppercase !important;
+  list-style: none !important;
+}
+
+.gate-archive-year > summary::-webkit-details-marker {
+  display: none !important;
+}
+
+.gate-archive-year-count,
+.gate-archive-month-count {
+  color: var(--text-soft) !important;
+  font-size: 0.68rem !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.08em !important;
+}
+
+.gate-archive-month {
+  margin: 0 0.82rem 0.82rem !important;
+  border: 1px solid rgba(184, 190, 199, 0.18) !important;
+  border-radius: var(--radius-lg) !important;
+  overflow: hidden !important;
+  background: rgba(184, 190, 199, 0.045) !important;
+}
+
+.gate-archive-month > summary {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 1rem !important;
+  padding: 0.72rem 0.82rem !important;
+  cursor: pointer !important;
+  color: var(--text) !important;
+  font-size: 0.84rem !important;
+  font-weight: 950 !important;
+  letter-spacing: 0.075em !important;
+  text-transform: uppercase !important;
+  list-style: none !important;
+}
+
+.gate-archive-month > summary::-webkit-details-marker {
+  display: none !important;
+}
+
+.gate-archive-record-list {
+  display: grid !important;
+  gap: 0.54rem !important;
+  padding: 0 0.82rem 0.82rem !important;
+}
+
+.gate-archive-record-card {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  gap: 0.72rem !important;
+  align-items: center !important;
+  min-height: 4.25rem !important;
+  padding: 0.78rem 0.84rem !important;
+  border: 1px solid rgba(184, 190, 199, 0.20) !important;
+  border-radius: var(--radius-md) !important;
+  background: rgba(8, 16, 28, 0.28) !important;
+  cursor: pointer !important;
+}
+
+.gate-archive-record-card:hover,
+.gate-archive-record-card:focus-visible {
+  outline: none !important;
+  border-color: rgba(184, 190, 199, 0.44) !important;
+  background: rgba(20, 49, 91, 0.20) !important;
+}
+
+.gate-archive-record-title {
+  color: var(--text) !important;
+  font-size: 0.92rem !important;
+  font-weight: 950 !important;
+  letter-spacing: 0.055em !important;
+}
+
+.gate-archive-record-meta {
+  margin-top: 0.18rem !important;
+  color: var(--text-muted) !important;
+  font-size: 0.68rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.05em !important;
+  text-transform: uppercase !important;
+}
+
+.gate-archive-record-stats {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  justify-content: flex-end !important;
+  gap: 0.35rem !important;
+}
+
+.gate-archive-stat-pill {
+  padding: 0.26rem 0.46rem !important;
+  border: 1px solid rgba(184, 190, 199, 0.20) !important;
+  border-radius: var(--radius-pill) !important;
+  color: var(--text-soft) !important;
+  font-size: 0.62rem !important;
+  font-weight: 950 !important;
+  letter-spacing: 0.06em !important;
+  text-transform: uppercase !important;
 }
 
 #page-archives thead,
@@ -160,4 +368,70 @@
 
 #page-squadron .gate-squadron-header {
   background: var(--gate-glass-bg-soft) !important;
+}
+
+/* Light-mode dorm modal corrections; high specificity so this wins over modal base styles. */
+body.theme-light #dorm-modal .modal-content,
+.theme-light #dorm-modal .modal-content {
+  background: linear-gradient(145deg, rgba(255,255,255,0.96), rgba(242,246,251,0.88)) !important;
+  border-color: rgba(20,49,91,0.18) !important;
+  color: var(--text) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.96), 0 24px 60px rgba(15,23,42,0.18) !important;
+}
+
+body.theme-light #dorm-modal .modal-content > .flex.justify-between.items-center.mb-4,
+.theme-light #dorm-modal .modal-content > .flex.justify-between.items-center.mb-4 {
+  background: linear-gradient(135deg, rgba(248,250,252,0.96), rgba(226,232,240,0.68)) !important;
+  border-color: rgba(20,49,91,0.18) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.92), 0 8px 18px rgba(15,23,42,0.08) !important;
+}
+
+body.theme-light #dorm-modal #modal-dorm-info,
+.theme-light #dorm-modal #modal-dorm-info {
+  background: rgba(20,49,91,0.055) !important;
+  border-color: rgba(20,49,91,0.12) !important;
+  color: #42526a !important;
+}
+
+body.theme-light #dorm-modal #modal-airman-input,
+body.theme-light #dorm-modal #modal-auditorium-input,
+body.theme-light #dorm-modal #modal-load-input,
+.theme-light #dorm-modal #modal-airman-input,
+.theme-light #dorm-modal #modal-auditorium-input,
+.theme-light #dorm-modal #modal-load-input {
+  background: rgba(255,255,255,0.74) !important;
+  border-color: rgba(20,49,91,0.18) !important;
+  color: #0f172a !important;
+}
+
+body.theme-light #dorm-modal .phase-btn,
+body.theme-light #dorm-modal .load-btn,
+.theme-light #dorm-modal .phase-btn,
+.theme-light #dorm-modal .load-btn {
+  background: linear-gradient(145deg, rgba(255,255,255,0.86), rgba(226,232,240,0.72)) !important;
+  border-color: rgba(20,49,91,0.16) !important;
+  color: #0f172a !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.92), 0 8px 16px rgba(15,23,42,0.08) !important;
+}
+
+body.theme-light #dorm-modal .phase-btn.selected,
+.theme-light #dorm-modal .phase-btn.selected {
+  background: linear-gradient(135deg, rgba(0,122,51,0.92), rgba(0,164,71,0.74)) !important;
+  border-color: rgba(0,122,51,0.38) !important;
+  color: #ffffff !important;
+}
+
+body.theme-light #dorm-modal #modal-action-section,
+.theme-light #dorm-modal #modal-action-section {
+  border-top-color: rgba(20,49,91,0.12) !important;
+}
+
+@media (max-width: 760px) {
+  .gate-archive-record-card {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .gate-archive-record-stats {
+    justify-content: flex-start !important;
+  }
 }

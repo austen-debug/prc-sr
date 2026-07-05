@@ -1,0 +1,137 @@
+/* PRC GATE Canonical UI Stack: Utilities / Mobile / Access
+   Purpose: final mobile access layout, role-page scoped display utilities, and last-pass non-destructive page-specific visibility rules.
+   This file replaces middleware inline CSS payloads. */
+
+@media (max-width: 991px) {
+  .app-nav.command-header-bar,
+  .app-nav {
+    display: grid !important;
+    grid-template-columns: minmax(78px, 112px) minmax(0, 1fr) !important;
+    grid-template-areas:
+      "brand menu"
+      "tools tools" !important;
+    align-items: center !important;
+    gap: 6px !important;
+    min-height: 124px !important;
+    height: auto !important;
+    padding: 8px 10px 10px !important;
+    overflow: visible !important;
+  }
+
+  .app-nav::before {
+    grid-area: brand !important;
+    width: min(28vw, 108px) !important;
+    min-width: 78px !important;
+    height: 40px !important;
+    min-height: 40px !important;
+    justify-self: start !important;
+    align-self: center !important;
+  }
+
+  #mobile-menu-trigger.mobile-only-control {
+    grid-area: menu !important;
+    display: inline-flex !important;
+    justify-self: end !important;
+    width: auto !important;
+    min-width: 104px !important;
+    max-width: 134px !important;
+    height: 40px !important;
+    min-height: 40px !important;
+    padding: 0 0.78rem !important;
+  }
+
+  .app-nav > div:last-child,
+  .app-nav .nav-group-right {
+    grid-area: tools !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 42px !important;
+    gap: 6px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border-left: 0 !important;
+    overflow: visible !important;
+    align-items: center !important;
+  }
+
+  #role-toggle {
+    grid-column: 1 / -1 !important;
+    width: 100% !important;
+    max-width: none !important;
+  }
+
+  #fullscreen-btn,
+  #sound-toggle-btn,
+  .app-nav button[aria-label='Toggle theme'] {
+    display: inline-flex !important;
+    height: 38px !important;
+    min-height: 38px !important;
+    min-width: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+    box-sizing: border-box !important;
+    justify-content: center !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+
+  #fullscreen-btn,
+  #sound-toggle-btn {
+    padding: 0 0.54rem !important;
+    font-size: 0.64rem !important;
+    letter-spacing: 0.05em !important;
+  }
+
+  .app-nav button[aria-label='Toggle theme'] {
+    width: 42px !important;
+    min-width: 42px !important;
+    padding: 0 !important;
+    justify-self: end !important;
+  }
+
+  #week-group-display {
+    display: none !important;
+  }
+
+  #main-nav-menu,
+  #nav-links,
+  .nav-group-left {
+    top: calc(100% + 5px) !important;
+  }
+
+  body:not(.fullscreen-board) .page,
+  body:not(.fullscreen-board) #page-squadron.gate-squadron-page {
+    padding-top: 166px !important;
+  }
+}
+
+@media (max-width: 420px) {
+  .app-nav.command-header-bar,
+  .app-nav {
+    grid-template-columns: 90px minmax(0, 1fr) !important;
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+  }
+
+  .app-nav::before {
+    width: 90px !important;
+    min-width: 90px !important;
+  }
+
+  #mobile-menu-trigger.mobile-only-control {
+    min-width: 100px !important;
+    max-width: 124px !important;
+    padding-left: 0.68rem !important;
+    padding-right: 0.68rem !important;
+  }
+}
+
+#page-squadron .gate-dorm-airman {
+  visibility: hidden !important;
+}
+
+#page-squadron .gate-auditorium-location {
+  display: none !important;
+}

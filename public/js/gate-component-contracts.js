@@ -123,6 +123,50 @@
     `;
   }
 
+  function formatBusDepartedTime(value) {
+    const date = new Date(value || '');
+    if (Number.isNaN(date.getTime())) return '—';
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+  }
+
+  function activeBusTitle(bus) {
+    if (bus?.bus_type === 'local') {
+      return `LOCAL – ${clean(bus.destination || bus.originating_destination, 'LOCAL')}`;
+    }
+    return `BUS #${clean(bus?.bus_id, '')}`;
+  }
+
+  function activeBusCard(bus) {
+    const id = esc(bus?.__backendId || '');
+    const title = activeBusTitle(bus);
+    const otw = n(bus?.otw_count);
+    const females = n(bus?.female_count);
+    const nat = n(bus?.nat_count);
+    const sf = n(bus?.space_force_count);
+    const departed = formatBusDepartedTime(bus?.departed_at || bus?.created_at);
+    const plainLabel = `${title} – ${otw} OTW | ${females} FEMALE | ${nat} NAT | ${sf} SPACE FORCE | DEPT ${departed}`;
+
+    return `
+      <button
+        type="button"
+        class="bus-badge prc-bus-card gate-component-active-bus-card"
+        data-component="active-bus-card"
+        data-owner="gate-active-bus-controller"
+        data-bus-id="${id}"
+        title="Confirm arrival: ${esc(plainLabel)}"
+        aria-label="Confirm arrival: ${esc(plainLabel)}"
+        onclick="confirmBusArrival(this.dataset.busId)"
+      >
+        <span class="prc-bus-card-title">${esc(title)}</span>
+        <span class="prc-bus-card-line">${otw} OTW</span>
+        <span class="prc-bus-card-line">${females} FEMALE</span>
+        <span class="prc-bus-card-line">${nat} NAT</span>
+        <span class="prc-bus-card-line">${sf} SPACE FORCE</span>
+        <span class="prc-bus-card-dept">DEPT: ${esc(departed)}</span>
+      </button>
+    `;
+  }
+
   function statusMetric({ id = '', label = '', value = '0' } = {}) {
     const idAttr = id ? ` id="${esc(id)}"` : '';
     return `
@@ -184,6 +228,8 @@
     dormLoad,
     dormBannerHtml,
     dormCard,
+    activeBusTitle,
+    activeBusCard,
     statusMetric,
     navButton,
     archiveRecordCard,

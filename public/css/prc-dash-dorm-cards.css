@@ -1,381 +1,25 @@
-/* PRC GATE Dorm Card UI Contract
-   Canonical styling for Status Board, Processing, Squadron Board dorm cards, dorm flags,
-   assigned airman/auditorium display, and responsive dorm-card alignment. */
+/* PRC GATE Dorm Card Support Layer
+   Processing-only dorm flag chip support.
+   Status Board and Squadron Board dorm-card geometry, banners, and female rings are owned by:
+   /css/gate-clean-ui-pass.css
+*/
+
 :root {
   --gate-flag-female-red: #ff3b30;
   --gate-flag-band-green: #22c55e;
   --gate-flag-space-force-bluebird: #45caff;
-  --gate-dorm-card-min: clamp(196px, 17.8vh, 258px);
-  --gate-dorm-card-pad-y: clamp(0.96rem, 1.08vw, 1.26rem);
-  --gate-dorm-card-pad-x: clamp(1.02rem, 1.22vw, 1.42rem);
   --gate-dorm-meta-font: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --gate-dorm-chip-height: 1.22rem;
-  --gate-dorm-banner-height: clamp(1.95rem, 1.7vw, 2.28rem);
-  --gate-board-stable-bg: rgba(7, 17, 31, 0.76);
-  --gate-board-stable-border: rgba(148, 163, 184, 0.26);
 }
 
-/* Suppress duplicate/animated glass overlays that caused white flashing on Status Board blocks. */
-#page-board .gate-dorm-card::before,
-#page-board .gate-dorm-card::after,
-#page-board .dorm-card::before,
-#page-board .dorm-card::after,
-#page-squadron .gate-dorm-card::before,
-#page-squadron .gate-dorm-card::after,
-#page-squadron .dorm-card::before,
-#page-squadron .dorm-card::after,
-#page-board .metric-block::before,
-#page-board .metric-block::after,
-#page-board #active-buses .prc-bus-card::before,
-#page-board #active-buses .prc-bus-card::after,
-#page-board #active-buses .bus-badge::before,
-#page-board #active-buses .bus-badge::after,
-#page-board .tactical-glass-card::before,
-#page-board .tactical-glass-card::after,
-#page-squadron .tactical-glass-card::before,
-#page-squadron .tactical-glass-card::after {
-  content: none !important;
-  animation: none !important;
-  transition: none !important;
-  opacity: 0 !important;
-  pointer-events: none !important;
-}
+/* Do not style Status/Squadron Board card geometry here. This layer intentionally avoids:
+   #page-board .gate-dorm-card
+   #page-squadron .gate-dorm-card
+   .gate-dorm-top-banner
+   .border-female board rings
+*/
 
-/* Status Board is a display surface, not an interactive liquid layer. Keep it visually stable. */
-#page-board .gate-dorm-card,
-#page-board .dorm-card,
-#page-board .metric-block,
-#page-board #active-buses .prc-bus-card,
-#page-board #active-buses .bus-badge,
-#page-squadron .gate-dorm-card,
-#page-squadron .dorm-card {
-  animation: none !important;
-  transition: none !important;
-  transform: none !important;
-  will-change: auto !important;
-  backface-visibility: hidden !important;
-  -webkit-backface-visibility: hidden !important;
-  contain: paint !important;
-}
-
-#page-board .gate-dorm-card:hover,
-#page-board .dorm-card:hover,
-#page-board .metric-block:hover,
-#page-board #active-buses .prc-bus-card:hover,
-#page-board #active-buses .bus-badge:hover,
-#page-squadron .gate-dorm-card:hover,
-#page-squadron .dorm-card:hover {
-  transform: none !important;
-}
-
-#page-board .gate-dorm-card,
-#page-board .dorm-card,
-#page-board .metric-block,
-#page-board #active-buses .prc-bus-card,
-#page-board #active-buses .bus-badge {
-  -webkit-backdrop-filter: none !important;
-  backdrop-filter: none !important;
-  background: var(--gate-board-stable-bg) !important;
-  border-color: var(--gate-board-stable-border) !important;
-  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.28) !important;
-}
-
-#page-board .gate-dorm-card.border-female,
-#page-board .dorm-card.border-female,
-#page-squadron .gate-dorm-card.border-female,
-#page-squadron .dorm-card.border-female {
-  border-color: rgba(255, 59, 48, 0.86) !important;
-}
-
-/* Status Board + Squadron Board card structure */
-#page-board .gate-dorm-card,
-#page-squadron .gate-dorm-card,
-#page-board .dorm-card,
-#page-squadron .dorm-card {
-  position: relative !important;
-  min-width: 0 !important;
-  min-height: var(--gate-dorm-card-min) !important;
-  padding: var(--gate-dorm-card-pad-y) var(--gate-dorm-card-pad-x) !important;
-  row-gap: 0.42rem !important;
-  column-gap: 0.84rem !important;
-  box-sizing: border-box !important;
-  isolation: isolate !important;
-  overflow: hidden !important;
-  font-family: var(--gate-dorm-meta-font) !important;
-}
-
-#page-board .gate-dorm-card {
-  grid-template-columns: minmax(0, 1fr) minmax(6rem, max-content) !important;
-  grid-template-rows: auto auto auto minmax(2.16rem, 1fr) auto 5px !important;
-  grid-template-areas:
-    "banner banner"
-    "name airman"
-    "info location"
-    "status status"
-    "timer load"
-    "progress progress" !important;
-}
-
-#page-squadron .gate-dorm-card {
-  grid-template-columns: minmax(0, 1fr) minmax(6rem, max-content) !important;
-  grid-template-rows: auto auto auto minmax(2.16rem, 1fr) auto 5px !important;
-  grid-template-areas:
-    "banner banner"
-    "name airman"
-    "info info"
-    "status status"
-    "timer load"
-    "progress progress" !important;
-}
-
-#page-board .gate-dorm-name,
-#page-squadron .gate-dorm-name,
-#page-board .dorm-id-text,
-#page-squadron .dorm-id-text {
-  min-width: 0 !important;
-  width: 100% !important;
-  max-width: 100% !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-  font-size: clamp(2.05rem, 2.8vw, 3.35rem) !important;
-  font-weight: 950 !important;
-  letter-spacing: 0.01em !important;
-  line-height: 0.95 !important;
-  padding-right: 0.35rem !important;
-}
-
-#page-board .gate-dorm-airman,
-#page-squadron .gate-dorm-airman {
-  display: inline-flex !important;
-  grid-area: airman !important;
-  align-items: center !important;
-  justify-content: flex-end !important;
-  justify-self: end !important;
-  align-self: start !important;
-  max-width: min(10.75rem, 32vw) !important;
-  min-height: 1.2rem !important;
-  padding: 0.08rem 0 !important;
-  color: var(--board-secondary-text, var(--text-muted)) !important;
-  font-size: clamp(0.62rem, 0.66vw, 0.76rem) !important;
-  font-weight: 850 !important;
-  letter-spacing: 0.075em !important;
-  line-height: 1.05 !important;
-  text-align: right !important;
-  text-transform: uppercase !important;
-  white-space: nowrap !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-}
-
-#page-board .gate-dorm-info,
-#page-squadron .gate-dorm-info {
-  min-width: 0 !important;
-  max-width: 100% !important;
-  color: var(--board-secondary-text, var(--text-muted)) !important;
-  font-size: clamp(0.68rem, 0.74vw, 0.86rem) !important;
-  font-weight: 850 !important;
-  letter-spacing: 0.074em !important;
-  line-height: 1.08 !important;
-  text-transform: uppercase !important;
-  white-space: nowrap !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-}
-
-/* Status/Squadron top indicator banners. */
-.gate-dorm-top-banner {
-  grid-area: banner !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  min-height: var(--gate-dorm-banner-height) !important;
-  width: auto !important;
-  max-width: none !important;
-  margin: calc(1px - var(--gate-dorm-card-pad-y)) calc(1px - var(--gate-dorm-card-pad-x)) 0 !important;
-  padding: 0.5rem 0.95rem 0.46rem !important;
-  border-radius: calc(var(--radius-lg, 1rem) - 2px) calc(var(--radius-lg, 1rem) - 2px) 0 0 !important;
-  border: 1px solid transparent !important;
-  border-bottom-width: 1px !important;
-  font-size: clamp(0.78rem, 0.82vw, 0.94rem) !important;
-  font-weight: 950 !important;
-  letter-spacing: 0.14em !important;
-  line-height: 1 !important;
-  text-transform: uppercase !important;
-  text-align: center !important;
-  white-space: nowrap !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-  box-shadow: none !important;
-}
-
-.gate-dorm-top-banner.banner-band {
-  background: rgba(34, 197, 94, 0.28) !important;
-  border-color: rgba(34, 197, 94, 0.56) !important;
-  color: #d7ffe4 !important;
-}
-
-.gate-dorm-top-banner.banner-space-force {
-  background: rgba(69, 202, 255, 0.26) !important;
-  border-color: rgba(69, 202, 255, 0.62) !important;
-  color: #e5fbff !important;
-}
-
-/* Processing keeps compact internal chips. Status/Squadron chips are replaced by banners. */
-.gate-dorm-flags {
-  display: flex !important;
-  flex-wrap: wrap !important;
-  gap: 0.28rem !important;
-  align-items: center !important;
-  justify-content: flex-start !important;
-  min-height: var(--gate-dorm-chip-height) !important;
-}
-
-#page-board .gate-dorm-flags,
-#page-squadron .gate-dorm-flags,
-.gate-dorm-card .gate-dorm-flags {
-  grid-area: flags !important;
-  min-width: 0 !important;
-  max-width: 100% !important;
-  overflow: hidden !important;
-  align-self: start !important;
-  justify-self: start !important;
-  margin: 0 !important;
-}
-
-#page-board .gate-dorm-flags,
-#page-squadron .gate-dorm-flags {
-  display: none !important;
-}
-
-.gate-dorm-flag-chip,
-.gate-auditorium-location {
-  min-height: var(--gate-dorm-chip-height) !important;
-  max-height: var(--gate-dorm-chip-height) !important;
-  max-width: 100% !important;
-  padding: 0 0.52rem !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-  white-space: nowrap !important;
-  border-radius: 999px !important;
-  font-size: 0.56rem !important;
-  font-weight: 950 !important;
-  line-height: 1 !important;
-  letter-spacing: 0.075em !important;
-  text-transform: uppercase !important;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.14), 0 3px 10px rgba(0,0,0,0.14) !important;
-}
-
-.gate-dorm-flag-chip.flag-band {
-  background: rgba(34, 197, 94, 0.18) !important;
-  border: 1px solid rgba(34, 197, 94, 0.62) !important;
-  color: #bbf7d0 !important;
-}
-
-.gate-dorm-flag-chip.flag-space-force {
-  background: rgba(69, 202, 255, 0.18) !important;
-  border: 1px solid rgba(69, 202, 255, 0.72) !important;
-  color: #e0f8ff !important;
-  text-shadow: 0 0 10px rgba(69, 202, 255, 0.36) !important;
-}
-
-.gate-auditorium-location {
-  border: 1px solid rgba(251, 191, 36, 0.42) !important;
-  background: rgba(251, 191, 36, 0.12) !important;
-  color: #fde68a !important;
-}
-
-#page-board .gate-auditorium-location {
-  grid-area: location !important;
-  justify-self: end !important;
-  align-self: start !important;
-  text-align: right !important;
-  width: fit-content !important;
-  max-width: min(10.75rem, 32vw) !important;
-  margin: 0 0 0 auto !important;
-}
-
-#page-processing .gate-auditorium-location,
-.proc-card .gate-auditorium-location {
-  margin-top: 0.24rem !important;
-}
-
-#page-squadron .gate-auditorium-location {
-  display: none !important;
-}
-
-.border-band,
-.border-space-force,
-.border-band.border-space-force {
-  border-color: var(--gate-glass-border, rgba(255,255,255,0.14)) !important;
-  box-shadow: var(--gate-glass-edge, var(--glass-highlight)), var(--gate-shadow-soft, var(--shadow-soft)) !important;
-}
-
-.border-female,
-.border-female.border-band,
-.border-female.border-space-force,
-.border-female.border-band.border-space-force,
-#page-board .gate-dorm-card.border-female,
-#page-board .dorm-card.border-female,
-#page-squadron .gate-dorm-card.border-female,
-#page-squadron .dorm-card.border-female {
-  border-color: rgba(255, 59, 48, 0.86) !important;
-  box-shadow:
-    0 10px 26px rgba(0, 0, 0, 0.28),
-    inset 4px 0 0 var(--gate-flag-female-red),
-    0 0 0 1px rgba(255, 59, 48, 0.24) !important;
-}
-
-/* Status/timer/load alignment */
-#page-board .gate-dorm-status-wrap,
-#page-squadron .gate-dorm-status-wrap {
-  padding: 0.34rem 0 0.28rem !important;
-  min-width: 0 !important;
-  align-self: center !important;
-}
-
-#page-board .gate-dorm-status,
-#page-squadron .gate-dorm-status {
-  max-width: 100% !important;
-  min-height: 1.62rem !important;
-  padding: 0.28rem 0.74rem !important;
-  font-size: clamp(0.64rem, 0.66vw, 0.78rem) !important;
-  font-weight: 950 !important;
-  letter-spacing: 0.095em !important;
-  white-space: nowrap !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-}
-
-#page-board .gate-dorm-timer,
-#page-squadron .gate-dorm-timer {
-  min-width: 0 !important;
-  align-self: end !important;
-  margin-bottom: 0.28rem !important;
-  font-size: clamp(1.75rem, 2.6vw, 3.08rem) !important;
-  letter-spacing: -0.03em !important;
-  line-height: 0.98 !important;
-}
-
-#page-board .gate-dorm-load,
-#page-squadron .gate-dorm-load {
-  min-width: 0 !important;
-  align-self: end !important;
-  justify-self: end !important;
-  margin-bottom: 0.28rem !important;
-  font-size: clamp(1.2rem, 1.6vw, 2rem) !important;
-  letter-spacing: -0.02em !important;
-  line-height: 0.98 !important;
-}
-
-#page-board .gate-dorm-progress,
-#page-squadron .gate-dorm-progress {
-  margin-top: 0 !important;
-}
-
-/* Processing cards */
+/* Processing cards keep compact internal chips. */
 #page-processing #proc-dorm-grid {
   align-items: stretch !important;
 }
@@ -434,11 +78,54 @@
 
 #page-processing .proc-card .gate-dorm-flags {
   display: flex !important;
+  visibility: visible !important;
   flex-wrap: wrap !important;
   gap: 0.28rem !important;
   margin: 0.3rem 0 0 !important;
   min-height: var(--gate-dorm-chip-height) !important;
   align-items: center !important;
+  justify-content: flex-start !important;
+}
+
+#page-processing .proc-card .gate-dorm-flag-chip,
+#page-processing .proc-card .gate-auditorium-location {
+  min-height: var(--gate-dorm-chip-height) !important;
+  max-height: var(--gate-dorm-chip-height) !important;
+  max-width: 100% !important;
+  padding: 0 0.52rem !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  border-radius: 999px !important;
+  font-size: 0.56rem !important;
+  font-weight: 950 !important;
+  line-height: 1 !important;
+  letter-spacing: 0.075em !important;
+  text-transform: uppercase !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.14), 0 3px 10px rgba(0,0,0,0.14) !important;
+}
+
+#page-processing .proc-card .gate-dorm-flag-chip.flag-band {
+  background: rgba(34, 197, 94, 0.18) !important;
+  border: 1px solid rgba(34, 197, 94, 0.62) !important;
+  color: #bbf7d0 !important;
+}
+
+#page-processing .proc-card .gate-dorm-flag-chip.flag-space-force {
+  background: rgba(69, 202, 255, 0.18) !important;
+  border: 1px solid rgba(69, 202, 255, 0.72) !important;
+  color: #e0f8ff !important;
+  text-shadow: 0 0 10px rgba(69, 202, 255, 0.36) !important;
+}
+
+#page-processing .proc-card .gate-auditorium-location {
+  margin-top: 0.24rem !important;
+  border: 1px solid rgba(251, 191, 36, 0.42) !important;
+  background: rgba(251, 191, 36, 0.12) !important;
+  color: #fde68a !important;
 }
 
 #page-processing .proc-card > .text-xl.font-black.font-tabular {
@@ -462,126 +149,21 @@
   font-variant-numeric: tabular-nums !important;
 }
 
-/* Light mode */
-.theme-light .gate-dorm-flag-chip.flag-band {
+.theme-light #page-processing .proc-card .gate-dorm-flag-chip.flag-band {
   background: rgba(187, 247, 208, 0.72) !important;
   border-color: rgba(22, 163, 74, 0.36) !important;
   color: #14532d !important;
 }
 
-.theme-light .gate-dorm-flag-chip.flag-space-force {
+.theme-light #page-processing .proc-card .gate-dorm-flag-chip.flag-space-force {
   background: rgba(224, 248, 255, 0.86) !important;
   border-color: rgba(2, 132, 199, 0.34) !important;
   color: #075985 !important;
   text-shadow: none !important;
 }
 
-.theme-light .gate-dorm-top-banner.banner-band {
-  background: rgba(187, 247, 208, 0.86) !important;
-  border-color: rgba(22, 163, 74, 0.36) !important;
-  color: #14532d !important;
-}
-
-.theme-light .gate-dorm-top-banner.banner-space-force {
-  background: rgba(224, 248, 255, 0.94) !important;
-  border-color: rgba(2, 132, 199, 0.36) !important;
-  color: #075985 !important;
-}
-
-.theme-light .gate-auditorium-location {
+.theme-light #page-processing .proc-card .gate-auditorium-location {
   background: rgba(254, 243, 199, 0.72) !important;
   border-color: rgba(217, 119, 6, 0.28) !important;
   color: #78350f !important;
-}
-
-.theme-light #page-board .gate-dorm-card,
-.theme-light #page-board .dorm-card,
-.theme-light #page-board .metric-block,
-.theme-light #page-board #active-buses .prc-bus-card,
-.theme-light #page-board #active-buses .bus-badge {
-  background: rgba(248, 250, 252, 0.92) !important;
-  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08) !important;
-}
-
-.theme-light .border-female,
-.theme-light .border-female.border-band,
-.theme-light .border-female.border-space-force,
-.theme-light .border-female.border-band.border-space-force,
-.theme-light #page-board .gate-dorm-card.border-female,
-.theme-light #page-board .dorm-card.border-female,
-.theme-light #page-squadron .gate-dorm-card.border-female,
-.theme-light #page-squadron .dorm-card.border-female {
-  border-color: rgba(220, 38, 38, 0.64) !important;
-  box-shadow:
-    0 8px 20px rgba(15, 23, 42, 0.08),
-    inset 4px 0 0 #dc2626,
-    0 0 0 1px rgba(220, 38, 38, 0.18) !important;
-}
-
-/* Responsive */
-@media (max-width: 1200px) {
-  #page-board .gate-dorm-card,
-  #page-squadron .gate-dorm-card {
-    --gate-dorm-card-pad-y: 0.92rem;
-    --gate-dorm-card-pad-x: 1rem;
-    min-height: clamp(186px, 19vh, 244px) !important;
-    padding: var(--gate-dorm-card-pad-y) var(--gate-dorm-card-pad-x) !important;
-  }
-
-  #page-board .gate-dorm-card,
-  #page-squadron .gate-dorm-card {
-    grid-template-columns: minmax(0, 1fr) minmax(4.9rem, max-content) !important;
-  }
-}
-
-@media (max-width: 760px) {
-  #page-board .gate-dorm-card {
-    grid-template-columns: minmax(0, 1fr) !important;
-    grid-template-rows: auto auto auto auto auto auto auto auto 5px !important;
-    grid-template-areas:
-      "banner"
-      "name"
-      "airman"
-      "info"
-      "location"
-      "status"
-      "timer"
-      "load"
-      "progress" !important;
-  }
-
-  #page-squadron .gate-dorm-card {
-    grid-template-columns: minmax(0, 1fr) !important;
-    grid-template-rows: auto auto auto auto auto auto auto 5px !important;
-    grid-template-areas:
-      "banner"
-      "name"
-      "airman"
-      "info"
-      "status"
-      "timer"
-      "load"
-      "progress" !important;
-  }
-
-  #page-board .gate-auditorium-location {
-    grid-area: location !important;
-    justify-self: start !important;
-    margin-top: 0 !important;
-    max-width: 100% !important;
-  }
-
-  #page-board .gate-dorm-load,
-  #page-squadron .gate-dorm-load,
-  #page-board .gate-dorm-airman,
-  #page-squadron .gate-dorm-airman {
-    justify-self: start !important;
-    justify-content: flex-start !important;
-    text-align: left !important;
-    max-width: 100% !important;
-  }
-
-  .gate-airman-location-grid {
-    grid-template-columns: minmax(0, 1fr) !important;
-  }
 }

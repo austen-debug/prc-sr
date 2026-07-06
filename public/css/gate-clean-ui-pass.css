@@ -501,4 +501,126 @@ body:not(.theme-light) #page-squadron .dorm-card[data-female-dorm='true'] .gate-
   body:not(.theme-light):not(.fullscreen-board) #page-squadron.gate-squadron-page {
     padding-top: calc(var(--gate-classification-height) + var(--gate-mobile-nav-height) + 14px) !important;
   }
+
+  body.theme-light #page-board,
+  body:not(.theme-light) #page-board,
+  body.theme-light #page-squadron.gate-squadron-page,
+  body:not(.theme-light) #page-squadron.gate-squadron-page {
+    width: 100% !important;
+    max-width: 100vw !important;
+    min-width: 0 !important;
+    overflow-x: hidden !important;
+    box-sizing: border-box !important;
+    padding-left: max(10px, env(safe-area-inset-left)) !important;
+    padding-right: max(10px, env(safe-area-inset-right)) !important;
+  }
+
+  body.theme-light #page-board .board-header,
+  body:not(.theme-light) #page-board .board-header {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+    margin: 0 0 14px !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+  }
+
+  body.theme-light #page-board .board-header .metric-block,
+  body:not(.theme-light) #page-board .board-header .metric-block {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+    min-height: 86px !important;
+    padding: 12px 14px !important;
+    border-radius: 10px !important;
+  }
+
+  body.theme-light #page-board .board-header .metric-block:nth-child(3),
+  body:not(.theme-light) #page-board .board-header .metric-block:nth-child(3) {
+    grid-column: 1 / -1 !important;
+    min-height: 104px !important;
+  }
+
+  body.theme-light #page-board .board-header .metric-block > *,
+  body:not(.theme-light) #page-board .board-header .metric-block > *,
+  body.theme-light #page-board #active-buses,
+  body:not(.theme-light) #page-board #active-buses {
+    max-width: 100% !important;
+    min-width: 0 !important;
+    overflow-wrap: anywhere !important;
+  }
+
+  body.theme-light #page-board .dorm-dashboard,
+  body:not(.theme-light) #page-board .dorm-dashboard,
+  body.theme-light #page-squadron .dorm-dashboard,
+  body:not(.theme-light) #page-squadron .dorm-dashboard {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 14px !important;
+    overflow: visible !important;
+  }
+
+  body.theme-light #page-board .dorm-column,
+  body:not(.theme-light) #page-board .dorm-column,
+  body.theme-light #page-squadron .dorm-column,
+  body:not(.theme-light) #page-squadron .dorm-column {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+  }
+
+  body.theme-light #page-board .dorm-col-content,
+  body:not(.theme-light) #page-board .dorm-col-content,
+  body.theme-light #page-squadron .dorm-col-content,
+  body:not(.theme-light) #page-squadron .dorm-col-content {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    padding: 10px !important;
+    box-sizing: border-box !important;
+  }
+
+  body.theme-light #page-board .gate-dorm-card,
+  body.theme-light #page-board .dorm-card,
+  body.theme-light #page-squadron .gate-dorm-card,
+  body.theme-light #page-squadron .dorm-card,
+  body:not(.theme-light) #page-board .gate-dorm-card,
+  body:not(.theme-light) #page-board .dorm-card,
+  body:not(.theme-light) #page-squadron .gate-dorm-card,
+  body:not(.theme-light) #page-squadron .dorm-card {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    border-radius: 10px !important;
+  }
+
+  body.theme-light #page-board .gate-dorm-top-banner,
+  body.theme-light #page-squadron .gate-dorm-top-banner,
+  body:not(.theme-light) #page-board .gate-dorm-top-banner,
+  body:not(.theme-light) #page-squadron .gate-dorm-top-banner {
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    height: var(--gate-board-banner-height) !important;
+    min-height: var(--gate-board-banner-height) !important;
+    margin: 0 calc(-1 * var(--gate-card-pad-x)) !important;
+    padding: 0 10px !important;
+    border-radius: 10px 10px 0 0 !important;
+    border-top-left-radius: 10px !important;
+    border-top-right-radius: 10px !important;
+    border-bottom-left-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+    clip-path: none !important;
+    transform: none !important;
+    filter: none !important;
+  }
 }

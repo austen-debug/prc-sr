@@ -9,3 +9,52 @@
 #page-squadron .gate-auditorium-location {
   display: none !important;
 }
+
+/* Final board-card conflict guard.
+   Female owns the outer card frame. Band/Space Force owns only the interior header strip.
+   This prevents the red Female frame and operational banner from competing for the same top edge. */
+#page-board .gate-dorm-card.border-female,
+#page-board .dorm-card.border-female,
+#page-board .gate-dorm-card[data-female-dorm='true'],
+#page-board .dorm-card[data-female-dorm='true'],
+#page-squadron .gate-dorm-card.border-female,
+#page-squadron .dorm-card.border-female,
+#page-squadron .gate-dorm-card[data-female-dorm='true'],
+#page-squadron .dorm-card[data-female-dorm='true'] {
+  border: 2px solid var(--gate-indicator-female, #ef4444) !important;
+  outline: 0 !important;
+  outline-offset: 0 !important;
+  overflow: hidden !important;
+  box-shadow: var(--shadow-soft-unified, 0 10px 28px rgba(0,0,0,0.34)) !important;
+}
+
+#page-board .gate-dorm-card.border-female .gate-dorm-top-banner,
+#page-board .dorm-card.border-female .gate-dorm-top-banner,
+#page-board .gate-dorm-card[data-female-dorm='true'] .gate-dorm-top-banner,
+#page-board .dorm-card[data-female-dorm='true'] .gate-dorm-top-banner,
+#page-squadron .gate-dorm-card.border-female .gate-dorm-top-banner,
+#page-squadron .dorm-card.border-female .gate-dorm-top-banner,
+#page-squadron .gate-dorm-card[data-female-dorm='true'] .gate-dorm-top-banner,
+#page-squadron .dorm-card[data-female-dorm='true'] .gate-dorm-top-banner,
+#page-board .gate-dorm-top-banner,
+#page-squadron .gate-dorm-top-banner {
+  border-radius: 0 !important;
+  clip-path: none !important;
+  transform: none !important;
+  filter: none !important;
+  z-index: 1 !important;
+}
+
+#page-board .gate-dorm-card.border-female .gate-dorm-load,
+#page-board .dorm-card.border-female .gate-dorm-load,
+#page-board .gate-dorm-card[data-female-dorm='true'] .gate-dorm-load,
+#page-board .dorm-card[data-female-dorm='true'] .gate-dorm-load,
+#page-squadron .gate-dorm-card.border-female .gate-dorm-load,
+#page-squadron .dorm-card.border-female .gate-dorm-load,
+#page-squadron .gate-dorm-card[data-female-dorm='true'] .gate-dorm-load,
+#page-squadron .dorm-card[data-female-dorm='true'] .gate-dorm-load {
+  border: 0 !important;
+  outline: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}

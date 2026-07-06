@@ -1,6 +1,6 @@
 // PRC GATE dorm flag validation
 // Behavior-only layer for dorm flag rendering and Space Force edit preservation.
-// Canonical styles live in /css/prc-dash-dorm-cards.css.
+// Board card styles are owned by /css/gate-clean-ui-pass.css; Processing chip styles are owned by /css/prc-dash-dorm-cards.css.
 (function () {
   let started = false;
   let sdkPatched = false;
@@ -52,7 +52,7 @@
     const female = isFemale(dorm);
     const spaceForce = isSpaceForce(dorm);
     const band = !spaceForce && isBand(dorm);
-    return { female, band, spaceForce };
+    return { female, band, spaceForce, hasBanner: band || spaceForce };
   }
 
   function flagHtml(dorm) {
@@ -75,9 +75,11 @@
     card.classList.toggle('border-female', flags.female);
     card.classList.toggle('border-band', flags.band);
     card.classList.toggle('border-space-force', flags.spaceForce);
+    card.classList.toggle('gate-dorm-has-banner', flags.hasBanner);
     card.dataset.spaceForce = flags.spaceForce ? 'true' : 'false';
     card.dataset.bandDorm = flags.band ? 'true' : 'false';
     card.dataset.femaleDorm = flags.female ? 'true' : 'false';
+    card.dataset.hasBanner = flags.hasBanner ? 'true' : 'false';
   }
 
   function setFlags(card, dorm) {

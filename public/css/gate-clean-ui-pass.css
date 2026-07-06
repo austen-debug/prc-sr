@@ -11,6 +11,8 @@
   --gate-clean-card-radius: 8px;
   --gate-clean-nested-radius: 4px;
   --gate-board-banner-height: 30px;
+  --gate-card-pad-x: 16px;
+  --gate-card-pad-y: 16px;
   --gate-indicator-band: #007a33;
   --gate-indicator-female: #720522;
   --gate-indicator-space: #2f6f9f;
@@ -209,6 +211,7 @@ body:not(.theme-light) #page-squadron .gate-dorm-card,
 body:not(.theme-light) #page-squadron .dorm-card {
   position: relative !important;
   overflow: hidden !important;
+  box-sizing: border-box !important;
   display: grid !important;
   grid-template-columns: minmax(0, 1fr) max-content !important;
   grid-template-areas:
@@ -221,29 +224,30 @@ body:not(.theme-light) #page-squadron .dorm-card {
   row-gap: 0.36rem !important;
   column-gap: 0.8rem !important;
   min-height: 150px !important;
-  padding: 16px 16px 14px !important;
+  padding: var(--gate-card-pad-y) var(--gate-card-pad-x) 14px !important;
   border-radius: var(--gate-clean-card-radius) !important;
   border: 1px solid var(--border-muted) !important;
   background: var(--bg-card) !important;
   box-shadow: var(--shadow-soft-unified) !important;
 }
 
-body.theme-light #page-board .gate-dorm-card[data-band-dorm='true'],
-body.theme-light #page-board .gate-dorm-card[data-space-force='true'],
-body.theme-light #page-board .dorm-card[data-band-dorm='true'],
-body.theme-light #page-board .dorm-card[data-space-force='true'],
-body.theme-light #page-squadron .gate-dorm-card[data-band-dorm='true'],
-body.theme-light #page-squadron .gate-dorm-card[data-space-force='true'],
-body.theme-light #page-squadron .dorm-card[data-band-dorm='true'],
-body.theme-light #page-squadron .dorm-card[data-space-force='true'],
-body:not(.theme-light) #page-board .gate-dorm-card[data-band-dorm='true'],
-body:not(.theme-light) #page-board .gate-dorm-card[data-space-force='true'],
-body:not(.theme-light) #page-board .dorm-card[data-band-dorm='true'],
-body:not(.theme-light) #page-board .dorm-card[data-space-force='true'],
-body:not(.theme-light) #page-squadron .gate-dorm-card[data-band-dorm='true'],
-body:not(.theme-light) #page-squadron .gate-dorm-card[data-space-force='true'],
-body:not(.theme-light) #page-squadron .dorm-card[data-band-dorm='true'],
-body:not(.theme-light) #page-squadron .dorm-card[data-space-force='true'] {
+/* Banner cards use one authoritative trigger. The :has() fallback catches validation-inserted banners. */
+body.theme-light #page-board .gate-dorm-card.gate-dorm-has-banner,
+body.theme-light #page-board .dorm-card.gate-dorm-has-banner,
+body.theme-light #page-board .gate-dorm-card:has(> .gate-dorm-top-banner),
+body.theme-light #page-board .dorm-card:has(> .gate-dorm-top-banner),
+body.theme-light #page-squadron .gate-dorm-card.gate-dorm-has-banner,
+body.theme-light #page-squadron .dorm-card.gate-dorm-has-banner,
+body.theme-light #page-squadron .gate-dorm-card:has(> .gate-dorm-top-banner),
+body.theme-light #page-squadron .dorm-card:has(> .gate-dorm-top-banner),
+body:not(.theme-light) #page-board .gate-dorm-card.gate-dorm-has-banner,
+body:not(.theme-light) #page-board .dorm-card.gate-dorm-has-banner,
+body:not(.theme-light) #page-board .gate-dorm-card:has(> .gate-dorm-top-banner),
+body:not(.theme-light) #page-board .dorm-card:has(> .gate-dorm-top-banner),
+body:not(.theme-light) #page-squadron .gate-dorm-card.gate-dorm-has-banner,
+body:not(.theme-light) #page-squadron .dorm-card.gate-dorm-has-banner,
+body:not(.theme-light) #page-squadron .gate-dorm-card:has(> .gate-dorm-top-banner),
+body:not(.theme-light) #page-squadron .dorm-card:has(> .gate-dorm-top-banner) {
   grid-template-areas:
     'banner banner'
     'name airman'
@@ -264,11 +268,12 @@ body:not(.theme-light) #page-squadron .gate-dorm-top-banner {
   visibility: visible !important;
   opacity: 1 !important;
   position: relative !important;
-  width: calc(100% + 32px) !important;
-  min-width: calc(100% + 32px) !important;
+  box-sizing: border-box !important;
+  width: auto !important;
+  min-width: 0 !important;
   height: var(--gate-board-banner-height) !important;
   min-height: var(--gate-board-banner-height) !important;
-  margin: 0 -16px !important;
+  margin: 0 calc(-1 * var(--gate-card-pad-x)) !important;
   padding: 0 12px !important;
   align-items: center !important;
   justify-content: center !important;
@@ -453,6 +458,8 @@ body:not(.theme-light) #page-squadron .dorm-card[data-female-dorm='true'] .gate-
     --gate-mobile-nav-height: 154px;
     --gate-clean-pad-x: 16px;
     --gate-board-banner-height: 28px;
+    --gate-card-pad-x: 16px;
+    --gate-card-pad-y: 16px;
   }
 
   body.theme-light .security-banner-fixed,

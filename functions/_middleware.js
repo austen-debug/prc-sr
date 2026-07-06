@@ -112,26 +112,35 @@ function extractId(assetTag) {
   return match ? match[1] : '';
 }
 
+function applyAppShellIdentity(html) {
+  return html.replace(
+    /<title>\s*Pfingston Reception Status Board\s*<\/title>/i,
+    '<title>GATE — Gateway Arrival Tracking Environment | Pfingston Reception Center</title>'
+  );
+}
+
 function applyUiAssets(html) {
+  const updatedHtml = applyAppShellIdentity(html);
+
   const linksToAdd = UI_STYLESHEETS.filter(link => {
     const href = extractUrl(link, 'href');
-    return href && !html.includes(href);
+    return href && !updatedHtml.includes(href);
   });
 
   const inlineAssetsToAdd = UI_INLINE_ASSETS.filter(asset => {
     const id = extractId(asset);
-    return id ? !html.includes(`id="${id}"`) : !html.includes(asset);
+    return id ? !updatedHtml.includes(`id="${id}"`) : !updatedHtml.includes(asset);
   });
 
   const scriptsToAdd = UI_HEAD_SCRIPTS.filter(script => {
     const src = extractUrl(script, 'src');
-    return src && !html.includes(src);
+    return src && !updatedHtml.includes(src);
   });
 
   const assetsToAdd = [...linksToAdd, ...inlineAssetsToAdd, ...scriptsToAdd];
-  if (assetsToAdd.length === 0) return html;
+  if (assetsToAdd.length === 0) return updatedHtml;
 
-  return html.replace(/<\/head>/i, `  ${assetsToAdd.join('\n  ')}\n </head>`);
+  return updatedHtml.replace(/<\/head>/i, `  ${assetsToAdd.join('\n  ')}\n </head>`);
 }
 
 async function maybeApplyUiAssets(response) {

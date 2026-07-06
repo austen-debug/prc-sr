@@ -106,6 +106,20 @@
     `);
   }
 
+  function ensureLocalSpaceForceInput() {
+    const natInput = document.getElementById('local-nat');
+    const natWrapper = natInput ? natInput.closest('div') : null;
+    if (!natWrapper || document.getElementById('local-sf')) return;
+
+    natWrapper.insertAdjacentHTML('afterend', `
+      <div data-owner="gate-bus-workflow-controller">
+        <label class="block text-sm font-medium mb-1" for="local-sf">Space Force</label>
+        <input id="local-sf" type="number" inputmode="numeric" min="0" value="0" class="w-full border rounded px-3 py-2 bg-transparent" style="border-color:var(--border);color:var(--text);">
+        <div id="local-sf-error" class="text-red-500 text-xs mt-1 hidden"></div>
+      </div>
+    `);
+  }
+
   function ensureSpaceForceColumn() {
     const body = document.getElementById('airport-bus-log-body');
     if (!body) return;
@@ -406,6 +420,7 @@
   }
 
   async function createLocalBus(form) {
+    ensureLocalSpaceForceInput();
     clearFieldErrors('local');
 
     const dest = String(document.getElementById('local-dest')?.value || '').trim();
@@ -639,6 +654,7 @@
 
   function startBusWorkflowController() {
     ensureAirportSpaceForceInput();
+    ensureLocalSpaceForceInput();
     addBusIdentityEditInput(null);
     addSpaceForceEditInput();
     patchBusLogRenderers();
@@ -664,6 +680,7 @@
       busWorkflowInterval = setInterval(() => {
         patchBusLogRenderers();
         ensureAirportSpaceForceInput();
+        ensureLocalSpaceForceInput();
         addBusIdentityEditInput(null);
         addSpaceForceEditInput();
         renderEditableBusLog();

@@ -42,7 +42,7 @@
     const female = isFemaleDorm(dorm);
     const spaceForce = isSpaceForceDorm(dorm);
     const band = !spaceForce && isBandDorm(dorm);
-    return { female, band, spaceForce };
+    return { female, band, spaceForce, hasBanner: band || spaceForce };
   }
 
   function dormStatusLabel(dorm) {
@@ -93,6 +93,7 @@
       flagsState.female ? 'border-female' : '',
       flagsState.band ? 'border-band' : '',
       flagsState.spaceForce ? 'border-space-force' : '',
+      flagsState.hasBanner ? 'gate-dorm-has-banner' : '',
       state === 'closed' ? 'dorm-closed' : '',
       load.isOver ? 'is-over' : (load.isFull ? 'is-full' : '')
     ].filter(Boolean).join(' ');
@@ -104,7 +105,7 @@
     const banner = dormBannerHtml(dorm, flagsState);
 
     return `
-      <div class="dorm-card tactical-glass-card gate-dorm-card gate-component-dorm-card gate-dorm-state-${esc(state)} ${flags}" data-component="dorm-card" data-dorm-id="${esc(dorm?.__backendId || '')}" data-state="${esc(state)}" data-component-type="${esc(component)}" data-female-dorm="${flagsState.female ? 'true' : 'false'}" data-band-dorm="${flagsState.band ? 'true' : 'false'}" data-space-force="${flagsState.spaceForce ? 'true' : 'false'}">
+      <div class="dorm-card tactical-glass-card gate-dorm-card gate-component-dorm-card gate-dorm-state-${esc(state)} ${flags}" data-component="dorm-card" data-dorm-id="${esc(dorm?.__backendId || '')}" data-state="${esc(state)}" data-component-type="${esc(component)}" data-female-dorm="${flagsState.female ? 'true' : 'false'}" data-band-dorm="${flagsState.band ? 'true' : 'false'}" data-space-force="${flagsState.spaceForce ? 'true' : 'false'}" data-has-banner="${flagsState.hasBanner ? 'true' : 'false'}">
         ${banner}
         <div class="gate-dorm-name">${esc(dorm?.dorm_name || '')}</div>
         <div class="gate-dorm-airman">${airman}</div>

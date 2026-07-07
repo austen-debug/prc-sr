@@ -1,69 +1,60 @@
-// PRC DASH instructor closed-dorm reopen fail-safe
-// Safe runtime patch. Does not touch navigation or page routing.
+// GATE instructor closed-dorm reopen fail-safe
+// Hook-driven support for reopening closed dorms without persistent polling.
 (function () {
-  var patchStarted = false;
+  'use strict';
+
+  let patchStarted = false;
+  let hooksRegistered = false;
 
   function isInstructor() {
-    try {
-      return typeof currentRole === 'undefined' || currentRole === 'instructor';
-    } catch (error) {
-      return false;
-    }
+    try { return typeof currentRole === 'undefined' || currentRole === 'instructor'; } catch (_) { return false; }
   }
 
   function parseTimerToSeconds(value) {
-    var raw = String(value || '').trim();
-    var match = raw.match(/^(\d{1,5})(?::([0-5]\d))?$/);
+    const raw = String(value || '').trim();
+    const match = raw.match(/^(\d{1,5})(?::([0-5]\d))?$/);
     if (!match) return 0;
 
-    var minutes = Number(match[1] || 0);
-    var seconds = Number(match[2] || 0);
+    const minutes = Number(match[1] || 0);
+    const seconds = Number(match[2] || 0);
     if (!Number.isFinite(minutes) || !Number.isFinite(seconds)) return 0;
-
     return Math.max(0, (minutes * 60) + seconds);
   }
 
   function getEditDormId() {
-    try {
-      return typeof editDormId === 'undefined' ? null : editDormId;
-    } catch (error) {
-      return null;
-    }
+    try { return typeof editDormId === 'undefined' ? null : editDormId; } catch (_) { return null; }
   }
 
   function getEditDorm() {
-    var id = getEditDormId();
+    const id = getEditDormId();
     if (!id) return null;
 
     try {
       if (typeof allData === 'undefined' || !Array.isArray(allData)) return null;
-      return allData.find(function (record) {
-        return record && record.__backendId === id && record.type === 'dorm';
-      }) || null;
-    } catch (error) {
+      return allData.find(record => record && record.__backendId === id && record.type === 'dorm') || null;
+    } catch (_) {
       return null;
     }
   }
 
   function showEditMessage(message, isError) {
-    var msg = document.getElementById('dorm-edit-msg');
+    const msg = document.getElementById('dorm-edit-msg');
     if (!msg) return;
-
     msg.textContent = message;
     msg.style.color = isError ? 'var(--red)' : 'var(--green)';
     msg.classList.remove('hidden');
   }
 
   function getFinalTimeValue(dorm) {
-    var input = document.getElementById('edit-closed-timer');
+    const input = document.getElementById('edit-closed-timer');
     return (input && input.value) || (dorm && dorm.closed_timer) || '00:00';
   }
 
   function ensureStyles() {
-    if (document.getElementById('prc-dorm-reopen-styles')) return;
+    if (document.getElementById('gate-dorm-reopen-styles')) return;
 
-    var style = document.createElement('style');
-    style.id = 'prc-dorm-reopen-styles';
+    const style = document.createElement('style');
+    style.id = 'gate-dorm-reopen-styles';
     style.textContent = '' +
       '#dorm-edit-form .prc-dorm-edit-actions{display:flex!important;flex-wrap:wrap!important;gap:.5rem!important;justify-content:flex-end!important;align-items:center!important;}' +
       '#dorm-edit-form .prc-dorm-edit-actions>button{box-sizing:border-box!important;min-width:88px!important;width:88px!important;min-height:36px!important;padding:.5rem .65rem!important;border-radius:.65rem!important;font-size:.72rem!important;font-weight:900!important;letter-spacing:.065em!important;line-height:1!important;text-align:center!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;}' +
@@ -75,7 +66,7 @@
   }
 
   function findFooter(form, saveButton) {
-    var node = saveButton ? saveButton.parentElement : null;
+    let node = saveButton ? saveButton.parentElement : null;
     while (node && node !== form) {
       if (node.classList && node.classList.contains('flex')) return node;
       node = node.parentElement;
@@ -87,35 +78,34 @@
     try {
       ensureStyles();
 
-      var form = document.getElementById('dorm-edit-form');
+      const form = document.getElementById('dorm-edit-form');
       if (!form) return;
 
-      var saveButton = form.querySelector('button[type="submit"]');
+      const saveButton = form.querySelector('button[type="submit"]');
       if (!saveButton) return;
 
-      var footer = findFooter(form, saveButton);
+      const footer = findFooter(form, saveButton);
       if (!footer) return;
 
       footer.classList.add('prc-dorm-edit-actions');
 
-      var cancelButton = footer.querySelector('button[onclick*="closeDormEditModal"]');
-      var deleteButton = footer.querySelector('button[onclick*="deleteDormitoryFromEditModal"]');
-      var buttons = [cancelButton, deleteButton, saveButton];
-      buttons.forEach(function (button) {
-        if (button) {
-          button.style.minWidth = '88px';
-          button.style.width = '88px';
-          button.style.minHeight = '36px';
-        }
+      const cancelButton = footer.querySelector('button[onclick*="closeDormEditModal"]');
+      const deleteButton = footer.querySelector('button[onclick*="deleteDormitoryFromEditModal"]');
+      [cancelButton, deleteButton, saveButton].forEach(button => {
+        if (!button) return;
+        button.style.minWidth = '88px';
+        button.style.width = '88px';
+        button.style.minHeight = '36px';
       });
 
-      var reopenButton = document.getElementById('reopen-dorm-btn');
+      let reopenButton = document.getElementById('reopen-dorm-btn');
       if (!reopenButton) {
         reopenButton = document.createElement('button');
         reopenButton.id = 'reopen-dorm-btn';
         reopenButton.type = 'button';
         reopenButton.textContent = 'REOPEN';
-        reopenButton.addEventListener('click', function (event) {
+        reopenButton.dataset.owner = 'gate-dorm-reopen-controller';
+        reopenButton.addEventListener('click', event => {
           event.preventDefault();
           event.stopPropagation();
           reopenDormFromEditModal();
@@ -125,12 +115,12 @@
         else footer.insertBefore(reopenButton, saveButton);
       }
 
-      var dorm = getEditDorm();
-      var isClosed = dorm && String(dorm.state || '').toLowerCase() === 'closed';
+      const dorm = getEditDorm();
+      const isClosed = dorm && String(dorm.state || '').toLowerCase() === 'closed';
       reopenButton.classList.toggle('hidden', !isClosed);
       reopenButton.disabled = !isClosed;
     } catch (error) {
-      console.warn('PRC DASH reopen button patch failed:', error);
+      console.warn('GATE reopen button refresh failed:', error);
     }
   }
 
@@ -138,7 +128,7 @@
     try {
       if (!isInstructor()) return;
 
-      var dorm = getEditDorm();
+      const dorm = getEditDorm();
       if (!dorm) return;
 
       if (String(dorm.state || '').toLowerCase() !== 'closed') {
@@ -146,10 +136,11 @@
         return;
       }
 
-      var elapsedSeconds = parseTimerToSeconds(getFinalTimeValue(dorm));
-      var reopenedOpenedAt = new Date(Date.now() - (elapsedSeconds * 1000)).toISOString();
+      const elapsedSeconds = parseTimerToSeconds(getFinalTimeValue(dorm));
+      const reopenedOpenedAt = new Date(Date.now() - (elapsedSeconds * 1000)).toISOString();
 
-      var result = await window.dataSdk.update(Object.assign({}, dorm, {
+      const result = await window.dataSdk.update({
+        ...dorm,
         state: 'open',
         phase: 'OPEN',
         opened_at: reopenedOpenedAt,
@@ -157,25 +148,27 @@
         closed_timer: '',
         manual_reopen_override: 'true',
         updated_at: new Date().toISOString()
-      }));
+      });
 
       if (result && result.isOk) {
         try {
           if (typeof allData !== 'undefined' && Array.isArray(allData)) {
-            var index = allData.findIndex(function (record) { return record.__backendId === dorm.__backendId; });
+            const index = allData.findIndex(record => record.__backendId === dorm.__backendId);
             if (index >= 0) {
-              allData[index] = Object.assign({}, allData[index], result.data || {}, {
+              allData[index] = {
+                ...allData[index],
+                ...(result.data || {}),
                 state: 'open',
                 phase: 'OPEN',
                 opened_at: reopenedOpenedAt,
                 closed_at: '',
                 closed_timer: '',
                 manual_reopen_override: undefined
-              });
+              };
             }
           }
         } catch (error) {
-          console.warn('PRC DASH reopen local update failed:', error);
+          console.warn('GATE reopen local update failed:', error);
         }
 
         if (typeof createSoundEvent === 'function') {
@@ -192,31 +185,48 @@
         showEditMessage((result && result.error) || 'Failed to reopen dorm.', true);
       }
     } catch (error) {
-      console.warn('PRC DASH reopen dorm failed:', error);
+      console.warn('GATE reopen dorm failed:', error);
       showEditMessage('Failed to reopen dorm.', true);
     }
   }
 
-  function startPatch() {
-    if (patchStarted) return;
-    patchStarted = true;
+  function registerHooksOnce() {
+    if (hooksRegistered || typeof window.registerGateHook !== 'function') return;
+    window.registerGateHook('afterModalOpen', ensureReopenButton);
+    window.registerGateHook('afterRenderAll', ensureReopenButton);
+    window.registerGateHook('afterDataChanged', ensureReopenButton);
+    hooksRegistered = true;
+  }
 
-    window.reopenDormFromEditModal = reopenDormFromEditModal;
+  function startReopenController() {
+    if (!patchStarted) {
+      patchStarted = true;
+      window.reopenDormFromEditModal = reopenDormFromEditModal;
+      window.GateDormReopenController = Object.freeze({
+        isPassiveCompatibilityLayer: true,
+        refresh: ensureReopenButton,
+        reopenDormFromEditModal
+      });
+    }
+
     ensureReopenButton();
-
-    setInterval(ensureReopenButton, 750);
+    registerHooksOnce();
   }
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', startPatch);
+    document.addEventListener('DOMContentLoaded', startReopenController, { once: true });
   } else {
-    startPatch();
+    startReopenController();
   }
+
+  window.addEventListener('load', startReopenController, { once: true });
 })();
 
-// PRC GATE operational sound system
-// Normalizes all app sound calls onto the current GATE audio assets.
+// GATE operational sound system
+// Normalizes app sound calls onto current GATE audio assets without persistent re-patching.
 (function () {
+  'use strict';
+
   const GATE_SOUND_FILES = {
     dorm_open: '/assets/gate_open_sound.mp3',
     open: '/assets/gate_open_sound.mp3',
@@ -234,6 +244,7 @@
   const recentErrorSignals = new Map();
   let observerStarted = false;
   let clickPatchReady = false;
+  let hooksRegistered = false;
 
   function normalizeSoundKey(soundKey) {
     const key = String(soundKey || '').trim().toLowerCase();
@@ -246,9 +257,7 @@
   }
 
   function soundIsEnabled() {
-    try {
-      if (typeof soundEnabled !== 'undefined') return soundEnabled === true;
-    } catch (_) {}
+    try { if (typeof soundEnabled !== 'undefined') return soundEnabled === true; } catch (_) {}
     return localStorage.getItem(SOUND_ENABLED_KEY) === 'true';
   }
 
@@ -260,7 +269,7 @@
   function preloadGateSounds() {
     try {
       if (typeof soundPlayers === 'undefined' || !soundPlayers || typeof soundPlayers !== 'object') soundPlayers = {};
-      Object.entries(GATE_SOUND_FILES).forEach(function ([key, src]) {
+      Object.entries(GATE_SOUND_FILES).forEach(([key, src]) => {
         if (!soundPlayers[key]) {
           const audio = new Audio(src);
           audio.preload = 'auto';
@@ -278,7 +287,6 @@
     const normalized = normalizeSoundKey(soundKey);
     const src = GATE_SOUND_FILES[normalized];
     const force = Boolean(options && options.force);
-
     if (!src || (!force && !soundIsEnabled())) return;
 
     try {
@@ -289,9 +297,7 @@
       audio.currentTime = 0;
       const result = audio.play();
       if (result && typeof result.catch === 'function') {
-        result.catch(function (error) {
-          console.warn(`GATE sound playback blocked or failed for ${normalized}:`, error);
-        });
+        result.catch(error => console.warn(`GATE sound playback blocked or failed for ${normalized}:`, error));
       }
     } catch (error) {
       console.warn(`GATE sound playback failed for ${normalized}:`, error);
@@ -331,7 +337,6 @@
       }
 
       if (!window.dataSdk || typeof window.dataSdk.create !== 'function') return;
-
       await window.dataSdk.create({
         type: 'sound_event',
         sound_key: normalized,
@@ -359,6 +364,7 @@
       const button = document.getElementById('sound-toggle-btn');
       if (button) {
         button.onclick = enableGateOperationalSounds;
+        button.dataset.owner = 'gate-sound-system';
         if (!clickPatchReady) {
           button.addEventListener('click', enableGateOperationalSounds, true);
           clickPatchReady = true;
@@ -423,7 +429,6 @@
     const key = `${el.id || el.className || el.tagName}:${text}`;
     const now = Date.now();
     const last = recentErrorSignals.get(key) || 0;
-
     if (now - last < 1800) return;
 
     recentErrorSignals.set(key, now);
@@ -439,10 +444,10 @@
     if (observerStarted || !document.body || typeof MutationObserver === 'undefined') return;
     observerStarted = true;
 
-    const observer = new MutationObserver(function (mutations) {
-      mutations.forEach(function (mutation) {
+    const observer = new MutationObserver(mutations => {
+      mutations.forEach(mutation => {
         if (mutation.target && mutation.target.nodeType === 1) signalErrorFromElement(mutation.target);
-        mutation.addedNodes.forEach(function (node) {
+        mutation.addedNodes.forEach(node => {
           if (node.nodeType !== 1) return;
           signalErrorFromElement(node);
           scanVisibleErrors(node);
@@ -464,9 +469,17 @@
   function patchGlobalErrorSounds() {
     if (window.__gateGlobalErrorSoundPatched === true) return;
     window.__gateGlobalErrorSoundPatched = true;
+    window.addEventListener('error', () => playGateErrorSound());
+    window.addEventListener('unhandledrejection', () => playGateErrorSound());
+  }
 
-    window.addEventListener('error', function () { playGateErrorSound(); });
-    window.addEventListener('unhandledrejection', function () { playGateErrorSound(); });
+  function registerHooksOnce() {
+    if (hooksRegistered || typeof window.registerGateHook !== 'function') return;
+    window.registerGateHook('afterRenderAll', patchSoundFunctions);
+    window.registerGateHook('afterPageChange', patchSoundFunctions);
+    window.registerGateHook('afterDataChanged', patchSoundFunctions);
+    window.registerGateHook('afterModalOpen', patchSoundFunctions);
+    hooksRegistered = true;
   }
 
   function startGateSoundSystem() {
@@ -475,16 +488,22 @@
     patchGlobalErrorSounds();
     startErrorObserver();
     preloadGateSounds();
+    registerHooksOnce();
 
-    setInterval(function () {
-      patchSoundFunctions();
-      patchMessageFunctions();
-    }, 500);
+    window.GateSoundSystem = Object.freeze({
+      isCanonicalSoundAssetLayer: true,
+      play: playGateSound,
+      enable: enableGateOperationalSounds,
+      createSoundEvent: createGateSoundEvent,
+      refresh: patchSoundFunctions
+    });
   }
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', startGateSoundSystem);
+    document.addEventListener('DOMContentLoaded', startGateSoundSystem, { once: true });
   } else {
     startGateSoundSystem();
   }
+
+  window.addEventListener('load', startGateSoundSystem, { once: true });
 })();

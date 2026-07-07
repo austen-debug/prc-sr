@@ -1,8 +1,12 @@
-// PRC DASH SAT arrivals board
+// GATE SAT arrivals board and board-header compatibility layer
+// Keeps SAT arrivals operational while avoiding active-bus/card ownership conflicts.
 (function () {
+  'use strict';
+
   const AUTO_REFRESH_MS = 20 * 60 * 1000;
   let refreshTimer = null;
   let isLoading = false;
+  let hooksRegistered = false;
 
   function escapeHtmlLocal(value) {
     if (typeof escapeHtml === 'function') return escapeHtml(value);
@@ -43,12 +47,10 @@
 
   function isAutoRefreshWindow() {
     const { weekday, hour } = nowCentralParts();
-
     if (weekday === 'Tue' && hour >= 16) return true;
     if (weekday === 'Wed' && hour < 6) return true;
     if (weekday === 'Wed' && hour >= 16) return true;
     if (weekday === 'Thu' && hour < 3) return true;
-
     return false;
   }
 
@@ -69,6 +71,7 @@
     board.id = 'sat-arrivals-board';
     board.className = 'sat-arrivals-board surface border rounded-lg p-4 mt-4 mx-4 mb-4';
     board.style.borderColor = 'var(--border)';
+    board.dataset.owner = 'gate-sat-arrivals-board';
     board.innerHTML = `
       <div class="flex items-center justify-between gap-3 flex-wrap mb-3">
         <div>
@@ -124,7 +127,6 @@
 
     const arrivals = payload.arrivals || [];
     const sourceMode = payload.fromCache ? 'cached' : 'fresh';
-
     updated.textContent = `Last updated: ${new Date(payload.lastUpdated || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} (${sourceMode})`;
 
     if (windowLabel) {
@@ -177,14 +179,12 @@
     try {
       const response = await fetch('/api/sat-arrivals', {
         method: 'GET',
-        headers: { 'Accept': 'application/json' },
+        headers: { Accept: 'application/json' },
         cache: 'no-store'
       });
 
       const payload = await response.json();
-
       if (!response.ok || !payload.isOk) throw new Error(payload.error || 'Unable to retrieve SAT arrivals.');
-
       renderArrivals(payload);
     } catch (error) {
       const wrapper = document.getElementById('sat-arrivals-table-wrap');
@@ -217,24 +217,44 @@
     if (message) message.textContent = 'Outside auto-refresh window. Use Refresh to load SAT arrivals for the next 24 hours.';
   }
 
+  function registerHooksOnce() {
+    if (hooksRegistered || typeof window.registerGateHook !== 'function') return;
+    window.registerGateHook('afterPageChange', () => {
+      ensureSatArrivalsBoard();
+      updateModeText();
+    });
+    hooksRegistered = true;
+  }
+
   function startSatArrivalsBoard() {
     ensureSatArrivalsBoard();
     maybeAutoLoadSatArrivals();
+    registerHooksOnce();
 
     if (!refreshTimer) refreshTimer = setInterval(maybeAutoLoadSatArrivals, AUTO_REFRESH_MS);
+
+    window.GateSatArrivalsBoard = Object.freeze({
+      isOperationalRefreshOwner: true,
+      refresh: loadSatArrivals,
+      ensure: ensureSatArrivalsBoard
+    });
   }
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', startSatArrivalsBoard);
+    document.addEventListener('DOMContentLoaded', startSatArrivalsBoard, { once: true });
   } else {
     startSatArrivalsBoard();
   }
 })();
 
-// PRC DASH Status Board header split
+// GATE Status Board header split
+// One-time/hook-driven compatibility only. Active bus card markup remains owned by GateActiveBusController.
 (function () {
+  'use strict';
+
   let headerPatched = false;
   let observersCreated = false;
+  let hooksRegistered = false;
 
   function ensureHeaderStylesheet() {
     if (document.querySelector('link[href="/css/prc-dash-board-header.css"]')) return;
@@ -284,7 +304,6 @@
   function syncHeaderValues() {
     const metricArrived = document.getElementById('metric-arrived');
     const metricAirport = document.getElementById('metric-airport');
-
     const arrivedEl = document.getElementById('metric-arrived-v3');
     const expectedEl = document.getElementById('metric-expected-v3');
     const lastEl = document.getElementById('metric-last-v3');
@@ -304,7 +323,7 @@
   }
 
   function createObservers() {
-    if (observersCreated) return;
+    if (observersCreated || typeof MutationObserver === 'undefined') return;
 
     const metricArrived = document.getElementById('metric-arrived');
     const metricAirport = document.getElementById('metric-airport');
@@ -350,10 +369,12 @@
 
       header.innerHTML = '';
       header.classList.add('prc-header-v3');
+      header.dataset.owner = 'gate-status-header-compatibility';
       header.appendChild(metricGrid);
 
       if (activeBusBlock) {
         activeBusBlock.classList.add('prc-active-buses-v3');
+        activeBusBlock.dataset.owner = activeBusBlock.dataset.owner || 'gate-active-bus-controller';
         header.appendChild(activeBusBlock);
       }
 
@@ -363,209 +384,32 @@
     }
 
     syncHeaderValues();
+    if (typeof window.GateActiveBusController?.render === 'function') {
+      window.GateActiveBusController.render({ force: true });
+    }
+  }
+
+  function registerHooksOnce() {
+    if (hooksRegistered || typeof window.registerGateHook !== 'function') return;
+    window.registerGateHook('afterRenderAll', patchStatusBoardHeader);
+    window.registerGateHook('afterDataChanged', patchStatusBoardHeader);
+    window.registerGateHook('afterPageChange', patchStatusBoardHeader);
+    hooksRegistered = true;
   }
 
   function startHeaderPatch() {
     patchStatusBoardHeader();
-    setInterval(patchStatusBoardHeader, 1000);
+    registerHooksOnce();
+
+    window.GateStatusHeaderCompatibility = Object.freeze({
+      isPassiveCompatibilityLayer: true,
+      refresh: patchStatusBoardHeader
+    });
   }
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', startHeaderPatch);
+    document.addEventListener('DOMContentLoaded', startHeaderPatch, { once: true });
   } else {
     startHeaderPatch();
-  }
-})();
-
-// PRC DASH active bus card formatter
-(function () {
-  let observerReady = false;
-  let scheduled = false;
-
-  function ensureActiveBusCardStyles() {
-    if (document.getElementById('prc-active-bus-card-styles')) return;
-
-    const style = document.createElement('style');
-    style.id = 'prc-active-bus-card-styles';
-    style.textContent = `
-      .prc-active-buses-v3 #active-buses {
-        display: flex !important;
-        flex-wrap: wrap !important;
-        gap: 0.72rem !important;
-        align-items: stretch !important;
-        align-content: flex-start !important;
-      }
-
-      .prc-active-buses-v3 #active-buses .bus-badge.prc-bus-card {
-        width: 142px !important;
-        min-width: 142px !important;
-        min-height: 118px !important;
-        padding: 0.78rem 0.82rem !important;
-        border-radius: 1.05rem !important;
-        display: flex !important;
-        flex-direction: column !important;
-        align-items: flex-start !important;
-        justify-content: center !important;
-        gap: 0.26rem !important;
-        text-align: left !important;
-        white-space: normal !important;
-        line-height: 1.02 !important;
-        background:
-          linear-gradient(145deg, rgba(56, 189, 248, 0.22), rgba(37, 99, 235, 0.12)),
-          rgba(15, 23, 42, 0.36) !important;
-        border-color: rgba(56, 189, 248, 0.48) !important;
-        box-shadow:
-          inset 0 1px 0 rgba(255,255,255,0.16),
-          0 8px 20px rgba(0,0,0,0.20),
-          0 0 18px rgba(56,189,248,0.16) !important;
-      }
-
-      .prc-active-buses-v3 #active-buses .bus-badge.prc-bus-card:hover {
-        transform: translateY(-1px) !important;
-        border-color: rgba(125, 211, 252, 0.72) !important;
-        box-shadow:
-          inset 0 1px 0 rgba(255,255,255,0.20),
-          0 11px 24px rgba(0,0,0,0.24),
-          0 0 24px rgba(56,189,248,0.28) !important;
-      }
-
-      .prc-bus-card-title {
-        color: var(--text);
-        font-size: 0.82rem;
-        font-weight: 950;
-        letter-spacing: 0.07em;
-        text-transform: uppercase;
-      }
-
-      .prc-bus-card-line {
-        color: var(--text-soft, var(--text-muted));
-        font-size: 0.72rem;
-        font-weight: 900;
-        letter-spacing: 0.05em;
-        text-transform: uppercase;
-      }
-
-      .theme-light .prc-active-buses-v3 #active-buses .bus-badge.prc-bus-card {
-        background:
-          linear-gradient(145deg, rgba(2, 132, 199, 0.13), rgba(255,255,255,0.76)),
-          rgba(255,255,255,0.64) !important;
-        border-color: rgba(2, 132, 199, 0.34) !important;
-        box-shadow:
-          inset 0 1px 0 rgba(255,255,255,0.84),
-          0 7px 16px rgba(15,23,42,0.08) !important;
-      }
-
-      .theme-light .prc-bus-card-title { color: #0f172a; }
-      .theme-light .prc-bus-card-line { color: #334155; }
-
-      @media (max-width: 640px) {
-        .prc-active-buses-v3 #active-buses .bus-badge.prc-bus-card {
-          width: 132px !important;
-          min-width: 132px !important;
-          min-height: 104px !important;
-          padding: 0.66rem 0.7rem !important;
-        }
-      }
-    `;
-
-    document.head.appendChild(style);
-  }
-
-  function escapeCardHtml(value) {
-    return String(value ?? '')
-      .replaceAll('&', '&amp;')
-      .replaceAll('<', '&lt;')
-      .replaceAll('>', '&gt;')
-      .replaceAll('"', '&quot;')
-      .replaceAll("'", '&#039;');
-  }
-
-  function findBusForButton(button) {
-    if (typeof allData === 'undefined') return null;
-
-    const onclick = button.getAttribute('onclick') || '';
-    const idMatch = onclick.match(/confirmBusArrival\('([^']+)'\)/);
-    const id = idMatch ? idMatch[1] : '';
-    if (!id) return null;
-
-    return allData.find(record => record.__backendId === id) || null;
-  }
-
-  function cardTitle(bus) {
-    if (bus.bus_type === 'local') {
-      return `LOCAL – ${String(bus.destination || bus.originating_destination || 'LOCAL').trim()}`;
-    }
-
-    return `BUS #${String(bus.bus_id || '').trim()}`;
-  }
-
-  function formatActiveBusCards() {
-    ensureActiveBusCardStyles();
-
-    const activeBusContainer = document.getElementById('active-buses');
-    if (!activeBusContainer) return;
-
-    activeBusContainer.querySelectorAll('.bus-badge').forEach(button => {
-      const bus = findBusForButton(button);
-      if (!bus) return;
-
-      const title = cardTitle(bus);
-      const otw = Number(bus.otw_count || 0);
-      const females = Number(bus.female_count || 0);
-      const nats = Number(bus.nat_count || 0);
-      const signature = `${title}|${otw}|${females}|${nats}`;
-
-      if (button.dataset.prcBusCardSig === signature && button.querySelector('.prc-bus-card-title')) return;
-
-      button.classList.add('prc-bus-card');
-      button.dataset.prcBusCardSig = signature;
-      button.title = `Confirm arrival: ${title} – ${otw} OTW | ${females} FEMALE | ${nats} NAT`;
-      button.setAttribute('aria-label', button.title);
-      button.innerHTML = `
-        <span class="prc-bus-card-title">${escapeCardHtml(title)}</span>
-        <span class="prc-bus-card-line">${otw} OTW</span>
-        <span class="prc-bus-card-line">${females} FEMALE</span>
-        <span class="prc-bus-card-line">${nats} NAT</span>
-      `;
-    });
-  }
-
-  function scheduleFormat() {
-    if (scheduled) return;
-    scheduled = true;
-
-    requestAnimationFrame(() => {
-      scheduled = false;
-      formatActiveBusCards();
-    });
-  }
-
-  function createObserver() {
-    if (observerReady) return;
-
-    const activeBusContainer = document.getElementById('active-buses');
-    if (!activeBusContainer) return;
-
-    const observer = new MutationObserver(scheduleFormat);
-    observer.observe(activeBusContainer, { childList: true, subtree: true, characterData: true });
-
-    observerReady = true;
-  }
-
-  function startActiveBusCards() {
-    ensureActiveBusCardStyles();
-    formatActiveBusCards();
-    createObserver();
-
-    setInterval(() => {
-      formatActiveBusCards();
-      createObserver();
-    }, 500);
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', startActiveBusCards);
-  } else {
-    startActiveBusCards();
   }
 })();

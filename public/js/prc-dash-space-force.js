@@ -1,10 +1,38 @@
 // GATE Space Force compatibility layer
-// Passive support only: Space Force field presence and closed-dorm final-time edit normalization.
+// Passive support only: Space Force field presence, shared data visibility, and closed-dorm final-time edit normalization.
 (function () {
   'use strict';
 
   let hooksRegistered = false;
   let dormEditFormPatched = false;
+  let dataBridgeReady = false;
+
+  function ensureGlobalDataBridge() {
+    if (dataBridgeReady) return;
+
+    try {
+      const descriptor = Object.getOwnPropertyDescriptor(window, 'allData');
+      if (descriptor && descriptor.configurable === false) {
+        dataBridgeReady = true;
+        return;
+      }
+
+      Object.defineProperty(window, 'allData', {
+        configurable: true,
+        enumerable: false,
+        get() {
+          try { return Array.isArray(allData) ? allData : []; } catch (_) { return []; }
+        },
+        set(value) {
+          try { allData = Array.isArray(value) ? value : []; } catch (_) {}
+        }
+      });
+
+      dataBridgeReady = true;
+    } catch (error) {
+      console.warn('GATE shared data bridge failed:', error);
+    }
+  }
 
   function findInputWrapper(inputId) {
     const input = document.getElementById(inputId);
@@ -220,6 +248,7 @@
   }
 
   function runSpaceForceCompatibilityPass() {
+    ensureGlobalDataBridge();
     ensureBusCardStyles();
     ensureAirportSpaceForceInput();
     ensureLocalSpaceForceInput();

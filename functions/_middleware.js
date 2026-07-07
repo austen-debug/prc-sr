@@ -32,6 +32,7 @@ const UI_HEAD_SCRIPTS = [
   '<script src="/js/prc-dash-modal-mobile-validation.js" defer></script>',
   '<script src="/js/prc-dash-processing-loaded-summary.js" defer></script>',
   '<script src="/js/prc-dash-current-summary-live-records.js" defer></script>',
+  '<script src="/js/gate-archive-print-controller.js" defer></script>',
   '<script src="/js/prc-dash-overtime-audit.js" defer></script>'
 ];
 

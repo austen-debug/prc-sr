@@ -1,8 +1,6 @@
-# PRC DASH / GATE
+# GATE — Gateway Arrival Tracking Environment
 
-Pfingston Reception Center Dashboard and Gateway Arrival Tracking Environment.
-
-PRC DASH / GATE is an unclassified operational throughput dashboard for Pfingston Reception Center Shipping and Receiving operations. It tracks reception status counts, airport and local arrivals, dormitory processing status, assigned Airmen, dorm timers, Squadron Board display data, and archive closeout records.
+Gateway Arrival Tracking Environment is an unclassified operational throughput tool for Pfingston Reception Center receiving operations. It tracks reception status counts, airport and local arrivals, dormitory processing status, assigned Airmen, dorm timers, Squadron Board display data, and archive closeout records.
 
 The system is intended to support the receiving workflow from airport arrivals through PRC processing, dormitory load management, command-center display, and archived week-group review.
 
@@ -13,7 +11,7 @@ The system is intended to support the receiving workflow from airport arrivals t
 - No orders data
 - No trainee records
 - Status counts only
-- Shared access accounts only for alpha testing
+- Shared access accounts only for beta testing
 
 ## Access Roles
 
@@ -33,6 +31,7 @@ Instructor functions include:
 - Acknowledge bus arrivals
 - Add local buses and local arrivals
 - Open and close dorms
+- Reopen closed dorms when correction is required
 - Update dorm load, phase, and assigned Airman
 - Maintain Band, Space Force, and Female dorm indicators
 - Right-click edit dorm records
@@ -136,7 +135,7 @@ Primary workflow:
 - Review closed week groups
 - Search/filter by week group
 - Expand/collapse records by year and month
-- Review rollups for dorms, buses, arrived, Female, and Naturalization totals
+- Review rollups for dorms, buses, arrived, Female, Naturalization, and Space Force totals
 - Open archive records through the archive edit modal
 - Print/PDF archived receiving reports
 
@@ -155,10 +154,11 @@ The application uses a controlled active UI stack injected through Cloudflare Fu
 
 Active stylesheet entrypoints:
 
-1. `/css/gate-base-tokens.css`
-2. `/css/gate-layout-pages.css`
-3. `/css/gate-components.css`
-4. `/css/gate-utilities-access.css`
+1. `/css/gate-index-legacy-shell.css`
+2. `/css/gate-base-tokens.css`
+3. `/css/gate-layout-pages.css`
+4. `/css/gate-components.css`
+5. `/css/gate-utilities-access.css`
 
 Final active UI chain loaded through `gate-utilities-access.css`:
 
@@ -178,13 +178,27 @@ Current UI ownership rules:
 
 Do not add additional board-card patch styles outside the active ownership files. Band and Space Force board banners must use the Dorm Card contract and must not be implemented as absolute overlay patches.
 
-## Component Contracts
+## Runtime Controllers
 
-The current UI recovery effort is moving the app away from patch-after-render behavior and toward stable component contracts.
+The current stabilization effort moves the app away from repeated patch-after-render behavior and toward stable component contracts and explicit controllers.
+
+Current controller areas:
+
+- `GateHooks` — lifecycle hook layer
+- `GateBrandingController` — user-visible GATE terminology and document identity
+- `GateActiveBusController` — active bus cards on Status Board
+- `GateBusWorkflowController` — airport dispatch, local arrivals, combined bus log, and shared bus edit modal
+- `GateArchiveSchemaController` — archive schema and closeout safety
+- `GateDormBoardController` — Status Board and Squadron Board dorm rendering
+- `GateTimerSoundController` — timer display, sound event processing, and overtime eligibility
+- `GateRuntimeStabilityController` — sound unlock, capped dorm load controls, Escape-to-close, and batch tab flow
+
+## Component Contracts
 
 Current contract areas:
 
 - Dorm Card component
+- Active Bus Card component
 - Status Metric component
 - Archive Record component
 - Header/Nav shell
@@ -218,40 +232,3 @@ Current validation and continuity documents:
 - Relevant modals
 - Print/PDF flow
 - Light/dark structural consistency
-- Mobile/tablet/desktop risk areas
-
-Static repository validation has been completed, but live browser/device QA is still required for final confirmation of viewport behavior, touch behavior, and print/PDF output.
-
-## Alpha Run Display Setup
-
-Recommended operational display setup:
-
-- Lobby TV monitors: Status Board live
-- Hold over room: Status Board live
-- Front break room: Status Board live
-- Auditorium or limited-view display: Squadron Board live
-- Bus / Intake Instructor: instructor access on phone, work iPad, or laptop
-- Admin Instructor: instructor access open on auditorium screen or laptop
-- Hold over Airmen: plugged-in instructor iPad at the desk using Airman access
-
-For iPad use, the Kiosk app may be used to lock the iPad to the single PRC DASH / GATE webpage for Airman use.
-
-## Current Alpha Build Notes
-
-- Cloudflare Pages static app with Functions middleware
-- Cloudflare D1-backed records API
-- Shared login sessions with instructor and Airman roles
-- Live refresh across devices through `/api/records`
-- SAT arrivals panel filters to a rolling next-24-hours window
-- Status Board uses live operational status metrics and Empty/Open/Closed dorm columns
-- Squadron Board provides a limited-view operational display
-- Explicit Receiving Day One and Day Two date/time windows support reporting and archive rollups
-- Airport and local bus records support editable OTW, Female, Naturalization, and Space Force counts
-- Archive closeout verifies archive creation before clearing live records
-- Archive management supports search/filter, year/month groups, record cards, edit modal, and print/PDF flow
-- Sound alerts support dorm open, dorm close, airport bus dispatch, and overtime
-- iPad sound requires users to press Enable Sound on that device
-
-## Operational Reminder
-
-PRC DASH / GATE is for unclassified operational status counts only. Do not enter PII, trainee names, orders information, or trainee records.

@@ -24,6 +24,51 @@
     const style = document.createElement('style');
     style.id = 'gate-mobile-runtime-corrections';
     style.textContent = `
+      @media (min-width: 768px) {
+        body:has(#page-board.active)::before {
+          display: none !important;
+          content: none !important;
+          opacity: 0 !important;
+          background-image: none !important;
+          mix-blend-mode: normal !important;
+          filter: none !important;
+        }
+
+        body:has(#page-board.active) #page-board.active {
+          isolation: isolate !important;
+          background-clip: padding-box !important;
+          transform: translateZ(0) !important;
+          backface-visibility: hidden !important;
+          will-change: auto !important;
+        }
+
+        body:has(#page-board.active) #page-board.active::before,
+        body:has(#page-board.active) #page-board.active::after,
+        body:has(#page-board.active) #page-board.active .board-header::before,
+        body:has(#page-board.active) #page-board.active .board-header::after,
+        body:has(#page-board.active) #page-board.active .dorm-dashboard::before,
+        body:has(#page-board.active) #page-board.active .dorm-dashboard::after {
+          display: none !important;
+          content: none !important;
+          opacity: 0 !important;
+          background: none !important;
+          animation: none !important;
+          transition: none !important;
+        }
+
+        body:has(#page-board.active) #page-board.active .board-header,
+        body:has(#page-board.active) #page-board.active .dorm-dashboard,
+        body:has(#page-board.active) #page-board.active .dorm-column,
+        body:has(#page-board.active) #page-board.active .dorm-col-content,
+        body:has(#page-board.active) #page-board.active .gate-dorm-card,
+        body:has(#page-board.active) #page-board.active .dorm-card {
+          animation: none !important;
+          transition-property: border-color, background-color, color, opacity !important;
+          transition-duration: 0s !important;
+          backface-visibility: hidden !important;
+        }
+      }
+
       body.fullscreen-board {
         height: 100dvh !important;
         max-height: 100dvh !important;

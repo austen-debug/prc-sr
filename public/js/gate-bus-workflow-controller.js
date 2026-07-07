@@ -72,6 +72,14 @@
     else list.push(record);
   }
 
+  function showMessage(id, message, isError = false) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = message || '';
+    el.style.color = isError ? 'var(--red)' : 'var(--green)';
+    el.classList.toggle('hidden', !message);
+  }
+
   function showError(id, message) {
     const el = document.getElementById(id);
     if (!el) return;
@@ -113,6 +121,19 @@
     wrapper.insertAdjacentHTML('afterend', markup);
   }
 
+  function ensureFieldError(inputId, errorId) {
+    const input = document.getElementById(inputId);
+    const wrapper = input ? input.closest('div') : null;
+    if (!wrapper || document.getElementById(errorId)) return;
+    wrapper.insertAdjacentHTML('beforeend', `<div id="${errorId}" class="text-red-500 text-xs mt-1 hidden"></div>`);
+  }
+
+  function refreshAllSurfaces() {
+    try { if (typeof renderAll === 'function') renderAll(); } catch (error) { console.warn('GATE bus renderAll refresh failed:', error); }
+    runPass();
+    try { window.GateActiveBusController?.render?.({ force: true }); } catch (_) {}
+  }
+
   function ensureFields() {
     insertAfter('bus-nat', 'bus-sf', `
       <div data-owner="gate-bus-workflow-controller">
@@ -121,6 +142,11 @@
         <div id="bus-sf-error" class="text-red-500 text-xs mt-1 hidden"></div>
       </div>
     `);
+
+    ensureFieldError('local-dest', 'local-dest-error');
+    ensureFieldError('local-total', 'local-total-error');
+    ensureFieldError('local-female', 'local-female-error');
+    ensureFieldError('local-nat', 'local-nat-error');
 
     insertAfter('local-nat', 'local-sf', `
       <div data-owner="gate-bus-workflow-controller">
@@ -245,8 +271,8 @@
     const activeWg = wg();
 
     if (!validateCounts('bus', total, females, naturals, spaceForce)) return;
-    if (!activeWg) return showMsg?.('airport-msg', 'Initialize a Week Group before dispatching buses.', true);
-    if (data().length >= 999) return showMsg?.('airport-msg', 'Record limit reached!', true);
+    if (!activeWg) return showMessage('airport-msg', 'Initialize a Week Group before dispatching buses.', true);
+    if (data().length >= 999) return showMessage('airport-msg', 'Record limit reached!', true);
 
     const submit = form.querySelector('button[type="submit"]');
     const original = submit ? submit.textContent : '';
@@ -277,14 +303,14 @@
       submit.textContent = original || 'DISPATCH BUS';
     }
 
-    if (!result?.isOk) return showMsg?.('airport-msg', result?.error || 'Failed', true);
+    if (!result?.isOk) return showMessage('airport-msg', result?.error || 'Failed to dispatch bus.', true);
 
     updateCache(result.data || payload);
     await createSoundEvent?.('bus_dispatch', { bus_id: String(busId), otw_count: total, female_count: females, nat_count: naturals, space_force_count: spaceForce, action: 'dispatch_bus' });
     form.reset();
     ['bus-female', 'bus-nat', 'bus-sf'].forEach(id => { const input = document.getElementById(id); if (input) input.value = '0'; });
-    showMsg?.('airport-msg', `Bus #${busId} Dispatched`, false);
-    refresh();
+    showMessage('airport-msg', `Bus #${busId} Dispatched`, false);
+    refreshAllSurfaces();
   }
 
   async function createLocal(form) {
@@ -296,10 +322,14 @@
     const spaceForce = n(document.getElementById('local-sf')?.value);
     const activeWg = wg();
 
-    if (!destination) return showMsg?.('local-bus-msg', 'Destination and total arrived are required.', true);
+    if (!destination) {
+      showError('local-dest-error', 'Originating destination is required.');
+      showMessage('local-bus-msg', 'Destination and total arrived are required.', true);
+      return;
+    }
     if (!validateCounts('local', total, females, naturals, spaceForce)) return;
-    if (!activeWg) return showMsg?.('local-bus-msg', 'Initialize a Week Group before adding a local arrival.', true);
-    if (data().length >= 999) return showMsg?.('local-bus-msg', 'Record limit reached!', true);
+    if (!activeWg) return showMessage('local-bus-msg', 'Initialize a Week Group before adding a local arrival.', true);
+    if (data().length >= 999) return showMessage('local-bus-msg', 'Record limit reached!', true);
 
     const submit = form.querySelector('button[type="submit"]');
     const original = submit ? submit.textContent : '';
@@ -308,6 +338,7 @@
       submit.textContent = 'SAVING...';
     }
 
+    const now = new Date().toISOString();
     const payload = {
       type: 'bus',
       bus_id: '',
@@ -319,8 +350,9 @@
       nat_count: naturals,
       space_force_count: spaceForce,
       status: 'arrived',
-      created_at: new Date().toISOString(),
-      arrived_at: new Date().toISOString(),
+      created_at: now,
+      departed_at: now,
+      arrived_at: now,
       week_group: activeWg
     };
 
@@ -328,16 +360,17 @@
 
     if (submit) {
       submit.disabled = false;
-      submit.textContent = original || 'SAVE';
+      submit.textContent = original || 'ADD LOCAL ARRIVAL';
     }
 
-    if (!result?.isOk) return showMsg?.('local-bus-msg', result?.error || 'Failed', true);
+    if (!result?.isOk) return showMessage('local-bus-msg', result?.error || 'Failed to add local arrival.', true);
 
     updateCache(result.data || payload);
     form.reset();
     ['local-female', 'local-nat', 'local-sf'].forEach(id => { const input = document.getElementById(id); if (input) input.value = '0'; });
-    closeLocalBusModal?.();
-    refresh();
+    refreshAllSurfaces();
+    showMessage('local-bus-msg', `${destination} added to arrived total.`, false);
+    window.setTimeout(() => closeLocalBusModal?.(), 250);
   }
 
   function openModal(id) {
@@ -425,7 +458,7 @@
 
     updateCache(result.data || payload);
     closeAirportBusEditModal?.();
-    refresh();
+    refreshAllSurfaces();
   }
 
   function onSubmit(event) {

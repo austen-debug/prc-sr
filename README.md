@@ -138,6 +138,7 @@ Primary workflow:
 - Review rollups for dorms, buses, arrived, Female, Naturalization, and Space Force totals
 - Open archive records through the archive edit modal
 - Print/PDF archived receiving reports
+- Print/PDF the current live receiving summary before closeout
 
 ## Pages
 
@@ -189,6 +190,7 @@ Current controller areas:
 - `GateActiveBusController` — active bus cards on Status Board
 - `GateBusWorkflowController` — airport dispatch, local arrivals, combined bus log, and shared bus edit modal
 - `GateArchiveSchemaController` — archive schema and closeout safety
+- `GateArchivePrintController` — archive print/PDF and current-summary print/PDF button ownership
 - `GateDormBoardController` — Status Board and Squadron Board dorm rendering
 - `GateTimerSoundController` — timer display, sound event processing, and overtime eligibility
 - `GateRuntimeStabilityController` — sound unlock, capped dorm load controls, Escape-to-close, and batch tab flow

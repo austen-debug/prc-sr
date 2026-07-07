@@ -84,6 +84,67 @@
       }
 
       @media (max-width: 767px) {
+        #page-airport {
+          overflow-x: hidden !important;
+          overflow-y: auto !important;
+        }
+
+        #page-airport .max-w-3xl {
+          max-width: none !important;
+          width: 100% !important;
+          min-width: 0 !important;
+        }
+
+        #page-airport #airport-form {
+          display: grid !important;
+          grid-auto-flow: column !important;
+          grid-auto-columns: minmax(176px, 72vw) !important;
+          grid-template-rows: auto auto !important;
+          align-items: end !important;
+          column-gap: 0.75rem !important;
+          row-gap: 0.6rem !important;
+          width: 100% !important;
+          max-width: 100% !important;
+          overflow-x: auto !important;
+          overflow-y: visible !important;
+          padding-bottom: 0.9rem !important;
+          scroll-snap-type: x proximity !important;
+          -webkit-overflow-scrolling: touch !important;
+        }
+
+        #page-airport #airport-form > * {
+          min-width: 0 !important;
+          scroll-snap-align: start !important;
+        }
+
+        #page-airport #airport-form h3,
+        #page-airport #airport-form #airport-msg {
+          grid-row: 1 !important;
+          grid-column: 1 / -1 !important;
+          min-width: 100% !important;
+        }
+
+        #page-airport #airport-form button[type='submit'] {
+          grid-row: 2 !important;
+          min-width: 176px !important;
+          height: 44px !important;
+          align-self: end !important;
+        }
+
+        #page-airport #airport-form input {
+          min-height: 44px !important;
+        }
+
+        #page-airport .surface:has(#airport-bus-log-body) {
+          overflow-x: auto !important;
+          overflow-y: hidden !important;
+          -webkit-overflow-scrolling: touch !important;
+        }
+
+        #page-airport .surface:has(#airport-bus-log-body) table {
+          min-width: 760px !important;
+        }
+
         #dorm-modal.confirm-overlay {
           align-items: flex-start !important;
           justify-content: center !important;

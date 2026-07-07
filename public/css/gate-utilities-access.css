@@ -39,11 +39,28 @@
 #page-squadron .dorm-card[data-female-dorm='true'] .gate-dorm-top-banner,
 #page-board .gate-dorm-top-banner,
 #page-squadron .gate-dorm-top-banner {
+  --gate-banner-edge-x: var(--gate-card-pad-x, 14px);
+  width: calc(100% + var(--gate-banner-edge-x) + var(--gate-banner-edge-x)) !important;
+  max-width: none !important;
+  min-width: calc(100% + var(--gate-banner-edge-x) + var(--gate-banner-edge-x)) !important;
+  margin-left: calc(-1 * var(--gate-banner-edge-x)) !important;
+  margin-right: calc(-1 * var(--gate-banner-edge-x)) !important;
+  justify-self: stretch !important;
+  align-self: stretch !important;
   border-radius: 0 !important;
   clip-path: none !important;
   transform: none !important;
   filter: none !important;
   z-index: 1 !important;
+}
+
+@media (max-width: 900px), (pointer: coarse) and (max-width: 1024px) {
+  #page-board .gate-dorm-card .gate-dorm-top-banner,
+  #page-board .dorm-card .gate-dorm-top-banner,
+  #page-squadron .gate-dorm-card .gate-dorm-top-banner,
+  #page-squadron .dorm-card .gate-dorm-top-banner {
+    --gate-banner-edge-x: 14px;
+  }
 }
 
 #page-board .gate-dorm-card.border-female .gate-dorm-load,

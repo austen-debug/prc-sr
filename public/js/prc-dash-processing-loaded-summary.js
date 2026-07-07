@@ -1,7 +1,13 @@
 // GATE processing loaded-versus-arrived summary
 // Shows how many arrived trainees have been assigned to dorms through Processing modals.
 (function () {
+  'use strict';
+
   const SUMMARY_ID = 'processing-loaded-arrived-summary';
+  const MAX_INSTALL_ATTEMPTS = 24;
+  let installAttempts = 0;
+  let installTimer = null;
+  let hooksRegistered = false;
 
   function n(value) {
     const parsed = Number(value || 0);
@@ -9,19 +15,11 @@
   }
 
   function records() {
-    try {
-      return Array.isArray(allData) ? allData : [];
-    } catch (_) {
-      return [];
-    }
+    try { return Array.isArray(allData) ? allData : []; } catch (_) { return []; }
   }
 
   function activeWg() {
-    try {
-      return typeof getActiveWG === 'function' ? getActiveWG() : '';
-    } catch (_) {
-      return '';
-    }
+    try { return typeof getActiveWG === 'function' ? getActiveWG() : ''; } catch (_) { return ''; }
   }
 
   function recordsByType(type, weekGroup) {
@@ -29,17 +27,12 @@
   }
 
   function getDorms(providedDorms) {
-    if (Array.isArray(providedDorms)) {
-      return providedDorms;
-    }
-
-    const weekGroup = activeWg();
-    return recordsByType('dorm', weekGroup);
+    if (Array.isArray(providedDorms)) return providedDorms;
+    return recordsByType('dorm', activeWg());
   }
 
   function getArrivedBuses() {
-    const weekGroup = activeWg();
-    return recordsByType('bus', weekGroup).filter(bus => bus.status === 'arrived');
+    return recordsByType('bus', activeWg()).filter(bus => bus.status === 'arrived');
   }
 
   function calculateCounts(providedDorms) {
@@ -48,24 +41,20 @@
     const loaded = dorms.reduce((sum, dorm) => sum + n(dorm.current_load), 0);
     const arrived = arrivedBuses.reduce((sum, bus) => sum + n(bus.otw_count), 0);
     const remaining = Math.max(arrived - loaded, 0);
-
     return { arrived, loaded, remaining };
   }
 
   function ensureSummaryElement() {
     const page = document.getElementById('page-processing');
-    if (!page) {
-      return null;
-    }
+    if (!page) return null;
 
     let summary = document.getElementById(SUMMARY_ID);
-    if (summary) {
-      return summary;
-    }
+    if (summary) return summary;
 
     summary = document.createElement('div');
     summary.id = SUMMARY_ID;
     summary.className = 'px-4 pb-3 flex-shrink-0';
+    summary.dataset.owner = 'gate-processing-loaded-summary';
     summary.innerHTML = `
       <div class="surface border rounded-lg p-4 grid gap-3 md:grid-cols-3" style="border-color:var(--border);">
         <div>
@@ -87,22 +76,16 @@
     `;
 
     const header = page.querySelector('.px-4.py-3.flex-shrink-0');
-    if (header && header.nextSibling) {
-      page.insertBefore(summary, header.nextSibling);
-    } else if (header) {
-      page.appendChild(summary);
-    } else {
-      page.prepend(summary);
-    }
+    if (header && header.nextSibling) page.insertBefore(summary, header.nextSibling);
+    else if (header) page.appendChild(summary);
+    else page.prepend(summary);
 
     return summary;
   }
 
   function renderSummary(providedDorms) {
     const summary = ensureSummaryElement();
-    if (!summary) {
-      return;
-    }
+    if (!summary) return;
 
     const { arrived, loaded, remaining } = calculateCounts(providedDorms);
     const arrivedEl = document.getElementById('processing-arrived-count');
@@ -115,30 +98,61 @@
   }
 
   function installRenderHook() {
-    if (typeof renderProcessingPage !== 'function' || renderProcessingPage.__loadedArrivedSummaryHooked) {
-      return false;
-    }
+    if (typeof renderProcessingPage !== 'function' || renderProcessingPage.__loadedArrivedSummaryHooked) return false;
 
     const originalRenderProcessingPage = renderProcessingPage;
-
-    renderProcessingPage = function patchedRenderProcessingPage(dorms) {
+    const patchedRenderProcessingPage = function patchedRenderProcessingPage(dorms) {
       originalRenderProcessingPage.apply(this, arguments);
       renderSummary(dorms);
     };
 
-    renderProcessingPage.__loadedArrivedSummaryHooked = true;
+    patchedRenderProcessingPage.__loadedArrivedSummaryHooked = true;
+    window.renderProcessingPage = patchedRenderProcessingPage;
+    try { renderProcessingPage = patchedRenderProcessingPage; } catch (_) {}
     renderSummary();
     return true;
   }
 
-  const installTimer = setInterval(() => {
-    if (installRenderHook()) {
-      clearInterval(installTimer);
-    }
-  }, 250);
+  function clearInstallTimer() {
+    if (!installTimer) return;
+    clearInterval(installTimer);
+    installTimer = null;
+  }
 
-  document.addEventListener('DOMContentLoaded', () => {
-    installRenderHook();
+  function attemptInstall() {
+    installAttempts += 1;
+    if (installRenderHook() || installAttempts >= MAX_INSTALL_ATTEMPTS) clearInstallTimer();
     renderSummary();
-  });
+  }
+
+  function registerHooksOnce() {
+    if (hooksRegistered || typeof window.registerGateHook !== 'function') return;
+    window.registerGateHook('afterRenderAll', () => renderSummary());
+    window.registerGateHook('afterDataChanged', () => renderSummary());
+    window.registerGateHook('afterPageChange', () => renderSummary());
+    window.registerGateHook('afterModalOpen', () => renderSummary());
+    hooksRegistered = true;
+  }
+
+  function startProcessingLoadedSummary() {
+    attemptInstall();
+    registerHooksOnce();
+    if (!installTimer && installAttempts < MAX_INSTALL_ATTEMPTS && typeof renderProcessingPage !== 'function') {
+      installTimer = setInterval(attemptInstall, 250);
+    }
+
+    window.GateProcessingLoadedSummary = Object.freeze({
+      isPassiveCompatibilityLayer: true,
+      render: renderSummary,
+      install: installRenderHook
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', startProcessingLoadedSummary, { once: true });
+  } else {
+    startProcessingLoadedSummary();
+  }
+
+  window.addEventListener('load', startProcessingLoadedSummary, { once: true });
 })();

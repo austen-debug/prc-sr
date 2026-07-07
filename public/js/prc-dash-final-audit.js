@@ -8,7 +8,6 @@
   let renderLifecyclePatched = false;
   let closeDormPatched = false;
   let mobileNavReady = false;
-  let brandingObserverReady = false;
   let boardObserverReady = false;
   let eventsBound = false;
   let passScheduled = false;
@@ -279,40 +278,6 @@
     mobileNavReady = true;
   }
 
-  function scrubLegacyTerminology() {
-    if (!document.body) return;
-    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
-      acceptNode(node) {
-        const parent = node.parentElement;
-        if (!parent) return NodeFilter.FILTER_REJECT;
-        if (['SCRIPT', 'STYLE', 'TEXTAREA'].includes(parent.tagName)) return NodeFilter.FILTER_REJECT;
-        return /prc\s?dash|dashboard/i.test(node.nodeValue || '') ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP;
-      }
-    });
-
-    let node;
-    while ((node = walker.nextNode())) {
-      node.nodeValue = node.nodeValue
-        .replace(/PRC\s?DASH/gi, 'PRC GATE')
-        .replace(/dashboard/gi, 'board');
-    }
-  }
-
-  function ensureBrandingObserver() {
-    if (brandingObserverReady || typeof MutationObserver === 'undefined' || !document.body) return;
-    let queued = false;
-    const observer = new MutationObserver(() => {
-      if (queued) return;
-      queued = true;
-      window.requestAnimationFrame(() => {
-        queued = false;
-        scrubLegacyTerminology();
-      });
-    });
-    observer.observe(document.body, { childList: true, subtree: true });
-    brandingObserverReady = true;
-  }
-
   function navButtonMarkup(page, label, active) {
     const contract = components();
     if (contract?.navButton) return contract.navButton({ page, label, active });
@@ -488,7 +453,6 @@
     patchRenderLifecycle();
     ensureResponsiveCommandShell();
     components()?.processingDormModalContract?.();
-    ensureBrandingObserver();
     try { keepNavigationRecoverable(); } catch (error) { console.warn('GATE nav recovery failed:', error); }
     try { renderGateDormColumns(null, { force: Boolean(options.force) }); } catch (error) { console.warn('GATE Status Board render failed:', error); }
     try { renderSquadronBoard({ force: Boolean(options.force) }); } catch (error) { console.warn('GATE Squadron Board render failed:', error); }

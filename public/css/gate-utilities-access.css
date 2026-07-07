@@ -280,3 +280,255 @@
     min-height: 136px !important;
   }
 }
+
+/* Phone-native Status Board view. */
+@media (max-width: 767px) {
+  body:not(.fullscreen-board) #page-board {
+    padding-left: max(10px, env(safe-area-inset-left)) !important;
+    padding-right: max(10px, env(safe-area-inset-right)) !important;
+    padding-bottom: max(16px, env(safe-area-inset-bottom)) !important;
+  }
+
+  #page-board .board-header {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+    margin: 0 0 10px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  #page-board .board-header .metric-block {
+    min-width: 0 !important;
+    min-height: 64px !important;
+    padding: 10px 11px !important;
+    border-radius: 14px !important;
+    overflow: hidden !important;
+  }
+
+  #page-board .board-header .metric-block:nth-child(3) {
+    grid-column: 1 / -1 !important;
+  }
+
+  #page-board .board-header .metric-block .text-xs,
+  #page-board .board-header .metric-block [class*='text-xs'] {
+    font-size: 0.62rem !important;
+    line-height: 1.05 !important;
+    letter-spacing: 0.13em !important;
+    margin-bottom: 4px !important;
+    white-space: normal !important;
+  }
+
+  #page-board #metric-arrived {
+    font-size: clamp(1.22rem, 8vw, 1.7rem) !important;
+    line-height: 1 !important;
+  }
+
+  #page-board #metric-airport {
+    font-size: clamp(0.8rem, 4.4vw, 1.02rem) !important;
+    line-height: 1.12 !important;
+    white-space: normal !important;
+    overflow-wrap: anywhere !important;
+  }
+
+  #page-board #active-buses {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    gap: 8px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    padding: 1px 0 3px !important;
+    scrollbar-width: none !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  #page-board #active-buses::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  #page-board #active-buses .bus-badge,
+  #page-board #active-buses .prc-bus-card {
+    flex: 0 0 154px !important;
+    width: 154px !important;
+    min-width: 154px !important;
+    min-height: 84px !important;
+    padding: 8px 10px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    gap: 2px !important;
+    border-radius: 13px !important;
+    white-space: normal !important;
+  }
+
+  #page-board #active-buses .prc-bus-card-title {
+    font-size: 0.88rem !important;
+    line-height: 1 !important;
+    margin-bottom: 2px !important;
+  }
+
+  #page-board #active-buses .prc-bus-card-line {
+    font-size: 0.68rem !important;
+    line-height: 1.05 !important;
+  }
+
+  #page-board #active-buses .prc-bus-card-dept {
+    font-size: 0.58rem !important;
+    margin-top: 3px !important;
+    padding-top: 3px !important;
+  }
+
+  #page-board .dorm-dashboard {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  #page-board .dorm-column {
+    width: 100% !important;
+    min-width: 0 !important;
+    border-radius: 14px !important;
+    overflow: hidden !important;
+  }
+
+  #page-board .dorm-col-header {
+    min-height: 36px !important;
+    padding: 0 12px !important;
+    display: flex !important;
+    align-items: center !important;
+    font-size: 0.78rem !important;
+    letter-spacing: 0.18em !important;
+  }
+
+  #page-board .dorm-col-content {
+    padding: 8px !important;
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+  }
+
+  #page-board .gate-dorm-card,
+  #page-board .dorm-card {
+    min-height: 0 !important;
+    padding: 10px 12px 10px !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    grid-template-rows: auto auto auto auto auto !important;
+    grid-template-areas:
+      'banner banner'
+      'name load'
+      'info load'
+      'status timer'
+      'progress progress' !important;
+    column-gap: 10px !important;
+    row-gap: 4px !important;
+    border-radius: 14px !important;
+    overflow: hidden !important;
+  }
+
+  #page-board .gate-dorm-card.gate-dorm-has-banner,
+  #page-board .dorm-card.gate-dorm-has-banner,
+  #page-board .gate-dorm-card[data-has-banner='true'],
+  #page-board .dorm-card[data-has-banner='true'] {
+    padding-top: 0 !important;
+  }
+
+  #page-board .gate-dorm-top-banner {
+    grid-area: banner !important;
+    min-height: 25px !important;
+    height: 25px !important;
+    margin-bottom: 5px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 0.64rem !important;
+    letter-spacing: 0.18em !important;
+  }
+
+  #page-board .gate-dorm-name {
+    grid-area: name !important;
+    align-self: end !important;
+    font-size: clamp(1.55rem, 10vw, 2.35rem) !important;
+    line-height: 0.92 !important;
+    min-width: 0 !important;
+  }
+
+  #page-board .gate-dorm-info {
+    grid-area: info !important;
+    min-width: 0 !important;
+    font-size: 0.74rem !important;
+    line-height: 1.05 !important;
+    letter-spacing: 0.11em !important;
+  }
+
+  #page-board .gate-dorm-airman {
+    grid-column: 2 !important;
+    grid-row: 2 !important;
+    align-self: start !important;
+    justify-self: end !important;
+    max-width: 13ch !important;
+    font-size: 0.64rem !important;
+    line-height: 1.05 !important;
+    text-align: right !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+
+  #page-board .gate-auditorium-location {
+    grid-column: 1 / -1 !important;
+    grid-row: auto !important;
+    justify-self: start !important;
+    font-size: 0.62rem !important;
+    line-height: 1.05 !important;
+    letter-spacing: 0.08em !important;
+  }
+
+  #page-board .gate-dorm-status-wrap {
+    grid-area: status !important;
+    align-self: center !important;
+    justify-self: start !important;
+  }
+
+  #page-board .gate-dorm-status {
+    min-height: 26px !important;
+    padding: 0 12px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border: 1px solid rgba(125, 211, 252, 0.34) !important;
+    border-radius: 999px !important;
+    background: rgba(14, 165, 233, 0.12) !important;
+    font-size: 0.72rem !important;
+    line-height: 1 !important;
+    letter-spacing: 0.18em !important;
+  }
+
+  #page-board .gate-dorm-timer {
+    grid-area: timer !important;
+    align-self: center !important;
+    justify-self: end !important;
+    font-size: clamp(1.02rem, 6vw, 1.32rem) !important;
+    line-height: 1 !important;
+  }
+
+  #page-board .gate-dorm-load {
+    grid-area: load !important;
+    align-self: end !important;
+    justify-self: end !important;
+    font-size: clamp(1.02rem, 6vw, 1.32rem) !important;
+    line-height: 1 !important;
+    white-space: nowrap !important;
+  }
+
+  #page-board .gate-dorm-progress {
+    grid-area: progress !important;
+    height: 7px !important;
+    margin-top: 4px !important;
+  }
+}

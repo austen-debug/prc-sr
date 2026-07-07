@@ -11,9 +11,6 @@
   display: none !important;
 }
 
-/* Final board-card conflict guard.
-   Female owns the outer card frame. Band/Space Force owns only the interior header strip.
-   This prevents the red Female frame and operational banner from competing for the same top edge. */
 #page-board .gate-dorm-card.border-female,
 #page-board .dorm-card.border-female,
 #page-board .gate-dorm-card[data-female-dorm='true'],
@@ -75,4 +72,140 @@
   outline: 0 !important;
   background: transparent !important;
   box-shadow: none !important;
+}
+
+@media (min-width: 768px) and (max-width: 1180px) and (pointer: coarse) {
+  :root {
+    --gate-mobile-safe-x: max(18px, env(safe-area-inset-left), env(safe-area-inset-right));
+    --gate-mobile-classification-height: 28px;
+    --gate-mobile-nav-clean-height: 122px;
+    --gate-mobile-page-top: calc(var(--gate-mobile-classification-height) + var(--gate-mobile-nav-clean-height) + 14px);
+    --gate-mobile-control-height: 38px;
+  }
+
+  .app-nav,
+  .app-nav.command-header-bar,
+  .command-header-bar {
+    inset: var(--gate-mobile-classification-height) 0 auto 0 !important;
+    height: var(--gate-mobile-nav-clean-height) !important;
+    min-height: var(--gate-mobile-nav-clean-height) !important;
+    max-height: var(--gate-mobile-nav-clean-height) !important;
+    padding: 10px var(--gate-mobile-safe-x) 12px !important;
+    display: grid !important;
+    grid-template-columns: 170px minmax(0, 1fr) !important;
+    grid-template-rows: 42px 44px !important;
+    grid-template-areas:
+      'brand tools'
+      'menu menu' !important;
+    gap: 10px 14px !important;
+    overflow: visible !important;
+  }
+
+  .app-nav::before,
+  .command-header-bar::before {
+    grid-area: brand !important;
+    width: 160px !important;
+    height: 40px !important;
+    align-self: center !important;
+  }
+
+  #mobile-menu-trigger,
+  .mobile-only-control {
+    display: none !important;
+  }
+
+  #main-nav-menu,
+  #nav-links,
+  .nav-group-left {
+    grid-area: menu !important;
+    position: static !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 8px !important;
+    width: 100% !important;
+    max-height: none !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    overflow: visible !important;
+  }
+
+  #main-nav-menu .nav-btn,
+  #nav-links .nav-btn,
+  .nav-group-left .nav-btn {
+    width: auto !important;
+    min-width: 0 !important;
+    height: 38px !important;
+    min-height: 38px !important;
+    padding: 0 12px !important;
+    border-radius: 999px !important;
+    font-size: clamp(0.62rem, 1.45vw, 0.76rem) !important;
+    line-height: 1 !important;
+    justify-content: center !important;
+    text-align: center !important;
+    white-space: nowrap !important;
+  }
+
+  .app-nav > div:last-child,
+  .app-nav .nav-group-right,
+  .nav-group-right {
+    grid-area: tools !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    gap: 8px !important;
+    padding: 0 !important;
+    border-left: 0 !important;
+    overflow: visible !important;
+  }
+
+  .app-nav > div:last-child button,
+  .app-nav .nav-group-right button,
+  .nav-group-right button {
+    flex: 0 1 auto !important;
+    height: var(--gate-mobile-control-height) !important;
+    min-height: var(--gate-mobile-control-height) !important;
+    max-height: var(--gate-mobile-control-height) !important;
+    min-width: 0 !important;
+    max-width: 190px !important;
+    padding: 0 12px !important;
+    border-radius: 999px !important;
+    font-size: clamp(0.6rem, 1.25vw, 0.72rem) !important;
+    white-space: nowrap !important;
+  }
+
+  body:not(.fullscreen-board) .page,
+  body:not(.fullscreen-board) #page-board,
+  body:not(.fullscreen-board) #page-squadron.gate-squadron-page {
+    padding-top: var(--gate-mobile-page-top) !important;
+    padding-left: var(--gate-mobile-safe-x) !important;
+    padding-right: var(--gate-mobile-safe-x) !important;
+  }
+
+  #page-board .prc-metric-grid-v3,
+  #page-squadron .gate-squadron-header {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+
+  #page-board .dorm-dashboard,
+  #page-squadron .dorm-dashboard {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 12px !important;
+  }
+
+  #page-board .gate-dorm-card,
+  #page-board .dorm-card,
+  #page-squadron .gate-dorm-card,
+  #page-squadron .dorm-card {
+    min-height: 136px !important;
+  }
 }

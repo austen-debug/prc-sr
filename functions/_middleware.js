@@ -13,6 +13,7 @@ const UI_INLINE_ASSETS = [];
 const UI_HEAD_SCRIPTS = [
   '<script src="/js/gate-component-contracts.js" defer></script>',
   '<script src="/js/gate-ui-hooks.js" defer></script>',
+  '<script src="/js/gate-branding-controller.js" defer></script>',
   '<script src="/js/prc-dash-runtime-fixes.js" defer></script>',
   '<script src="/js/prc-dash-sat-arrivals.js" defer></script>',
   '<script src="/js/prc-dash-space-force.js" defer></script>',
@@ -115,10 +116,25 @@ function extractId(assetTag) {
 }
 
 function applyAppShellIdentity(html) {
-  return html.replace(
+  let output = html.replace(
     /<title>\s*Pfingston Reception Status Board\s*<\/title>/i,
     '<title>GATE — Gateway Arrival Tracking Environment | Pfingston Reception Center</title>'
   );
+
+  output = output.replace(
+    /<title>\s*GATE\s*—\s*Gateway Arrival Tracking Environment\s*<\/title>/i,
+    '<title>GATE — Gateway Arrival Tracking Environment | Pfingston Reception Center</title>'
+  );
+
+  return output;
+}
+
+function normalizeServedBranding(html) {
+  return html
+    .replace(/\bPRC\s*DASH\b/g, 'GATE')
+    .replace(/\bPRC\s*GATE\b/g, 'GATE')
+    .replace(/\bPRC[-\s]*SR\b/g, 'GATE')
+    .replace(/\bPfingston Reception Status Board\b/g, 'GATE — Gateway Arrival Tracking Environment');
 }
 
 function stripLegacyInlineShellCss(html) {
@@ -129,7 +145,7 @@ function stripLegacyInlineShellCss(html) {
 }
 
 function prepareAppShellHtml(html) {
-  return stripLegacyInlineShellCss(applyAppShellIdentity(html));
+  return normalizeServedBranding(stripLegacyInlineShellCss(applyAppShellIdentity(html)));
 }
 
 function applyUiAssets(html) {

@@ -1,6 +1,7 @@
 const COOKIE_NAME = 'prc_sr_session';
 
 const UI_STYLESHEETS = [
+  '<link rel="stylesheet" href="/css/gate-index-legacy-shell.css">',
   '<link rel="stylesheet" href="/css/gate-base-tokens.css">',
   '<link rel="stylesheet" href="/css/gate-layout-pages.css">',
   '<link rel="stylesheet" href="/css/gate-components.css">',
@@ -120,8 +121,19 @@ function applyAppShellIdentity(html) {
   );
 }
 
+function stripLegacyInlineShellCss(html) {
+  return html.replace(
+    /\s*<style>\s*:root\s*\{[\s\S]*?<\/style>\s*/i,
+    '\n'
+  );
+}
+
+function prepareAppShellHtml(html) {
+  return stripLegacyInlineShellCss(applyAppShellIdentity(html));
+}
+
 function applyUiAssets(html) {
-  const updatedHtml = applyAppShellIdentity(html);
+  const updatedHtml = prepareAppShellHtml(html);
 
   const linksToAdd = UI_STYLESHEETS.filter(link => {
     const href = extractUrl(link, 'href');

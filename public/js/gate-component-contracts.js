@@ -201,6 +201,7 @@
           <span class="gate-archive-stat-pill">${n(record?.total_arrived)} Arrived</span>
           <span class="gate-archive-stat-pill">${n(record?.female_total)} Female</span>
           <span class="gate-archive-stat-pill">${n(record?.nat_total)} NAT</span>
+          <span class="gate-archive-stat-pill" data-archive-space-force-pill="true">${n(record?.space_force_total ?? record?.arrived_space_force_total)} Space Force</span>
         </span>
       </button>
     `;

@@ -9,6 +9,11 @@
   let priorArchivePrint = null;
   let priorCurrentPrint = null;
 
+  function n(value) {
+    const parsed = Number(value || 0);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+
   function getAllDataSafe() {
     try { return Array.isArray(allData) ? allData : []; } catch (_) { return []; }
   }
@@ -19,6 +24,87 @@
 
   function getArchive(id = getEditArchiveIdSafe()) {
     return getAllDataSafe().find(record => record && record.type === 'archive' && record.__backendId === id) || null;
+  }
+
+  function archiveRecords() {
+    return getAllDataSafe().filter(record => record && record.type === 'archive');
+  }
+
+  function getArchiveSpaceForceTotal(record) {
+    if (!record) return 0;
+    const explicit = n(record.space_force_total);
+    const arrived = n(record.arrived_space_force_total);
+    if (explicit || arrived) return explicit || arrived;
+
+    try {
+      const buses = JSON.parse(record.bus_data || '[]');
+      return buses.reduce((sum, bus) => sum + n(bus.space_force_count), 0);
+    } catch (_) {
+      return 0;
+    }
+  }
+
+  function getVisibleArchiveRecords() {
+    const archiveCards = Array.from(document.querySelectorAll('#archive-history [data-archive-id]'));
+    if (!archiveCards.length) return archiveRecords();
+
+    const ids = new Set(archiveCards.map(card => card.dataset.archiveId).filter(Boolean));
+    return archiveRecords().filter(record => ids.has(record.__backendId));
+  }
+
+  function archiveSpaceForceTotal(records) {
+    return records.reduce((sum, record) => sum + getArchiveSpaceForceTotal(record), 0);
+  }
+
+  function ensureArchiveSpaceForcePill(card, record) {
+    if (!card || !record) return;
+    const stats = card.querySelector('.gate-archive-record-stats');
+    if (!stats) return;
+
+    let pill = stats.querySelector('[data-archive-space-force-pill="true"]');
+    if (!pill) {
+      pill = document.createElement('span');
+      pill.className = 'gate-archive-stat-pill';
+      pill.dataset.archiveSpaceForcePill = 'true';
+      stats.appendChild(pill);
+    }
+
+    pill.textContent = `${getArchiveSpaceForceTotal(record)} Space Force`;
+    card.dataset.spaceForceTotal = String(getArchiveSpaceForceTotal(record));
+  }
+
+  function enhanceArchiveCardsWithSpaceForce() {
+    document.querySelectorAll('#archive-history [data-archive-id]').forEach(card => {
+      const record = getArchive(card.dataset.archiveId);
+      ensureArchiveSpaceForcePill(card, record);
+    });
+  }
+
+  function enhanceArchiveToolbarWithSpaceForce() {
+    const toolbarCopy = document.querySelector('#archive-history .gate-archive-toolbar-copy');
+    if (!toolbarCopy) return;
+
+    const visible = getVisibleArchiveRecords();
+    const total = archiveSpaceForceTotal(visible);
+    if (/Space Force/i.test(toolbarCopy.textContent || '')) return;
+    toolbarCopy.textContent = `${toolbarCopy.textContent} · ${total} Space Force`;
+  }
+
+  function enhanceArchiveSummaryLabelsWithSpaceForce() {
+    document.querySelectorAll('#archive-history details.gate-archive-year, #archive-history details.gate-archive-month').forEach(details => {
+      const label = details.querySelector(':scope > summary .gate-archive-year-count, :scope > summary .gate-archive-month-count');
+      if (!label || /Space Force/i.test(label.textContent || '')) return;
+
+      const cards = Array.from(details.querySelectorAll('[data-archive-id]'));
+      const total = cards.reduce((sum, card) => sum + getArchiveSpaceForceTotal(getArchive(card.dataset.archiveId)), 0);
+      label.textContent = `${label.textContent} · ${total} Space Force`;
+    });
+  }
+
+  function enhanceArchiveSpaceForceUi() {
+    enhanceArchiveCardsWithSpaceForce();
+    enhanceArchiveToolbarWithSpaceForce();
+    enhanceArchiveSummaryLabelsWithSpaceForce();
   }
 
   function showArchiveMessage(text, isError = true) {
@@ -173,6 +259,7 @@
     installGlobals();
     ensureCurrentSummaryButton();
     bindArchivePrintButton();
+    enhanceArchiveSpaceForceUi();
   }
 
   function schedulePass() {
@@ -204,7 +291,9 @@
       printArchiveReport,
       printCurrentSummaryReport,
       refresh: schedulePass,
-      getArchive
+      getArchive,
+      getArchiveSpaceForceTotal,
+      enhanceArchiveSpaceForceUi
     });
   }
 

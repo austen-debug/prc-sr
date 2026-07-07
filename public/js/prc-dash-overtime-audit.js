@@ -9,16 +9,12 @@
   const INSTALL_RETRY_LIMIT = 24;
 
   let installed = false;
+  let hooksRegistered = false;
   let installAttempts = 0;
   let installRetryInterval = null;
   let controllerInterval = null;
   let auditInProgress = false;
   let localOvertimeInProgress = new Set();
-
-  function n(value) {
-    const parsed = Number(value || 0);
-    return Number.isFinite(parsed) ? parsed : 0;
-  }
 
   function activeWeekGroup() {
     try { return typeof getActiveWG === 'function' ? getActiveWG() : ''; } catch (_) { return ''; }
@@ -311,33 +307,39 @@
     try { timerInterval = controllerInterval; } catch (_) {}
   }
 
+  function exposeController() {
+    if (window.GateTimerSoundController) return;
+
+    window.GateTimerSoundController = Object.freeze({
+      isCanonicalOwner: true,
+      updateTimers: updateTimerDisplays,
+      processSoundEvents: processSoundEventsDeduped,
+      auditOvertime: auditOpenDormsForOvertime,
+      triggerOvertimeSoundOnce,
+      getElapsedTimer: elapsedTimer
+    });
+  }
+
+  function registerHooksOnce() {
+    if (hooksRegistered || typeof window.registerGateHook !== 'function') return;
+
+    window.registerGateHook('afterRenderAll', updateTimerDisplays);
+    window.registerGateHook('afterDataChanged', () => {
+      updateTimerDisplays();
+      processSoundEventsDeduped();
+      auditOpenDormsForOvertime();
+    });
+    window.registerGateHook('afterPageChange', updateTimerDisplays);
+    hooksRegistered = true;
+  }
+
   function installController() {
     patchGlobalFunctions();
     stopLegacyTimerInterval();
     startControllerInterval();
+    exposeController();
+    registerHooksOnce();
     tick();
-
-    if (!window.GateTimerSoundController) {
-      window.GateTimerSoundController = Object.freeze({
-        isCanonicalOwner: true,
-        updateTimers: updateTimerDisplays,
-        processSoundEvents: processSoundEventsDeduped,
-        auditOvertime: auditOpenDormsForOvertime,
-        triggerOvertimeSoundOnce,
-        getElapsedTimer: elapsedTimer
-      });
-    }
-
-    if (typeof window.registerGateHook === 'function') {
-      window.registerGateHook('afterRenderAll', updateTimerDisplays);
-      window.registerGateHook('afterDataChanged', () => {
-        updateTimerDisplays();
-        processSoundEventsDeduped();
-        auditOpenDormsForOvertime();
-      });
-      window.registerGateHook('afterPageChange', updateTimerDisplays);
-    }
-
     installed = true;
   }
 
@@ -345,7 +347,7 @@
     installAttempts += 1;
     installController();
 
-    if (installAttempts >= INSTALL_RETRY_LIMIT || installed) {
+    if (installAttempts >= INSTALL_RETRY_LIMIT) {
       if (installRetryInterval) clearInterval(installRetryInterval);
       installRetryInterval = null;
     }
@@ -353,7 +355,9 @@
 
   function start() {
     attemptInstall();
-    if (!installRetryInterval) installRetryInterval = setInterval(attemptInstall, INSTALL_RETRY_MS);
+    if (!installRetryInterval && installAttempts < INSTALL_RETRY_LIMIT) {
+      installRetryInterval = setInterval(attemptInstall, INSTALL_RETRY_MS);
+    }
   }
 
   if (document.readyState === 'loading') {

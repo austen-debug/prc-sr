@@ -96,43 +96,64 @@
         }
 
         #page-airport #airport-form {
-          display: grid !important;
-          grid-auto-flow: column !important;
-          grid-auto-columns: minmax(176px, 72vw) !important;
-          grid-template-rows: auto auto !important;
-          align-items: end !important;
-          column-gap: 0.75rem !important;
-          row-gap: 0.6rem !important;
+          display: flex !important;
+          flex-direction: column !important;
+          align-items: stretch !important;
+          justify-content: flex-start !important;
+          gap: 0.82rem !important;
           width: 100% !important;
           max-width: 100% !important;
-          overflow-x: auto !important;
+          min-width: 0 !important;
+          overflow-x: hidden !important;
           overflow-y: visible !important;
-          padding-bottom: 0.9rem !important;
-          scroll-snap-type: x proximity !important;
-          -webkit-overflow-scrolling: touch !important;
+          padding: 1rem !important;
+          scroll-snap-type: none !important;
+          -webkit-overflow-scrolling: auto !important;
         }
 
         #page-airport #airport-form > * {
+          width: 100% !important;
+          max-width: 100% !important;
           min-width: 0 !important;
-          scroll-snap-align: start !important;
+          margin-top: 0 !important;
+          scroll-snap-align: none !important;
         }
 
-        #page-airport #airport-form h3,
-        #page-airport #airport-form #airport-msg {
-          grid-row: 1 !important;
-          grid-column: 1 / -1 !important;
-          min-width: 100% !important;
+        #page-airport #airport-form h3 {
+          font-size: 0.98rem !important;
+          line-height: 1.15 !important;
+          letter-spacing: 0.11em !important;
+          margin-bottom: 0.1rem !important;
         }
 
-        #page-airport #airport-form button[type='submit'] {
-          grid-row: 2 !important;
-          min-width: 176px !important;
-          height: 44px !important;
-          align-self: end !important;
+        #page-airport #airport-form label {
+          font-size: 0.78rem !important;
+          line-height: 1.15 !important;
+          white-space: normal !important;
         }
 
         #page-airport #airport-form input {
-          min-height: 44px !important;
+          width: 100% !important;
+          max-width: 100% !important;
+          min-width: 0 !important;
+          min-height: 48px !important;
+          font-size: 1rem !important;
+          box-sizing: border-box !important;
+        }
+
+        #page-airport #airport-form button[type='submit'] {
+          width: 100% !important;
+          min-width: 0 !important;
+          min-height: 48px !important;
+          height: auto !important;
+          align-self: stretch !important;
+          margin-top: 0.15rem !important;
+        }
+
+        #page-airport #airport-form #airport-msg {
+          min-height: 1.1rem !important;
+          text-align: center !important;
+          white-space: normal !important;
         }
 
         #page-airport .surface:has(#airport-bus-log-body) {

@@ -251,6 +251,7 @@
         'batch-dorm',
         'batch-sex',
         'batch-band',
+        'batch-space-force',
         'batch-load'
       ];
 

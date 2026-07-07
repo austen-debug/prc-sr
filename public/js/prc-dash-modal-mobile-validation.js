@@ -24,6 +24,65 @@
     const style = document.createElement('style');
     style.id = 'gate-mobile-runtime-corrections';
     style.textContent = `
+      body.fullscreen-board {
+        height: 100dvh !important;
+        max-height: 100dvh !important;
+        overflow: hidden !important;
+      }
+
+      body.fullscreen-board #page-board.active,
+      body.fullscreen-board #page-board {
+        height: 100dvh !important;
+        min-height: 0 !important;
+        max-height: 100dvh !important;
+        box-sizing: border-box !important;
+        padding: calc(var(--gate-shell-offset-clean, 78px) + 10px) clamp(0.55rem, 0.82vw, 1rem) 1rem !important;
+        overflow-x: hidden !important;
+        overflow-y: auto !important;
+        overscroll-behavior: contain !important;
+        -webkit-overflow-scrolling: touch !important;
+        scroll-padding-top: calc(var(--gate-shell-offset-clean, 78px) + 14px) !important;
+        scroll-padding-bottom: 2rem !important;
+      }
+
+      body.fullscreen-board #page-board .board-header.prc-header-v3 {
+        margin-top: 0 !important;
+        margin-bottom: 0.58rem !important;
+      }
+
+      body.fullscreen-board #page-board .dorm-dashboard {
+        align-items: start !important;
+        padding-bottom: 1rem !important;
+      }
+
+      body.fullscreen-board #page-board .dorm-column,
+      body.fullscreen-board #page-board .dorm-col-content {
+        min-height: 0 !important;
+        max-height: none !important;
+        overflow: visible !important;
+      }
+
+      body.fullscreen-board #page-board .gate-dorm-card,
+      body.fullscreen-board #page-board .dorm-card {
+        contain: layout paint !important;
+      }
+
+      @media (min-width: 1025px) {
+        body.fullscreen-board #page-board .board-header.prc-header-v3 {
+          grid-template-columns: minmax(340px, 0.58fr) minmax(420px, 1fr) !important;
+        }
+
+        body.fullscreen-board #page-board .prc-metric-card-v3 {
+          min-height: 72px !important;
+          padding-top: 0.52rem !important;
+          padding-bottom: 0.52rem !important;
+        }
+
+        body.fullscreen-board #page-board .prc-active-buses-v3 {
+          min-height: 112px !important;
+        }
+      }
+
       @media (max-width: 767px) {
         #dorm-modal.confirm-overlay {
           align-items: flex-start !important;

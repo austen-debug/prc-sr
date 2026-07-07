@@ -1,94 +1,18 @@
-// PRC DASH Space Force bus count support
-// UI/runtime patch loaded after the main single-page app. Keeps existing D1/data SDK workflow intact.
+// GATE Space Force compatibility layer
+// Passive support only: Space Force field presence and closed-dorm final-time edit normalization.
 (function () {
-  let airportFormPatched = false;
-  let airportEditFormPatched = false;
-  let airportEditOpenPatched = false;
-  let renderAirportBusLogPatched = false;
-  let renderAllPatchedForSf = false;
-  let busCardStylesPatched = false;
+  'use strict';
 
-  function n(value) {
-    const parsed = Number(value || 0);
-    return Number.isFinite(parsed) ? parsed : 0;
-  }
-
-  function safeEscape(value) {
-    if (typeof escapeHtml === 'function') return escapeHtml(value);
-    return String(value ?? '')
-      .replaceAll('&', '&amp;')
-      .replaceAll('<', '&lt;')
-      .replaceAll('>', '&gt;')
-      .replaceAll('"', '&quot;')
-      .replaceAll("'", '&#039;');
-  }
-
-  function getActiveWeekGroupSafe() {
-    try {
-      return typeof getActiveWG === 'function' ? getActiveWG() : '';
-    } catch (_) {
-      return '';
-    }
-  }
-
-  function formatDepartedTime(value) {
-    if (!value) return '—';
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return '—';
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
-  }
+  let hooksRegistered = false;
+  let dormEditFormPatched = false;
 
   function findInputWrapper(inputId) {
     const input = document.getElementById(inputId);
     return input ? input.closest('div') : null;
   }
 
-  function showFieldError(id, message) {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.textContent = message || '';
-    el.classList.toggle('hidden', !message);
-  }
-
-  function resetErrors(ids) {
-    ids.forEach(id => showFieldError(id, ''));
-  }
-
-  function validateCounts(prefix, otw, females, nats, spaceForce) {
-    const errors = {
-      otw: `${prefix}-otw-error`,
-      female: `${prefix}-female-error`,
-      nat: `${prefix}-nat-error`,
-      sf: `${prefix}-sf-error`
-    };
-
-    resetErrors(Object.values(errors));
-
-    if (!Number.isFinite(otw) || otw < 0 || otw > 44) {
-      showFieldError(errors.otw, 'OTW must be between 0 and 44.');
-      return false;
-    }
-
-    if (!Number.isFinite(females) || females < 0 || females > otw) {
-      showFieldError(errors.female, 'Females cannot exceed OTW.');
-      return false;
-    }
-
-    if (!Number.isFinite(nats) || nats < 0 || nats > otw) {
-      showFieldError(errors.nat, 'Naturalizations cannot exceed OTW.');
-      return false;
-    }
-
-    if (!Number.isFinite(spaceForce) || spaceForce < 0 || spaceForce > otw) {
-      showFieldError(errors.sf, 'Space Force cannot exceed OTW.');
-      return false;
-    }
-
-    return true;
-  }
-
   function ensureBusCardStyles() {
-    if (busCardStylesPatched || document.getElementById('prc-bus-card-styles')) return;
+    if (document.getElementById('prc-bus-card-styles')) return;
 
     const style = document.createElement('style');
     style.id = 'prc-bus-card-styles';
@@ -157,37 +81,47 @@
         }
       }
     `;
+
     document.head.appendChild(style);
-    busCardStylesPatched = true;
   }
 
-  function addSpaceForceInputs() {
-    const airportNatWrapper = findInputWrapper('bus-nat');
-    if (airportNatWrapper && !document.getElementById('bus-sf')) {
-      airportNatWrapper.insertAdjacentHTML('afterend', `
-        <div>
-          <label class="block text-sm font-medium mb-1" for="bus-sf">Space Force</label>
-          <input id="bus-sf" type="number" inputmode="numeric" min="0" value="0" class="w-full border rounded px-3 py-2 bg-transparent" style="border-color:var(--border);color:var(--text);">
-          <div id="bus-sf-error" class="text-red-500 text-xs mt-1 hidden"></div>
-        </div>
-      `);
-    }
+  function ensureAirportSpaceForceInput() {
+    const natWrapper = findInputWrapper('bus-nat');
+    if (!natWrapper || document.getElementById('bus-sf')) return;
 
-    const editNatWrapper = findInputWrapper('edit-bus-nat');
-    if (editNatWrapper && !document.getElementById('edit-bus-sf')) {
-      editNatWrapper.insertAdjacentHTML('afterend', `
-        <div>
-          <label class="block text-sm font-medium mb-1" for="edit-bus-sf">Space Force</label>
-          <input id="edit-bus-sf" type="number" inputmode="numeric" min="0" class="w-full border rounded px-3 py-2 bg-transparent" style="border-color:var(--border);color:var(--text);">
-          <div id="edit-bus-sf-error" class="text-red-500 text-xs mt-1 hidden"></div>
-        </div>
-      `);
-    }
+    natWrapper.insertAdjacentHTML('afterend', `
+      <div data-owner="gate-space-force-compatibility-layer">
+        <label class="block text-sm font-medium mb-1" for="bus-sf">Space Force</label>
+        <input id="bus-sf" type="number" inputmode="numeric" min="0" value="0" class="w-full border rounded px-3 py-2 bg-transparent" style="border-color:var(--border);color:var(--text);">
+        <div id="bus-sf-error" class="text-red-500 text-xs mt-1 hidden"></div>
+      </div>
+    `);
+  }
 
-    const logHelp = document.querySelector('#page-airport .surface h3 + .text-xs.text-muted');
-    if (logHelp && logHelp.textContent.includes('OTW, female, or naturalization')) {
-      logHelp.textContent = 'Click a bus to edit OTW, female, naturalization, or Space Force counts.';
-    }
+  function ensureLocalSpaceForceInput() {
+    const natWrapper = findInputWrapper('local-nat');
+    if (!natWrapper || document.getElementById('local-sf')) return;
+
+    natWrapper.insertAdjacentHTML('afterend', `
+      <div data-owner="gate-space-force-compatibility-layer">
+        <label class="block text-sm font-medium mb-1" for="local-sf">Space Force</label>
+        <input id="local-sf" type="number" inputmode="numeric" min="0" value="0" class="w-full border rounded px-3 py-2 bg-transparent" style="border-color:var(--border);color:var(--text);">
+        <div id="local-sf-error" class="text-red-500 text-xs mt-1 hidden"></div>
+      </div>
+    `);
+  }
+
+  function ensureEditSpaceForceInput() {
+    const natWrapper = findInputWrapper('edit-bus-nat');
+    if (!natWrapper || document.getElementById('edit-bus-sf')) return;
+
+    natWrapper.insertAdjacentHTML('afterend', `
+      <div data-owner="gate-space-force-compatibility-layer">
+        <label class="block text-sm font-medium mb-1" for="edit-bus-sf">Space Force</label>
+        <input id="edit-bus-sf" type="number" inputmode="numeric" min="0" class="w-full border rounded px-3 py-2 bg-transparent" style="border-color:var(--border);color:var(--text);">
+        <div id="edit-bus-sf-error" class="text-red-500 text-xs mt-1 hidden"></div>
+      </div>
+    `);
   }
 
   function ensureAirportLogSfColumn() {
@@ -216,311 +150,6 @@
     }
   }
 
-  function updateAirportLogRowsWithSf() {
-    ensureAirportLogSfColumn();
-
-    const body = document.getElementById('airport-bus-log-body');
-    if (!body || typeof allData === 'undefined') return;
-
-    body.querySelectorAll('tr[onclick*="openAirportBusEditModal"]').forEach(row => {
-      const onclick = row.getAttribute('onclick') || '';
-      const match = onclick.match(/openAirportBusEditModal\('([^']+)'\)/);
-      const id = match ? match[1] : '';
-      const bus = id ? allData.find(record => record.__backendId === id) : null;
-      if (!bus) return;
-
-      let cell = row.querySelector('[data-sf-col="body"]');
-      if (!cell) {
-        cell = document.createElement('td');
-        cell.className = 'px-3 py-2 font-tabular';
-        cell.dataset.sfCol = 'body';
-        row.appendChild(cell);
-      }
-
-      cell.textContent = String(n(bus.space_force_count));
-    });
-
-    const activeWg = getActiveWeekGroupSafe();
-    const airportBuses = allData.filter(record => (
-      record.type === 'bus' &&
-      record.week_group === activeWg &&
-      record.bus_type === 'airport'
-    ));
-
-    const total = airportBuses.reduce((sum, bus) => sum + n(bus.space_force_count), 0);
-    const totalEl = document.getElementById('airport-log-total-sf');
-    if (totalEl) totalEl.textContent = String(total);
-  }
-
-  function updateActiveBusSfBadges() {
-    ensureBusCardStyles();
-
-    const container = document.getElementById('active-buses');
-    if (!container || typeof allData === 'undefined') return;
-
-    container.querySelectorAll('.bus-badge').forEach(button => {
-      const onclick = button.getAttribute('onclick') || '';
-      const match = onclick.match(/confirmBusArrival\('([^']+)'\)/);
-      const id = match ? match[1] : '';
-      const bus = id ? allData.find(record => record.__backendId === id) : null;
-      if (!bus) return;
-
-      const otw = n(bus.otw_count);
-      const females = n(bus.female_count);
-      const nats = n(bus.nat_count);
-      const sf = n(bus.space_force_count);
-      const departed = formatDepartedTime(bus.created_at || bus.departed_at);
-      const title = bus.bus_type === 'local'
-        ? `LOCAL – ${bus.destination || bus.originating_destination || 'LOCAL'}`
-        : `BUS #${bus.bus_id || ''}`;
-      const plainLabel = `${title}: ${otw} OTW, ${females} FEMALE, ${nats} NAT, ${sf} SPACE FORCE, DEPT ${departed}`;
-
-      button.innerHTML = `
-        <span class="prc-bus-card-title">${safeEscape(title)}</span>
-        <span class="prc-bus-card-line">${otw} OTW</span>
-        <span class="prc-bus-card-line">${females} FEMALE</span>
-        <span class="prc-bus-card-line">${nats} NAT</span>
-        <span class="prc-bus-card-line">${sf} SPACE FORCE</span>
-        <span class="prc-bus-card-dept">DEPT: ${safeEscape(departed)}</span>
-      `;
-      button.title = `Confirm arrival: ${plainLabel}`;
-      button.setAttribute('aria-label', `Confirm arrival: ${plainLabel}`);
-    });
-  }
-
-  function patchRenderAirportBusLog() {
-    try {
-      if (renderAirportBusLogPatched || typeof renderAirportBusLog !== 'function') return;
-
-      const originalRenderAirportBusLog = renderAirportBusLog;
-      const patchedRenderAirportBusLog = function patchedRenderAirportBusLog(...args) {
-        const result = originalRenderAirportBusLog.apply(this, args);
-        addSpaceForceInputs();
-        updateAirportLogRowsWithSf();
-        return result;
-      };
-
-      window.renderAirportBusLog = patchedRenderAirportBusLog;
-      try { renderAirportBusLog = patchedRenderAirportBusLog; } catch (_) {}
-      renderAirportBusLogPatched = true;
-    } catch (error) {
-      console.warn('PRC DASH Space Force airport log patch failed:', error);
-    }
-  }
-
-  function patchRenderAllForSf() {
-    try {
-      if (renderAllPatchedForSf || typeof renderAll !== 'function') return;
-
-      const originalRenderAll = renderAll;
-      const patchedRenderAllForSf = function patchedRenderAllForSf(...args) {
-        const result = originalRenderAll.apply(this, args);
-        addSpaceForceInputs();
-        updateAirportLogRowsWithSf();
-        updateActiveBusSfBadges();
-        return result;
-      };
-
-      window.renderAll = patchedRenderAllForSf;
-      try { renderAll = patchedRenderAllForSf; } catch (_) {}
-      renderAllPatchedForSf = true;
-    } catch (error) {
-      console.warn('PRC DASH Space Force render patch failed:', error);
-    }
-  }
-
-  function patchAirportDispatchForm() {
-    const form = document.getElementById('airport-form');
-    if (!form || airportFormPatched) return;
-
-    form.addEventListener('submit', async event => {
-      event.preventDefault();
-      event.stopImmediatePropagation();
-
-      addSpaceForceInputs();
-
-      const otw = n(document.getElementById('bus-otw')?.value);
-      const females = n(document.getElementById('bus-female')?.value);
-      const nats = n(document.getElementById('bus-nat')?.value);
-      const spaceForce = n(document.getElementById('bus-sf')?.value);
-
-      if (!validateCounts('bus', otw, females, nats, spaceForce)) return;
-
-      if (typeof allData !== 'undefined' && allData.length >= 999) {
-        if (typeof showMsg === 'function') showMsg('airport-msg', 'Record limit reached!', true);
-        return;
-      }
-
-      const wg = getActiveWeekGroupSafe();
-      if (!wg) {
-        if (typeof showMsg === 'function') showMsg('airport-msg', 'Initialize a Week Group before dispatching buses.', true);
-        return;
-      }
-
-      const submitButton = form.querySelector('button[type="submit"]');
-      const originalText = submitButton ? submitButton.textContent : '';
-
-      if (submitButton) {
-        submitButton.disabled = true;
-        submitButton.textContent = 'Dispatching...';
-      }
-
-      const newBusId = typeof getNextAirportBusId === 'function' ? getNextAirportBusId() : Date.now();
-      const result = await window.dataSdk.create({
-        type: 'bus',
-        bus_id: String(newBusId),
-        bus_type: 'airport',
-        destination: '',
-        otw_count: otw,
-        female_count: females,
-        nat_count: nats,
-        space_force_count: spaceForce,
-        status: 'active',
-        created_at: new Date().toISOString(),
-        week_group: wg
-      });
-
-      if (submitButton) {
-        submitButton.disabled = false;
-        submitButton.textContent = originalText || 'DISPATCH BUS';
-      }
-
-      if (result && result.isOk) {
-        if (typeof createSoundEvent === 'function') {
-          await createSoundEvent('bus_dispatch', {
-            bus_id: String(newBusId),
-            otw_count: otw,
-            female_count: females,
-            nat_count: nats,
-            space_force_count: spaceForce,
-            action: 'dispatch_bus'
-          });
-        }
-
-        form.reset();
-        const femaleInput = document.getElementById('bus-female');
-        const natInput = document.getElementById('bus-nat');
-        const sfInput = document.getElementById('bus-sf');
-        if (femaleInput) femaleInput.value = '0';
-        if (natInput) natInput.value = '0';
-        if (sfInput) sfInput.value = '0';
-        if (typeof showMsg === 'function') showMsg('airport-msg', `Bus #${newBusId} Dispatched`, false);
-      } else if (typeof showMsg === 'function') {
-        showMsg('airport-msg', 'Failed', true);
-      }
-    }, true);
-
-    airportFormPatched = true;
-  }
-
-  function patchAirportBusEditOpen() {
-    try {
-      if (airportEditOpenPatched || typeof openAirportBusEditModal !== 'function') return;
-
-      const originalOpen = openAirportBusEditModal;
-      const patchedOpen = function patchedOpenAirportBusEditModal(id) {
-        originalOpen.call(this, id);
-        addSpaceForceInputs();
-
-        const bus = typeof allData !== 'undefined'
-          ? allData.find(record => record.__backendId === id)
-          : null;
-
-        const sfInput = document.getElementById('edit-bus-sf');
-        if (bus && sfInput) sfInput.value = n(bus.space_force_count);
-        resetErrors(['edit-bus-otw-error', 'edit-bus-female-error', 'edit-bus-nat-error', 'edit-bus-sf-error']);
-      };
-
-      window.openAirportBusEditModal = patchedOpen;
-      try { openAirportBusEditModal = patchedOpen; } catch (_) {}
-      airportEditOpenPatched = true;
-    } catch (error) {
-      console.warn('PRC DASH Space Force edit-open patch failed:', error);
-    }
-  }
-
-  function patchAirportBusEditForm() {
-    const form = document.getElementById('airport-bus-edit-form');
-    if (!form || airportEditFormPatched) return;
-
-    form.addEventListener('submit', async event => {
-      event.preventDefault();
-      event.stopImmediatePropagation();
-
-      if (typeof editBusId === 'undefined' || !editBusId || typeof allData === 'undefined') return;
-
-      const bus = allData.find(record => record.__backendId === editBusId);
-      if (!bus || bus.bus_type !== 'airport') return;
-
-      const otw = n(document.getElementById('edit-bus-otw')?.value);
-      const females = n(document.getElementById('edit-bus-female')?.value);
-      const nats = n(document.getElementById('edit-bus-nat')?.value);
-      const spaceForce = n(document.getElementById('edit-bus-sf')?.value);
-
-      if (!validateCounts('edit-bus', otw, females, nats, spaceForce)) return;
-
-      const result = await window.dataSdk.update({
-        ...bus,
-        otw_count: otw,
-        female_count: females,
-        nat_count: nats,
-        space_force_count: spaceForce,
-        updated_at: new Date().toISOString()
-      });
-
-      if (result && result.isOk) {
-        if (typeof closeAirportBusEditModal === 'function') closeAirportBusEditModal();
-      } else {
-        const msg = document.getElementById('edit-bus-msg');
-        if (msg) {
-          msg.textContent = 'Failed to save bus update.';
-          msg.style.color = 'var(--red)';
-          msg.classList.remove('hidden');
-        }
-      }
-    }, true);
-
-    airportEditFormPatched = true;
-  }
-
-  function startSpaceForcePatch() {
-    ensureBusCardStyles();
-    addSpaceForceInputs();
-    ensureAirportLogSfColumn();
-    patchAirportDispatchForm();
-    patchAirportBusEditOpen();
-    patchAirportBusEditForm();
-    patchRenderAirportBusLog();
-    patchRenderAllForSf();
-    updateAirportLogRowsWithSf();
-    updateActiveBusSfBadges();
-
-    setInterval(() => {
-      ensureBusCardStyles();
-      addSpaceForceInputs();
-      ensureAirportLogSfColumn();
-      patchAirportDispatchForm();
-      patchAirportBusEditOpen();
-      patchAirportBusEditForm();
-      patchRenderAirportBusLog();
-      patchRenderAllForSf();
-      updateAirportLogRowsWithSf();
-      updateActiveBusSfBadges();
-    }, 750);
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', startSpaceForcePatch);
-  } else {
-    startSpaceForcePatch();
-  }
-})();
-
-// PRC DASH closed dorm final time edit patch
-// Keeps stale-state protection intact while allowing instructor right-click final time corrections.
-(function () {
-  let dormEditFormPatched = false;
-
   function normalizeFinalTime(value) {
     const raw = String(value || '').trim();
     if (!raw) return '';
@@ -542,97 +171,89 @@
     msg.classList.remove('hidden');
   }
 
-  function getValue(id, fallback = '') {
-    const el = document.getElementById(id);
-    return el ? el.value : fallback;
+  function patchDormEditFinalTimeInput() {
+    const finalTimeInput = document.getElementById('edit-closed-timer');
+    if (!finalTimeInput || finalTimeInput.dataset.gateFinalTimePatched === 'true') return;
+
+    finalTimeInput.dataset.gateFinalTimePatched = 'true';
+    finalTimeInput.dataset.owner = 'gate-space-force-compatibility-layer';
+    finalTimeInput.addEventListener('blur', () => {
+      finalTimeInput.value = normalizeFinalTime(finalTimeInput.value);
+    });
+    finalTimeInput.addEventListener('keydown', event => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        const form = document.getElementById('dorm-edit-form');
+        if (form) form.requestSubmit();
+      }
+    });
   }
 
-  function patchDormEditForm() {
+  function patchDormEditFormValidation() {
     const form = document.getElementById('dorm-edit-form');
     if (!form || dormEditFormPatched) return;
 
-    form.addEventListener('submit', async event => {
-      event.preventDefault();
-      event.stopImmediatePropagation();
+    form.addEventListener('submit', event => {
+      try {
+        if (typeof editDormId === 'undefined' || !editDormId || !Array.isArray(allData)) return;
+        const dorm = allData.find(record => record.__backendId === editDormId && record.type === 'dorm');
+        if (!dorm || String(dorm.state || '').toLowerCase() !== 'closed') return;
 
-      if (typeof currentRole !== 'undefined' && currentRole !== 'instructor') return;
-      if (typeof editDormId === 'undefined' || !editDormId || typeof allData === 'undefined') return;
+        const input = document.getElementById('edit-closed-timer');
+        if (!input) return;
 
-      const dorm = allData.find(record => record.__backendId === editDormId && record.type === 'dorm');
-      if (!dorm) return;
-
-      const maxLoad = Math.max(0, Number(getValue('edit-max-load', 0) || 0));
-      const currentLoadRaw = Math.max(0, Number(getValue('edit-current-load', 0) || 0));
-      const currentLoad = Math.min(currentLoadRaw, maxLoad);
-      const finalTime = normalizeFinalTime(getValue('edit-closed-timer', dorm.closed_timer || ''));
-      const isClosed = String(dorm.state || '').toLowerCase() === 'closed';
-
-      if (isClosed && finalTime && !/^\d{1,4}:\d{2}$/.test(finalTime)) {
-        showEditMessage('Final Time must use MM:SS format, such as 60:00.', true);
-        return;
-      }
-
-      const payload = {
-        ...dorm,
-        dorm_name: getValue('edit-dorm-name', dorm.dorm_name || '').trim() || dorm.dorm_name,
-        sdq: getValue('edit-sdq').trim(),
-        section: getValue('edit-section').trim(),
-        inter_sec: getValue('edit-inter-sec').trim(),
-        sex: getValue('edit-sex', dorm.sex || 'male'),
-        band: document.getElementById('edit-band')?.checked ? 'true' : 'false',
-        max_load: maxLoad,
-        current_load: currentLoad,
-        notes: getValue('edit-notes').trim(),
-        phase: isClosed ? 'Closed' : dorm.phase,
-        closed_timer: isClosed ? (finalTime || dorm.closed_timer || '00:00') : dorm.closed_timer,
-        manual_closed_timer_override: isClosed ? 'true' : undefined,
-        updated_at: new Date().toISOString()
-      };
-
-      const result = await window.dataSdk.update(payload);
-
-      if (result && result.isOk) {
-        const index = allData.findIndex(record => record.__backendId === editDormId);
-        if (index >= 0) {
-          allData[index] = {
-            ...allData[index],
-            ...(result.data || payload),
-            manual_closed_timer_override: undefined
-          };
+        const finalTime = normalizeFinalTime(input.value || dorm.closed_timer || '');
+        if (finalTime && !/^\d{1,4}:\d{2}$/.test(finalTime)) {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          showEditMessage('Final Time must use MM:SS format, such as 60:00.', true);
+          return;
         }
 
-        if (typeof renderAll === 'function') renderAll();
-        if (typeof closeDormEditModal === 'function') closeDormEditModal();
-      } else {
-        showEditMessage(result?.error || 'Failed to save changes.', true);
+        input.value = finalTime || dorm.closed_timer || '00:00';
+      } catch (error) {
+        console.warn('GATE final time validation failed:', error);
       }
     }, true);
-
-    const finalTimeInput = document.getElementById('edit-closed-timer');
-    if (finalTimeInput && finalTimeInput.dataset.prcFinalTimePatched !== 'true') {
-      finalTimeInput.dataset.prcFinalTimePatched = 'true';
-      finalTimeInput.addEventListener('blur', () => {
-        finalTimeInput.value = normalizeFinalTime(finalTimeInput.value);
-      });
-      finalTimeInput.addEventListener('keydown', event => {
-        if (event.key === 'Enter') {
-          event.preventDefault();
-          form.requestSubmit();
-        }
-      });
-    }
 
     dormEditFormPatched = true;
   }
 
-  function startPatch() {
-    patchDormEditForm();
-    setInterval(patchDormEditForm, 1000);
+  function runSpaceForceCompatibilityPass() {
+    ensureBusCardStyles();
+    ensureAirportSpaceForceInput();
+    ensureLocalSpaceForceInput();
+    ensureEditSpaceForceInput();
+    ensureAirportLogSfColumn();
+    patchDormEditFinalTimeInput();
+    patchDormEditFormValidation();
+  }
+
+  function registerHooksOnce() {
+    if (hooksRegistered || typeof window.registerGateHook !== 'function') return;
+    window.registerGateHook('afterRenderAll', runSpaceForceCompatibilityPass);
+    window.registerGateHook('afterPageChange', runSpaceForceCompatibilityPass);
+    window.registerGateHook('afterDataChanged', runSpaceForceCompatibilityPass);
+    window.registerGateHook('afterModalOpen', runSpaceForceCompatibilityPass);
+    hooksRegistered = true;
+  }
+
+  function startSpaceForceCompatibilityLayer() {
+    runSpaceForceCompatibilityPass();
+    registerHooksOnce();
+
+    window.GateSpaceForceCompatibilityLayer = Object.freeze({
+      isPassiveCompatibilityLayer: true,
+      refresh: runSpaceForceCompatibilityPass,
+      normalizeFinalTime
+    });
   }
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', startPatch);
+    document.addEventListener('DOMContentLoaded', startSpaceForceCompatibilityLayer, { once: true });
   } else {
-    startPatch();
+    startSpaceForceCompatibilityLayer();
   }
+
+  window.addEventListener('load', startSpaceForceCompatibilityLayer, { once: true });
 })();

@@ -1,0 +1,519 @@
+/* GATE Mobile UI Polish
+   Final mobile-facing polish layer. Scope is small/touch viewports only; desktop behavior is intentionally untouched. */
+
+@media (max-width: 900px), (pointer: coarse) and (max-width: 1024px) {
+  html,
+  body {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    overflow-x: hidden !important;
+    -webkit-text-size-adjust: 100% !important;
+    text-size-adjust: 100% !important;
+  }
+
+  :root {
+    --gate-mobile-safe-x: max(12px, env(safe-area-inset-left), env(safe-area-inset-right));
+    --gate-mobile-shell-gap: 10px;
+    --gate-mobile-classification-height: 28px;
+    --gate-mobile-nav-clean-height: 120px;
+    --gate-mobile-page-top: calc(var(--gate-mobile-classification-height) + var(--gate-mobile-nav-clean-height) + 12px);
+    --gate-mobile-control-height: 42px;
+    --gate-mobile-radius: 14px;
+  }
+
+  .security-banner-fixed {
+    height: var(--gate-mobile-classification-height) !important;
+    min-height: var(--gate-mobile-classification-height) !important;
+    max-height: var(--gate-mobile-classification-height) !important;
+    padding: 0 var(--gate-mobile-safe-x) !important;
+    font-size: clamp(0.66rem, 2.45vw, 0.74rem) !important;
+    line-height: 1 !important;
+    letter-spacing: 0.1em !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  .app-nav,
+  .app-nav.command-header-bar,
+  .command-header-bar {
+    inset: var(--gate-mobile-classification-height) 0 auto 0 !important;
+    height: var(--gate-mobile-nav-clean-height) !important;
+    min-height: var(--gate-mobile-nav-clean-height) !important;
+    max-height: var(--gate-mobile-nav-clean-height) !important;
+    padding: 8px var(--gate-mobile-safe-x) 10px !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    grid-template-rows: 38px 54px !important;
+    grid-template-areas:
+      'brand menu'
+      'tools tools' !important;
+    gap: 8px 10px !important;
+    overflow: visible !important;
+  }
+
+  .app-nav::before,
+  .command-header-bar::before {
+    grid-area: brand !important;
+    width: min(122px, 44vw) !important;
+    height: 34px !important;
+    align-self: center !important;
+  }
+
+  #mobile-menu-trigger,
+  .mobile-only-control {
+    grid-area: menu !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    justify-self: end !important;
+    min-width: 112px !important;
+    height: 38px !important;
+    min-height: 38px !important;
+    padding: 0 14px !important;
+    border: 1px solid var(--border-muted, rgba(148,163,184,.28)) !important;
+    border-radius: var(--gate-mobile-radius) !important;
+    background: rgba(20, 49, 91, 0.28) !important;
+    color: var(--text, #fff) !important;
+    font-size: 0.72rem !important;
+    font-weight: 950 !important;
+    letter-spacing: 0.08em !important;
+    text-transform: uppercase !important;
+  }
+
+  #main-nav-menu,
+  #nav-links,
+  .nav-group-left {
+    position: fixed !important;
+    top: calc(var(--gate-mobile-classification-height) + 50px) !important;
+    left: var(--gate-mobile-safe-x) !important;
+    right: var(--gate-mobile-safe-x) !important;
+    z-index: 10030 !important;
+    display: none !important;
+    grid-area: unset !important;
+    max-height: min(62dvh, 430px) !important;
+    padding: 10px !important;
+    border: 1px solid var(--border-muted, rgba(148,163,184,.28)) !important;
+    border-radius: 18px !important;
+    background: color-mix(in srgb, var(--bg-card) 94%, transparent) !important;
+    box-shadow: 0 22px 50px rgba(0,0,0,.36) !important;
+    -webkit-backdrop-filter: blur(20px) saturate(1.24) !important;
+    backdrop-filter: blur(20px) saturate(1.24) !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+  }
+
+  #main-nav-menu.mobile-dropdown-active,
+  #nav-links.mobile-dropdown-active,
+  .nav-group-left.mobile-dropdown-active {
+    display: grid !important;
+    gap: 8px !important;
+  }
+
+  #main-nav-menu .nav-btn,
+  #nav-links .nav-btn,
+  .nav-group-left .nav-btn {
+    width: 100% !important;
+    min-width: 0 !important;
+    height: 44px !important;
+    min-height: 44px !important;
+    justify-content: flex-start !important;
+    padding: 0 14px !important;
+    border-radius: 12px !important;
+    font-size: 0.78rem !important;
+    text-align: left !important;
+  }
+
+  .app-nav > div:last-child,
+  .app-nav .nav-group-right,
+  .nav-group-right {
+    grid-area: tools !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 7px !important;
+    padding: 0 !important;
+    border-left: 0 !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    scrollbar-width: none !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  .app-nav > div:last-child::-webkit-scrollbar,
+  .app-nav .nav-group-right::-webkit-scrollbar,
+  .nav-group-right::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  .app-nav > div:last-child button,
+  .app-nav .nav-group-right button,
+  .nav-group-right button {
+    flex: 0 0 auto !important;
+    height: var(--gate-mobile-control-height) !important;
+    min-height: var(--gate-mobile-control-height) !important;
+    max-height: var(--gate-mobile-control-height) !important;
+    min-width: max-content !important;
+    padding: 0 12px !important;
+    border-radius: 999px !important;
+    font-size: 0.68rem !important;
+  }
+
+  body:not(.fullscreen-board) .page,
+  body:not(.fullscreen-board) #page-board,
+  body:not(.fullscreen-board) #page-squadron.gate-squadron-page {
+    padding-top: var(--gate-mobile-page-top) !important;
+    padding-left: var(--gate-mobile-safe-x) !important;
+    padding-right: var(--gate-mobile-safe-x) !important;
+  }
+
+  body.fullscreen-board .security-banner-fixed,
+  body.fullscreen-board .app-nav,
+  body.fullscreen-board .command-header-bar {
+    display: none !important;
+  }
+
+  body.fullscreen-board #page-board,
+  body.fullscreen-board #page-squadron.gate-squadron-page {
+    padding: max(10px, env(safe-area-inset-top)) var(--gate-mobile-safe-x) max(10px, env(safe-area-inset-bottom)) !important;
+  }
+
+  #page-board .board-header,
+  #page-squadron .gate-squadron-header {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    margin-bottom: 12px !important;
+  }
+
+  #page-board .prc-metric-grid-v3,
+  #page-squadron .gate-squadron-header {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+
+  #page-board .prc-active-buses-v3,
+  #page-board #active-buses {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  #page-board #active-buses {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+  }
+
+  #page-board .bus-badge,
+  #page-board .prc-bus-card {
+    width: 100% !important;
+    min-height: 58px !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    gap: 4px 8px !important;
+    text-align: left !important;
+    white-space: normal !important;
+  }
+
+  #page-board .dorm-dashboard,
+  #page-squadron .dorm-dashboard {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  #page-board .dorm-column,
+  #page-squadron .dorm-column {
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+
+  #page-board .dorm-col-content,
+  #page-squadron .dorm-col-content {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+    min-width: 0 !important;
+  }
+
+  #page-board .gate-dorm-card,
+  #page-board .dorm-card,
+  #page-squadron .gate-dorm-card,
+  #page-squadron .dorm-card {
+    min-height: 132px !important;
+    padding-left: 14px !important;
+    padding-right: 14px !important;
+    row-gap: 0.32rem !important;
+  }
+
+  #page-board .gate-dorm-name,
+  #page-squadron .gate-dorm-name {
+    font-size: clamp(1.05rem, 5vw, 1.42rem) !important;
+    line-height: 0.96 !important;
+  }
+
+  #page-board .gate-dorm-airman,
+  #page-squadron .gate-dorm-airman {
+    max-width: 10ch !important;
+    font-size: 0.76rem !important;
+  }
+
+  #page-board .gate-dorm-status,
+  #page-squadron .gate-dorm-status {
+    font-size: clamp(1.35rem, 8.6vw, 2.35rem) !important;
+    line-height: 0.9 !important;
+  }
+
+  #page-board .gate-dorm-timer,
+  #page-board .gate-dorm-load,
+  #page-squadron .gate-dorm-timer,
+  #page-squadron .gate-dorm-load {
+    font-size: 0.98rem !important;
+  }
+
+  #page-airport,
+  #page-input,
+  #page-processing,
+  #page-archives {
+    width: 100% !important;
+    max-width: 100vw !important;
+    overflow-x: hidden !important;
+  }
+
+  #page-airport .surface,
+  #page-processing .surface,
+  #page-archives .surface {
+    border-radius: 16px !important;
+  }
+
+  #page-airport table,
+  #page-archives table {
+    min-width: 720px !important;
+  }
+
+  #page-airport .surface:has(table),
+  #page-archives .surface:has(table) {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  #page-processing > .px-4.py-3,
+  #page-processing > .px-4.py-3.flex-shrink-0 {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+
+  #page-processing > .px-4.py-3 button,
+  #page-processing #closeout-btn {
+    width: 100% !important;
+    min-height: 48px !important;
+    font-size: 0.86rem !important;
+  }
+
+  #proc-dorm-grid {
+    grid-template-columns: 1fr !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    gap: 10px !important;
+  }
+
+  #page-input > .flex-shrink-0.px-4.py-3,
+  #page-input > .flex-shrink-0.border-t {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  #page-input > .flex-shrink-0.px-4.py-3 > .flex {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  #wg-batch-input,
+  #init-wg-btn {
+    min-height: 46px !important;
+  }
+
+  #init-wg-btn {
+    width: 100% !important;
+  }
+
+  #receiving-windows-panel,
+  #archive-receiving-windows-panel {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+
+  #receiving-windows-panel input,
+  #archive-receiving-windows-panel input {
+    min-height: 44px !important;
+    font-size: 0.92rem !important;
+  }
+
+  #batch-grid-wrapper {
+    padding: 10px 0 !important;
+    overflow-x: auto !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  #batch-grid-wrapper > div {
+    min-width: 860px !important;
+    padding-bottom: 10px !important;
+  }
+
+  #batch-grid-wrapper .sticky {
+    top: 0 !important;
+    z-index: 3 !important;
+    padding: 6px 0 !important;
+    background: color-mix(in srgb, var(--bg) 94%, transparent) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    backdrop-filter: blur(12px) !important;
+  }
+
+  #batch-rows-container input,
+  #batch-rows-container select,
+  #batch-rows-container button {
+    min-height: 42px !important;
+    font-size: 0.88rem !important;
+  }
+
+  #page-archives .max-w-3xl {
+    max-width: none !important;
+    width: 100% !important;
+  }
+
+  .gate-archive-toolbar {
+    grid-template-columns: 1fr !important;
+    min-height: 0 !important;
+    padding: 12px !important;
+  }
+
+  .gate-archive-search-wrap,
+  #gate-archive-search,
+  .gate-archive-clear-search {
+    width: 100% !important;
+  }
+
+  .gate-archive-year > summary,
+  .gate-archive-month > summary,
+  .gate-archive-record-card {
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+    align-items: start !important;
+  }
+
+  .gate-archive-year-count,
+  .gate-archive-month-count {
+    text-align: left !important;
+  }
+
+  .gate-archive-record-stats {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    justify-content: flex-start !important;
+    gap: 6px !important;
+  }
+
+  .gate-archive-stat-pill {
+    min-height: 28px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+  }
+
+  .confirm-overlay {
+    align-items: flex-start !important;
+    justify-content: center !important;
+    padding: calc(env(safe-area-inset-top) + 12px) var(--gate-mobile-safe-x) calc(env(safe-area-inset-bottom) + 16px) !important;
+  }
+
+  .confirm-overlay > .modal-content,
+  #confirm-dialog > .surface,
+  #confirm-dialog > div {
+    width: min(100%, 620px) !important;
+    max-width: 100% !important;
+    max-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 28px) !important;
+    overflow-y: auto !important;
+    border-radius: 18px !important;
+    padding: 14px !important;
+  }
+
+  .modal-content > .flex.justify-between.items-center.mb-4 {
+    margin: -2px -2px 12px !important;
+    padding: 10px 12px !important;
+    border-radius: 14px !important;
+  }
+
+  .modal-content input,
+  .modal-content select,
+  .modal-content textarea,
+  .modal-content button {
+    min-height: 44px !important;
+    font-size: 16px !important;
+  }
+
+  .modal-content .grid,
+  #dorm-edit-form .grid,
+  #archive-edit-form .grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .gate-airman-location-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .gate-processing-context-menu {
+    left: var(--gate-mobile-safe-x) !important;
+    right: var(--gate-mobile-safe-x) !important;
+    width: auto !important;
+    max-width: none !important;
+  }
+}
+
+@media (max-width: 420px) {
+  :root {
+    --gate-mobile-nav-clean-height: 112px;
+    --gate-mobile-page-top: calc(var(--gate-mobile-classification-height) + var(--gate-mobile-nav-clean-height) + 10px);
+  }
+
+  .app-nav,
+  .app-nav.command-header-bar,
+  .command-header-bar {
+    grid-template-rows: 36px 48px !important;
+    padding-top: 7px !important;
+    padding-bottom: 8px !important;
+  }
+
+  .app-nav > div:last-child button,
+  .app-nav .nav-group-right button,
+  .nav-group-right button {
+    height: 38px !important;
+    min-height: 38px !important;
+    font-size: 0.62rem !important;
+    padding: 0 10px !important;
+  }
+
+  #page-board .prc-metric-grid-v3,
+  #page-squadron .gate-squadron-header {
+    grid-template-columns: 1fr !important;
+  }
+
+  #page-board .gate-dorm-card,
+  #page-board .dorm-card,
+  #page-squadron .gate-dorm-card,
+  #page-squadron .dorm-card {
+    min-height: 126px !important;
+  }
+}

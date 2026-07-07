@@ -1,10 +1,11 @@
 // PRC GATE Processing page instructor context menu
-// Behavior-only layer. Canonical styles live in /css/prc-dash-modal-systems.css.
+// Behavior layer for instructor record actions, edit-record field preservation, and record refresh.
 (function () {
   let started = false;
   let menuEl = null;
   let sdkPatched = false;
   let editOpenPatched = false;
+  let closeDormPatched = false;
   let passScheduled = false;
 
   function esc(value) {
@@ -18,6 +19,7 @@
   }
 
   function getAllDataSafe() {
+    if (Array.isArray(window.allData)) return window.allData;
     try { return Array.isArray(allData) ? allData : []; } catch (_) { return []; }
   }
 
@@ -35,6 +37,31 @@
 
   function normalizeUpper(value) {
     return String(value ?? '').trim().toUpperCase();
+  }
+
+  function normalizeFinalTime(value, fallback = '00:00') {
+    const raw = String(value || '').trim();
+    if (!raw) return fallback || '00:00';
+    const match = raw.match(/^(\d{1,5})(?::([0-5]\d))?$/);
+    if (!match) return raw;
+    return `${String(Number(match[1] || 0)).padStart(2, '0')}:${match[2] || '00'}`;
+  }
+
+  function computeFinalTime(dorm) {
+    if (!dorm) return '00:00';
+    try {
+      if (window.GateDormBoardController?.computeDormElapsedTimer) {
+        const computed = window.GateDormBoardController.computeDormElapsedTimer(dorm);
+        if (computed) return normalizeFinalTime(computed, '00:00');
+      }
+    } catch (_) {}
+    try {
+      if (typeof getElapsedTimer === 'function' && dorm.opened_at) {
+        const timer = getElapsedTimer(dorm.opened_at);
+        if (timer?.text) return normalizeFinalTime(timer.text, '00:00');
+      }
+    } catch (_) {}
+    return normalizeFinalTime(dorm.closed_timer, '00:00');
   }
 
   function ensureMenu() {
@@ -59,6 +86,31 @@
     if (menuEl) menuEl.classList.add('hidden');
   }
 
+  function syncLocalRecord(record) {
+    if (!record || !record.__backendId) return;
+    const list = getAllDataSafe();
+    if (!Array.isArray(list)) return;
+    const index = list.findIndex(item => item && item.__backendId === record.__backendId);
+    if (index >= 0) list[index] = { ...list[index], ...record };
+    else list.push(record);
+  }
+
+  function forceRecordRefresh() {
+    try { if (typeof renderAll === 'function') renderAll(); } catch (error) { console.warn('GATE Processing render refresh failed:', error); }
+    try { window.GateDormBoardController?.refresh?.(); } catch (_) {}
+    try { window.GateActiveBusController?.render?.({ force: true }); } catch (_) {}
+    try { window.runGateHooks?.('afterDataChanged', { source: 'processing-record-update' }); } catch (_) {}
+    schedulePass();
+  }
+
+  function showEditMessage(message, isError = false) {
+    const msg = document.getElementById('dorm-edit-msg');
+    if (!msg) return;
+    msg.textContent = message;
+    msg.style.color = isError ? 'var(--red)' : 'var(--green)';
+    msg.classList.remove('hidden');
+  }
+
   function openEditModal(id) {
     hideMenu();
     if (typeof openDormEditModal === 'function') {
@@ -72,12 +124,77 @@
     if (typeof openDormModal === 'function') openDormModal(id);
   }
 
+  async function updateDormRecord(payload, options = {}) {
+    if (!payload || payload.type !== 'dorm' || !payload.__backendId) return { isOk: false, error: 'Missing dorm record.' };
+    const result = await window.dataSdk.update(payload);
+    if (result?.isOk) {
+      syncLocalRecord(result.data || payload);
+      if (options.soundType && typeof createSoundEvent === 'function') {
+        try { await createSoundEvent(options.soundType, options.soundPayload || {}); } catch (error) { console.warn('GATE Processing sound event failed:', error); }
+      }
+      forceRecordRefresh();
+    }
+    return result;
+  }
+
+  async function openRecord(id) {
+    hideMenu();
+    if (!isInstructor()) return;
+    const dorm = getDormById(id);
+    if (!dorm) return;
+    const now = new Date().toISOString();
+    const result = await updateDormRecord({
+      ...dorm,
+      state: 'open',
+      phase: 'OPEN',
+      opened_at: now,
+      closed_at: '',
+      closed_timer: '',
+      overtime_sound_sent: 'false',
+      overtime_sound_at: '',
+      updated_at: now
+    }, {
+      soundType: 'dorm_open',
+      soundPayload: { dorm_id: id, dorm_name: dorm.dorm_name || '', action: 'open_dorm' }
+    });
+    if (!result?.isOk) showEditMessage(result?.error || 'Failed to open dorm.', true);
+  }
+
+  async function closeRecord(id) {
+    hideMenu();
+    if (!isInstructor()) return;
+    const dorm = getDormById(id);
+    if (!dorm) return;
+    const finalTime = computeFinalTime(dorm);
+    const now = new Date().toISOString();
+    const result = await updateDormRecord({
+      ...dorm,
+      state: 'closed',
+      phase: 'Closed',
+      closed_timer: finalTime,
+      closed_at: now,
+      updated_at: now
+    }, {
+      soundType: 'dorm_closed',
+      soundPayload: { dorm_id: id, dorm_name: dorm.dorm_name || '', final_time: finalTime, action: 'close_dorm' }
+    });
+    if (!result?.isOk) showEditMessage(result?.error || 'Failed to close dorm.', true);
+    if (typeof closeDormModal === 'function') closeDormModal();
+  }
+
   function deleteViaEditModal(id) {
     hideMenu();
     openEditModal(id);
     setTimeout(() => {
       if (typeof deleteDormitoryFromEditModal === 'function') deleteDormitoryFromEditModal();
     }, 50);
+  }
+
+  function stateActionMarkup(dorm) {
+    const state = String(dorm?.state || '').toLowerCase();
+    if (state === 'empty') return '<button type="button" class="gate-processing-context-action" data-action="open" role="menuitem">Open Record <span>▶</span></button>';
+    if (state === 'open') return '<button type="button" class="gate-processing-context-action danger" data-action="close" role="menuitem">Close Record <span>■</span></button>';
+    return '';
   }
 
   function showMenu(event, card, dorm) {
@@ -91,11 +208,14 @@
         <span class="gate-processing-context-subtitle">${esc(info || state)} · ${esc(state)}</span>
       </div>
       <button type="button" class="gate-processing-context-action" data-action="edit" role="menuitem">Edit Record <span>↵</span></button>
+      ${stateActionMarkup(dorm)}
       <button type="button" class="gate-processing-context-action" data-action="processing" role="menuitem">Open Processing Controls <span>⌘</span></button>
       <button type="button" class="gate-processing-context-action danger" data-action="delete" role="menuitem">Delete Record <span>!</span></button>
     `;
 
     menu.querySelector('[data-action="edit"]')?.addEventListener('click', () => openEditModal(dorm.__backendId));
+    menu.querySelector('[data-action="open"]')?.addEventListener('click', () => openRecord(dorm.__backendId));
+    menu.querySelector('[data-action="close"]')?.addEventListener('click', () => closeRecord(dorm.__backendId));
     menu.querySelector('[data-action="processing"]')?.addEventListener('click', () => openProcessingModal(dorm.__backendId));
     menu.querySelector('[data-action="delete"]')?.addEventListener('click', () => deleteViaEditModal(dorm.__backendId));
 
@@ -158,9 +278,11 @@
     const dorm = dormId ? getDormById(dormId) : null;
     const airman = document.getElementById('edit-assigned-airman');
     const auditorium = document.getElementById('edit-auditorium-location');
-    if (!dorm || !airman || !auditorium) return;
-    airman.value = dorm.assigned_airman || '';
-    auditorium.value = dorm.auditorium_location || '';
+    const finalTime = document.getElementById('edit-closed-timer');
+    if (!dorm) return;
+    if (airman) airman.value = dorm.assigned_airman || '';
+    if (auditorium) auditorium.value = dorm.auditorium_location || '';
+    if (finalTime && String(dorm.state || '').toLowerCase() === 'closed' && !finalTime.value) finalTime.value = normalizeFinalTime(dorm.closed_timer, '00:00');
   }
 
   function patchEditOpen() {
@@ -176,22 +298,40 @@
     editOpenPatched = true;
   }
 
+  function patchCloseDorm() {
+    if (closeDormPatched || typeof closeDorm !== 'function') return;
+    const patchedCloseDorm = function patchedProcessingCloseDorm(id) {
+      return closeRecord(id);
+    };
+    window.closeDorm = patchedCloseDorm;
+    try { closeDorm = patchedCloseDorm; } catch (_) {}
+    closeDormPatched = true;
+  }
+
   function patchDataSdkUpdate() {
     if (sdkPatched || !window.dataSdk || typeof window.dataSdk.update !== 'function') return;
     const originalUpdate = window.dataSdk.update.bind(window.dataSdk);
-    window.dataSdk.update = function patchedProcessingContextUpdate(payload) {
+    window.dataSdk.update = async function patchedProcessingContextUpdate(payload) {
       const editModal = document.getElementById('dorm-edit-modal');
       if (payload && payload.type === 'dorm' && editModal && !editModal.classList.contains('hidden')) {
         const airman = document.getElementById('edit-assigned-airman');
         const auditorium = document.getElementById('edit-auditorium-location');
-        if (airman || auditorium) {
-          payload = Object.assign({}, payload, {
-            assigned_airman: airman ? normalizeUpper(airman.value) : payload.assigned_airman,
-            auditorium_location: auditorium ? normalizeUpper(auditorium.value) : payload.auditorium_location
-          });
-        }
+        const finalTimeInput = document.getElementById('edit-closed-timer');
+        const isClosed = String(payload.state || '').toLowerCase() === 'closed';
+        payload = Object.assign({}, payload, {
+          assigned_airman: airman ? normalizeUpper(airman.value) : payload.assigned_airman,
+          auditorium_location: auditorium ? normalizeUpper(auditorium.value) : payload.auditorium_location,
+          updated_at: new Date().toISOString(),
+          ...(isClosed && finalTimeInput ? { closed_timer: normalizeFinalTime(finalTimeInput.value, payload.closed_timer || '00:00') } : {})
+        });
       }
-      return originalUpdate(payload);
+
+      const result = await originalUpdate(payload);
+      if (result?.isOk && payload?.type === 'dorm') {
+        syncLocalRecord(result.data || payload);
+        forceRecordRefresh();
+      }
+      return result;
     };
     sdkPatched = true;
   }
@@ -201,6 +341,7 @@
     ensureMenu();
     ensureEditRecordFields();
     patchEditOpen();
+    patchCloseDorm();
     patchDataSdkUpdate();
 
     const editModal = document.getElementById('dorm-edit-modal');
@@ -238,8 +379,13 @@
         if (focused?.classList?.contains('gate-processing-context-action')) focused.click();
       }
     }, true);
+    document.addEventListener('blur', event => {
+      if (event.target?.matches?.('#edit-closed-timer')) {
+        event.target.value = normalizeFinalTime(event.target.value, '00:00');
+      }
+    }, true);
     document.addEventListener('input', event => {
-      if (event.target?.matches?.('#edit-assigned-airman, #edit-auditorium-location')) schedulePass();
+      if (event.target?.matches?.('#edit-assigned-airman, #edit-auditorium-location, #edit-closed-timer')) schedulePass();
     }, true);
     window.addEventListener('scroll', hideMenu, true);
     window.addEventListener('resize', () => { hideMenu(); schedulePass(); }, true);

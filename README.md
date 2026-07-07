@@ -83,7 +83,10 @@ Primary workflow:
 
 - Enter the week group ID
 - Build dorm rows with SDQ, section, inter-section, dorm, sex, Band, Space Force, and load values
-- Configure explicit Receiving Day One and Receiving Day Two start/end windows
+- Configure optional Receiving Day One and Receiving Day Two start/end windows
+- Validate that any configured receiving window has both start and end values
+- Preserve Band and Space Force as mutually exclusive dorm indicators
+- Save receiving window values into dorm and archive records for report continuity
 - Initialize the week group
 - Establish expected counts used by the Status Board, Squadron Board, Archives, and reports
 
@@ -189,6 +192,7 @@ Current controller areas:
 - `GateBrandingController` — user-visible GATE terminology and document identity
 - `GateActiveBusController` — active bus cards on Status Board
 - `GateBusWorkflowController` — airport dispatch, local arrivals, combined bus log, and shared bus edit modal
+- `GateInputPageController` — Input page receiving windows, batch Space Force support, archive window fields, and initialization preflight validation
 - `GateArchiveSchemaController` — archive schema and closeout safety
 - `GateArchivePrintController` — archive print/PDF and current-summary print/PDF button ownership
 - `GateDormBoardController` — Status Board and Squadron Board dorm rendering

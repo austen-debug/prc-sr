@@ -23,7 +23,8 @@
           filter: none !important;
         }
 
-        body:has(#page-board.active) #page-board.active {
+        body:has(#page-board.active) #page-board.active,
+        body:has(#page-processing.active) #page-processing.active {
           position: relative !important;
           isolation: isolate !important;
           transform: translateZ(0) !important;
@@ -31,7 +32,8 @@
           will-change: auto !important;
         }
 
-        body:has(#page-board.active) #page-board.active::before {
+        body:has(#page-board.active) #page-board.active::before,
+        body:has(#page-processing.active) #page-processing.active::before {
           content: '' !important;
           display: block !important;
           position: fixed !important;
@@ -39,9 +41,6 @@
           pointer-events: none !important;
           z-index: 0 !important;
           background-repeat: no-repeat !important;
-          background-position: center 55% !important;
-          background-size: min(44vw, 760px) auto !important;
-          opacity: var(--gate-watermark-opacity-clean, 0.07) !important;
           transform: translateZ(0) !important;
           backface-visibility: hidden !important;
           will-change: auto !important;
@@ -51,21 +50,50 @@
           filter: grayscale(100%) !important;
         }
 
-        body:not(.theme-light):has(#page-board.active) #page-board.active::before {
+        body:has(#page-board.active) #page-board.active::before {
+          background-position: center 47% !important;
+          background-size: min(58vw, 980px) auto !important;
+          opacity: var(--gate-watermark-opacity-clean, 0.07) !important;
+        }
+
+        body:has(#page-processing.active) #page-processing.active::before {
+          background-position: center 52% !important;
+          background-size: min(48vw, 820px) auto !important;
+          opacity: var(--gate-watermark-opacity-clean, 0.06) !important;
+        }
+
+        body:not(.theme-light):has(#page-board.active) #page-board.active::before,
+        body:not(.theme-light):has(#page-processing.active) #page-processing.active::before {
           background-image: url('/assets/gate_emblem_white.png') !important;
-          opacity: 0.075 !important;
+        }
+
+        body:not(.theme-light):has(#page-board.active) #page-board.active::before {
+          opacity: 0.105 !important;
+        }
+
+        body:not(.theme-light):has(#page-processing.active) #page-processing.active::before {
+          opacity: 0.07 !important;
+        }
+
+        body.theme-light:has(#page-board.active) #page-board.active::before,
+        body.theme-light:has(#page-processing.active) #page-processing.active::before {
+          background-image: url('/assets/gate_emblem_blue.png') !important;
         }
 
         body.theme-light:has(#page-board.active) #page-board.active::before {
-          background-image: url('/assets/gate_emblem_blue.png') !important;
-          opacity: 0.045 !important;
+          opacity: 0.058 !important;
+        }
+
+        body.theme-light:has(#page-processing.active) #page-processing.active::before {
+          opacity: 0.044 !important;
         }
 
         body:has(#page-board.active) #page-board.active::after,
         body:has(#page-board.active) #page-board.active .board-header::before,
         body:has(#page-board.active) #page-board.active .board-header::after,
         body:has(#page-board.active) #page-board.active .dorm-dashboard::before,
-        body:has(#page-board.active) #page-board.active .dorm-dashboard::after {
+        body:has(#page-board.active) #page-board.active .dorm-dashboard::after,
+        body:has(#page-processing.active) #page-processing.active::after {
           display: none !important;
           content: none !important;
           opacity: 0 !important;
@@ -79,31 +107,19 @@
         body:has(#page-board.active) #page-board.active .dorm-column,
         body:has(#page-board.active) #page-board.active .dorm-col-content,
         body:has(#page-board.active) #page-board.active .gate-dorm-card,
-        body:has(#page-board.active) #page-board.active .dorm-card {
-          position: relative !important;
-          z-index: 1 !important;
-          animation: none !important;
-          transition-property: border-color, background-color, color, opacity !important;
-          transition-duration: 0s !important;
-          backface-visibility: hidden !important;
-        }
-
-        body:has(#page-processing.active) #page-processing.active {
-          isolation: isolate !important;
-          transform: translateZ(0) !important;
-          backface-visibility: hidden !important;
-        }
-
+        body:has(#page-board.active) #page-board.active .dorm-card,
         body:has(#page-processing.active) #page-processing.active > .flex-shrink-0,
         body:has(#page-processing.active) #page-processing.active .surface,
         body:has(#page-processing.active) #page-processing.active .proc-card,
         body:has(#page-processing.active) #page-processing.active #proc-dorm-grid,
         body:has(#page-processing.active) #page-processing.active [id*='loaded'],
         body:has(#page-processing.active) #page-processing.active [id*='arrived'] {
+          position: relative !important;
+          z-index: 1 !important;
           transform: translateZ(0) !important;
           backface-visibility: hidden !important;
           animation: none !important;
-          transition-property: border-color, background-color, color, box-shadow !important;
+          transition-property: border-color, background-color, color, opacity, box-shadow !important;
           transition-duration: 0s !important;
           will-change: auto !important;
         }

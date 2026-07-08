@@ -30,6 +30,7 @@ const UI_HEAD_SCRIPTS = [
   '<script src="/js/prc-dash-archive-print-cleanup.js" defer></script>',
   '<script src="/js/prc-dash-access-control-validation.js" defer></script>',
   '<script src="/js/prc-dash-modal-mobile-validation.js" defer></script>',
+  '<script src="/js/gate-tablet-processing-modal-fix.js?v=tablet-processing-modal-20260707" defer></script>',
   '<script src="/js/gate-airport-phone-layout-fix.js?v=airport-phone-hard-fix-20260707" defer></script>',
   '<script src="/js/gate-render-stability-fix.js?v=render-stability-20260707" defer></script>',
   '<script src="/js/prc-dash-processing-loaded-summary.js" defer></script>',

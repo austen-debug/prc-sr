@@ -1,9 +1,11 @@
-// GATE Input Page Controller
-// Canonical owner for Input page receiving windows, batch-grid Space Force support, archive window fields, and initialization preflight validation.
+// GATE Phase 4 Input Page Controller
+// Canonical owner for Input page batch grid, Week Group initialization, receiving windows, Space Force dorm metadata, and initialization preflight validation.
 (function () {
   'use strict';
 
   const WINDOW_STORAGE_PREFIX = 'gate_receiving_windows_';
+  const ROW_COUNT = 25;
+  const GRID_TEMPLATE = '1fr 1fr 1.5fr 1.5fr 1fr 0.5fr 0.5fr 1fr 40px';
   const WINDOW_FIELDS = [
     ['receiving_day_one_start', 'RECEIVING DAY ONE START DATE / TIME'],
     ['receiving_day_one_end', 'RECEIVING DAY ONE END DATE / TIME'],
@@ -11,13 +13,11 @@
     ['receiving_day_two_end', 'RECEIVING DAY TWO END DATE / TIME']
   ];
 
-  let dataSdkPatched = false;
-  let batchFunctionsPatched = false;
-  let initPatched = false;
+  let installed = false;
   let hooksRegistered = false;
   let passQueued = false;
-  let installAttempts = 0;
-  let installTimer = null;
+  let dataSdkPatched = false;
+  let archiveOpenPatched = false;
 
   function n(value) {
     const parsed = Number(value || 0);
@@ -39,16 +39,44 @@
     try { return typeof getActiveWG === 'function' ? getActiveWG() : ''; } catch (_) { return ''; }
   }
 
-  function batchRowsSafe() {
-    try { return Array.isArray(batchRows) ? batchRows : []; } catch (_) { return []; }
-  }
-
   function allDataSafe() {
     try { return Array.isArray(allData) ? allData : []; } catch (_) { return []; }
   }
 
+  function emptyRow(index) {
+    return { rowIndex: index, sdq: '', sec: '', inter_sec: '', dorm_name: '', sex: 'male', band: false, space_force: false, load: '' };
+  }
+
+  function batchRowsSafe() {
+    try {
+      if (!Array.isArray(batchRows)) batchRows = Array.from({ length: ROW_COUNT }, (_, index) => emptyRow(index));
+      while (batchRows.length < ROW_COUNT) batchRows.push(emptyRow(batchRows.length));
+      batchRows.forEach((row, index) => {
+        row.rowIndex = index;
+        if (typeof row.sdq === 'undefined') row.sdq = '';
+        if (typeof row.sec === 'undefined') row.sec = '';
+        if (typeof row.inter_sec === 'undefined') row.inter_sec = '';
+        if (typeof row.dorm_name === 'undefined') row.dorm_name = '';
+        if (typeof row.sex === 'undefined') row.sex = 'male';
+        if (typeof row.band === 'undefined') row.band = false;
+        if (typeof row.space_force === 'undefined') row.space_force = false;
+        if (typeof row.load === 'undefined') row.load = '';
+        if (row.band && row.space_force) row.space_force = false;
+      });
+      return batchRows;
+    } catch (_) {
+      if (!Array.isArray(window.batchRows)) window.batchRows = Array.from({ length: ROW_COUNT }, (_, index) => emptyRow(index));
+      return window.batchRows;
+    }
+  }
+
+  function setBatchRow(index, patch) {
+    const rows = batchRowsSafe();
+    rows[index] = Object.assign(emptyRow(index), rows[index] || {}, patch || {}, { rowIndex: index });
+  }
+
   function getWeekGroupInputValue() {
-    return String(document.getElementById('wg-batch-input')?.value || activeWeekGroup() || '').trim();
+    return String(document.getElementById('wg-batch-input')?.value || activeWeekGroup() || '').trim().toUpperCase();
   }
 
   function storageKey(weekGroup = '') {
@@ -107,25 +135,19 @@
     const oneEnd = parseDateTime(values.receiving_day_one_end);
     const twoStart = parseDateTime(values.receiving_day_two_start);
     if (oneEnd && twoStart && twoStart.getTime() < oneEnd.getTime()) return 'Receiving Day Two cannot start before Receiving Day One ends.';
-
     return '';
   }
 
   function showInputMessage(message, isError = true) {
-    if (typeof showBatchMsg === 'function') {
-      showBatchMsg(message, isError);
-      return;
-    }
-
     const el = document.getElementById('init-status-msg');
     if (!el) {
-      if (isError) alert(message);
+      if (isError) window.alert(message);
       return;
     }
-
     el.textContent = message;
     el.className = `text-sm ${isError ? 'text-red-500' : 'text-green-400'}`;
     el.classList.remove('hidden');
+    if (!isError) window.setTimeout(() => el.classList.add('hidden'), 4000);
   }
 
   function ensureInputPageShell() {
@@ -144,6 +166,8 @@
     const initButton = document.getElementById('init-wg-btn');
     if (initButton) {
       initButton.dataset.owner = 'gate-input-page-controller';
+      initButton.dataset.gateInputAction = 'initialize-week-group';
+      initButton.removeAttribute('onclick');
       initButton.title = 'Validate input rows and initialize the selected week group.';
     }
   }
@@ -188,6 +212,7 @@
       input.dataset.owner = 'gate-input-page-controller';
       input.addEventListener('change', () => {
         saveWindowInputs();
+        validateAndMarkWindows();
         schedulePass();
       });
       input.addEventListener('blur', () => {
@@ -199,6 +224,7 @@
     if (wgInput.dataset.gateInputWindowBound !== 'true') {
       wgInput.dataset.gateInputWindowBound = 'true';
       wgInput.addEventListener('change', () => {
+        wgInput.value = String(wgInput.value || '').trim().toUpperCase();
         setWindowInputs(parseStorage(wgInput.value.trim()));
         validateAndMarkWindows();
         schedulePass();
@@ -233,103 +259,46 @@
     return !error;
   }
 
-  function ensureArchiveWindowPanel() {
-    const form = document.getElementById('archive-edit-form');
-    const anchor = document.getElementById('archive-edit-dorm-count')?.closest('.grid');
-    if (!form || !anchor) return;
-
-    let panel = document.getElementById('archive-receiving-windows-panel');
-    if (!panel) {
-      panel = document.createElement('section');
-      panel.id = 'archive-receiving-windows-panel';
-      panel.className = 'grid grid-cols-2 gap-3';
-      panel.dataset.owner = 'gate-input-page-controller';
-      panel.setAttribute('aria-label', 'Archived receiving windows');
-      panel.innerHTML = WINDOW_FIELDS.map(([key, label]) => `
-        <div>
-          <label for="archive-edit-${key}" class="block text-sm font-medium mb-1">${esc(label)}</label>
-          <input id="archive-edit-${key}" type="datetime-local" class="w-full border rounded px-3 py-2 bg-transparent font-tabular" style="border-color:var(--border);color:var(--text);">
-        </div>
-      `).join('');
-      anchor.insertAdjacentElement('beforebegin', panel);
-    }
-
-    WINDOW_FIELDS.forEach(([key]) => {
-      const input = document.getElementById(`archive-edit-${key}`);
-      if (!input || input.dataset.gateArchiveWindowBound === 'true') return;
-      input.dataset.gateArchiveWindowBound = 'true';
-      input.dataset.owner = 'gate-input-page-controller';
-    });
-  }
-
-  function getEditArchiveIdSafe() {
-    try { return editArchiveId || ''; } catch (_) { return window.editArchiveId || ''; }
-  }
-
-  function getOpenArchive() {
-    const id = getEditArchiveIdSafe();
-    if (!id) return null;
-    return allDataSafe().find(record => record && record.type === 'archive' && record.__backendId === id) || null;
-  }
-
-  function fillArchiveWindowPanel(archive = getOpenArchive()) {
-    if (!archive) return;
-    ensureArchiveWindowPanel();
-    WINDOW_FIELDS.forEach(([key]) => {
-      const input = document.getElementById(`archive-edit-${key}`);
-      if (input && !input.matches(':focus')) input.value = archive[key] || input.value || '';
-    });
-  }
-
-  function ensureBatchRowsHaveInputFields() {
-    const rows = batchRowsSafe();
-    rows.forEach(row => {
-      if (typeof row.space_force === 'undefined') row.space_force = false;
-      if (typeof row.band === 'undefined') row.band = false;
-    });
-  }
-
-  function ensureBatchSpaceForceColumn() {
+  function renderBatchGrid() {
     const header = document.querySelector('#batch-grid-wrapper .sticky');
-    const rows = document.getElementById('batch-rows-container');
-    if (!header || !rows) return;
+    const container = document.getElementById('batch-rows-container');
+    if (!container) return;
 
-    ensureBatchRowsHaveInputFields();
-
-    const gridTemplate = '1fr 1fr 1.5fr 1.5fr 1fr 0.5fr 0.5fr 1fr 40px';
-    header.style.gridTemplateColumns = gridTemplate;
-    header.dataset.owner = 'gate-input-page-controller';
-
-    if (!header.querySelector('[data-sf-header="true"]')) {
-      const loadHeader = Array.from(header.children).find(el => el.textContent.trim().toUpperCase() === 'LOAD');
-      const sfHeader = document.createElement('div');
-      sfHeader.dataset.sfHeader = 'true';
-      sfHeader.className = 'text-[10px] uppercase font-bold tracking-wider text-muted';
-      sfHeader.textContent = 'SPACE FORCE';
-      if (loadHeader) header.insertBefore(sfHeader, loadHeader);
-      else header.appendChild(sfHeader);
+    const rows = batchRowsSafe();
+    if (header) {
+      header.style.gridTemplateColumns = GRID_TEMPLATE;
+      header.dataset.owner = 'gate-input-page-controller';
+      if (!header.querySelector('[data-sf-header="true"]')) {
+        const loadHeader = Array.from(header.children).find(el => el.textContent.trim().toUpperCase() === 'LOAD');
+        const sfHeader = document.createElement('div');
+        sfHeader.dataset.sfHeader = 'true';
+        sfHeader.className = 'text-[10px] uppercase font-bold tracking-wider text-muted';
+        sfHeader.textContent = 'SPACE FORCE';
+        if (loadHeader) header.insertBefore(sfHeader, loadHeader);
+        else header.appendChild(sfHeader);
+      }
     }
 
-    rows.querySelectorAll(':scope > div').forEach(rowEl => {
-      const rowIndex = rowEl.querySelector('[data-row]')?.dataset.row;
-      if (rowIndex === undefined) return;
-      rowEl.style.gridTemplateColumns = gridTemplate;
-      rowEl.dataset.owner = 'gate-input-page-controller';
-      const loadInput = rowEl.querySelector('.batch-load');
-      const row = batchRowsSafe()[Number(rowIndex)];
-      const checked = row && row.space_force ? 'checked' : '';
+    container.dataset.owner = 'gate-input-page-controller';
+    container.innerHTML = rows.map((row, index) => `
+      <div class="grid gap-2 items-center" style="grid-template-columns:${GRID_TEMPLATE};" data-owner="gate-input-page-controller" data-input-row="${index}">
+        <input class="batch-sdq border rounded px-1 py-1 bg-transparent text-xs" style="border-color:var(--border);color:var(--text);" data-row="${index}" value="${esc(row.sdq)}" aria-label="Row ${index + 1} SDQ">
+        <input class="batch-sec border rounded px-1 py-1 bg-transparent text-xs" style="border-color:var(--border);color:var(--text);" data-row="${index}" value="${esc(row.sec)}" aria-label="Row ${index + 1} Section">
+        <input class="batch-inter border rounded px-1 py-1 bg-transparent text-xs" style="border-color:var(--border);color:var(--text);" data-row="${index}" value="${esc(row.inter_sec)}" aria-label="Row ${index + 1} Inter Section">
+        <input class="batch-dorm border rounded px-1 py-1 bg-transparent text-xs" style="border-color:var(--border);color:var(--text);" data-row="${index}" value="${esc(row.dorm_name)}" aria-label="Row ${index + 1} Dorm Name">
+        <select class="batch-sex border rounded px-1 py-1 bg-transparent text-xs" style="border-color:var(--border);color:var(--text);" data-row="${index}" aria-label="Row ${index + 1} Sex">
+          <option value="male" ${row.sex !== 'female' ? 'selected' : ''}>Male</option>
+          <option value="female" ${row.sex === 'female' ? 'selected' : ''}>Female</option>
+        </select>
+        <label class="flex items-center justify-center" title="Band dorm"><input type="checkbox" class="batch-band w-4 h-4" data-row="${index}" ${row.band ? 'checked' : ''} aria-label="Row ${index + 1} Band"></label>
+        <label class="flex items-center justify-center" title="Space Force dorm"><input type="checkbox" class="batch-space-force w-4 h-4" data-row="${index}" ${row.space_force ? 'checked' : ''} aria-label="Row ${index + 1} Space Force"></label>
+        <input type="number" class="batch-load border rounded px-1 py-1 bg-transparent text-xs font-tabular" style="border-color:var(--border);color:var(--text);" inputmode="numeric" data-row="${index}" min="0" value="${esc(row.load)}" aria-label="Row ${index + 1} Load">
+        <button type="button" data-gate-input-clear-row="${index}" class="text-red-500 text-lg leading-none" aria-label="Clear row ${index + 1}">×</button>
+      </div>
+    `).join('');
 
-      if (!rowEl.querySelector('.batch-space-force')) {
-        const wrapper = document.createElement('label');
-        wrapper.className = 'flex items-center justify-center';
-        wrapper.title = 'Space Force dorm';
-        wrapper.innerHTML = `<input type="checkbox" class="batch-space-force w-4 h-4" data-row="${rowIndex}" ${checked}>`;
-        if (loadInput) rowEl.insertBefore(wrapper, loadInput);
-      } else {
-        const input = rowEl.querySelector('.batch-space-force');
-        if (input && row) input.checked = Boolean(row.space_force);
-      }
-    });
+    configureHorizontalTabFlow();
+    updateTotalLoad();
   }
 
   function syncBatchField(target) {
@@ -337,6 +306,13 @@
     const index = Number(target.dataset.row);
     const rows = batchRowsSafe();
     if (!Number.isFinite(index) || !rows[index]) return;
+
+    if (target.classList.contains('batch-sdq')) rows[index].sdq = target.value;
+    if (target.classList.contains('batch-sec')) rows[index].sec = target.value;
+    if (target.classList.contains('batch-inter')) rows[index].inter_sec = target.value;
+    if (target.classList.contains('batch-dorm')) rows[index].dorm_name = target.value;
+    if (target.classList.contains('batch-sex')) rows[index].sex = target.value || 'male';
+    if (target.classList.contains('batch-load')) rows[index].load = target.value;
 
     if (target.classList.contains('batch-space-force')) {
       rows[index].space_force = Boolean(target.checked);
@@ -357,60 +333,15 @@
     }
   }
 
-  function patchBatchFunctions() {
-    if (batchFunctionsPatched) return;
+  function syncAllBatchRowsFromDom() {
+    document.querySelectorAll('#batch-rows-container [data-row]').forEach(input => syncBatchField(input));
+  }
 
-    try {
-      if (typeof initBatchGrid === 'function' && initBatchGrid.__gateInputController !== true) {
-        const originalInit = initBatchGrid;
-        const patchedInit = function gateInputInitBatchGrid(...args) {
-          const result = originalInit.apply(this, args);
-          ensureBatchRowsHaveInputFields();
-          ensureBatchSpaceForceColumn();
-          configureHorizontalTabFlow();
-          return result;
-        };
-        patchedInit.__gateInputController = true;
-        window.initBatchGrid = patchedInit;
-        try { initBatchGrid = patchedInit; } catch (_) {}
-      }
-
-      if (typeof clearBatchRow === 'function' && clearBatchRow.__gateInputController !== true) {
-        const originalClear = clearBatchRow;
-        const patchedClear = function gateInputClearBatchRow(index) {
-          const result = originalClear.apply(this, arguments);
-          const rows = batchRowsSafe();
-          if (rows[index]) {
-            rows[index].space_force = false;
-            rows[index].band = false;
-          }
-          ensureBatchSpaceForceColumn();
-          updateTotalLoad();
-          return result;
-        };
-        patchedClear.__gateInputController = true;
-        window.clearBatchRow = patchedClear;
-        try { clearBatchRow = patchedClear; } catch (_) {}
-      }
-    } catch (error) {
-      console.warn('GATE Input batch function patch failed:', error);
-    }
-
-    document.addEventListener('input', event => {
-      if (!event.target?.closest?.('#batch-rows-container')) return;
-      syncBatchField(event.target);
-      updateTotalLoad();
-      schedulePass();
-    }, true);
-
-    document.addEventListener('change', event => {
-      if (!event.target?.closest?.('#batch-rows-container')) return;
-      syncBatchField(event.target);
-      updateTotalLoad();
-      schedulePass();
-    }, true);
-
-    batchFunctionsPatched = true;
+  function clearBatchRowCanonical(index) {
+    const rowIndex = Number(index);
+    if (!Number.isFinite(rowIndex)) return;
+    setBatchRow(rowIndex, emptyRow(rowIndex));
+    renderBatchGrid();
   }
 
   function updateTotalLoad() {
@@ -422,20 +353,171 @@
   function configureHorizontalTabFlow() {
     const container = document.getElementById('batch-rows-container');
     if (!container) return;
-
     const fieldClasses = ['batch-sdq', 'batch-sec', 'batch-inter', 'batch-dorm', 'batch-sex', 'batch-band', 'batch-space-force', 'batch-load'];
-    for (let row = 0; row < 25; row += 1) {
+    for (let row = 0; row < ROW_COUNT; row += 1) {
       fieldClasses.forEach((className, col) => {
         const field = container.querySelector(`.${className}[data-row="${row}"]`);
         if (field) field.tabIndex = (row * fieldClasses.length) + col + 1;
       });
     }
-    container.querySelectorAll('button[onclick^="clearBatchRow"]').forEach(button => { button.tabIndex = -1; });
+    container.querySelectorAll('[data-gate-input-clear-row]').forEach(button => { button.tabIndex = -1; });
+  }
+
+  function filledRows() {
+    syncAllBatchRowsFromDom();
+    return batchRowsSafe().filter(row => n(row.load) > 0);
+  }
+
+  function normalizedDormName(row) {
+    return String(row.dorm_name || '').trim() || `Dorm ${Number(row.rowIndex || 0) + 1}`;
+  }
+
+  function preflightInitialization() {
+    const weekGroup = getWeekGroupInputValue();
+    if (!weekGroup) return { ok: false, message: 'Week Group ID required.' };
+
+    const windowError = validateReceivingWindows();
+    if (windowError) return { ok: false, message: windowError };
+
+    const rows = filledRows();
+    if (rows.length === 0) return { ok: false, message: 'At least one row with Load required.' };
+
+    const conflict = rows.find(row => row.band && row.space_force);
+    if (conflict) return { ok: false, message: 'A dorm cannot be both Band and Space Force. Clear one selection before initializing.' };
+
+    const invalidLoad = rows.find(row => n(row.load) <= 0 || n(row.load) > 60);
+    if (invalidLoad) return { ok: false, message: 'Dorm loads must be between 1 and 60.' };
+
+    const names = rows.map(row => normalizedDormName(row).toUpperCase());
+    const duplicate = names.find((name, index) => names.indexOf(name) !== index);
+    if (duplicate) return { ok: false, message: `Duplicate dorm name detected: ${duplicate}.` };
+
+    const existingDorms = allDataSafe().filter(record => record.type === 'dorm' && record.week_group === weekGroup);
+    if (existingDorms.length) return { ok: false, message: `${weekGroup} already has live dorm records. Close out/archive before initializing it again.` };
+
+    if (allDataSafe().length + rows.length + 1 >= 999) return { ok: false, message: 'Record limit reached.' };
+    return { ok: true, message: '' };
+  }
+
+  function syncLocalRecord(record) {
+    if (!record || !record.__backendId) return;
+    const list = allDataSafe();
+    const index = list.findIndex(item => item.__backendId === record.__backendId);
+    if (index >= 0) list[index] = { ...list[index], ...record };
+    else list.push(record);
+  }
+
+  function buildDormPayload(row, weekGroup, windows) {
+    const spaceForce = Boolean(row.space_force);
+    const now = new Date().toISOString();
+    return Object.assign({}, windows, {
+      type: 'dorm',
+      dorm_name: normalizedDormName(row),
+      section: String(row.sec || '').trim(),
+      sdq: String(row.sdq || '').trim(),
+      inter_sec: String(row.inter_sec || '').trim(),
+      max_load: n(row.load),
+      current_load: 0,
+      sex: row.sex === 'female' ? 'female' : 'male',
+      band: row.band && !spaceForce ? 'true' : 'false',
+      space_force: spaceForce ? 'true' : 'false',
+      is_space_force: spaceForce ? 'true' : 'false',
+      state: 'empty',
+      phase: '',
+      opened_at: '',
+      closed_timer: '',
+      closed_at: '',
+      notes: '',
+      assigned_airman: '',
+      auditorium_location: '',
+      overtime_sound_sent: 'false',
+      overtime_sound_at: '',
+      week_group: weekGroup,
+      created_at: now,
+      destination: '',
+      bus_type: ''
+    });
+  }
+
+  async function initializeWeekGroupCanonical(event) {
+    event?.preventDefault?.();
+    event?.stopPropagation?.();
+    event?.stopImmediatePropagation?.();
+
+    ensureInputPageShell();
+    syncAllBatchRowsFromDom();
+    saveWindowInputs();
+
+    const preflight = preflightInitialization();
+    if (!preflight.ok) {
+      showInputMessage(preflight.message, true);
+      return;
+    }
+
+    const weekGroup = getWeekGroupInputValue();
+    const rows = filledRows();
+    const windows = readWindowInputs(weekGroup);
+    const btn = document.getElementById('init-wg-btn');
+    const originalText = btn?.textContent || 'INITIALIZE WEEK GROUP';
+
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = 'Initializing...';
+    }
+
+    let ok = 0;
+    try {
+      const existingConfig = allDataSafe().find(record => record.type === 'config' && record.key === 'week_group');
+      const configPayload = existingConfig
+        ? { ...existingConfig, value: weekGroup, updated_at: new Date().toISOString() }
+        : { type: 'config', key: 'week_group', value: weekGroup, created_at: new Date().toISOString() };
+      const configResult = existingConfig ? await window.dataSdk.update(configPayload) : await window.dataSdk.create(configPayload);
+      if (configResult?.isOk) syncLocalRecord(configResult.data || configPayload);
+      else throw new Error(configResult?.error || 'Failed to set active Week Group.');
+
+      for (const row of rows) {
+        const payload = buildDormPayload(row, weekGroup, windows);
+        const result = await window.dataSdk.create(payload);
+        if (result?.isOk) {
+          ok += 1;
+          syncLocalRecord(result.data || payload);
+        }
+      }
+
+      if (ok === rows.length) {
+        document.getElementById('init-success-overlay')?.classList.remove('hidden');
+        showInputMessage(`${weekGroup} initialized with ${ok} dorms.`, false);
+      } else {
+        showInputMessage(`${ok}/${rows.length} dorms created. Check records before retrying.`, true);
+      }
+
+      try { window.GateStatusBoardController?.scheduleRender?.({ force: true }); } catch (_) {}
+      try { window.GateProcessingController?.scheduleRender?.({ force: true }); } catch (_) {}
+      try { window.runGateHooks?.('afterDataChanged', { source: 'gate-input-initialize-week-group' }); } catch (_) {}
+    } catch (error) {
+      showInputMessage(error?.message || 'Failed to initialize Week Group.', true);
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = originalText;
+      }
+    }
+  }
+
+  function returnToBoardCanonical(event) {
+    event?.preventDefault?.();
+    document.getElementById('init-success-overlay')?.classList.add('hidden');
+    if (window.GateAppShell?.go) window.GateAppShell.go('board');
+    else if (typeof showPage === 'function') showPage('board');
+  }
+
+  function isSpaceForceDorm(dorm) {
+    return dorm && (dorm.space_force === true || dorm.space_force === 'true' || dorm.is_space_force === true || dorm.is_space_force === 'true');
   }
 
   function findBatchRowForDormPayload(payload) {
     return batchRowsSafe().find(row => (
-      String(row.dorm_name || '').trim() === String(payload.dorm_name || '').trim() &&
+      String(normalizedDormName(row)).trim() === String(payload.dorm_name || '').trim() &&
       String(row.sdq || '').trim() === String(payload.sdq || '').trim() &&
       String(row.sec || '').trim() === String(payload.section || '').trim() &&
       String(row.inter_sec || '').trim() === String(payload.inter_sec || '').trim() &&
@@ -443,13 +525,8 @@
     )) || null;
   }
 
-  function isSpaceForceDorm(dorm) {
-    return dorm && (dorm.space_force === true || dorm.space_force === 'true' || dorm.is_space_force === true || dorm.is_space_force === 'true');
-  }
-
   function patchDataSdk() {
     if (dataSdkPatched || !window.dataSdk || typeof window.dataSdk.create !== 'function') return;
-
     const originalCreate = window.dataSdk.create.bind(window.dataSdk);
     const originalUpdate = typeof window.dataSdk.update === 'function' ? window.dataSdk.update.bind(window.dataSdk) : null;
 
@@ -501,49 +578,48 @@
     dataSdkPatched = true;
   }
 
-  function preflightInitialization() {
-    const weekGroup = getWeekGroupInputValue();
-    if (!weekGroup) return { ok: false, message: 'Week Group ID required.' };
-
-    const windowError = validateReceivingWindows();
-    if (windowError) return { ok: false, message: windowError };
-
-    const rows = batchRowsSafe();
-    const filledRows = rows.filter(row => n(row.load) > 0);
-    if (filledRows.length === 0) return { ok: false, message: 'At least one row with Load required.' };
-
-    const conflict = filledRows.find(row => row.band && row.space_force);
-    if (conflict) return { ok: false, message: 'A dorm cannot be both Band and Space Force. Clear one selection before initializing.' };
-
-    return { ok: true, message: '' };
+  function ensureArchiveWindowPanel() {
+    const form = document.getElementById('archive-edit-form');
+    const anchor = document.getElementById('archive-edit-dorm-count')?.closest('.grid');
+    if (!form || !anchor) return;
+    let panel = document.getElementById('archive-receiving-windows-panel');
+    if (!panel) {
+      panel = document.createElement('section');
+      panel.id = 'archive-receiving-windows-panel';
+      panel.className = 'grid grid-cols-2 gap-3';
+      panel.dataset.owner = 'gate-input-page-controller';
+      panel.setAttribute('aria-label', 'Archived receiving windows');
+      panel.innerHTML = WINDOW_FIELDS.map(([key, label]) => `
+        <div>
+          <label for="archive-edit-${key}" class="block text-sm font-medium mb-1">${esc(label)}</label>
+          <input id="archive-edit-${key}" type="datetime-local" class="w-full border rounded px-3 py-2 bg-transparent font-tabular" style="border-color:var(--border);color:var(--text);">
+        </div>
+      `).join('');
+      anchor.insertAdjacentElement('beforebegin', panel);
+    }
+    WINDOW_FIELDS.forEach(([key]) => {
+      const input = document.getElementById(`archive-edit-${key}`);
+      if (input) input.dataset.owner = 'gate-input-page-controller';
+    });
   }
 
-  function patchInitializeWeekGroup() {
-    if (initPatched || typeof initializeWeekGroup !== 'function') return;
-
-    const originalInitialize = initializeWeekGroup;
-    const patchedInitialize = async function gateInputInitializeWeekGroup(...args) {
-      ensureBatchRowsHaveInputFields();
-      syncAllBatchRowsFromDom();
-      saveWindowInputs();
-
-      const preflight = preflightInitialization();
-      if (!preflight.ok) {
-        showInputMessage(preflight.message, true);
-        return;
-      }
-
-      return originalInitialize.apply(this, args);
-    };
-
-    patchedInitialize.__gateInputController = true;
-    window.initializeWeekGroup = patchedInitialize;
-    try { initializeWeekGroup = patchedInitialize; } catch (_) {}
-    initPatched = true;
+  function getEditArchiveIdSafe() {
+    try { return editArchiveId || ''; } catch (_) { return window.editArchiveId || ''; }
   }
 
-  function syncAllBatchRowsFromDom() {
-    document.querySelectorAll('#batch-rows-container [data-row]').forEach(input => syncBatchField(input));
+  function getOpenArchive() {
+    const id = getEditArchiveIdSafe();
+    if (!id) return null;
+    return allDataSafe().find(record => record && record.type === 'archive' && record.__backendId === id) || null;
+  }
+
+  function fillArchiveWindowPanel(archive = getOpenArchive()) {
+    if (!archive) return;
+    ensureArchiveWindowPanel();
+    WINDOW_FIELDS.forEach(([key]) => {
+      const input = document.getElementById(`archive-edit-${key}`);
+      if (input && !input.matches(':focus')) input.value = archive[key] || input.value || '';
+    });
   }
 
   function collectReceivingWindowsForReport({ weekGroup = '', archive = {}, dorms = [] } = {}) {
@@ -563,8 +639,7 @@
   }
 
   function patchArchiveOpen() {
-    if (typeof openArchiveEditModal !== 'function' || openArchiveEditModal.__gateInputController === true) return;
-
+    if (archiveOpenPatched || typeof openArchiveEditModal !== 'function') return;
     const originalOpen = openArchiveEditModal;
     const patchedOpen = function gateInputOpenArchiveEditModal(event, id) {
       const result = originalOpen.apply(this, arguments);
@@ -574,10 +649,56 @@
       schedulePass();
       return result;
     };
-
     patchedOpen.__gateInputController = true;
     window.openArchiveEditModal = patchedOpen;
     try { openArchiveEditModal = patchedOpen; } catch (_) {}
+    archiveOpenPatched = true;
+  }
+
+  function patchGlobals() {
+    window.initBatchGrid = renderBatchGrid;
+    window.clearBatchRow = clearBatchRowCanonical;
+    window.handleBatchInput = function gateInputHandleBatchInput(event) {
+      syncBatchField(event?.target);
+      updateTotalLoad();
+    };
+    window.updateTotalLoadCalc = updateTotalLoad;
+    window.initializeWeekGroup = initializeWeekGroupCanonical;
+    window.returnToBoard = returnToBoardCanonical;
+    window.showBatchMsg = showInputMessage;
+    window.collectReceivingWindowsForReport = collectReceivingWindowsForReport;
+
+    try { initBatchGrid = renderBatchGrid; } catch (_) {}
+    try { clearBatchRow = clearBatchRowCanonical; } catch (_) {}
+    try { handleBatchInput = window.handleBatchInput; } catch (_) {}
+    try { updateTotalLoadCalc = updateTotalLoad; } catch (_) {}
+    try { initializeWeekGroup = initializeWeekGroupCanonical; } catch (_) {}
+    try { returnToBoard = returnToBoardCanonical; } catch (_) {}
+    try { showBatchMsg = showInputMessage; } catch (_) {}
+  }
+
+  function handleInputChange(event) {
+    const target = event.target;
+    if (!target?.closest?.('#batch-rows-container')) return;
+    syncBatchField(target);
+    updateTotalLoad();
+  }
+
+  function handleClick(event) {
+    const clearButton = event.target?.closest?.('[data-gate-input-clear-row]');
+    if (clearButton) {
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation?.();
+      clearBatchRowCanonical(clearButton.dataset.gateInputClearRow);
+      return;
+    }
+
+    const initButton = event.target?.closest?.('#init-wg-btn, [data-gate-input-action="initialize-week-group"]');
+    if (initButton) {
+      initializeWeekGroupCanonical(event);
+      return;
+    }
   }
 
   function runPass() {
@@ -586,23 +707,23 @@
     ensureReceivingWindowPanel();
     ensureArchiveWindowPanel();
     fillArchiveWindowPanel();
-    ensureBatchRowsHaveInputFields();
-    ensureBatchSpaceForceColumn();
-    configureHorizontalTabFlow();
-    updateTotalLoad();
     patchDataSdk();
-    patchBatchFunctions();
-    patchInitializeWeekGroup();
     patchArchiveOpen();
+    patchGlobals();
+    renderBatchGrid();
     validateAndMarkWindows();
 
-    window.collectReceivingWindowsForReport = collectReceivingWindowsForReport;
     window.GateInputPageController = Object.freeze({
       isCanonicalOwner: true,
+      renderBatchGrid,
+      clearBatchRow: clearBatchRowCanonical,
+      initializeWeekGroup: initializeWeekGroupCanonical,
+      returnToBoard: returnToBoardCanonical,
       refresh: schedulePass,
       collectReceivingWindows: collectReceivingWindowsForReport,
       validateReceivingWindows,
-      preflightInitialization
+      preflightInitialization,
+      getRows: batchRowsSafe
     });
   }
 
@@ -622,23 +743,18 @@
     hooksRegistered = true;
   }
 
-  function attemptInstall() {
-    installAttempts += 1;
-    schedulePass();
-    registerHooksOnce();
-    if ((initPatched && dataSdkPatched) || installAttempts >= 24) {
-      if (installTimer) clearInterval(installTimer);
-      installTimer = null;
-    }
-  }
-
   function start() {
-    attemptInstall();
-    if (!installTimer && installAttempts < 24) installTimer = setInterval(attemptInstall, 250);
+    if (!installed) {
+      document.addEventListener('input', handleInputChange, true);
+      document.addEventListener('change', handleInputChange, true);
+      document.addEventListener('click', handleClick, true);
+      installed = true;
+    }
+    runPass();
+    registerHooksOnce();
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, { once: true });
   else start();
-
   window.addEventListener('load', start, { once: true });
 })();

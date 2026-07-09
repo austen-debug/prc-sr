@@ -6,7 +6,7 @@ const UI_STYLESHEETS = [
   '<link rel="stylesheet" href="/css/gate-layout-pages.css">',
   '<link rel="stylesheet" href="/css/gate-components.css">',
   '<link rel="stylesheet" href="/css/gate-utilities-access.css">',
-  '<link rel="stylesheet" href="/css/gate-premium-metrics.css?v=premium-metrics-20260707">'
+  '<link rel="stylesheet" href="/css/gate-premium-metrics.css?v=premium-metrics-20260707b">'
 ];
 
 const UI_INLINE_ASSETS = [];
@@ -42,7 +42,7 @@ const UI_HEAD_SCRIPTS = [
   '<script src="/js/prc-dash-processing-loaded-summary.js" defer></script>',
   '<script src="/js/prc-dash-current-summary-live-records.js" defer></script>',
   '<script src="/js/gate-archive-print-controller.js" defer></script>',
-  '<script src="/js/gate-premium-metrics-controller.js?v=premium-metrics-20260707" defer></script>',
+  '<script src="/js/gate-premium-metrics-controller.js?v=premium-metrics-20260707b" defer></script>',
   '<script src="/js/prc-dash-overtime-audit.js" defer></script>'
 ];
 

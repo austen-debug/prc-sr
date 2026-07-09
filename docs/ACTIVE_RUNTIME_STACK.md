@@ -1,7 +1,7 @@
 # GATE Active Runtime Stack
 
-Status: Phase 5 updated baseline
-Scope: Documents the active served runtime after App Shell, Status Board, Processing, Airport/local arrival, Input/Week Group initialization, and Archive/Reporting/Closeout ownership consolidation.
+Status: Phase 6 updated baseline
+Scope: Documents the active served runtime after App Shell, Status Board, Processing, Airport/local arrival, Input/Week Group initialization, Archive/Reporting/Closeout, and lifecycle hook ownership cleanup.
 
 ## Purpose
 
@@ -38,7 +38,7 @@ Legacy / important note:
 Injected by middleware in current order:
 
 1. `/js/gate-component-contracts.js`
-2. `/js/gate-ui-hooks.js`
+2. `/js/gate-ui-hooks.js?v=phase-6-hooks-20260709`
 3. `/js/gate-branding-controller.js`
 4. `/js/prc-dash-runtime-fixes.js`
 5. `/js/prc-dash-sat-arrivals.js`
@@ -90,9 +90,37 @@ These files remain in the repository for traceability but are no longer loaded b
 3. `/js/prc-dash-current-summary-live-records.js`
 4. `/js/gate-archive-print-controller.js`
 
-## Runtime pattern after Phase 5
+## Narrowed in Phase 6
+
+`/js/gate-ui-hooks.js` remains active, but it is now lifecycle-only.
+
+It owns:
+
+- hook registry initialization
+- `window.runGateHooks()`
+- `window.registerGateHook()`
+- `window.unregisterGateHook()`
+- `renderAll()` lifecycle wrapper
+- `showPage()` lifecycle wrapper
+- compatibility handoff stubs for prior installer calls
+
+It no longer owns:
+
+- Active Bus rendering
+- Active Bus mutation observation
+- Archive schema construction
+- Safe closeout
+- Closeout button ownership
+
+## Runtime pattern after Phase 6
 
 The runtime is still a monolithic base app plus injected controllers, but the major operational workflow surfaces now have active owners.
+
+`GateHooks` / `gate-ui-hooks.js` is the active owner for:
+
+- lifecycle hook registration
+- lifecycle hook execution
+- wrapping base `renderAll()` and `showPage()` so canonical controllers can react consistently
 
 `GateAppShell` is the final active owner for:
 
@@ -200,14 +228,17 @@ The served base runtime writes directly to those IDs. `gate-premium-metrics-cont
 
 ## Remaining high-risk active overlap areas
 
-1. `gate-ui-hooks.js`
-   - still contains older active bus and archive schema internal controllers, although later canonical controllers now supersede them.
+The remaining active overlap is now primarily UI-specific and mobile-specific:
 
-2. Mobile page-specific patches
+1. Mobile/page-specific patches
    - `gate-airport-phone-layout-fix.js`
    - `prc-dash-modal-mobile-validation.js`
    - `gate-tablet-processing-modal-fix.js`
+   - `gate-render-stability-fix.js`
 
-## Phase 5 conclusion
+2. Legacy base shell
+   - `public/index.html` still contains legacy inline CSS, legacy functions, and legacy page markup that are being overridden by canonical controllers.
 
-Navigation / App Shell / Mobile Shell, Status Board metrics, Status Board dorm columns, Active Buses En Route, Processing page/modal behavior, Airport/local arrival bus workflow, Input / Week Group initialization, and Archive / Reporting / Closeout now have active canonical owners. The next recommended phase is final runtime hardening and mobile/UI polish.
+## Phase 6 conclusion
+
+Navigation / App Shell / Mobile Shell, lifecycle hooks, Status Board metrics, Status Board dorm columns, Active Buses En Route, Processing page/modal behavior, Airport/local arrival bus workflow, Input / Week Group initialization, and Archive / Reporting / Closeout now have active canonical owners. The next recommended phase is Mobile / UI Polish and Final Design System stabilization.

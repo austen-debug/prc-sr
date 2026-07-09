@@ -1,7 +1,7 @@
 # GATE Active Runtime Stack
 
-Status: Phase 1B updated baseline
-Scope: Documents the active served runtime after Navigation / App Shell / Mobile Shell consolidation and Status Board metric ownership consolidation.
+Status: Phase 1C updated baseline
+Scope: Documents the active served runtime after App Shell, Status Board metric, and Status Board body ownership consolidation.
 
 ## Purpose
 
@@ -45,27 +45,28 @@ Injected by middleware in current order:
 6. `/js/prc-dash-space-force.js`
 7. `/js/prc-dash-dorm-reopen.js`
 8. `/js/prc-dash-final-audit.js`
-9. `/js/prc-dash-dorm-flag-validation.js`
-10. `/js/prc-dash-auditorium-location.js`
-11. `/js/prc-dash-processing-context-menu.js`
-12. `/js/gate-processing-final-time-commit.js?v=final-time-commit-20260707`
-13. `/js/gate-airman-modal-close-safety.js?v=airman-modal-close-20260707`
-14. `/js/gate-bus-workflow-controller.js`
-15. `/js/prc-dash-print-report.js`
-16. `/js/gate-input-page-controller.js`
-17. `/js/prc-dash-archive-actions.js`
-18. `/js/prc-dash-archive-print-cleanup.js`
-19. `/js/gate-permission-guard.js?v=phase-1a-permission-guard-20260709`
-20. `/js/gate-app-shell-controller.js?v=phase-1a-app-shell-20260709`
-21. `/js/prc-dash-modal-mobile-validation.js`
-22. `/js/gate-tablet-processing-modal-fix.js?v=tablet-processing-modal-20260707`
-23. `/js/gate-airport-phone-layout-fix.js?v=airport-phone-hard-fix-20260707`
-24. `/js/gate-render-stability-fix.js?v=render-stability-20260707`
-25. `/js/prc-dash-processing-loaded-summary.js`
-26. `/js/prc-dash-current-summary-live-records.js`
-27. `/js/gate-archive-print-controller.js`
-28. `/js/gate-premium-metrics-controller.js?v=premium-metrics-20260709d`
-29. `/js/prc-dash-overtime-audit.js`
+9. `/js/gate-status-board-controller.js?v=phase-1c-status-board-20260709`
+10. `/js/prc-dash-dorm-flag-validation.js`
+11. `/js/prc-dash-auditorium-location.js`
+12. `/js/prc-dash-processing-context-menu.js`
+13. `/js/gate-processing-final-time-commit.js?v=final-time-commit-20260707`
+14. `/js/gate-airman-modal-close-safety.js?v=airman-modal-close-20260707`
+15. `/js/gate-bus-workflow-controller.js`
+16. `/js/prc-dash-print-report.js`
+17. `/js/gate-input-page-controller.js`
+18. `/js/prc-dash-archive-actions.js`
+19. `/js/prc-dash-archive-print-cleanup.js`
+20. `/js/gate-permission-guard.js?v=phase-1a-permission-guard-20260709`
+21. `/js/gate-app-shell-controller.js?v=phase-1a-app-shell-20260709`
+22. `/js/prc-dash-modal-mobile-validation.js`
+23. `/js/gate-tablet-processing-modal-fix.js?v=tablet-processing-modal-20260707`
+24. `/js/gate-airport-phone-layout-fix.js?v=airport-phone-hard-fix-20260707`
+25. `/js/gate-render-stability-fix.js?v=render-stability-20260707`
+26. `/js/prc-dash-processing-loaded-summary.js`
+27. `/js/prc-dash-current-summary-live-records.js`
+28. `/js/gate-archive-print-controller.js`
+29. `/js/gate-premium-metrics-controller.js?v=premium-metrics-20260709d`
+30. `/js/prc-dash-overtime-audit.js`
 
 ## Removed from active runtime in Phase 1A
 
@@ -77,9 +78,9 @@ These files remain in the repository for traceability but are no longer loaded b
 4. `/js/gate-mobile-app-shell-finalizer.js?v=mobile-app-shell-finalizer-20260707`
 5. `/js/gate-desktop-nav-restore.js?v=desktop-nav-restore-20260707`
 
-## Runtime pattern after Phase 1B
+## Runtime pattern after Phase 1C
 
-The runtime is still a monolithic base app plus injected controllers, but shell and metric ownership have been consolidated.
+The runtime is still a monolithic base app plus injected controllers, but the largest board surfaces now have active owners.
 
 `GateAppShell` is the final active owner for:
 
@@ -99,7 +100,7 @@ The runtime is still a monolithic base app plus injected controllers, but shell 
 - Airman allowed local arrival support
 - non-instructor context-menu blocking
 
-Status Board metrics are now served as source-owned markup by middleware:
+Status Board metrics are served as source-owned markup by middleware:
 
 - `stat-arrived`
 - `stat-expected`
@@ -108,27 +109,24 @@ Status Board metrics are now served as source-owned markup by middleware:
 
 The served base runtime writes directly to those IDs. `gate-premium-metrics-controller.js` is now a passive sync/cleanup guard only, not a card-creation layer.
 
+`GateStatusBoardController` is now the active owner for:
+
+- Status Board dorm columns
+- Status Board dorm card rendering handoff
+- Active Buses En Route panel
+- board timer text refresh
+- legacy `renderDormColumns` / `buildBoardDormCard` compatibility functions
+
+`prc-dash-final-audit.js` has been narrowed to:
+
+- document identity support
+- Squadron Board creation/rendering
+- close-dorm final-time safety
+- compatibility `GateDormBoardController` API
+
 ## Remaining high-risk active overlap areas
 
-1. Dorm cards / board columns
-   - `index.html`
-   - `gate-component-contracts.js`
-   - `prc-dash-final-audit.js`
-
-2. Active bus panel
-   - `index.html`
-   - `gate-ui-hooks.js` active bus controller
-   - `gate-bus-workflow-controller.js`
-
-3. Bus workflow
-   - `index.html`
-   - `gate-bus-workflow-controller.js`
-
-4. Input / initialization
-   - `index.html`
-   - `gate-input-page-controller.js`
-
-5. Processing page / modal
+1. Processing page / modal
    - `index.html`
    - `prc-dash-processing-context-menu.js`
    - `gate-processing-final-time-commit.js`
@@ -136,11 +134,27 @@ The served base runtime writes directly to those IDs. `gate-premium-metrics-cont
    - `gate-tablet-processing-modal-fix.js`
    - `prc-dash-modal-mobile-validation.js`
 
-6. Mobile page-specific patches
+2. Bus workflow
+   - `index.html`
+   - `gate-bus-workflow-controller.js`
+   - Status Board active bus panel now reads these records, but does not create them.
+
+3. Input / initialization
+   - `index.html`
+   - `gate-input-page-controller.js`
+
+4. Archive / reporting
+   - `gate-ui-hooks.js` archive schema controller
+   - `prc-dash-archive-actions.js`
+   - `prc-dash-archive-print-cleanup.js`
+   - `gate-archive-print-controller.js`
+   - `prc-dash-current-summary-live-records.js`
+
+5. Mobile page-specific patches
    - `gate-airport-phone-layout-fix.js`
    - `prc-dash-modal-mobile-validation.js`
    - `gate-tablet-processing-modal-fix.js`
 
-## Phase 1B conclusion
+## Phase 1C conclusion
 
-Navigation / App Shell / Mobile Shell and Status Board top metrics now have canonical active owners. The next recommended phase is Phase 1C — Status Board dorm cards and active bus panel ownership.
+Navigation / App Shell / Mobile Shell, Status Board metrics, Status Board dorm columns, and Active Buses En Route now have active canonical owners. The next recommended phase is Processing page and modal ownership consolidation.

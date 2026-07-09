@@ -1,5 +1,5 @@
 // GATE Phase 2 Processing Controller
-// Canonical owner for Processing page cards, dorm modal, edit modal workflow, instructor context menu, Airman-safe close, and final-time commit.
+// Canonical owner for Processing page cards, dorm modal, edit modal workflow, instructor context menu, Airman-safe close, final-time commit, and reopen access.
 (function () {
   'use strict';
 
@@ -61,6 +61,15 @@
     const match = raw.match(/^(\d{1,5})(?::([0-5]\d))?$/);
     if (!match) return raw;
     return `${String(Number(match[1] || 0)).padStart(2, '0')}:${match[2] || '00'}`;
+  }
+
+  function parseTimerToSeconds(value) {
+    const normalized = normalizeFinalTime(value, '00:00');
+    const match = String(normalized || '').match(/^(\d{1,5}):([0-5]\d)$/);
+    if (!match) return 0;
+    const minutes = Number(match[1] || 0);
+    const seconds = Number(match[2] || 0);
+    return Math.max(0, (minutes * 60) + seconds);
   }
 
   function computeFinalTime(dorm) {
@@ -191,6 +200,17 @@
     try { modalDormId = id || null; } catch (_) {}
   }
 
+  function instructorModalActions(id, state) {
+    const editButton = `<button type="button" data-processing-action="edit-record" data-dorm-id="${esc(id)}" class="px-6 py-3 rounded-lg font-bold text-white text-lg" style="background:var(--surface-alt);border:1px solid var(--border);color:var(--text);">EDIT RECORD</button>`;
+    if (state === 'empty') {
+      return `<button type="button" data-processing-action="open-dorm" data-dorm-id="${esc(id)}" class="px-8 py-3 rounded-lg font-bold text-white text-lg" style="background:var(--green);">OPEN DORM</button>${editButton}`;
+    }
+    if (state === 'open') {
+      return `<button type="button" data-processing-action="close-dorm" data-dorm-id="${esc(id)}" class="px-8 py-3 rounded-lg font-bold text-white text-lg" style="background:var(--red);">CLOSE DORM</button>${editButton}`;
+    }
+    return `<button type="button" data-processing-action="reopen-dorm" data-dorm-id="${esc(id)}" class="px-8 py-3 rounded-lg font-bold text-white text-lg" style="background:linear-gradient(135deg,#2563eb,#38bdf8);">REOPEN DORM</button>${editButton}`;
+  }
+
   function openDormModalCanonical(id) {
     const dorm = dormById(id);
     if (!dorm) return;
@@ -229,12 +249,8 @@
         actionSection.innerHTML = state === 'closed'
           ? '<div class="text-muted font-bold">DORM CLOSED</div>'
           : '<div class="text-muted font-bold text-center">Instructor access required to open or close dorms.</div>';
-      } else if (state === 'empty') {
-        actionSection.innerHTML = `<button type="button" data-processing-action="open-dorm" data-dorm-id="${esc(id)}" class="px-8 py-3 rounded-lg font-bold text-white text-lg" style="background:var(--green);">OPEN DORM</button>`;
-      } else if (state === 'open') {
-        actionSection.innerHTML = `<button type="button" data-processing-action="close-dorm" data-dorm-id="${esc(id)}" class="px-8 py-3 rounded-lg font-bold text-white text-lg" style="background:var(--red);">CLOSE DORM</button>`;
       } else {
-        actionSection.innerHTML = '<div class="text-muted font-bold">DORM CLOSED</div>';
+        actionSection.innerHTML = instructorModalActions(id, state);
       }
     }
 
@@ -346,6 +362,46 @@
     closeDormModalCanonical();
   }
 
+  async function reopenDormCanonical(id, options = {}) {
+    if (!isInstructor()) return;
+    const dorm = dormById(id || activeEditDormId() || activeModalDormId());
+    if (!dorm) return;
+    if (String(dorm.state || '').toLowerCase() !== 'closed') {
+      setEditMessage('Only closed dorms can be reopened.', true);
+      return;
+    }
+
+    const finalTimeSource = options.finalTime || document.getElementById('edit-closed-timer')?.value || dorm.closed_timer || '00:00';
+    const elapsedSeconds = parseTimerToSeconds(finalTimeSource);
+    const reopenedOpenedAt = new Date(Date.now() - (elapsedSeconds * 1000)).toISOString();
+    const now = new Date().toISOString();
+
+    await updateDorm({
+      ...dorm,
+      state: 'open',
+      phase: 'OPEN',
+      opened_at: reopenedOpenedAt,
+      closed_at: '',
+      closed_timer: '',
+      manual_reopen_override: 'true',
+      updated_at: now
+    }, {
+      source: 'processing-reopen-dorm',
+      soundType: 'dorm_open',
+      soundPayload: { dorm_id: dorm.__backendId, dorm_name: dorm.dorm_name || '', action: 'reopen_dorm' }
+    });
+
+    closeDormModalCanonical();
+    closeDormEditModalCanonical();
+  }
+
+  function reopenDormFromEditModalCanonical(event) {
+    event?.preventDefault?.();
+    event?.stopPropagation?.();
+    event?.stopImmediatePropagation?.();
+    return reopenDormCanonical(activeEditDormId(), { finalTime: document.getElementById('edit-closed-timer')?.value });
+  }
+
   function ensureEditExtensionFields() {
     const notes = document.getElementById('edit-notes');
     if (!notes || document.getElementById('edit-assigned-airman')) return;
@@ -413,6 +469,9 @@
       modal.classList.remove('hidden');
       modal.setAttribute('aria-hidden', 'false');
     }
+
+    window.GateDormReopenController?.refresh?.();
+    window.runGateHooks?.('afterModalOpen', { modal: 'dorm-edit', dormId: id, source: 'gate-processing-controller' });
   }
 
   function closeDormEditModalCanonical() {
@@ -526,7 +585,9 @@
     const state = String(dorm.state || 'empty').toLowerCase();
     const stateAction = state === 'empty'
       ? '<button type="button" class="gate-processing-context-action" data-processing-context-action="open" role="menuitem">Open Record <span>▶</span></button>'
-      : (state === 'open' ? '<button type="button" class="gate-processing-context-action danger" data-processing-context-action="close" role="menuitem">Close Record <span>■</span></button>' : '');
+      : (state === 'open'
+        ? '<button type="button" class="gate-processing-context-action danger" data-processing-context-action="close" role="menuitem">Close Record <span>■</span></button>'
+        : '<button type="button" class="gate-processing-context-action" data-processing-context-action="reopen" role="menuitem">Reopen Record <span>↻</span></button>');
 
     menu.innerHTML = `
       <div class="gate-processing-context-title">
@@ -564,6 +625,8 @@
       const id = action.dataset.dormId || activeModalDormId();
       if (action.dataset.processingAction === 'open-dorm') openDormCanonical(id);
       if (action.dataset.processingAction === 'close-dorm') closeDormCanonical(id);
+      if (action.dataset.processingAction === 'reopen-dorm') reopenDormCanonical(id);
+      if (action.dataset.processingAction === 'edit-record') openDormEditModalCanonical(event, id);
       return;
     }
 
@@ -577,6 +640,7 @@
       if (actionName === 'edit') openDormEditModalCanonical(event, dorm.__backendId);
       if (actionName === 'open') openDormCanonical(dorm.__backendId);
       if (actionName === 'close') closeDormCanonical(dorm.__backendId);
+      if (actionName === 'reopen') reopenDormCanonical(dorm.__backendId);
       if (actionName === 'processing') openDormModalCanonical(dorm.__backendId);
       if (actionName === 'delete') {
         openDormEditModalCanonical(event, dorm.__backendId);
@@ -645,6 +709,7 @@
     window.openDormEditModal = openDormEditModalCanonical;
     window.closeDormEditModal = closeDormEditModalCanonical;
     window.deleteDormitoryFromEditModal = deleteDormitoryCanonical;
+    window.reopenDormFromEditModal = reopenDormFromEditModalCanonical;
 
     try { renderProcessingPage = renderProcessingPageCanonical; } catch (_) {}
     try { buildProcCard = processingCard; } catch (_) {}
@@ -660,6 +725,7 @@
     try { openDormEditModal = openDormEditModalCanonical; } catch (_) {}
     try { closeDormEditModal = closeDormEditModalCanonical; } catch (_) {}
     try { deleteDormitoryFromEditModal = deleteDormitoryCanonical; } catch (_) {}
+    try { reopenDormFromEditModal = reopenDormFromEditModalCanonical; } catch (_) {}
   }
 
   function bindEditSubmit() {
@@ -683,6 +749,7 @@
     bindEditSubmit();
     document.addEventListener('click', handleProcessingClick, true);
     document.addEventListener('contextmenu', handleProcessingContext, true);
+    document.addEventListener('auxclick', handleProcessingContext, true);
     document.addEventListener('keydown', handleKeydown, true);
     window.addEventListener('resize', hideContextMenu, true);
     window.registerGateHook?.('afterRenderAll', () => scheduleRender({ force: true }));
@@ -698,6 +765,7 @@
       closeDormModal: closeDormModalCanonical,
       openDorm: openDormCanonical,
       closeDorm: closeDormCanonical,
+      reopenDorm: reopenDormCanonical,
       openDormEditModal: openDormEditModalCanonical,
       closeDormEditModal: closeDormEditModalCanonical,
       saveLoad: saveLoadCanonical,

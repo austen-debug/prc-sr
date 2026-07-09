@@ -1,7 +1,7 @@
 # GATE Active Runtime Stack
 
-Status: Phase 3 updated baseline
-Scope: Documents the active served runtime after App Shell, Status Board, Processing, and Airport/local arrival workflow ownership consolidation.
+Status: Phase 4 updated baseline
+Scope: Documents the active served runtime after App Shell, Status Board, Processing, Airport/local arrival, and Input/Week Group initialization ownership consolidation.
 
 ## Purpose
 
@@ -51,7 +51,7 @@ Injected by middleware in current order:
 12. `/js/prc-dash-auditorium-location.js`
 13. `/js/gate-bus-workflow-controller.js?v=phase-3-bus-workflow-20260709`
 14. `/js/prc-dash-print-report.js`
-15. `/js/gate-input-page-controller.js`
+15. `/js/gate-input-page-controller.js?v=phase-4-input-20260709`
 16. `/js/prc-dash-archive-actions.js`
 17. `/js/prc-dash-archive-print-cleanup.js`
 18. `/js/gate-permission-guard.js?v=phase-1a-permission-guard-20260709`
@@ -84,7 +84,7 @@ These files remain in the repository for traceability but are no longer loaded b
 2. `/js/gate-processing-final-time-commit.js?v=final-time-commit-20260707`
 3. `/js/gate-airman-modal-close-safety.js?v=airman-modal-close-20260707`
 
-## Runtime pattern after Phase 3
+## Runtime pattern after Phase 4
 
 The runtime is still a monolithic base app plus injected controllers, but the major operational workflow surfaces now have active owners.
 
@@ -151,6 +151,21 @@ The served base runtime writes directly to those IDs. `gate-premium-metrics-cont
 - bus-related surface refresh after create/update/arrival confirmation
 - legacy airport/local bus global compatibility functions
 
+`GateInputPageController` is the active owner for:
+
+- batch grid rendering
+- batch row state
+- clear row behavior
+- horizontal tab flow
+- Total Expected calculation
+- Week Group initialization
+- receiving Day One / Day Two windows
+- Space Force dorm checkbox column
+- Band / Space Force mutual exclusion
+- dorm payload validation before create
+- receiving-window and Space Force metadata injection into dorm/archive payloads
+- legacy Input global compatibility functions
+
 `prc-dash-final-audit.js` has been narrowed to:
 
 - document identity support
@@ -160,22 +175,18 @@ The served base runtime writes directly to those IDs. `gate-premium-metrics-cont
 
 ## Remaining high-risk active overlap areas
 
-1. Input / initialization
-   - `index.html`
-   - `gate-input-page-controller.js`
-
-2. Archive / reporting
+1. Archive / reporting
    - `gate-ui-hooks.js` archive schema controller
    - `prc-dash-archive-actions.js`
    - `prc-dash-archive-print-cleanup.js`
    - `gate-archive-print-controller.js`
    - `prc-dash-current-summary-live-records.js`
 
-3. Mobile page-specific patches
+2. Mobile page-specific patches
    - `gate-airport-phone-layout-fix.js`
    - `prc-dash-modal-mobile-validation.js`
    - `gate-tablet-processing-modal-fix.js`
 
-## Phase 3 conclusion
+## Phase 4 conclusion
 
-Navigation / App Shell / Mobile Shell, Status Board metrics, Status Board dorm columns, Active Buses En Route, Processing page/modal behavior, and Airport/local arrival bus workflow now have active canonical owners. The next recommended phase is Input / Week Group initialization consolidation.
+Navigation / App Shell / Mobile Shell, Status Board metrics, Status Board dorm columns, Active Buses En Route, Processing page/modal behavior, Airport/local arrival bus workflow, and Input / Week Group initialization now have active canonical owners. The next recommended phase is Archive / Reporting / Closeout consolidation.

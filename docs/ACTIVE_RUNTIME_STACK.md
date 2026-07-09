@@ -1,7 +1,7 @@
 # GATE Active Runtime Stack
 
-Status: Phase Zero baseline
-Scope: Documentation only. No runtime behavior changes.
+Status: Phase 1A updated baseline
+Scope: Documents the active served runtime after Navigation / App Shell / Mobile Shell consolidation.
 
 ## Purpose
 
@@ -17,6 +17,7 @@ Injected directly by middleware:
 4. `/css/gate-components.css`
 5. `/css/gate-utilities-access.css`
 6. `/css/gate-premium-metrics.css?v=premium-metrics-20260709c`
+7. `/css/gate-app-shell.css?v=phase-1a-app-shell-20260709`
 
 Imported by `gate-utilities-access.css`:
 
@@ -29,7 +30,7 @@ Legacy / important note:
 
 - `public/index.html` still contains substantial inline CSS and original shell layout rules.
 - Some CSS is also injected dynamically by JavaScript controllers.
-- The effective CSS cascade is therefore middleware CSS + imported CSS + static inline legacy CSS + script-injected style blocks.
+- `gate-app-shell.css` is now the final active CSS owner for app shell/nav/page isolation presentation.
 
 ## Active JavaScript load path
 
@@ -53,73 +54,73 @@ Injected by middleware in current order:
 16. `/js/gate-input-page-controller.js`
 17. `/js/prc-dash-archive-actions.js`
 18. `/js/prc-dash-archive-print-cleanup.js`
-19. `/js/prc-dash-access-control-validation.js`
-20. `/js/prc-dash-modal-mobile-validation.js`
-21. `/js/gate-tablet-processing-modal-fix.js?v=tablet-processing-modal-20260707`
-22. `/js/gate-mobile-nav-routing-fix.js?v=mobile-nav-routing-20260707`
-23. `/js/gate-mobile-shell-redesign.js?v=mobile-shell-redesign-20260707b`
-24. `/js/gate-mobile-app-shell-finalizer.js?v=mobile-app-shell-finalizer-20260707`
-25. `/js/gate-desktop-nav-restore.js?v=desktop-nav-restore-20260707`
-26. `/js/gate-airport-phone-layout-fix.js?v=airport-phone-hard-fix-20260707`
-27. `/js/gate-render-stability-fix.js?v=render-stability-20260707`
-28. `/js/prc-dash-processing-loaded-summary.js`
-29. `/js/prc-dash-current-summary-live-records.js`
-30. `/js/gate-archive-print-controller.js`
-31. `/js/gate-premium-metrics-controller.js?v=premium-metrics-20260709c`
-32. `/js/prc-dash-overtime-audit.js`
+19. `/js/gate-permission-guard.js?v=phase-1a-permission-guard-20260709`
+20. `/js/gate-app-shell-controller.js?v=phase-1a-app-shell-20260709`
+21. `/js/prc-dash-modal-mobile-validation.js`
+22. `/js/gate-tablet-processing-modal-fix.js?v=tablet-processing-modal-20260707`
+23. `/js/gate-airport-phone-layout-fix.js?v=airport-phone-hard-fix-20260707`
+24. `/js/gate-render-stability-fix.js?v=render-stability-20260707`
+25. `/js/prc-dash-processing-loaded-summary.js`
+26. `/js/prc-dash-current-summary-live-records.js`
+27. `/js/gate-archive-print-controller.js`
+28. `/js/gate-premium-metrics-controller.js?v=premium-metrics-20260709c`
+29. `/js/prc-dash-overtime-audit.js`
 
-## Runtime pattern
+## Removed from active runtime in Phase 1A
 
-The current runtime is a monolithic base app with many injected compatibility and ownership layers.
+These files remain in the repository for traceability but are no longer loaded by middleware:
 
-`public/index.html` still contains:
+1. `/js/prc-dash-access-control-validation.js`
+2. `/js/gate-mobile-nav-routing-fix.js?v=mobile-nav-routing-20260707`
+3. `/js/gate-mobile-shell-redesign.js?v=mobile-shell-redesign-20260707b`
+4. `/js/gate-mobile-app-shell-finalizer.js?v=mobile-app-shell-finalizer-20260707`
+5. `/js/gate-desktop-nav-restore.js?v=desktop-nav-restore-20260707`
 
-- static page markup
-- global state
-- base data SDK adapter
-- base routing and navigation
-- base render loop
-- base board rendering
-- base Processing modal logic
-- base Airport and local arrival handlers
-- base Input week-group initialization
-- base archive and closeout workflow
-- base timer and sound logic
+## Runtime pattern after Phase 1A
 
-The injected controllers then patch, replace, wrap, or supplement the base runtime.
+The runtime is still a monolithic base app plus injected controllers, but shell ownership has been consolidated.
 
-## High-risk active overlap areas
+`GateAppShell` is now the final active owner for:
 
-1. Navigation / routing
-   - `index.html`
-   - `prc-dash-final-audit.js`
-   - `gate-access-control-controller.js`
-   - `gate-mobile-nav-routing-fix.js`
-   - `gate-mobile-shell-redesign.js`
-   - `gate-mobile-app-shell-finalizer.js`
-   - `gate-desktop-nav-restore.js`
+- `showPage`
+- `buildNav`
+- role-aware nav rendering
+- page isolation
+- mobile drawer state
+- moving system controls into/out of the mobile drawer
+- Week Group chip display
 
-2. Status Board metrics
+`GatePermissionGuard` is now responsible for:
+
+- protected action guards
+- instructor-only form blocking
+- Squadron limited interaction blocking
+- Airman allowed local arrival support
+- non-instructor context-menu blocking
+
+## Remaining high-risk active overlap areas
+
+1. Status Board metrics
    - `index.html`
    - `prc-dash-board-header.js`
    - `gate-premium-metrics-controller.js`
    - `gate-premium-metrics.css`
 
-3. Dorm cards / board columns
+2. Dorm cards / board columns
    - `index.html`
    - `gate-component-contracts.js`
    - `prc-dash-final-audit.js`
 
-4. Bus workflow
+3. Bus workflow
    - `index.html`
    - `gate-bus-workflow-controller.js`
    - `gate-ui-hooks.js` active bus controller
 
-5. Input / initialization
+4. Input / initialization
    - `index.html`
    - `gate-input-page-controller.js`
 
-6. Processing page / modal
+5. Processing page / modal
    - `index.html`
    - `prc-dash-processing-context-menu.js`
    - `gate-processing-final-time-commit.js`
@@ -127,15 +128,11 @@ The injected controllers then patch, replace, wrap, or supplement the base runti
    - `gate-tablet-processing-modal-fix.js`
    - `prc-dash-modal-mobile-validation.js`
 
-7. Mobile / responsive shell
-   - `gate-mobile-nav-routing-fix.js`
-   - `gate-mobile-shell-redesign.js`
-   - `gate-mobile-app-shell-finalizer.js`
-   - `gate-desktop-nav-restore.js`
+6. Mobile page-specific patches
    - `gate-airport-phone-layout-fix.js`
    - `prc-dash-modal-mobile-validation.js`
    - `gate-tablet-processing-modal-fix.js`
 
-## Phase Zero conclusion
+## Phase 1A conclusion
 
-The runtime is operational but over-layered. The next development phase should not add more feature patches. It should consolidate ownership, beginning with navigation / app shell / mobile shell, then Status Board, then Processing, then Airport/Input/Archives.
+Navigation / App Shell / Mobile Shell now has a canonical active owner. The next recommended phase is Status Board metrics and board header ownership cleanup, so metric compatibility sinks and old header remnants can be removed source-first.

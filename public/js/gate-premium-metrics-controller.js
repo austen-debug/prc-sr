@@ -48,6 +48,9 @@
     const boardHeader = document.querySelector('#page-board .board-header');
     if (!boardHeader) return;
 
+    const hasCanonicalMetrics = Boolean(boardHeader.querySelector('.gate-metrics-container'));
+    if (!hasCanonicalMetrics) return;
+
     boardHeader.classList.add('gate-premium-metrics-enabled');
     boardHeader.dataset.owner = boardHeader.dataset.owner || 'gate-status-metrics-source';
 

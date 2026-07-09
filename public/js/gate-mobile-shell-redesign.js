@@ -7,10 +7,16 @@
   let scheduled = false;
   let placeholder = null;
 
+  const MOBILE_SHELL_MEDIA = '(max-width: 767px), (pointer: coarse) and (max-width: 1024px) and (max-height: 560px)';
+  const MOBILE_LANDSCAPE_MEDIA = '(pointer: coarse) and (max-width: 1024px) and (max-height: 560px)';
   const TOOL_IDS = ['sound-toggle-btn', 'fullscreen-btn', 'role-toggle'];
 
   function isMobileShell() {
-    return window.matchMedia('(max-width: 767px), (pointer: coarse) and (max-width: 900px)').matches;
+    return window.matchMedia(MOBILE_SHELL_MEDIA).matches;
+  }
+
+  function isPhoneLandscapeShell() {
+    return window.matchMedia(MOBILE_LANDSCAPE_MEDIA).matches;
   }
 
   function nav() {
@@ -96,7 +102,7 @@
     const style = document.createElement('style');
     style.id = 'gate-mobile-shell-redesign';
     style.textContent = `
-      @media (max-width: 767px), (pointer: coarse) and (max-width: 900px) {
+      @media ${MOBILE_SHELL_MEDIA} {
         :root {
           --gate-phone-banner-h: 28px;
           --gate-phone-shell-h: 62px;
@@ -104,6 +110,8 @@
           --gate-phone-page-top: calc(var(--gate-phone-banner-h) + var(--gate-phone-shell-h) + 12px);
           --gate-phone-safe-x: max(12px, env(safe-area-inset-left), env(safe-area-inset-right));
           --gate-phone-control-h: clamp(42px, 10vw, 48px);
+          --gate-phone-radius: clamp(14px, 3.8vw, 18px);
+          --gate-phone-gap: clamp(8px, 2.4vw, 12px);
           --gate-phone-font-xs: clamp(0.66rem, 2.6vw, 0.76rem);
           --gate-phone-font-sm: clamp(0.76rem, 3vw, 0.88rem);
           --gate-phone-font-md: clamp(0.88rem, 3.6vw, 1rem);
@@ -114,6 +122,12 @@
           width: 100% !important;
           max-width: 100% !important;
           overflow-x: hidden !important;
+          -webkit-text-size-adjust: 100% !important;
+          text-size-adjust: 100% !important;
+        }
+
+        body.gate-mobile-shell-redesigned {
+          overscroll-behavior-x: none !important;
         }
 
         .security-banner-fixed {
@@ -152,10 +166,11 @@
           grid-template-columns: minmax(0, 1fr) auto !important;
           grid-template-rows: 1fr !important;
           grid-template-areas: 'week menu' !important;
-          gap: 10px !important;
+          gap: var(--gate-phone-gap) !important;
           align-items: center !important;
           overflow: visible !important;
           z-index: 10040 !important;
+          box-sizing: border-box !important;
         }
 
         .app-nav::before,
@@ -188,13 +203,15 @@
           max-width: 100% !important;
           height: var(--gate-phone-control-h) !important;
           min-height: var(--gate-phone-control-h) !important;
-          padding: 0 0.78rem !important;
+          padding: 0 0.82rem !important;
           overflow: hidden !important;
           white-space: nowrap !important;
           text-overflow: ellipsis !important;
           font-size: var(--gate-phone-font-sm) !important;
+          line-height: 1 !important;
           letter-spacing: 0.055em !important;
-          border-radius: 16px !important;
+          border-radius: var(--gate-phone-radius) !important;
+          box-sizing: border-box !important;
         }
 
         #mobile-menu-trigger,
@@ -210,10 +227,12 @@
           min-height: var(--gate-phone-control-h) !important;
           padding: 0 0.74rem !important;
           font-size: var(--gate-phone-font-xs) !important;
+          line-height: 1 !important;
           letter-spacing: 0.08em !important;
-          border-radius: 16px !important;
+          border-radius: var(--gate-phone-radius) !important;
           text-transform: uppercase !important;
           touch-action: manipulation !important;
+          box-sizing: border-box !important;
         }
 
         #main-nav-menu,
@@ -239,6 +258,7 @@
           overscroll-behavior: contain !important;
           -webkit-overflow-scrolling: touch !important;
           border-radius: 20px !important;
+          box-sizing: border-box !important;
         }
 
         #main-nav-menu.mobile-dropdown-active,
@@ -266,12 +286,14 @@
           height: var(--gate-phone-control-h) !important;
           min-height: var(--gate-phone-control-h) !important;
           padding: 0 0.92rem !important;
-          border-radius: 14px !important;
+          border-radius: calc(var(--gate-phone-radius) - 2px) !important;
           font-size: var(--gate-phone-font-sm) !important;
+          line-height: 1 !important;
           letter-spacing: 0.055em !important;
           text-align: left !important;
           grid-column: 1 / -1 !important;
           touch-action: manipulation !important;
+          box-sizing: border-box !important;
         }
 
         .gate-mobile-system-menu-panel {
@@ -306,12 +328,14 @@
           height: var(--gate-phone-control-h) !important;
           min-height: var(--gate-phone-control-h) !important;
           padding: 0 0.92rem !important;
-          border-radius: 14px !important;
+          border-radius: calc(var(--gate-phone-radius) - 2px) !important;
           justify-content: flex-start !important;
           font-size: var(--gate-phone-font-sm) !important;
+          line-height: 1 !important;
           letter-spacing: 0.055em !important;
           text-align: left !important;
           touch-action: manipulation !important;
+          box-sizing: border-box !important;
         }
 
         body:not(.fullscreen-board) .page,
@@ -331,20 +355,74 @@
           box-sizing: border-box !important;
         }
 
-        .surface,
-        .tactical-glass-card,
-        .gate-dorm-card,
-        .dorm-card,
-        .modal-content {
+        body.gate-mobile-shell-redesigned .page > *,
+        body.gate-mobile-shell-redesigned .page .surface,
+        body.gate-mobile-shell-redesigned .page .tactical-glass-card,
+        body.gate-mobile-shell-redesigned .page .max-w-3xl,
+        body.gate-mobile-shell-redesigned .page .max-w-4xl,
+        body.gate-mobile-shell-redesigned .page .max-w-5xl,
+        body.gate-mobile-shell-redesigned .gate-dorm-card,
+        body.gate-mobile-shell-redesigned .dorm-card,
+        body.gate-mobile-shell-redesigned .modal-content {
           max-width: 100% !important;
+          min-width: 0 !important;
           box-sizing: border-box !important;
         }
 
-        input,
-        select,
-        textarea,
-        button {
+        body.gate-mobile-shell-redesigned input,
+        body.gate-mobile-shell-redesigned select,
+        body.gate-mobile-shell-redesigned textarea,
+        body.gate-mobile-shell-redesigned button {
           font-size: max(16px, var(--gate-phone-font-sm)) !important;
+        }
+      }
+
+      @media ${MOBILE_LANDSCAPE_MEDIA} {
+        :root {
+          --gate-phone-banner-h: 24px;
+          --gate-phone-shell-h: 54px;
+          --gate-phone-page-top: calc(var(--gate-phone-banner-h) + var(--gate-phone-shell-h) + 8px);
+          --gate-phone-safe-x: max(10px, env(safe-area-inset-left), env(safe-area-inset-right));
+          --gate-phone-control-h: clamp(38px, 8.2vh, 42px);
+          --gate-phone-radius: 14px;
+          --gate-phone-gap: 8px;
+          --gate-phone-font-xs: clamp(0.60rem, 1.35vw, 0.70rem);
+          --gate-phone-font-sm: clamp(0.70rem, 1.55vw, 0.82rem);
+        }
+
+        #main-nav-menu,
+        #nav-links,
+        .nav-group-left {
+          grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+          max-height: calc(100dvh - var(--gate-phone-page-top) - 10px) !important;
+          gap: 8px !important;
+          padding: 8px !important;
+        }
+
+        #main-nav-menu .nav-btn,
+        #nav-links .nav-btn,
+        .nav-group-left .nav-btn,
+        #main-nav-menu .gate-component-nav-button,
+        #nav-links .gate-component-nav-button,
+        .nav-group-left .gate-component-nav-button {
+          grid-column: auto !important;
+          min-height: var(--gate-phone-control-h) !important;
+        }
+
+        .gate-mobile-system-menu-panel {
+          grid-column: 1 / -1 !important;
+        }
+
+        .gate-mobile-system-controls {
+          grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        }
+
+        body:not(.fullscreen-board) #page-board,
+        body:not(.fullscreen-board) #page-processing,
+        body:not(.fullscreen-board) #page-airport,
+        body:not(.fullscreen-board) #page-input,
+        body:not(.fullscreen-board) #page-archives {
+          padding-top: var(--gate-phone-page-top) !important;
         }
       }
     `;
@@ -374,13 +452,12 @@
     installStyles();
     ensureMobileMenuButtonExists();
 
-    if (isMobileShell()) {
-      document.body.classList.add('gate-mobile-shell-redesigned');
-      moveToolsIntoMenu();
-    } else {
-      document.body.classList.remove('gate-mobile-shell-redesigned');
-      restoreToolsToHeader();
-    }
+    const mobile = isMobileShell();
+    document.body.classList.toggle('gate-mobile-shell-redesigned', mobile);
+    document.body.classList.toggle('gate-mobile-shell-landscape', mobile && isPhoneLandscapeShell());
+
+    if (mobile) moveToolsIntoMenu();
+    else restoreToolsToHeader();
   }
 
   function schedule() {

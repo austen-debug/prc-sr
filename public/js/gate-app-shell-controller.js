@@ -1,4 +1,4 @@
-// GATE Phase 1A App Shell Controller
+// GATE Phase 7 App Shell Controller
 // Canonical owner for route switching, role-aware nav rendering, page isolation, and mobile drawer behavior.
 (function () {
   'use strict';
@@ -20,11 +20,14 @@
 
   const MOBILE_MEDIA = '(max-width: 767px), (pointer: coarse) and (max-width: 1024px) and (max-height: 560px)';
   const SYSTEM_CONTROL_IDS = ['role-toggle', 'fullscreen-btn', 'sound-toggle-btn', 'theme-toggle-btn'];
+  const SYNTHETIC_CLICK_SUPPRESS_MS = 650;
 
   let installed = false;
   let drawerOpen = false;
   let systemAnchor = null;
   let scheduled = false;
+  let suppressClickUntil = 0;
+  let suppressNextOutsideClick = false;
 
   function esc(value) {
     return String(value ?? '')
@@ -99,13 +102,21 @@
 
   function ensureSquadronPage() {
     if (document.getElementById('page-squadron')) return true;
-    try {
-      window.GateDormBoardController?.refresh?.();
-    } catch (_) {}
-    try {
-      if (!document.getElementById('page-squadron') && typeof renderAll === 'function') renderAll();
-    } catch (_) {}
+    try { window.GateDormBoardController?.refresh?.(); } catch (_) {}
+    try { if (!document.getElementById('page-squadron') && typeof renderAll === 'function') renderAll(); } catch (_) {}
     return Boolean(document.getElementById('page-squadron'));
+  }
+
+  function ensureScrim() {
+    let scrim = document.getElementById('gate-mobile-menu-scrim');
+    if (!scrim) {
+      scrim = document.createElement('div');
+      scrim.id = 'gate-mobile-menu-scrim';
+      scrim.dataset.owner = 'gate-app-shell-controller';
+      scrim.setAttribute('aria-hidden', 'true');
+      document.body.appendChild(scrim);
+    }
+    return scrim;
   }
 
   function ensureShellStructure() {
@@ -137,20 +148,24 @@
     const theme = document.querySelector('button[aria-label="Toggle theme"], button[aria-label*="theme" i]');
     if (theme && !theme.id) theme.id = 'theme-toggle-btn';
 
-    if (!document.getElementById('mobile-menu-trigger')) {
-      const trigger = document.createElement('button');
+    let trigger = document.getElementById('mobile-menu-trigger');
+    if (!trigger) {
+      trigger = document.createElement('button');
       trigger.id = 'mobile-menu-trigger';
       trigger.type = 'button';
       trigger.className = 'nav-btn mobile-only-control gate-component-nav-button';
       trigger.dataset.component = 'mobile-nav-trigger';
       trigger.dataset.owner = 'gate-app-shell-controller';
-      trigger.setAttribute('aria-label', 'Toggle Operational Navigation Menu');
-      trigger.setAttribute('aria-haspopup', 'true');
-      trigger.setAttribute('aria-expanded', 'false');
-      trigger.setAttribute('aria-controls', 'main-nav-menu');
       trigger.innerHTML = '<span>Menu</span><span class="menu-arrow-indicator" aria-hidden="true">▾</span>';
       nav.insertBefore(trigger, menu);
     }
+    trigger.type = 'button';
+    trigger.setAttribute('aria-label', 'Toggle Operational Navigation Menu');
+    trigger.setAttribute('aria-haspopup', 'true');
+    trigger.setAttribute('aria-expanded', drawerOpen ? 'true' : 'false');
+    trigger.setAttribute('aria-controls', 'main-nav-menu');
+
+    ensureScrim();
   }
 
   function ensureSystemAnchor() {
@@ -221,7 +236,8 @@
     let wg = '';
     try { wg = typeof getActiveWG === 'function' ? getActiveWG() : ''; } catch (_) { wg = ''; }
     const text = wg || 'No WG';
-    el.textContent = isMobileShell() && wg ? `WG ${String(wg).replace(/^WG\s*/i, '')}` : text;
+    const cleaned = String(wg || '').replace(/^WG\s*/i, '').trim();
+    el.textContent = isMobileShell() && cleaned ? `WG ${cleaned}` : text;
     el.title = text;
     el.setAttribute('aria-label', `Active week group: ${text}`);
     el.dataset.owner = 'gate-app-shell-controller';
@@ -243,11 +259,8 @@
     menu.querySelectorAll('[data-gate-nav-button="true"]').forEach(button => button.remove());
     const panel = document.getElementById('gate-shell-system-panel');
     const html = pages.map(navButton).join('');
-    if (panel && panel.parentNode === menu) {
-      panel.insertAdjacentHTML('beforebegin', html);
-    } else {
-      menu.innerHTML = html;
-    }
+    if (panel && panel.parentNode === menu) panel.insertAdjacentHTML('beforebegin', html);
+    else menu.innerHTML = html;
 
     menu.dataset.role = role();
     menu.dataset.owner = 'gate-app-shell-controller';
@@ -303,16 +316,12 @@
   }
 
   function patchGlobals() {
-    const gateShowPage = function gateAppShellShowPage(page) {
-      return go(page);
-    };
+    const gateShowPage = function gateAppShellShowPage(page) { return go(page); };
     gateShowPage.__gateAppShellController = true;
     window.showPage = gateShowPage;
     try { showPage = gateShowPage; } catch (_) {}
 
-    const gateBuildNav = function gateAppShellBuildNav() {
-      renderNav();
-    };
+    const gateBuildNav = function gateAppShellBuildNav() { renderNav(); };
     gateBuildNav.__gateAppShellController = true;
     window.buildNav = gateBuildNav;
     try { buildNav = gateBuildNav; } catch (_) {}
@@ -322,11 +331,13 @@
     drawerOpen = Boolean(open) && isMobileShell();
     const menu = menuElement();
     const trigger = document.getElementById('mobile-menu-trigger');
+    const scrim = ensureScrim();
     document.body.classList.toggle('gate-mobile-drawer-open', drawerOpen);
     if (menu) {
       menu.classList.toggle('mobile-dropdown-active', drawerOpen);
       menu.setAttribute('aria-hidden', drawerOpen ? 'false' : 'true');
     }
+    if (scrim) scrim.setAttribute('aria-hidden', drawerOpen ? 'false' : 'true');
     if (trigger) trigger.setAttribute('aria-expanded', drawerOpen ? 'true' : 'false');
   }
 
@@ -344,20 +355,63 @@
     return true;
   }
 
-  function handleClick(event) {
+  function isShellClickTarget(event) {
+    return Boolean(event.target?.closest?.('#mobile-menu-trigger, #main-nav-menu, #gate-mobile-menu-scrim'));
+  }
+
+  function handleShellInteraction(event, pointerSource = false) {
     const trigger = event.target?.closest?.('#mobile-menu-trigger');
     if (trigger) {
+      if (pointerSource) suppressClickUntil = Date.now() + SYNTHETIC_CLICK_SUPPRESS_MS;
+      suppressNextOutsideClick = false;
       event.preventDefault?.();
       event.stopPropagation?.();
       event.stopImmediatePropagation?.();
       setDrawer(!drawerOpen);
-      return;
+      return true;
     }
 
-    if (routeFromEvent(event)) return;
+    if (routeFromEvent(event)) {
+      if (pointerSource) suppressClickUntil = Date.now() + SYNTHETIC_CLICK_SUPPRESS_MS;
+      suppressNextOutsideClick = false;
+      return true;
+    }
+
+    const scrim = event.target?.closest?.('#gate-mobile-menu-scrim');
+    if (scrim) {
+      if (pointerSource) suppressClickUntil = Date.now() + SYNTHETIC_CLICK_SUPPRESS_MS;
+      suppressNextOutsideClick = true;
+      event.preventDefault?.();
+      event.stopPropagation?.();
+      event.stopImmediatePropagation?.();
+      setDrawer(false);
+      return true;
+    }
 
     const menu = menuElement();
-    if (drawerOpen && menu && !menu.contains(event.target)) setDrawer(false);
+    if (drawerOpen && menu && !menu.contains(event.target)) {
+      if (pointerSource) suppressClickUntil = Date.now() + SYNTHETIC_CLICK_SUPPRESS_MS;
+      suppressNextOutsideClick = true;
+      setDrawer(false);
+      return true;
+    }
+    return false;
+  }
+
+  function handlePointerUp(event) {
+    if (!isMobileShell()) return;
+    handleShellInteraction(event, true);
+  }
+
+  function handleClick(event) {
+    if (isMobileShell() && Date.now() < suppressClickUntil && (isShellClickTarget(event) || suppressNextOutsideClick)) {
+      event.preventDefault?.();
+      event.stopPropagation?.();
+      event.stopImmediatePropagation?.();
+      suppressNextOutsideClick = false;
+      return;
+    }
+    handleShellInteraction(event, false);
   }
 
   function handleKeydown(event) {
@@ -385,6 +439,7 @@
     installed = true;
     ensureShellStructure();
     patchGlobals();
+    document.addEventListener('pointerup', handlePointerUp, true);
     document.addEventListener('click', handleClick, true);
     document.addEventListener('keydown', handleKeydown, true);
     window.addEventListener('resize', scheduleSync, true);

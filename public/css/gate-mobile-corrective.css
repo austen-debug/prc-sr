@@ -1,0 +1,331 @@
+/* GATE Phase 7C Mobile Corrective Layer
+   Phone-only overrides after removing legacy mobile polish import. This layer fixes menu visibility, metric sizing, and legacy mini-watermarks. */
+
+@media (max-width: 767px), (pointer: coarse) and (max-width: 1024px) {
+  :root {
+    --gate-shell-banner-height: 28px;
+    --gate-shell-mobile-nav-height: 60px;
+    --gate-mobile-drawer-top: calc(var(--gate-shell-banner-height) + var(--gate-shell-mobile-nav-height) + 8px);
+    --gate-phone-safe-x: max(12px, env(safe-area-inset-left), env(safe-area-inset-right));
+  }
+
+  html,
+  body.gate-app-shell-ready {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100vw !important;
+    overflow-x: hidden !important;
+  }
+
+  body.gate-app-shell-ready .security-banner-fixed {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    height: var(--gate-shell-banner-height) !important;
+    min-height: var(--gate-shell-banner-height) !important;
+    max-height: var(--gate-shell-banner-height) !important;
+    z-index: 12000 !important;
+  }
+
+  body.gate-app-shell-ready .app-nav.command-header-bar,
+  body.gate-app-shell-ready .app-nav,
+  body.gate-app-shell-ready .command-header-bar {
+    position: fixed !important;
+    top: var(--gate-shell-banner-height) !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: auto !important;
+    inset: var(--gate-shell-banner-height) 0 auto 0 !important;
+    width: 100vw !important;
+    height: var(--gate-shell-mobile-nav-height) !important;
+    min-height: var(--gate-shell-mobile-nav-height) !important;
+    max-height: var(--gate-shell-mobile-nav-height) !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    grid-template-rows: 1fr !important;
+    grid-template-areas: 'week menu' !important;
+    align-items: center !important;
+    gap: 12px !important;
+    padding: 8px var(--gate-phone-safe-x) !important;
+    overflow: visible !important;
+    z-index: 11950 !important;
+    box-sizing: border-box !important;
+  }
+
+  body.gate-app-shell-ready .app-nav.command-header-bar::before,
+  body.gate-app-shell-ready .app-nav::before,
+  body.gate-app-shell-ready .command-header-bar::before {
+    display: none !important;
+    content: none !important;
+  }
+
+  body.gate-app-shell-ready #week-group-display {
+    grid-area: week !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    height: 44px !important;
+    min-height: 44px !important;
+    max-height: 44px !important;
+    justify-self: stretch !important;
+    align-self: center !important;
+  }
+
+  body.gate-app-shell-ready #mobile-menu-trigger {
+    grid-area: menu !important;
+    display: inline-flex !important;
+    position: relative !important;
+    inset: auto !important;
+    justify-self: end !important;
+    align-self: center !important;
+    width: 116px !important;
+    min-width: 116px !important;
+    max-width: 116px !important;
+    height: 44px !important;
+    min-height: 44px !important;
+    max-height: 44px !important;
+    z-index: 11960 !important;
+    transform: none !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+  }
+
+  body.gate-app-shell-ready #gate-mobile-menu-scrim {
+    position: fixed !important;
+    display: none !important;
+    top: var(--gate-mobile-drawer-top) !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    z-index: 11940 !important;
+    background: rgba(2, 6, 23, 0.48) !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    transform: none !important;
+  }
+
+  body.gate-app-shell-ready.gate-mobile-drawer-open #gate-mobile-menu-scrim {
+    display: block !important;
+  }
+
+  body.gate-app-shell-ready #main-nav-menu,
+  body.gate-app-shell-ready #nav-links,
+  body.gate-app-shell-ready .nav-group-left {
+    position: fixed !important;
+    top: var(--gate-mobile-drawer-top) !important;
+    left: var(--gate-phone-safe-x) !important;
+    right: var(--gate-phone-safe-x) !important;
+    bottom: auto !important;
+    inset: var(--gate-mobile-drawer-top) var(--gate-phone-safe-x) auto var(--gate-phone-safe-x) !important;
+    z-index: 11970 !important;
+    display: none !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-auto-rows: minmax(44px, auto) !important;
+    gap: 8px !important;
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: calc(100vw - (var(--gate-phone-safe-x) * 2)) !important;
+    max-height: min(68dvh, 520px) !important;
+    margin: 0 !important;
+    padding: 12px !important;
+    border: 1px solid rgba(184, 190, 199, 0.28) !important;
+    border-radius: 20px !important;
+    background: rgba(8, 18, 31, 0.98) !important;
+    box-shadow: 0 24px 58px rgba(0, 0, 0, 0.62) !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    transform: none !important;
+    translate: none !important;
+    scale: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    box-sizing: border-box !important;
+  }
+
+  body.theme-light.gate-app-shell-ready #main-nav-menu,
+  body.theme-light.gate-app-shell-ready #nav-links,
+  body.theme-light.gate-app-shell-ready .nav-group-left {
+    background: rgba(255, 255, 255, 0.98) !important;
+  }
+
+  body.gate-app-shell-ready #main-nav-menu.mobile-dropdown-active,
+  body.gate-app-shell-ready #nav-links.mobile-dropdown-active,
+  body.gate-app-shell-ready .nav-group-left.mobile-dropdown-active,
+  body.gate-app-shell-ready.gate-mobile-drawer-open #main-nav-menu,
+  body.gate-app-shell-ready.gate-mobile-drawer-open #nav-links,
+  body.gate-app-shell-ready.gate-mobile-drawer-open .nav-group-left {
+    display: grid !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    transform: none !important;
+  }
+
+  body.gate-app-shell-ready #main-nav-menu .nav-btn,
+  body.gate-app-shell-ready #nav-links .nav-btn,
+  body.gate-app-shell-ready .nav-group-left .nav-btn,
+  body.gate-app-shell-ready #main-nav-menu .gate-component-nav-button,
+  body.gate-app-shell-ready #nav-links .gate-component-nav-button,
+  body.gate-app-shell-ready .nav-group-left .gate-component-nav-button,
+  body.gate-app-shell-ready .gate-shell-system-controls button {
+    position: relative !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    height: 46px !important;
+    min-height: 46px !important;
+    max-height: none !important;
+    padding: 0 14px !important;
+    border-radius: 14px !important;
+    font-size: 15px !important;
+    line-height: 1 !important;
+    letter-spacing: 0.06em !important;
+    text-align: left !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    transform: none !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+
+  body.gate-app-shell-ready .gate-shell-system-panel,
+  body.gate-app-shell-ready .gate-shell-system-controls {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 8px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  body.gate-app-shell-ready.gate-mobile-drawer-open #page-board,
+  body.gate-app-shell-ready.gate-mobile-drawer-open #page-airport,
+  body.gate-app-shell-ready.gate-mobile-drawer-open #page-input,
+  body.gate-app-shell-ready.gate-mobile-drawer-open #page-processing,
+  body.gate-app-shell-ready.gate-mobile-drawer-open #page-archives,
+  body.gate-app-shell-ready.gate-mobile-drawer-open #page-squadron {
+    filter: none !important;
+    -webkit-filter: none !important;
+    transform: none !important;
+  }
+
+  body.gate-app-shell-ready .page.active,
+  body.gate-app-shell-ready #page-board.active,
+  body.gate-app-shell-ready #page-squadron.active {
+    padding-top: calc(var(--gate-shell-banner-height) + var(--gate-shell-mobile-nav-height) + 10px) !important;
+    padding-left: var(--gate-phone-safe-x) !important;
+    padding-right: var(--gate-phone-safe-x) !important;
+    max-width: 100vw !important;
+    overflow-x: hidden !important;
+    box-sizing: border-box !important;
+  }
+
+  #page-board .board-header.gate-premium-metrics-enabled {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 12px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  #page-board .gate-metrics-container {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  #page-board .gate-metrics-container .metric-card {
+    min-width: 0 !important;
+    min-height: 96px !important;
+    padding: 14px 14px 12px !important;
+    border-radius: 14px !important;
+    overflow: hidden !important;
+  }
+
+  #page-board .gate-metrics-container .metric-label {
+    max-width: 100% !important;
+    font-size: 11px !important;
+    letter-spacing: 0.13em !important;
+    line-height: 1 !important;
+  }
+
+  #page-board .gate-metrics-container .metric-value {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    margin-top: 10px !important;
+    color: var(--metric-value-text, #ffffff) !important;
+    font-size: clamp(2rem, 10.5vw, 3rem) !important;
+    font-weight: 800 !important;
+    line-height: 0.95 !important;
+    letter-spacing: -0.08em !important;
+    white-space: nowrap !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    font-variant-numeric: tabular-nums !important;
+  }
+
+  #page-board #stat-last,
+  #page-board #stat-local {
+    font-size: clamp(1.72rem, 8vw, 2.28rem) !important;
+    letter-spacing: -0.12em !important;
+  }
+
+  #page-board .gate-active-buses-block,
+  #page-board .metric-block.gate-active-buses-block {
+    position: relative !important;
+    overflow: hidden !important;
+    min-height: 150px !important;
+    padding: 18px !important;
+    border-radius: 16px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  #page-board .gate-active-buses-block::before,
+  #page-board .gate-active-buses-block::after,
+  #page-board .metric-block.gate-active-buses-block::before,
+  #page-board .metric-block.gate-active-buses-block::after,
+  #page-board #active-buses::before,
+  #page-board #active-buses::after,
+  #page-board .gate-active-buses-block img,
+  #page-board .gate-active-buses-block svg,
+  #page-board .gate-active-buses-block picture {
+    display: none !important;
+    content: none !important;
+    opacity: 0 !important;
+    background: none !important;
+    background-image: none !important;
+    visibility: hidden !important;
+  }
+
+  #page-board .dorm-dashboard,
+  #page-squadron .dorm-dashboard {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 14px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  #page-board .dorm-col-content,
+  #page-squadron .dorm-col-content {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 12px !important;
+    min-width: 0 !important;
+  }
+}

@@ -65,18 +65,33 @@
     `;
   }
 
+  function ensureCompatibilitySinks(boardHeader) {
+    let sinks = document.getElementById('gate-metric-compat-sinks');
+    if (!sinks) {
+      sinks = document.createElement('div');
+      sinks.id = 'gate-metric-compat-sinks';
+      sinks.setAttribute('aria-hidden', 'true');
+      sinks.style.cssText = 'display:none!important;visibility:hidden!important;position:absolute!important;inset:auto!important;width:0!important;height:0!important;overflow:hidden!important;';
+      sinks.innerHTML = '<span id="metric-arrived"></span><span id="metric-airport"></span>';
+      boardHeader.appendChild(sinks);
+    }
+    return sinks;
+  }
+
   function swapLegacyBlocks() {
     const boardHeader = document.querySelector('#page-board .board-header');
     if (!boardHeader) return null;
 
     let container = boardHeader.querySelector('.gate-metrics-container');
     if (!container) {
-      const legacyArrived = document.getElementById('metric-arrived')?.closest('.metric-block');
-      const legacyAirport = document.getElementById('metric-airport')?.closest('.metric-block');
+      const legacyArrivedEl = document.getElementById('metric-arrived');
+      const legacyAirportEl = document.getElementById('metric-airport');
+      const legacyArrived = legacyArrivedEl?.closest('.metric-block');
+      const legacyAirport = legacyAirportEl?.closest('.metric-block');
       const activeBuses = document.getElementById('active-buses')?.closest('.metric-block');
 
-      const arrivedSeed = document.getElementById('metric-arrived')?.textContent || '';
-      const airportSeed = document.getElementById('metric-airport')?.textContent || '';
+      const arrivedSeed = legacyArrivedEl?.textContent || '';
+      const airportSeed = legacyAirportEl?.textContent || '';
 
       const template = document.createElement('template');
       template.innerHTML = canonicalMetricsHtml().trim();
@@ -91,6 +106,7 @@
       legacyArrived?.remove();
       legacyAirport?.remove();
       boardHeader.querySelectorAll('#gate-premium-metrics, .gate-premium-metrics').forEach(element => element.remove());
+      ensureCompatibilitySinks(boardHeader);
 
       activeBuses?.classList.add('gate-active-buses-block');
       boardHeader.classList.add('gate-premium-metrics-enabled');
@@ -98,6 +114,8 @@
       const arrivedData = parseArrivedExpected(arrivedSeed);
       const airportData = parseLastLocal(airportSeed);
       updateDirectStats(arrivedData, airportData);
+    } else {
+      ensureCompatibilitySinks(boardHeader);
     }
 
     return container;

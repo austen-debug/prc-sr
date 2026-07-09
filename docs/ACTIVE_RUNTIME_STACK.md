@@ -1,7 +1,7 @@
 # GATE Active Runtime Stack
 
-Status: Phase 7 updated baseline
-Scope: Documents the active served runtime after App Shell, Status Board, Processing, Airport/local arrival, Input/Week Group initialization, Archive/Reporting/Closeout, lifecycle hook ownership cleanup, legacy print-report runtime removal, and initial mobile UI stabilization.
+Status: Phase 7B updated baseline
+Scope: Documents the active served runtime after App Shell, Status Board, Processing, Airport/local arrival, Input/Week Group initialization, Archive/Reporting/Closeout, lifecycle hook ownership cleanup, legacy print-report runtime removal, initial mobile UI stabilization, and render stability guard cleanup.
 
 ## Purpose
 
@@ -57,7 +57,7 @@ Injected by middleware in current order:
 18. `/js/prc-dash-modal-mobile-validation.js`
 19. `/js/gate-tablet-processing-modal-fix.js?v=tablet-processing-modal-20260707`
 20. `/js/gate-airport-phone-layout-fix.js?v=airport-phone-hard-fix-20260707`
-21. `/js/gate-render-stability-fix.js?v=render-stability-20260707`
+21. `/js/gate-render-stability-fix.js?v=phase-7b-style-guard-20260709`
 22. `/js/prc-dash-processing-loaded-summary.js`
 23. `/js/gate-premium-metrics-controller.js?v=premium-metrics-20260709d`
 24. `/js/prc-dash-overtime-audit.js`
@@ -119,7 +119,25 @@ It no longer owns:
 - Safe closeout
 - Closeout button ownership
 
-## Runtime pattern after Phase 7
+## Narrowed in Phase 7B
+
+`/js/gate-render-stability-fix.js` remains active, but it is now style-only.
+
+It owns:
+
+- desktop-only board/processing visual stabilization CSS
+- desktop-only watermark stabilization for board/processing pages
+
+It no longer owns:
+
+- `.page.active` mutation
+- page visibility detection
+- mutation observation
+- document click handling
+- document mousemove handling
+- lifecycle hook subscriptions
+
+## Runtime pattern after Phase 7B
 
 The runtime is still a monolithic base app plus injected controllers, but the major operational workflow surfaces now have active owners.
 
@@ -133,6 +151,7 @@ The runtime is still a monolithic base app plus injected controllers, but the ma
 
 - `showPage`
 - `buildNav`
+- `.page.active` state
 - role-aware nav rendering
 - page isolation
 - mobile drawer state
@@ -229,6 +248,11 @@ The served base runtime writes directly to those IDs. `gate-premium-metrics-cont
 - Space Force dorm/bus metadata preservation
 - legacy archive/print/closeout global compatibility functions
 
+`GateRenderStabilityStyleGuard` is a style-only guard for:
+
+- desktop Status Board visual stability
+- desktop Processing visual stability
+
 `prc-dash-final-audit.js` has been narrowed to:
 
 - document identity support
@@ -244,14 +268,13 @@ The remaining active overlap is now primarily page-specific UI polish:
    - `gate-airport-phone-layout-fix.js`
    - `prc-dash-modal-mobile-validation.js`
    - `gate-tablet-processing-modal-fix.js`
-   - `gate-render-stability-fix.js`
 
 2. Legacy base shell
    - `public/index.html` still contains legacy inline CSS, legacy functions, and legacy page markup that are being overridden by canonical controllers.
 
 3. Input/archive metadata bridge
-   - `GateInputPageController` still helps preserve receiving-window metadata for archive payloads. This is acceptable for the Phase 7 baseline, but should eventually be folded fully into `GateArchiveController`.
+   - `GateInputPageController` still helps preserve receiving-window metadata for archive payloads. This is acceptable for the Phase 7B baseline, but should eventually be folded fully into `GateArchiveController`.
 
-## Phase 7 conclusion
+## Phase 7B conclusion
 
-Navigation / App Shell / Mobile Shell, lifecycle hooks, Status Board metrics, Status Board dorm columns, Active Buses En Route, Processing page/modal behavior, Airport/local arrival bus workflow, Input / Week Group initialization, Archive / Reporting / Closeout, mobile drawer behavior, and mobile board watermark presentation now have active canonical owners. The next recommended work is device validation followed by deeper page-by-page mobile polish.
+Navigation / App Shell / Mobile Shell, lifecycle hooks, Status Board metrics, Status Board dorm columns, Active Buses En Route, Processing page/modal behavior, Airport/local arrival bus workflow, Input / Week Group initialization, Archive / Reporting / Closeout, mobile drawer behavior, mobile board watermark presentation, and desktop render-stability styling now have active canonical owners or style-only guards. The next recommended work is device validation followed by page-by-page mobile polish.

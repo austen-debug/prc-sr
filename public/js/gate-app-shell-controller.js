@@ -295,7 +295,7 @@
     setDrawer(false);
 
     try { if (typeof updateRoleVisibility === 'function') updateRoleVisibility(); } catch (_) {}
-    try { window.GateAccessControlController?.enforce?.(); } catch (_) {}
+    try { window.GatePermissionGuard?.enforce?.(); } catch (_) {}
     if (!options.silent) {
       try { window.runGateHooks?.('afterPageChange', { page: targetPage, source: 'gate-app-shell-controller' }); } catch (_) {}
     }
@@ -386,7 +386,6 @@
     ensureShellStructure();
     patchGlobals();
     document.addEventListener('click', handleClick, true);
-    document.addEventListener('touchend', handleClick, true);
     document.addEventListener('keydown', handleKeydown, true);
     window.addEventListener('resize', scheduleSync, true);
     window.addEventListener('orientationchange', scheduleSync, true);

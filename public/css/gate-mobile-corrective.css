@@ -1,5 +1,5 @@
-/* GATE Phase 7C Mobile Corrective Layer
-   Phone-only overrides after removing legacy mobile polish import. This layer fixes menu visibility, metric sizing, and legacy mini-watermarks. */
+/* GATE Phase 7D Mobile Corrective Layer
+   Phone-only overrides. This layer forces a fail-safe sheet menu, readable metrics, and low-visibility watermarks. */
 
 @media (max-width: 767px), (pointer: coarse) and (max-width: 1024px) {
   :root {
@@ -100,7 +100,7 @@
     right: 0 !important;
     bottom: 0 !important;
     z-index: 11940 !important;
-    background: rgba(2, 6, 23, 0.48) !important;
+    background: rgba(2, 6, 23, 0.38) !important;
     -webkit-backdrop-filter: none !important;
     backdrop-filter: none !important;
     transform: none !important;
@@ -110,71 +110,87 @@
     display: block !important;
   }
 
+  /* The legacy inline nav menu is kept for compatibility but hidden on phone.
+     The fail-safe phone sheet below owns visible mobile navigation. */
   body.gate-app-shell-ready #main-nav-menu,
   body.gate-app-shell-ready #nav-links,
   body.gate-app-shell-ready .nav-group-left {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
+
+  body.gate-app-shell-ready #gate-mobile-nav-sheet {
     position: fixed !important;
     top: var(--gate-mobile-drawer-top) !important;
     left: var(--gate-phone-safe-x) !important;
     right: var(--gate-phone-safe-x) !important;
-    bottom: auto !important;
-    inset: var(--gate-mobile-drawer-top) var(--gate-phone-safe-x) auto var(--gate-phone-safe-x) !important;
-    z-index: 11970 !important;
+    z-index: 11980 !important;
     display: none !important;
     grid-template-columns: minmax(0, 1fr) !important;
-    grid-auto-rows: minmax(44px, auto) !important;
-    gap: 8px !important;
+    gap: 10px !important;
     width: auto !important;
-    min-width: 0 !important;
     max-width: calc(100vw - (var(--gate-phone-safe-x) * 2)) !important;
-    max-height: min(68dvh, 520px) !important;
+    max-height: min(72dvh, 560px) !important;
     margin: 0 !important;
-    padding: 12px !important;
-    border: 1px solid rgba(184, 190, 199, 0.28) !important;
-    border-radius: 20px !important;
-    background: rgba(8, 18, 31, 0.98) !important;
-    box-shadow: 0 24px 58px rgba(0, 0, 0, 0.62) !important;
+    padding: 14px !important;
+    border: 1px solid rgba(184, 190, 199, 0.32) !important;
+    border-radius: 22px !important;
+    background: rgba(8, 18, 31, 0.99) !important;
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.66) !important;
     overflow-x: hidden !important;
     overflow-y: auto !important;
     -webkit-overflow-scrolling: touch !important;
     transform: none !important;
-    translate: none !important;
-    scale: none !important;
     visibility: hidden !important;
     opacity: 0 !important;
     pointer-events: none !important;
-    filter: none !important;
-    -webkit-backdrop-filter: none !important;
-    backdrop-filter: none !important;
     box-sizing: border-box !important;
   }
 
-  body.theme-light.gate-app-shell-ready #main-nav-menu,
-  body.theme-light.gate-app-shell-ready #nav-links,
-  body.theme-light.gate-app-shell-ready .nav-group-left {
-    background: rgba(255, 255, 255, 0.98) !important;
+  body.theme-light.gate-app-shell-ready #gate-mobile-nav-sheet {
+    background: rgba(255, 255, 255, 0.99) !important;
+    box-shadow: 0 24px 64px rgba(15, 23, 42, 0.24) !important;
   }
 
-  body.gate-app-shell-ready #main-nav-menu.mobile-dropdown-active,
-  body.gate-app-shell-ready #nav-links.mobile-dropdown-active,
-  body.gate-app-shell-ready .nav-group-left.mobile-dropdown-active,
-  body.gate-app-shell-ready.gate-mobile-drawer-open #main-nav-menu,
-  body.gate-app-shell-ready.gate-mobile-drawer-open #nav-links,
-  body.gate-app-shell-ready.gate-mobile-drawer-open .nav-group-left {
+  body.gate-app-shell-ready #gate-mobile-nav-sheet.gate-mobile-sheet-open,
+  body.gate-app-shell-ready.gate-mobile-drawer-open #gate-mobile-nav-sheet {
     display: grid !important;
     visibility: visible !important;
     opacity: 1 !important;
     pointer-events: auto !important;
-    transform: none !important;
   }
 
-  body.gate-app-shell-ready #main-nav-menu .nav-btn,
-  body.gate-app-shell-ready #nav-links .nav-btn,
-  body.gate-app-shell-ready .nav-group-left .nav-btn,
-  body.gate-app-shell-ready #main-nav-menu .gate-component-nav-button,
-  body.gate-app-shell-ready #nav-links .gate-component-nav-button,
-  body.gate-app-shell-ready .nav-group-left .gate-component-nav-button,
-  body.gate-app-shell-ready .gate-shell-system-controls button {
+  body.gate-app-shell-ready #gate-mobile-nav-sheet .gate-mobile-sheet-title,
+  body.gate-app-shell-ready #gate-mobile-nav-sheet .gate-shell-system-label {
+    color: var(--text-muted, #94a3b8) !important;
+    font-size: 11px !important;
+    font-weight: 950 !important;
+    letter-spacing: 0.16em !important;
+    line-height: 1 !important;
+    text-transform: uppercase !important;
+  }
+
+  body.gate-app-shell-ready #gate-mobile-nav-sheet .gate-mobile-sheet-routes,
+  body.gate-app-shell-ready #gate-mobile-nav-sheet .gate-shell-system-controls,
+  body.gate-app-shell-ready #gate-mobile-nav-sheet .gate-mobile-sheet-system {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 8px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  body.gate-app-shell-ready #gate-mobile-nav-sheet .gate-mobile-sheet-system {
+    margin-top: 4px !important;
+    padding-top: 10px !important;
+    border-top: 1px solid rgba(184, 190, 199, 0.18) !important;
+  }
+
+  body.gate-app-shell-ready #gate-mobile-nav-sheet .nav-btn,
+  body.gate-app-shell-ready #gate-mobile-nav-sheet .gate-component-nav-button,
+  body.gate-app-shell-ready #gate-mobile-nav-sheet button {
     position: relative !important;
     display: flex !important;
     align-items: center !important;
@@ -182,12 +198,12 @@
     width: 100% !important;
     min-width: 0 !important;
     max-width: 100% !important;
-    height: 46px !important;
-    min-height: 46px !important;
+    height: 48px !important;
+    min-height: 48px !important;
     max-height: none !important;
-    padding: 0 14px !important;
+    padding: 0 15px !important;
     border-radius: 14px !important;
-    font-size: 15px !important;
+    font-size: 16px !important;
     line-height: 1 !important;
     letter-spacing: 0.06em !important;
     text-align: left !important;
@@ -197,15 +213,6 @@
     transform: none !important;
     opacity: 1 !important;
     visibility: visible !important;
-  }
-
-  body.gate-app-shell-ready .gate-shell-system-panel,
-  body.gate-app-shell-ready .gate-shell-system-controls {
-    display: grid !important;
-    grid-template-columns: minmax(0, 1fr) !important;
-    gap: 8px !important;
-    width: 100% !important;
-    min-width: 0 !important;
   }
 
   body.gate-app-shell-ready.gate-mobile-drawer-open #page-board,
@@ -248,17 +255,20 @@
 
   #page-board .gate-metrics-container .metric-card {
     min-width: 0 !important;
-    min-height: 96px !important;
-    padding: 14px 14px 12px !important;
+    min-height: 92px !important;
+    padding: 13px 12px 11px !important;
     border-radius: 14px !important;
     overflow: hidden !important;
   }
 
   #page-board .gate-metrics-container .metric-label {
     max-width: 100% !important;
-    font-size: 11px !important;
-    letter-spacing: 0.13em !important;
+    font-size: 9px !important;
+    letter-spacing: 0.08em !important;
     line-height: 1 !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    white-space: nowrap !important;
   }
 
   #page-board .gate-metrics-container .metric-value {
@@ -268,7 +278,7 @@
     min-width: 0 !important;
     margin-top: 10px !important;
     color: var(--metric-value-text, #ffffff) !important;
-    font-size: clamp(2rem, 10.5vw, 3rem) !important;
+    font-size: clamp(1.72rem, 8.8vw, 2.55rem) !important;
     font-weight: 800 !important;
     line-height: 0.95 !important;
     letter-spacing: -0.08em !important;
@@ -280,8 +290,8 @@
 
   #page-board #stat-last,
   #page-board #stat-local {
-    font-size: clamp(1.72rem, 8vw, 2.28rem) !important;
-    letter-spacing: -0.12em !important;
+    font-size: clamp(1.38rem, 6.35vw, 1.86rem) !important;
+    letter-spacing: -0.11em !important;
   }
 
   #page-board .gate-active-buses-block,
@@ -310,6 +320,22 @@
     background: none !important;
     background-image: none !important;
     visibility: hidden !important;
+  }
+
+  body.gate-app-shell-ready.gate-app-shell-mobile #page-board.active::before,
+  body.gate-app-shell-ready.gate-app-shell-mobile #page-processing.active::before,
+  body.gate-app-shell-ready.gate-app-shell-mobile #page-squadron.active::before {
+    width: min(86vw, 520px) !important;
+    height: min(86vw, 520px) !important;
+    top: 58% !important;
+    opacity: 0.022 !important;
+    filter: grayscale(100%) !important;
+  }
+
+  body.theme-light.gate-app-shell-ready.gate-app-shell-mobile #page-board.active::before,
+  body.theme-light.gate-app-shell-ready.gate-app-shell-mobile #page-processing.active::before,
+  body.theme-light.gate-app-shell-ready.gate-app-shell-mobile #page-squadron.active::before {
+    opacity: 0.018 !important;
   }
 
   #page-board .dorm-dashboard,

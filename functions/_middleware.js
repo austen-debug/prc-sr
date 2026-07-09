@@ -25,7 +25,7 @@ const UI_HEAD_SCRIPTS = [
   '<script src="/js/gate-processing-controller.js?v=phase-2-processing-20260709b" defer></script>',
   '<script src="/js/prc-dash-dorm-flag-validation.js" defer></script>',
   '<script src="/js/prc-dash-auditorium-location.js" defer></script>',
-  '<script src="/js/gate-bus-workflow-controller.js" defer></script>',
+  '<script src="/js/gate-bus-workflow-controller.js?v=phase-3-bus-workflow-20260709" defer></script>',
   '<script src="/js/prc-dash-print-report.js" defer></script>',
   '<script src="/js/gate-input-page-controller.js" defer></script>',
   '<script src="/js/prc-dash-archive-actions.js" defer></script>',

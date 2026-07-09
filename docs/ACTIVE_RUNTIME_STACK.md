@@ -1,7 +1,7 @@
 # GATE Active Runtime Stack
 
-Status: Phase 6B updated baseline
-Scope: Documents the active served runtime after App Shell, Status Board, Processing, Airport/local arrival, Input/Week Group initialization, Archive/Reporting/Closeout, lifecycle hook ownership cleanup, and legacy print-report runtime removal.
+Status: Phase 7 updated baseline
+Scope: Documents the active served runtime after App Shell, Status Board, Processing, Airport/local arrival, Input/Week Group initialization, Archive/Reporting/Closeout, lifecycle hook ownership cleanup, legacy print-report runtime removal, and initial mobile UI stabilization.
 
 ## Purpose
 
@@ -17,7 +17,7 @@ Injected directly by middleware:
 4. `/css/gate-components.css`
 5. `/css/gate-utilities-access.css`
 6. `/css/gate-premium-metrics.css?v=premium-metrics-20260709d`
-7. `/css/gate-app-shell.css?v=phase-1a-app-shell-20260709`
+7. `/css/gate-app-shell.css?v=phase-7-mobile-shell-20260709`
 
 Imported by `gate-utilities-access.css`:
 
@@ -30,7 +30,7 @@ Legacy / important note:
 
 - `public/index.html` still contains substantial inline CSS and original shell layout rules.
 - Some CSS is also injected dynamically by JavaScript controllers.
-- `gate-app-shell.css` is the final active CSS owner for app shell/nav/page isolation presentation.
+- `gate-app-shell.css` is the final active CSS owner for app shell/nav/page isolation presentation, mobile drawer presentation, and mobile watermark correction.
 - `gate-premium-metrics.css` is the active component style layer for the canonical four-card Status Board metric row.
 
 ## Active JavaScript load path
@@ -53,7 +53,7 @@ Injected by middleware in current order:
 14. `/js/gate-input-page-controller.js?v=phase-4-input-20260709`
 15. `/js/gate-archive-controller.js?v=phase-5-archive-20260709`
 16. `/js/gate-permission-guard.js?v=phase-1a-permission-guard-20260709`
-17. `/js/gate-app-shell-controller.js?v=phase-1a-app-shell-20260709`
+17. `/js/gate-app-shell-controller.js?v=phase-7-mobile-shell-20260709`
 18. `/js/prc-dash-modal-mobile-validation.js`
 19. `/js/gate-tablet-processing-modal-fix.js?v=tablet-processing-modal-20260707`
 20. `/js/gate-airport-phone-layout-fix.js?v=airport-phone-hard-fix-20260707`
@@ -119,7 +119,7 @@ It no longer owns:
 - Safe closeout
 - Closeout button ownership
 
-## Runtime pattern after Phase 6B
+## Runtime pattern after Phase 7
 
 The runtime is still a monolithic base app plus injected controllers, but the major operational workflow surfaces now have active owners.
 
@@ -136,8 +136,11 @@ The runtime is still a monolithic base app plus injected controllers, but the ma
 - role-aware nav rendering
 - page isolation
 - mobile drawer state
+- mobile drawer scrim/backdrop
+- mobile pointer/touch routing and synthetic-click suppression
 - moving system controls into/out of the mobile drawer
 - Week Group chip display
+- mobile watermark positioning/scaling for board-style pages
 
 `GatePermissionGuard` is responsible for:
 
@@ -235,7 +238,7 @@ The served base runtime writes directly to those IDs. `gate-premium-metrics-cont
 
 ## Remaining high-risk active overlap areas
 
-The remaining active overlap is now primarily UI-specific and mobile-specific:
+The remaining active overlap is now primarily page-specific UI polish:
 
 1. Mobile/page-specific patches
    - `gate-airport-phone-layout-fix.js`
@@ -247,8 +250,8 @@ The remaining active overlap is now primarily UI-specific and mobile-specific:
    - `public/index.html` still contains legacy inline CSS, legacy functions, and legacy page markup that are being overridden by canonical controllers.
 
 3. Input/archive metadata bridge
-   - `GateInputPageController` still helps preserve receiving-window metadata for archive payloads. This is acceptable for the Phase 6B baseline, but should eventually be folded fully into `GateArchiveController`.
+   - `GateInputPageController` still helps preserve receiving-window metadata for archive payloads. This is acceptable for the Phase 7 baseline, but should eventually be folded fully into `GateArchiveController`.
 
-## Phase 6B conclusion
+## Phase 7 conclusion
 
-Navigation / App Shell / Mobile Shell, lifecycle hooks, Status Board metrics, Status Board dorm columns, Active Buses En Route, Processing page/modal behavior, Airport/local arrival bus workflow, Input / Week Group initialization, and Archive / Reporting / Closeout now have active canonical owners. Archive print/PDF and Current Summary print no longer have an active legacy report helper competing with `GateArchiveController`. The next recommended phase is Mobile / UI Polish and Final Design System stabilization.
+Navigation / App Shell / Mobile Shell, lifecycle hooks, Status Board metrics, Status Board dorm columns, Active Buses En Route, Processing page/modal behavior, Airport/local arrival bus workflow, Input / Week Group initialization, Archive / Reporting / Closeout, mobile drawer behavior, and mobile board watermark presentation now have active canonical owners. The next recommended work is device validation followed by deeper page-by-page mobile polish.

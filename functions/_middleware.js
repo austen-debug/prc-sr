@@ -6,7 +6,8 @@ const UI_STYLESHEETS = [
   '<link rel="stylesheet" href="/css/gate-layout-pages.css">',
   '<link rel="stylesheet" href="/css/gate-components.css">',
   '<link rel="stylesheet" href="/css/gate-utilities-access.css">',
-  '<link rel="stylesheet" href="/css/gate-premium-metrics.css?v=premium-metrics-20260709c">'
+  '<link rel="stylesheet" href="/css/gate-premium-metrics.css?v=premium-metrics-20260709c">',
+  '<link rel="stylesheet" href="/css/gate-app-shell.css?v=phase-1a-app-shell-20260709">'
 ];
 
 const UI_INLINE_ASSETS = [];
@@ -30,13 +31,10 @@ const UI_HEAD_SCRIPTS = [
   '<script src="/js/gate-input-page-controller.js" defer></script>',
   '<script src="/js/prc-dash-archive-actions.js" defer></script>',
   '<script src="/js/prc-dash-archive-print-cleanup.js" defer></script>',
-  '<script src="/js/prc-dash-access-control-validation.js" defer></script>',
+  '<script src="/js/gate-permission-guard.js?v=phase-1a-permission-guard-20260709" defer></script>',
+  '<script src="/js/gate-app-shell-controller.js?v=phase-1a-app-shell-20260709" defer></script>',
   '<script src="/js/prc-dash-modal-mobile-validation.js" defer></script>',
   '<script src="/js/gate-tablet-processing-modal-fix.js?v=tablet-processing-modal-20260707" defer></script>',
-  '<script src="/js/gate-mobile-nav-routing-fix.js?v=mobile-nav-routing-20260707" defer></script>',
-  '<script src="/js/gate-mobile-shell-redesign.js?v=mobile-shell-redesign-20260707b" defer></script>',
-  '<script src="/js/gate-mobile-app-shell-finalizer.js?v=mobile-app-shell-finalizer-20260707" defer></script>',
-  '<script src="/js/gate-desktop-nav-restore.js?v=desktop-nav-restore-20260707" defer></script>',
   '<script src="/js/gate-airport-phone-layout-fix.js?v=airport-phone-hard-fix-20260707" defer></script>',
   '<script src="/js/gate-render-stability-fix.js?v=render-stability-20260707" defer></script>',
   '<script src="/js/prc-dash-processing-loaded-summary.js" defer></script>',

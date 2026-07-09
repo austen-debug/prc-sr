@@ -28,8 +28,7 @@ const UI_HEAD_SCRIPTS = [
   '<script src="/js/gate-bus-workflow-controller.js?v=phase-3-bus-workflow-20260709" defer></script>',
   '<script src="/js/prc-dash-print-report.js" defer></script>',
   '<script src="/js/gate-input-page-controller.js?v=phase-4-input-20260709" defer></script>',
-  '<script src="/js/prc-dash-archive-actions.js" defer></script>',
-  '<script src="/js/prc-dash-archive-print-cleanup.js" defer></script>',
+  '<script src="/js/gate-archive-controller.js?v=phase-5-archive-20260709" defer></script>',
   '<script src="/js/gate-permission-guard.js?v=phase-1a-permission-guard-20260709" defer></script>',
   '<script src="/js/gate-app-shell-controller.js?v=phase-1a-app-shell-20260709" defer></script>',
   '<script src="/js/prc-dash-modal-mobile-validation.js" defer></script>',
@@ -37,8 +36,6 @@ const UI_HEAD_SCRIPTS = [
   '<script src="/js/gate-airport-phone-layout-fix.js?v=airport-phone-hard-fix-20260707" defer></script>',
   '<script src="/js/gate-render-stability-fix.js?v=render-stability-20260707" defer></script>',
   '<script src="/js/prc-dash-processing-loaded-summary.js" defer></script>',
-  '<script src="/js/prc-dash-current-summary-live-records.js" defer></script>',
-  '<script src="/js/gate-archive-print-controller.js" defer></script>',
   '<script src="/js/gate-premium-metrics-controller.js?v=premium-metrics-20260709d" defer></script>',
   '<script src="/js/prc-dash-overtime-audit.js" defer></script>'
 ];

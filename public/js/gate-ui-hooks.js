@@ -64,9 +64,10 @@
     return window.GateHooks[name].length !== before;
   }
 
-  function syncGlobalFunction(name, fn) {
-    window[name] = fn;
-    try { eval(`${name} = window.${name}`); } catch (_) {}
+  function exposeHookApi() {
+    window.runGateHooks = runGateHooks;
+    window.registerGateHook = registerGateHook;
+    window.unregisterGateHook = unregisterGateHook;
   }
 
   function wrapRenderAll() {
@@ -130,9 +131,7 @@
 
   function install() {
     ensureHookRegistry();
-    syncGlobalFunction('runGateHooks', runGateHooks);
-    syncGlobalFunction('registerGateHook', registerGateHook);
-    syncGlobalFunction('unregisterGateHook', unregisterGateHook);
+    exposeHookApi();
     installCompatibilityStubs();
     installWrappers();
   }

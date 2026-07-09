@@ -32,6 +32,24 @@ body.theme-light {
   align-items: stretch;
 }
 
+#page-board .board-header.gate-premium-metrics-enabled .prc-metric-grid-v3,
+#page-board .board-header.gate-premium-metrics-enabled .prc-metric-card-v3,
+#page-board .board-header.gate-premium-metrics-enabled .prc-header-legacy-v3,
+#page-board .board-header.gate-premium-metrics-enabled #gate-premium-metrics,
+#page-board .board-header.gate-premium-metrics-enabled .gate-premium-metrics {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  position: absolute !important;
+  inset: auto !important;
+  width: 0 !important;
+  height: 0 !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  opacity: 0 !important;
+}
+
 #page-board .gate-metrics-container {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));

@@ -1,7 +1,7 @@
 # GATE Active Runtime Stack
 
-Status: Phase 2 updated baseline
-Scope: Documents the active served runtime after App Shell, Status Board, and Processing ownership consolidation.
+Status: Phase 3 updated baseline
+Scope: Documents the active served runtime after App Shell, Status Board, Processing, and Airport/local arrival workflow ownership consolidation.
 
 ## Purpose
 
@@ -46,10 +46,10 @@ Injected by middleware in current order:
 7. `/js/prc-dash-dorm-reopen.js`
 8. `/js/prc-dash-final-audit.js`
 9. `/js/gate-status-board-controller.js?v=phase-1c-status-board-20260709`
-10. `/js/gate-processing-controller.js?v=phase-2-processing-20260709`
+10. `/js/gate-processing-controller.js?v=phase-2-processing-20260709b`
 11. `/js/prc-dash-dorm-flag-validation.js`
 12. `/js/prc-dash-auditorium-location.js`
-13. `/js/gate-bus-workflow-controller.js`
+13. `/js/gate-bus-workflow-controller.js?v=phase-3-bus-workflow-20260709`
 14. `/js/prc-dash-print-report.js`
 15. `/js/gate-input-page-controller.js`
 16. `/js/prc-dash-archive-actions.js`
@@ -84,9 +84,9 @@ These files remain in the repository for traceability but are no longer loaded b
 2. `/js/gate-processing-final-time-commit.js?v=final-time-commit-20260707`
 3. `/js/gate-airman-modal-close-safety.js?v=airman-modal-close-20260707`
 
-## Runtime pattern after Phase 2
+## Runtime pattern after Phase 3
 
-The runtime is still a monolithic base app plus injected controllers, but major workflow surfaces now have active owners.
+The runtime is still a monolithic base app plus injected controllers, but the major operational workflow surfaces now have active owners.
 
 `GateAppShell` is the final active owner for:
 
@@ -133,10 +133,23 @@ The served base runtime writes directly to those IDs. `gate-premium-metrics-cont
 - phase update
 - open dorm
 - close dorm
+- reopen dorm
 - instructor edit modal workflow
 - final-time edit commit
 - Processing instructor context menu
 - legacy Processing global compatibility functions
+
+`GateBusWorkflowController` is the active owner for:
+
+- airport bus form submission
+- local arrival form submission
+- active bus arrival confirmation
+- airport/local bus edit modal open/close
+- local bus modal open/close
+- combined airport/local bus log rendering
+- Space Force bus fields and table column
+- bus-related surface refresh after create/update/arrival confirmation
+- legacy airport/local bus global compatibility functions
 
 `prc-dash-final-audit.js` has been narrowed to:
 
@@ -147,27 +160,22 @@ The served base runtime writes directly to those IDs. `gate-premium-metrics-cont
 
 ## Remaining high-risk active overlap areas
 
-1. Bus workflow
-   - `index.html`
-   - `gate-bus-workflow-controller.js`
-   - Status Board active bus panel now reads these records, but does not create them.
-
-2. Input / initialization
+1. Input / initialization
    - `index.html`
    - `gate-input-page-controller.js`
 
-3. Archive / reporting
+2. Archive / reporting
    - `gate-ui-hooks.js` archive schema controller
    - `prc-dash-archive-actions.js`
    - `prc-dash-archive-print-cleanup.js`
    - `gate-archive-print-controller.js`
    - `prc-dash-current-summary-live-records.js`
 
-4. Mobile page-specific patches
+3. Mobile page-specific patches
    - `gate-airport-phone-layout-fix.js`
    - `prc-dash-modal-mobile-validation.js`
    - `gate-tablet-processing-modal-fix.js`
 
-## Phase 2 conclusion
+## Phase 3 conclusion
 
-Navigation / App Shell / Mobile Shell, Status Board metrics, Status Board dorm columns, Active Buses En Route, and Processing page/modal behavior now have active canonical owners. The next recommended phase is Airport and local arrival workflow consolidation.
+Navigation / App Shell / Mobile Shell, Status Board metrics, Status Board dorm columns, Active Buses En Route, Processing page/modal behavior, and Airport/local arrival bus workflow now have active canonical owners. The next recommended phase is Input / Week Group initialization consolidation.

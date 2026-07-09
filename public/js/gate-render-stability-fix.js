@@ -1,16 +1,16 @@
-// GATE render stability fixes
-// Stabilizes high-refresh board/processing visual layers without changing workflow data.
+// GATE Phase 7B render stability style guard
+// Desktop-only visual stabilization. Does not own routing, page.active state, rendering, records, or workflow behavior.
 (function () {
   'use strict';
 
   let installed = false;
-  let scheduled = false;
 
   function installStyles() {
     if (document.getElementById('gate-render-stability-fix')) return;
 
     const style = document.createElement('style');
     style.id = 'gate-render-stability-fix';
+    style.dataset.owner = 'gate-render-stability-style-guard';
     style.textContent = `
       @media (min-width: 768px) {
         body:has(#page-board.active)::before,
@@ -136,40 +136,15 @@
     document.head.appendChild(style);
   }
 
-  function markActivePage() {
-    const pages = document.querySelectorAll('.page');
-    pages.forEach(page => {
-      const isVisible = !page.classList.contains('hidden') && page.offsetParent !== null;
-      page.classList.toggle('active', isVisible);
-    });
-  }
-
-  function run() {
-    scheduled = false;
-    installStyles();
-    markActivePage();
-  }
-
-  function schedule() {
-    if (scheduled) return;
-    scheduled = true;
-    requestAnimationFrame(run);
-  }
-
   function start() {
     if (installed) return;
     installed = true;
     installStyles();
-    markActivePage();
-    window.addEventListener('resize', schedule, true);
-    document.addEventListener('mousemove', schedule, { capture: true, passive: true });
-    document.addEventListener('click', schedule, true);
-    window.registerGateHook?.('afterPageChange', schedule);
-    window.registerGateHook?.('afterRenderAll', schedule);
-    window.registerGateHook?.('afterDataChanged', schedule);
-    const observer = new MutationObserver(schedule);
-    observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
-    schedule();
+    window.GateRenderStabilityStyleGuard = Object.freeze({
+      isStyleOnly: true,
+      ownsPageState: false,
+      refresh: installStyles
+    });
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, { once: true });

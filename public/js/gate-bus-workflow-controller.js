@@ -1,5 +1,5 @@
-// GATE bus workflow controller
-// Interval-free owner for airport dispatch, local arrivals, combined bus log, shared bus edit modal, and Space Force counts.
+// GATE Phase 3 bus workflow controller
+// Canonical owner for airport dispatch, local arrivals, bus arrival confirmation, combined bus log, shared bus edit modal, and Space Force counts.
 (function () {
   'use strict';
 
@@ -32,6 +32,14 @@
     try { return Array.isArray(allData) ? allData : []; } catch (_) { return []; }
   }
 
+  function isBusRecord(record) {
+    return record && record.type === 'bus' && (record.bus_type === 'airport' || record.bus_type === 'local');
+  }
+
+  function isActiveBus(bus) {
+    return bus && (bus.status === 'active' || bus.status === 'otw');
+  }
+
   function buses(source) {
     const activeWg = wg();
     const list = Array.isArray(source)
@@ -39,16 +47,20 @@
       : (typeof getRecords === 'function' ? getRecords('bus') : data().filter(record => record.type === 'bus'));
 
     return list
-      .filter(bus => bus && bus.type === 'bus' && (bus.bus_type === 'airport' || bus.bus_type === 'local'))
+      .filter(isBusRecord)
       .filter(bus => !activeWg || bus.week_group === activeWg)
       .sort((a, b) => {
-        const statusA = a.status === 'active' ? 0 : 1;
-        const statusB = b.status === 'active' ? 0 : 1;
+        const statusA = isActiveBus(a) ? 0 : 1;
+        const statusB = isActiveBus(b) ? 0 : 1;
         if (statusA !== statusB) return statusA - statusB;
         if (a.bus_type !== b.bus_type) return a.bus_type === 'airport' ? -1 : 1;
         if (a.bus_type === 'airport') return n(a.bus_id) - n(b.bus_id);
         return new Date(a.created_at || 0) - new Date(b.created_at || 0);
       });
+  }
+
+  function busById(id) {
+    return data().find(record => record && record.__backendId === id && isBusRecord(record)) || null;
   }
 
   function time(value) {
@@ -128,10 +140,13 @@
     wrapper.insertAdjacentHTML('beforeend', `<div id="${errorId}" class="text-red-500 text-xs mt-1 hidden"></div>`);
   }
 
-  function refreshAllSurfaces() {
+  function refreshAllSurfaces(source = 'gate-bus-workflow-controller') {
     try { if (typeof renderAll === 'function') renderAll(); } catch (error) { console.warn('GATE bus renderAll refresh failed:', error); }
     runPass();
+    try { window.GateStatusBoardController?.scheduleRender?.({ force: true }); } catch (_) {}
     try { window.GateActiveBusController?.render?.({ force: true }); } catch (_) {}
+    try { window.GatePremiumMetricsController?.refresh?.(); } catch (_) {}
+    try { window.runGateHooks?.('afterDataChanged', { source }); } catch (_) {}
   }
 
   function ensureFields() {
@@ -282,6 +297,7 @@
     }
 
     const busId = typeof getNextAirportBusId === 'function' ? getNextAirportBusId() : Date.now();
+    const now = new Date().toISOString();
     const payload = {
       type: 'bus',
       bus_id: String(busId),
@@ -292,7 +308,8 @@
       nat_count: naturals,
       space_force_count: spaceForce,
       status: 'active',
-      created_at: new Date().toISOString(),
+      created_at: now,
+      departed_at: now,
       week_group: activeWg
     };
 
@@ -310,7 +327,7 @@
     form.reset();
     ['bus-female', 'bus-nat', 'bus-sf'].forEach(id => { const input = document.getElementById(id); if (input) input.value = '0'; });
     showMessage('airport-msg', `Bus #${busId} Dispatched`, false);
-    refreshAllSurfaces();
+    refreshAllSurfaces('airport-dispatch');
   }
 
   async function createLocal(form) {
@@ -368,13 +385,31 @@
     updateCache(result.data || payload);
     form.reset();
     ['local-female', 'local-nat', 'local-sf'].forEach(id => { const input = document.getElementById(id); if (input) input.value = '0'; });
-    refreshAllSurfaces();
+    refreshAllSurfaces('local-arrival-create');
     showMessage('local-bus-msg', `${destination} added to arrived total.`, false);
-    window.setTimeout(() => closeLocalBusModal?.(), 250);
+    window.setTimeout(closeLocalBusModalCanonical, 250);
+  }
+
+  function openLocalBusModalCanonical() {
+    ensureFields();
+    const modal = document.getElementById('local-bus-modal');
+    if (!modal) return;
+    modal.classList.remove('hidden');
+    modal.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('gate-modal-open');
+    window.runGateHooks?.('afterModalOpen', { modal: 'local-bus-modal', source: 'gate-bus-workflow-controller' });
+  }
+
+  function closeLocalBusModalCanonical() {
+    const modal = document.getElementById('local-bus-modal');
+    if (!modal) return;
+    modal.classList.add('hidden');
+    modal.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('gate-modal-open');
   }
 
   function openModal(id) {
-    const bus = data().find(record => record.__backendId === id && record.type === 'bus');
+    const bus = busById(id);
     if (!bus) return;
 
     ensureFields();
@@ -399,13 +434,28 @@
     const msg = document.getElementById('edit-bus-msg');
     if (msg) msg.classList.add('hidden');
 
-    document.getElementById('airport-bus-edit-modal')?.classList.remove('hidden');
-    window.runGateHooks?.('afterModalOpen', { modal: 'airport-bus-edit-modal', busId: id });
+    const modal = document.getElementById('airport-bus-edit-modal');
+    if (modal) {
+      modal.classList.remove('hidden');
+      modal.setAttribute('aria-hidden', 'false');
+    }
+    document.body.classList.add('gate-modal-open');
+    window.runGateHooks?.('afterModalOpen', { modal: 'airport-bus-edit-modal', busId: id, source: 'gate-bus-workflow-controller' });
+  }
+
+  function closeAirportBusEditModalCanonical() {
+    const modal = document.getElementById('airport-bus-edit-modal');
+    if (modal) {
+      modal.classList.add('hidden');
+      modal.setAttribute('aria-hidden', 'true');
+    }
+    try { editBusId = null; } catch (_) { window.editBusId = null; }
+    document.body.classList.remove('gate-modal-open');
   }
 
   async function updateBus(form) {
     if (typeof editBusId === 'undefined' || !editBusId) return;
-    const bus = data().find(record => record.__backendId === editBusId && record.type === 'bus');
+    const bus = busById(editBusId);
     if (!bus) return;
 
     ['edit-bus-identity-error', 'edit-bus-otw-error', 'edit-bus-female-error', 'edit-bus-nat-error', 'edit-bus-sf-error'].forEach(id => showError(id, ''));
@@ -457,8 +507,40 @@
     }
 
     updateCache(result.data || payload);
-    closeAirportBusEditModal?.();
-    refreshAllSurfaces();
+    closeAirportBusEditModalCanonical();
+    refreshAllSurfaces('bus-edit-save');
+  }
+
+  function confirmAction(message, callback) {
+    if (typeof showConfirm === 'function') {
+      showConfirm(message, callback);
+      return;
+    }
+    if (window.confirm(message)) callback();
+  }
+
+  function confirmBusArrivalCanonical(id) {
+    const bus = busById(id);
+    if (!bus || !isActiveBus(bus)) return;
+    const busLabel = bus.bus_type === 'local'
+      ? `LOCAL – ${bus.destination || bus.originating_destination || 'Originating Destination'}`
+      : `Bus #${bus.bus_id || ''}`;
+
+    confirmAction(`Confirm ${busLabel} has arrived at PRC?`, async () => {
+      const payload = {
+        ...bus,
+        status: 'arrived',
+        arrived_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      const result = await window.dataSdk.update(payload);
+      if (result?.isOk) {
+        updateCache(result.data || payload);
+        refreshAllSurfaces('bus-arrival-confirm');
+      } else {
+        showMessage('airport-msg', result?.error || 'Failed to confirm bus arrival.', true);
+      }
+    });
   }
 
   function onSubmit(event) {
@@ -479,12 +561,19 @@
   }
 
   function patchGlobals() {
-    if (typeof renderAirportBusLog === 'function') {
-      window.renderAirportBusLog = renderBusLog;
-      try { renderAirportBusLog = renderBusLog; } catch (_) {}
-    }
+    window.renderAirportBusLog = renderBusLog;
     window.openAirportBusEditModal = openModal;
+    window.closeAirportBusEditModal = closeAirportBusEditModalCanonical;
+    window.openLocalBusModal = openLocalBusModalCanonical;
+    window.closeLocalBusModal = closeLocalBusModalCanonical;
+    window.confirmBusArrival = confirmBusArrivalCanonical;
+
+    try { renderAirportBusLog = renderBusLog; } catch (_) {}
     try { openAirportBusEditModal = openModal; } catch (_) {}
+    try { closeAirportBusEditModal = closeAirportBusEditModalCanonical; } catch (_) {}
+    try { openLocalBusModal = openLocalBusModalCanonical; } catch (_) {}
+    try { closeLocalBusModal = closeLocalBusModalCanonical; } catch (_) {}
+    try { confirmBusArrival = confirmBusArrivalCanonical; } catch (_) {}
   }
 
   function runPass() {
@@ -516,6 +605,10 @@
       isCanonicalOwner: true,
       renderBusLog,
       openBusModal: openModal,
+      closeBusModal: closeAirportBusEditModalCanonical,
+      openLocalBusModal: openLocalBusModalCanonical,
+      closeLocalBusModal: closeLocalBusModalCanonical,
+      confirmBusArrival: confirmBusArrivalCanonical,
       refresh,
       getEditableBuses: buses
     });

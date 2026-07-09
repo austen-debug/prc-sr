@@ -5,9 +5,10 @@ const UI_STYLESHEETS = [
   '<link rel="stylesheet" href="/css/gate-base-tokens.css">',
   '<link rel="stylesheet" href="/css/gate-layout-pages.css">',
   '<link rel="stylesheet" href="/css/gate-components.css">',
-  '<link rel="stylesheet" href="/css/gate-utilities-access.css">',
+  '<link rel="stylesheet" href="/css/gate-utilities-access.css?v=phase-7c-mobile-corrective-20260709">',
   '<link rel="stylesheet" href="/css/gate-premium-metrics.css?v=premium-metrics-20260709d">',
-  '<link rel="stylesheet" href="/css/gate-app-shell.css?v=phase-7-mobile-shell-20260709">'
+  '<link rel="stylesheet" href="/css/gate-app-shell.css?v=phase-7-mobile-shell-20260709">',
+  '<link rel="stylesheet" href="/css/gate-mobile-corrective.css?v=phase-7c-mobile-corrective-20260709">'
 ];
 
 const UI_INLINE_ASSETS = [];

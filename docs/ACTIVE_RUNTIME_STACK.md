@@ -1,11 +1,11 @@
 # GATE Active Runtime Stack
 
-Status: Phase 1A updated baseline
-Scope: Documents the active served runtime after Navigation / App Shell / Mobile Shell consolidation.
+Status: Phase 1B updated baseline
+Scope: Documents the active served runtime after Navigation / App Shell / Mobile Shell consolidation and Status Board metric ownership consolidation.
 
 ## Purpose
 
-This document identifies the active served runtime stack for GATE — Gateway Arrival Tracking Environment. The active app is not defined only by `public/index.html`; it is defined by `functions/_middleware.js`, which injects the live CSS and JavaScript layers into served HTML.
+This document identifies the active served runtime stack for GATE — Gateway Arrival Tracking Environment. The active app is not defined only by `public/index.html`; it is defined by `functions/_middleware.js`, which injects and source-refactors the live CSS and JavaScript layers into served HTML.
 
 ## Active CSS load path
 
@@ -16,7 +16,7 @@ Injected directly by middleware:
 3. `/css/gate-layout-pages.css`
 4. `/css/gate-components.css`
 5. `/css/gate-utilities-access.css`
-6. `/css/gate-premium-metrics.css?v=premium-metrics-20260709c`
+6. `/css/gate-premium-metrics.css?v=premium-metrics-20260709d`
 7. `/css/gate-app-shell.css?v=phase-1a-app-shell-20260709`
 
 Imported by `gate-utilities-access.css`:
@@ -30,7 +30,8 @@ Legacy / important note:
 
 - `public/index.html` still contains substantial inline CSS and original shell layout rules.
 - Some CSS is also injected dynamically by JavaScript controllers.
-- `gate-app-shell.css` is now the final active CSS owner for app shell/nav/page isolation presentation.
+- `gate-app-shell.css` is the final active CSS owner for app shell/nav/page isolation presentation.
+- `gate-premium-metrics.css` is the active component style layer for the canonical four-card Status Board metric row.
 
 ## Active JavaScript load path
 
@@ -63,7 +64,7 @@ Injected by middleware in current order:
 25. `/js/prc-dash-processing-loaded-summary.js`
 26. `/js/prc-dash-current-summary-live-records.js`
 27. `/js/gate-archive-print-controller.js`
-28. `/js/gate-premium-metrics-controller.js?v=premium-metrics-20260709c`
+28. `/js/gate-premium-metrics-controller.js?v=premium-metrics-20260709d`
 29. `/js/prc-dash-overtime-audit.js`
 
 ## Removed from active runtime in Phase 1A
@@ -76,11 +77,11 @@ These files remain in the repository for traceability but are no longer loaded b
 4. `/js/gate-mobile-app-shell-finalizer.js?v=mobile-app-shell-finalizer-20260707`
 5. `/js/gate-desktop-nav-restore.js?v=desktop-nav-restore-20260707`
 
-## Runtime pattern after Phase 1A
+## Runtime pattern after Phase 1B
 
-The runtime is still a monolithic base app plus injected controllers, but shell ownership has been consolidated.
+The runtime is still a monolithic base app plus injected controllers, but shell and metric ownership have been consolidated.
 
-`GateAppShell` is now the final active owner for:
+`GateAppShell` is the final active owner for:
 
 - `showPage`
 - `buildNav`
@@ -90,7 +91,7 @@ The runtime is still a monolithic base app plus injected controllers, but shell 
 - moving system controls into/out of the mobile drawer
 - Week Group chip display
 
-`GatePermissionGuard` is now responsible for:
+`GatePermissionGuard` is responsible for:
 
 - protected action guards
 - instructor-only form blocking
@@ -98,23 +99,30 @@ The runtime is still a monolithic base app plus injected controllers, but shell 
 - Airman allowed local arrival support
 - non-instructor context-menu blocking
 
+Status Board metrics are now served as source-owned markup by middleware:
+
+- `stat-arrived`
+- `stat-expected`
+- `stat-last`
+- `stat-local`
+
+The served base runtime writes directly to those IDs. `gate-premium-metrics-controller.js` is now a passive sync/cleanup guard only, not a card-creation layer.
+
 ## Remaining high-risk active overlap areas
 
-1. Status Board metrics
-   - `index.html`
-   - `prc-dash-board-header.js`
-   - `gate-premium-metrics-controller.js`
-   - `gate-premium-metrics.css`
-
-2. Dorm cards / board columns
+1. Dorm cards / board columns
    - `index.html`
    - `gate-component-contracts.js`
    - `prc-dash-final-audit.js`
 
+2. Active bus panel
+   - `index.html`
+   - `gate-ui-hooks.js` active bus controller
+   - `gate-bus-workflow-controller.js`
+
 3. Bus workflow
    - `index.html`
    - `gate-bus-workflow-controller.js`
-   - `gate-ui-hooks.js` active bus controller
 
 4. Input / initialization
    - `index.html`
@@ -133,6 +141,6 @@ The runtime is still a monolithic base app plus injected controllers, but shell 
    - `prc-dash-modal-mobile-validation.js`
    - `gate-tablet-processing-modal-fix.js`
 
-## Phase 1A conclusion
+## Phase 1B conclusion
 
-Navigation / App Shell / Mobile Shell now has a canonical active owner. The next recommended phase is Status Board metrics and board header ownership cleanup, so metric compatibility sinks and old header remnants can be removed source-first.
+Navigation / App Shell / Mobile Shell and Status Board top metrics now have canonical active owners. The next recommended phase is Phase 1C — Status Board dorm cards and active bus panel ownership.

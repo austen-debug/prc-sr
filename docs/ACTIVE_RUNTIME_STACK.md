@@ -1,7 +1,7 @@
 # GATE Active Runtime Stack
 
-Status: Phase 4 updated baseline
-Scope: Documents the active served runtime after App Shell, Status Board, Processing, Airport/local arrival, and Input/Week Group initialization ownership consolidation.
+Status: Phase 5 updated baseline
+Scope: Documents the active served runtime after App Shell, Status Board, Processing, Airport/local arrival, Input/Week Group initialization, and Archive/Reporting/Closeout ownership consolidation.
 
 ## Purpose
 
@@ -52,19 +52,16 @@ Injected by middleware in current order:
 13. `/js/gate-bus-workflow-controller.js?v=phase-3-bus-workflow-20260709`
 14. `/js/prc-dash-print-report.js`
 15. `/js/gate-input-page-controller.js?v=phase-4-input-20260709`
-16. `/js/prc-dash-archive-actions.js`
-17. `/js/prc-dash-archive-print-cleanup.js`
-18. `/js/gate-permission-guard.js?v=phase-1a-permission-guard-20260709`
-19. `/js/gate-app-shell-controller.js?v=phase-1a-app-shell-20260709`
-20. `/js/prc-dash-modal-mobile-validation.js`
-21. `/js/gate-tablet-processing-modal-fix.js?v=tablet-processing-modal-20260707`
-22. `/js/gate-airport-phone-layout-fix.js?v=airport-phone-hard-fix-20260707`
-23. `/js/gate-render-stability-fix.js?v=render-stability-20260707`
-24. `/js/prc-dash-processing-loaded-summary.js`
-25. `/js/prc-dash-current-summary-live-records.js`
-26. `/js/gate-archive-print-controller.js`
-27. `/js/gate-premium-metrics-controller.js?v=premium-metrics-20260709d`
-28. `/js/prc-dash-overtime-audit.js`
+16. `/js/gate-archive-controller.js?v=phase-5-archive-20260709`
+17. `/js/gate-permission-guard.js?v=phase-1a-permission-guard-20260709`
+18. `/js/gate-app-shell-controller.js?v=phase-1a-app-shell-20260709`
+19. `/js/prc-dash-modal-mobile-validation.js`
+20. `/js/gate-tablet-processing-modal-fix.js?v=tablet-processing-modal-20260707`
+21. `/js/gate-airport-phone-layout-fix.js?v=airport-phone-hard-fix-20260707`
+22. `/js/gate-render-stability-fix.js?v=render-stability-20260707`
+23. `/js/prc-dash-processing-loaded-summary.js`
+24. `/js/gate-premium-metrics-controller.js?v=premium-metrics-20260709d`
+25. `/js/prc-dash-overtime-audit.js`
 
 ## Removed from active runtime in Phase 1A
 
@@ -84,7 +81,16 @@ These files remain in the repository for traceability but are no longer loaded b
 2. `/js/gate-processing-final-time-commit.js?v=final-time-commit-20260707`
 3. `/js/gate-airman-modal-close-safety.js?v=airman-modal-close-20260707`
 
-## Runtime pattern after Phase 4
+## Removed from active runtime in Phase 5
+
+These files remain in the repository for traceability but are no longer loaded by middleware:
+
+1. `/js/prc-dash-archive-actions.js`
+2. `/js/prc-dash-archive-print-cleanup.js`
+3. `/js/prc-dash-current-summary-live-records.js`
+4. `/js/gate-archive-print-controller.js`
+
+## Runtime pattern after Phase 5
 
 The runtime is still a monolithic base app plus injected controllers, but the major operational workflow surfaces now have active owners.
 
@@ -166,6 +172,25 @@ The served base runtime writes directly to those IDs. `gate-premium-metrics-cont
 - receiving-window and Space Force metadata injection into dorm/archive payloads
 - legacy Input global compatibility functions
 
+`GateArchiveController` is the active owner for:
+
+- closeout confirmation handoff
+- archive payload construction
+- archive creation
+- archive verification before live records are cleared
+- live dorm/bus/sound-event deletion after archive verification
+- active Week Group / last Airport config clearing
+- Input grid reset after closeout
+- archive history rendering
+- archive search/filter
+- archive edit modal open/close
+- archive edit save
+- archive print/PDF output
+- current summary print output
+- receiving-window metadata preservation
+- Space Force dorm/bus metadata preservation
+- legacy archive/print/closeout global compatibility functions
+
 `prc-dash-final-audit.js` has been narrowed to:
 
 - document identity support
@@ -175,18 +200,14 @@ The served base runtime writes directly to those IDs. `gate-premium-metrics-cont
 
 ## Remaining high-risk active overlap areas
 
-1. Archive / reporting
-   - `gate-ui-hooks.js` archive schema controller
-   - `prc-dash-archive-actions.js`
-   - `prc-dash-archive-print-cleanup.js`
-   - `gate-archive-print-controller.js`
-   - `prc-dash-current-summary-live-records.js`
+1. `gate-ui-hooks.js`
+   - still contains older active bus and archive schema internal controllers, although later canonical controllers now supersede them.
 
 2. Mobile page-specific patches
    - `gate-airport-phone-layout-fix.js`
    - `prc-dash-modal-mobile-validation.js`
    - `gate-tablet-processing-modal-fix.js`
 
-## Phase 4 conclusion
+## Phase 5 conclusion
 
-Navigation / App Shell / Mobile Shell, Status Board metrics, Status Board dorm columns, Active Buses En Route, Processing page/modal behavior, Airport/local arrival bus workflow, and Input / Week Group initialization now have active canonical owners. The next recommended phase is Archive / Reporting / Closeout consolidation.
+Navigation / App Shell / Mobile Shell, Status Board metrics, Status Board dorm columns, Active Buses En Route, Processing page/modal behavior, Airport/local arrival bus workflow, Input / Week Group initialization, and Archive / Reporting / Closeout now have active canonical owners. The next recommended phase is final runtime hardening and mobile/UI polish.

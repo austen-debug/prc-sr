@@ -1,5 +1,5 @@
-// GATE Phase 7 App Shell Controller
-// Canonical owner for route switching, role-aware nav rendering, page isolation, and mobile drawer behavior.
+// GATE Phase 7D App Shell Controller
+// Canonical owner for route switching, role-aware nav rendering, page isolation, and fail-safe mobile sheet behavior.
 (function () {
   'use strict';
 
@@ -73,6 +73,14 @@
     return document.getElementById('main-nav-menu') || document.getElementById('nav-links') || document.querySelector('.nav-group-left');
   }
 
+  function mobileSheetElement() {
+    return document.getElementById('gate-mobile-nav-sheet');
+  }
+
+  function mobileSheetRouteList() {
+    return document.getElementById('gate-mobile-sheet-routes');
+  }
+
   function rightGroup() {
     const nav = navElement();
     if (!nav) return null;
@@ -119,6 +127,21 @@
     return scrim;
   }
 
+  function ensureMobileSheet() {
+    let sheet = mobileSheetElement();
+    if (!sheet) {
+      sheet = document.createElement('section');
+      sheet.id = 'gate-mobile-nav-sheet';
+      sheet.dataset.owner = 'gate-app-shell-controller';
+      sheet.dataset.component = 'mobile-nav-sheet';
+      sheet.setAttribute('aria-label', 'Operational Navigation');
+      sheet.setAttribute('aria-hidden', 'true');
+      sheet.innerHTML = '<div class="gate-mobile-sheet-title">Navigation</div><div id="gate-mobile-sheet-routes" class="gate-mobile-sheet-routes"></div><div class="gate-mobile-sheet-system"><div class="gate-shell-system-label">System</div><div id="gate-mobile-sheet-system-controls" class="gate-shell-system-controls"></div></div>';
+      document.body.appendChild(sheet);
+    }
+    return sheet;
+  }
+
   function ensureShellStructure() {
     const nav = navElement();
     const menu = menuElement();
@@ -161,11 +184,12 @@
     }
     trigger.type = 'button';
     trigger.setAttribute('aria-label', 'Toggle Operational Navigation Menu');
-    trigger.setAttribute('aria-haspopup', 'true');
+    trigger.setAttribute('aria-haspopup', 'dialog');
     trigger.setAttribute('aria-expanded', drawerOpen ? 'true' : 'false');
-    trigger.setAttribute('aria-controls', 'main-nav-menu');
+    trigger.setAttribute('aria-controls', 'gate-mobile-nav-sheet');
 
     ensureScrim();
+    ensureMobileSheet();
   }
 
   function ensureSystemAnchor() {
@@ -178,6 +202,12 @@
   }
 
   function ensureSystemPanel() {
+    if (isMobileShell()) {
+      const sheet = ensureMobileSheet();
+      const target = sheet.querySelector('#gate-mobile-sheet-system-controls');
+      return target || null;
+    }
+
     const menu = menuElement();
     if (!menu) return null;
     let panel = document.getElementById('gate-shell-system-panel');
@@ -243,9 +273,18 @@
     el.dataset.owner = 'gate-app-shell-controller';
   }
 
-  function navButton(page) {
+  function navButton(page, sheet = false) {
     const active = page === activePage();
-    return `<button type="button" class="nav-btn nav-link-item gate-component-nav-button ${active ? 'active active-page-state current-page' : ''}" data-page="${esc(page)}" data-gate-nav-button="true" aria-current="${active ? 'page' : 'false'}">${esc(pageLabel(page))}</button>`;
+    const sheetAttr = sheet ? ' data-gate-mobile-sheet-button="true"' : '';
+    return `<button type="button" class="nav-btn nav-link-item gate-component-nav-button ${active ? 'active active-page-state current-page' : ''}" data-page="${esc(page)}" data-gate-nav-button="true"${sheetAttr} aria-current="${active ? 'page' : 'false'}">${esc(pageLabel(page))}</button>`;
+  }
+
+  function renderMobileSheetRoutes(pages) {
+    const sheet = ensureMobileSheet();
+    const routeList = sheet.querySelector('#gate-mobile-sheet-routes');
+    if (!routeList) return;
+    routeList.innerHTML = pages.map(page => navButton(page, true)).join('');
+    sheet.dataset.role = role();
   }
 
   function renderNav() {
@@ -258,9 +297,11 @@
     const pages = allowedPages();
     menu.querySelectorAll('[data-gate-nav-button="true"]').forEach(button => button.remove());
     const panel = document.getElementById('gate-shell-system-panel');
-    const html = pages.map(navButton).join('');
+    const html = pages.map(page => navButton(page)).join('');
     if (panel && panel.parentNode === menu) panel.insertAdjacentHTML('beforebegin', html);
     else menu.innerHTML = html;
+
+    renderMobileSheetRoutes(pages);
 
     menu.dataset.role = role();
     menu.dataset.owner = 'gate-app-shell-controller';
@@ -330,12 +371,18 @@
   function setDrawer(open) {
     drawerOpen = Boolean(open) && isMobileShell();
     const menu = menuElement();
+    const sheet = ensureMobileSheet();
     const trigger = document.getElementById('mobile-menu-trigger');
     const scrim = ensureScrim();
     document.body.classList.toggle('gate-mobile-drawer-open', drawerOpen);
+    document.body.dataset.gateMobileMenuOpen = drawerOpen ? 'true' : 'false';
     if (menu) {
       menu.classList.toggle('mobile-dropdown-active', drawerOpen);
       menu.setAttribute('aria-hidden', drawerOpen ? 'false' : 'true');
+    }
+    if (sheet) {
+      sheet.classList.toggle('gate-mobile-sheet-open', drawerOpen);
+      sheet.setAttribute('aria-hidden', drawerOpen ? 'false' : 'true');
     }
     if (scrim) scrim.setAttribute('aria-hidden', drawerOpen ? 'false' : 'true');
     if (trigger) trigger.setAttribute('aria-expanded', drawerOpen ? 'true' : 'false');
@@ -345,7 +392,8 @@
     const button = event.target?.closest?.('[data-gate-nav-button="true"], [data-page].nav-btn');
     if (!button) return false;
     const menu = menuElement();
-    if (!menu || !menu.contains(button)) return false;
+    const sheet = mobileSheetElement();
+    if (!((menu && menu.contains(button)) || (sheet && sheet.contains(button)))) return false;
     const page = button.dataset.page;
     if (!page) return false;
     event.preventDefault?.();
@@ -356,7 +404,7 @@
   }
 
   function isShellClickTarget(event) {
-    return Boolean(event.target?.closest?.('#mobile-menu-trigger, #main-nav-menu, #gate-mobile-menu-scrim'));
+    return Boolean(event.target?.closest?.('#mobile-menu-trigger, #main-nav-menu, #gate-mobile-nav-sheet, #gate-mobile-menu-scrim'));
   }
 
   function handleShellInteraction(event, pointerSource = false) {
@@ -389,11 +437,16 @@
     }
 
     const menu = menuElement();
-    if (drawerOpen && menu && !menu.contains(event.target)) {
-      if (pointerSource) suppressClickUntil = Date.now() + SYNTHETIC_CLICK_SUPPRESS_MS;
-      suppressNextOutsideClick = true;
-      setDrawer(false);
-      return true;
+    const sheet = mobileSheetElement();
+    if (drawerOpen && !event.target?.closest?.('#mobile-menu-trigger')) {
+      const insideMenu = Boolean(menu && menu.contains(event.target));
+      const insideSheet = Boolean(sheet && sheet.contains(event.target));
+      if (!insideMenu && !insideSheet) {
+        if (pointerSource) suppressClickUntil = Date.now() + SYNTHETIC_CLICK_SUPPRESS_MS;
+        suppressNextOutsideClick = true;
+        setDrawer(false);
+        return true;
+      }
     }
     return false;
   }

@@ -6,7 +6,7 @@ const UI_STYLESHEETS = [
   '<link rel="stylesheet" href="/css/gate-layout-pages.css">',
   '<link rel="stylesheet" href="/css/gate-components.css">',
   '<link rel="stylesheet" href="/css/gate-utilities-access.css">',
-  '<link rel="stylesheet" href="/css/gate-premium-metrics.css?v=premium-metrics-20260709c">',
+  '<link rel="stylesheet" href="/css/gate-premium-metrics.css?v=premium-metrics-20260709d">',
   '<link rel="stylesheet" href="/css/gate-app-shell.css?v=phase-1a-app-shell-20260709">'
 ];
 
@@ -40,9 +40,43 @@ const UI_HEAD_SCRIPTS = [
   '<script src="/js/prc-dash-processing-loaded-summary.js" defer></script>',
   '<script src="/js/prc-dash-current-summary-live-records.js" defer></script>',
   '<script src="/js/gate-archive-print-controller.js" defer></script>',
-  '<script src="/js/gate-premium-metrics-controller.js?v=premium-metrics-20260709c" defer></script>',
+  '<script src="/js/gate-premium-metrics-controller.js?v=premium-metrics-20260709d" defer></script>',
   '<script src="/js/prc-dash-overtime-audit.js" defer></script>'
 ];
+
+const STATUS_BOARD_METRICS_HTML = `<div class="board-header gate-premium-metrics-enabled" data-owner="gate-status-metrics-source" data-phase="1B">
+     <div class="gate-metrics-container">
+      <div class="metric-card arrived-card">
+       <div class="metric-header">
+        <span class="status-dot led-green" aria-hidden="true"></span>
+        <span class="metric-label">ARRIVED</span>
+       </div>
+       <div class="metric-value" id="stat-arrived">0</div>
+      </div>
+      <div class="metric-card expected-card">
+       <div class="metric-header">
+        <span class="metric-label">EXPECTED</span>
+       </div>
+       <div class="metric-value" id="stat-expected">0</div>
+      </div>
+      <div class="metric-card last-card">
+       <div class="metric-header">
+        <span class="metric-label">LAST ARRIVAL</span>
+       </div>
+       <div class="metric-value" id="stat-last">00:00</div>
+      </div>
+      <div class="metric-card local-card">
+       <div class="metric-header">
+        <span class="metric-label">LOCAL TIME</span>
+       </div>
+       <div class="metric-value" id="stat-local">00:00</div>
+      </div>
+     </div>
+     <div class="metric-block gate-active-buses-block">
+      <div class="text-xs uppercase tracking-wider font-medium text-muted mb-1">Active Buses En Route</div>
+      <div id="active-buses" class="flex gap-2 flex-wrap items-center"></div>
+     </div>
+    </div>`;
 
 function jsonResponse(data, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -153,8 +187,41 @@ function stripLegacyInlineShellCss(html) {
   );
 }
 
+function applyStatusBoardMetricSourceRefactor(html) {
+  let output = html.replace(
+    /<div class="board-header">\s*<div class="metric-block">[\s\S]*?<div id="active-buses" class="flex gap-2 flex-wrap items-center"><\/div>\s*<\/div>\s*<\/div>/,
+    STATUS_BOARD_METRICS_HTML
+  );
+
+  output = output.replace(
+    /function updateAirportMetric\(\) \{[\s\S]*?\n\}\n\n function updateSoundButton/,
+    `function updateAirportMetric() {
+  const lastAirport = getConfig('last_airport') || '—';
+  const lastEl = document.getElementById('stat-last');
+  const localEl = document.getElementById('stat-local');
+
+  if (lastEl) lastEl.textContent = lastAirport;
+  if (localEl) localEl.textContent = getLocalTime24();
+}
+
+ function updateSoundButton`
+  );
+
+  output = output.replace(
+    /document\.getElementById\('metric-arrived'\)\.textContent = `ARRIVED: \$\{totalArrived\} \| EXPECTED: \$\{totalExpected\}`;/,
+    `const arrivedMetricEl = document.getElementById('stat-arrived');
+      const expectedMetricEl = document.getElementById('stat-expected');
+      if (arrivedMetricEl) arrivedMetricEl.textContent = String(totalArrived);
+      if (expectedMetricEl) expectedMetricEl.textContent = String(totalExpected);`
+  );
+
+  return output;
+}
+
 function prepareAppShellHtml(html) {
-  return normalizeServedBranding(stripLegacyInlineShellCss(applyAppShellIdentity(html)));
+  return applyStatusBoardMetricSourceRefactor(
+    normalizeServedBranding(stripLegacyInlineShellCss(applyAppShellIdentity(html)))
+  );
 }
 
 function applyUiAssets(html) {

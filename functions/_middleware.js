@@ -35,6 +35,7 @@ const UI_HEAD_SCRIPTS = [
   '<script src="/js/gate-mobile-nav-routing-fix.js?v=mobile-nav-routing-20260707" defer></script>',
   '<script src="/js/gate-mobile-shell-redesign.js?v=mobile-shell-redesign-20260707b" defer></script>',
   '<script src="/js/gate-mobile-app-shell-finalizer.js?v=mobile-app-shell-finalizer-20260707" defer></script>',
+  '<script src="/js/gate-desktop-nav-restore.js?v=desktop-nav-restore-20260707" defer></script>',
   '<script src="/js/gate-airport-phone-layout-fix.js?v=airport-phone-hard-fix-20260707" defer></script>',
   '<script src="/js/gate-render-stability-fix.js?v=render-stability-20260707" defer></script>',
   '<script src="/js/prc-dash-processing-loaded-summary.js" defer></script>',

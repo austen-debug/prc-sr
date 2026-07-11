@@ -7,9 +7,9 @@ const UI_STYLESHEETS = [
   '<link rel="stylesheet" href="/css/gate-components.css">',
   '<link rel="stylesheet" href="/css/gate-utilities-access.css?v=phase-7c-mobile-corrective-20260709">',
   '<link rel="stylesheet" href="/css/gate-premium-metrics.css?v=premium-metrics-20260709d">',
-  '<link rel="stylesheet" href="/css/gate-app-shell.css?v=phase-7d-mobile-sheet-20260709">',
-  '<link rel="stylesheet" href="/css/gate-mobile-corrective.css?v=phase-7d-mobile-sheet-20260709">',
-  '<link rel="stylesheet" href="/css/gate-ui-ownership-correction.css?v=phase-7e-ui-ownership-20260709">'
+  '<link rel="stylesheet" href="/css/gate-app-shell.css?v=phase-7g-viewport-watermark-20260709">',
+  '<link rel="stylesheet" href="/css/gate-mobile-corrective.css?v=phase-7g-viewport-watermark-20260709">',
+  '<link rel="stylesheet" href="/css/gate-ui-ownership-correction.css?v=phase-7g-viewport-watermark-20260709">'
 ];
 
 const UI_INLINE_ASSETS = [];
@@ -31,7 +31,7 @@ const UI_HEAD_SCRIPTS = [
   '<script src="/js/gate-input-page-controller.js?v=phase-4-input-20260709" defer></script>',
   '<script src="/js/gate-archive-controller.js?v=phase-5-archive-20260709" defer></script>',
   '<script src="/js/gate-permission-guard.js?v=phase-1a-permission-guard-20260709" defer></script>',
-  '<script src="/js/gate-app-shell-controller.js?v=phase-7d-mobile-sheet-20260709" defer></script>',
+  '<script src="/js/gate-app-shell-controller.js?v=phase-7g-viewport-watermark-20260709" defer></script>',
   '<script src="/js/prc-dash-modal-mobile-validation.js?v=phase-7e-ui-ownership-20260709" defer></script>',
   '<script src="/js/gate-tablet-processing-modal-fix.js?v=tablet-processing-modal-20260707" defer></script>',
   '<script src="/js/gate-airport-phone-layout-fix.js?v=airport-phone-hard-fix-20260707" defer></script>',

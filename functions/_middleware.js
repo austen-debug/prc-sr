@@ -29,7 +29,7 @@ const UI_HEAD_SCRIPTS = [
   '<script src="/js/prc-dash-auditorium-location.js" defer></script>',
   '<script src="/js/gate-bus-workflow-controller.js?v=phase-3-bus-workflow-20260709" defer></script>',
   '<script src="/js/gate-input-page-controller.js?v=phase-4-input-20260709" defer></script>',
-  '<script src="/js/gate-archive-controller.js?v=phase-5-archive-20260709" defer></script>',
+  '<script src="/js/gate-archive-controller.js?v=phase-8b-report-calculation-20260709" defer></script>',
   '<script src="/js/gate-permission-guard.js?v=phase-1a-permission-guard-20260709" defer></script>',
   '<script src="/js/gate-app-shell-controller.js?v=phase-7g-viewport-watermark-20260709" defer></script>',
   '<script src="/js/prc-dash-modal-mobile-validation.js?v=phase-7e-ui-ownership-20260709" defer></script>',

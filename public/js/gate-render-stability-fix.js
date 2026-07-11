@@ -1,5 +1,5 @@
-// GATE Phase 7B render stability style guard
-// Desktop-only visual stabilization. Does not own routing, page.active state, rendering, records, or workflow behavior.
+// GATE Phase 7F render stability style guard
+// Desktop-only visual stabilization. Does not own routing, page.active state, rendering, records, workflow behavior, or watermark placement.
 (function () {
   'use strict';
 
@@ -14,7 +14,8 @@
     style.textContent = `
       @media (min-width: 768px) {
         body:has(#page-board.active)::before,
-        body:has(#page-processing.active)::before {
+        body:has(#page-processing.active)::before,
+        body:has(#page-squadron.active)::before {
           display: none !important;
           content: none !important;
           opacity: 0 !important;
@@ -24,7 +25,8 @@
         }
 
         body:has(#page-board.active) #page-board.active,
-        body:has(#page-processing.active) #page-processing.active {
+        body:has(#page-processing.active) #page-processing.active,
+        body:has(#page-squadron.active) #page-squadron.active {
           position: relative !important;
           isolation: isolate !important;
           transform: translateZ(0) !important;
@@ -32,68 +34,17 @@
           will-change: auto !important;
         }
 
-        body:has(#page-board.active) #page-board.active::before,
-        body:has(#page-processing.active) #page-processing.active::before {
-          content: '' !important;
-          display: block !important;
-          position: fixed !important;
-          inset: 0 !important;
-          pointer-events: none !important;
-          z-index: 0 !important;
-          background-repeat: no-repeat !important;
-          transform: translateZ(0) !important;
-          backface-visibility: hidden !important;
-          will-change: auto !important;
-          animation: none !important;
-          transition: none !important;
-          mix-blend-mode: normal !important;
-          filter: grayscale(100%) !important;
-        }
-
-        body:has(#page-board.active) #page-board.active::before {
-          background-position: center 47% !important;
-          background-size: min(58vw, 980px) auto !important;
-          opacity: var(--gate-watermark-opacity-clean, 0.07) !important;
-        }
-
-        body:has(#page-processing.active) #page-processing.active::before {
-          background-position: center 52% !important;
-          background-size: min(48vw, 820px) auto !important;
-          opacity: var(--gate-watermark-opacity-clean, 0.06) !important;
-        }
-
-        body:not(.theme-light):has(#page-board.active) #page-board.active::before,
-        body:not(.theme-light):has(#page-processing.active) #page-processing.active::before {
-          background-image: url('/assets/gate_emblem_white.png') !important;
-        }
-
-        body:not(.theme-light):has(#page-board.active) #page-board.active::before {
-          opacity: 0.105 !important;
-        }
-
-        body:not(.theme-light):has(#page-processing.active) #page-processing.active::before {
-          opacity: 0.07 !important;
-        }
-
-        body.theme-light:has(#page-board.active) #page-board.active::before,
-        body.theme-light:has(#page-processing.active) #page-processing.active::before {
-          background-image: url('/assets/gate_emblem_blue.png') !important;
-        }
-
-        body.theme-light:has(#page-board.active) #page-board.active::before {
-          opacity: 0.058 !important;
-        }
-
-        body.theme-light:has(#page-processing.active) #page-processing.active::before {
-          opacity: 0.044 !important;
-        }
-
         body:has(#page-board.active) #page-board.active::after,
         body:has(#page-board.active) #page-board.active .board-header::before,
         body:has(#page-board.active) #page-board.active .board-header::after,
         body:has(#page-board.active) #page-board.active .dorm-dashboard::before,
         body:has(#page-board.active) #page-board.active .dorm-dashboard::after,
-        body:has(#page-processing.active) #page-processing.active::after {
+        body:has(#page-processing.active) #page-processing.active::after,
+        body:has(#page-squadron.active) #page-squadron.active::after,
+        body:has(#page-squadron.active) #page-squadron.active .board-header::before,
+        body:has(#page-squadron.active) #page-squadron.active .board-header::after,
+        body:has(#page-squadron.active) #page-squadron.active .dorm-dashboard::before,
+        body:has(#page-squadron.active) #page-squadron.active .dorm-dashboard::after {
           display: none !important;
           content: none !important;
           opacity: 0 !important;
@@ -108,6 +59,12 @@
         body:has(#page-board.active) #page-board.active .dorm-col-content,
         body:has(#page-board.active) #page-board.active .gate-dorm-card,
         body:has(#page-board.active) #page-board.active .dorm-card,
+        body:has(#page-squadron.active) #page-squadron.active .board-header,
+        body:has(#page-squadron.active) #page-squadron.active .dorm-dashboard,
+        body:has(#page-squadron.active) #page-squadron.active .dorm-column,
+        body:has(#page-squadron.active) #page-squadron.active .dorm-col-content,
+        body:has(#page-squadron.active) #page-squadron.active .gate-dorm-card,
+        body:has(#page-squadron.active) #page-squadron.active .dorm-card,
         body:has(#page-processing.active) #page-processing.active > .flex-shrink-0,
         body:has(#page-processing.active) #page-processing.active .surface,
         body:has(#page-processing.active) #page-processing.active .proc-card,
@@ -143,6 +100,7 @@
     window.GateRenderStabilityStyleGuard = Object.freeze({
       isStyleOnly: true,
       ownsPageState: false,
+      ownsWatermark: false,
       refresh: installStyles
     });
   }

@@ -1,5 +1,5 @@
-// GATE Phase 7D App Shell Controller
-// Canonical owner for route switching, role-aware nav rendering, page isolation, and fail-safe mobile sheet behavior.
+// GATE Phase 7G App Shell Controller
+// Canonical owner for route switching, role-aware nav rendering, page isolation, body route state, and fail-safe mobile sheet behavior.
 (function () {
   'use strict';
 
@@ -77,10 +77,6 @@
     return document.getElementById('gate-mobile-nav-sheet');
   }
 
-  function mobileSheetRouteList() {
-    return document.getElementById('gate-mobile-sheet-routes');
-  }
-
   function rightGroup() {
     const nav = navElement();
     if (!nav) return null;
@@ -90,6 +86,16 @@
   function activePage() {
     const page = document.querySelector('.page.active');
     return page ? page.id.replace(/^page-/, '') : firstAllowedPage();
+  }
+
+  function setBodyRouteState(page) {
+    const cleanPage = String(page || '').replace(/^page-/, '') || firstAllowedPage();
+    const watermarkPages = ['board', 'processing', 'squadron'];
+    document.body.dataset.gateActivePage = cleanPage;
+    document.body.classList.toggle('gate-watermark-page', watermarkPages.includes(cleanPage));
+    document.body.classList.toggle('gate-watermark-board', cleanPage === 'board');
+    document.body.classList.toggle('gate-watermark-processing', cleanPage === 'processing');
+    document.body.classList.toggle('gate-watermark-squadron', cleanPage === 'squadron');
   }
 
   function toast(message) {
@@ -148,6 +154,7 @@
     if (!nav || !menu) return;
 
     document.body.classList.add('gate-app-shell-ready');
+    setBodyRouteState(activePage());
     nav.classList.add('command-header-bar');
     nav.dataset.owner = 'gate-app-shell-controller';
     nav.dataset.component = 'app-shell';
@@ -318,13 +325,15 @@
   }
 
   function setActivePage(page) {
+    const cleanPage = String(page || '').replace(/^page-/, '') || firstAllowedPage();
     document.querySelectorAll('.page').forEach(element => {
-      const isActive = element.id === `page-${page}`;
+      const isActive = element.id === `page-${cleanPage}`;
       element.classList.toggle('active', isActive);
       element.classList.toggle('gate-shell-active-page', isActive);
       element.setAttribute('aria-hidden', isActive ? 'false' : 'true');
       element.dataset.gateRouteState = isActive ? 'active' : 'inactive';
     });
+    setBodyRouteState(cleanPage);
   }
 
   function go(page, options = {}) {

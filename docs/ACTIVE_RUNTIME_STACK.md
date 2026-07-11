@@ -1,7 +1,7 @@
 # GATE Active Runtime Stack
 
-Status: Phase 7E updated baseline
-Scope: Documents the active served runtime after workflow ownership consolidation and UI ownership correction.
+Status: Phase 7G updated baseline
+Scope: Documents the active served runtime after workflow ownership consolidation, UI ownership correction, and the viewport-fixed watermark contract.
 
 ## Purpose
 
@@ -17,9 +17,9 @@ Injected directly by middleware:
 4. `/css/gate-components.css`
 5. `/css/gate-utilities-access.css?v=phase-7c-mobile-corrective-20260709`
 6. `/css/gate-premium-metrics.css?v=premium-metrics-20260709d`
-7. `/css/gate-app-shell.css?v=phase-7d-mobile-sheet-20260709`
-8. `/css/gate-mobile-corrective.css?v=phase-7d-mobile-sheet-20260709`
-9. `/css/gate-ui-ownership-correction.css?v=phase-7e-ui-ownership-20260709`
+7. `/css/gate-app-shell.css?v=phase-7g-viewport-watermark-20260709`
+8. `/css/gate-mobile-corrective.css?v=phase-7g-viewport-watermark-20260709`
+9. `/css/gate-ui-ownership-correction.css?v=phase-7g-viewport-watermark-20260709`
 
 Imported by `gate-utilities-access.css`:
 
@@ -49,11 +49,11 @@ Injected by middleware in current order:
 14. `/js/gate-input-page-controller.js?v=phase-4-input-20260709`
 15. `/js/gate-archive-controller.js?v=phase-5-archive-20260709`
 16. `/js/gate-permission-guard.js?v=phase-1a-permission-guard-20260709`
-17. `/js/gate-app-shell-controller.js?v=phase-7d-mobile-sheet-20260709`
+17. `/js/gate-app-shell-controller.js?v=phase-7g-viewport-watermark-20260709`
 18. `/js/prc-dash-modal-mobile-validation.js?v=phase-7e-ui-ownership-20260709`
 19. `/js/gate-tablet-processing-modal-fix.js?v=tablet-processing-modal-20260707`
 20. `/js/gate-airport-phone-layout-fix.js?v=airport-phone-hard-fix-20260707`
-21. `/js/gate-render-stability-fix.js?v=phase-7b-style-guard-20260709`
+21. `/js/gate-render-stability-fix.js?v=phase-7f-watermark-owner-20260709`
 22. `/js/prc-dash-processing-loaded-summary.js`
 23. `/js/gate-premium-metrics-controller.js?v=premium-metrics-20260709d`
 24. `/js/prc-dash-overtime-audit.js`
@@ -97,89 +97,47 @@ Reason: `GateArchiveController` is now the only active owner for archive print/P
 
 `/js/gate-ui-hooks.js` remains active, but it is lifecycle-only.
 
-It owns:
+It owns hook registry initialization, `window.runGateHooks()`, `window.registerGateHook()`, `window.unregisterGateHook()`, the `renderAll()` lifecycle wrapper, the `showPage()` lifecycle wrapper, and compatibility handoff stubs for prior installer calls.
 
-- hook registry initialization
-- `window.runGateHooks()`
-- `window.registerGateHook()`
-- `window.unregisterGateHook()`
-- `renderAll()` lifecycle wrapper
-- `showPage()` lifecycle wrapper
-- compatibility handoff stubs for prior installer calls
+It no longer owns Active Bus rendering, Active Bus mutation observation, Archive schema construction, safe closeout, or closeout button ownership.
 
-It no longer owns:
+## Narrowed in Phase 7B / 7F
 
-- Active Bus rendering
-- Active Bus mutation observation
-- Archive schema construction
-- Safe closeout
-- Closeout button ownership
+`/js/gate-render-stability-fix.js` remains active, but it is style-only and does not own route state or watermark placement.
 
-## Narrowed in Phase 7B
-
-`/js/gate-render-stability-fix.js` remains active, but it is style-only.
-
-It owns:
-
-- desktop-only board/processing visual stabilization CSS
-- desktop-only watermark stabilization for board/processing pages
-
-It no longer owns:
-
-- `.page.active` mutation
-- page visibility detection
-- mutation observation
-- document click handling
-- document mousemove handling
-- lifecycle hook subscriptions
+It no longer owns `.page.active` mutation, page visibility detection, mutation observation, document click handling, document mousemove handling, lifecycle hook subscriptions, or watermark positioning.
 
 ## Narrowed in Phase 7E
 
 `/js/prc-dash-modal-mobile-validation.js` remains active, but it is now a modal/touch helper only.
 
-It owns:
+It owns `gate-modal-open` body state, `gate-touch-access-mode` body state, Processing card long-press context-menu dispatch for instructor touch devices, and modal/touch state refresh.
 
-- `gate-modal-open` body state
-- `gate-touch-access-mode` body state
-- Processing card long-press context-menu dispatch for instructor touch devices
-- modal/touch state refresh
+It no longer owns board CSS, watermark CSS, fullscreen board CSS, Airport page mobile layout CSS, dorm modal visual CSS, active-bus card CSS, broad runtime style injection, or navigation/menu behavior.
 
-It no longer owns:
+## Added in Phase 7G
 
-- board CSS
-- watermark CSS
-- fullscreen board CSS
-- Airport page mobile layout CSS
-- dorm modal visual CSS
-- active-bus card CSS
-- broad runtime style injection
-- navigation/menu behavior
+`GateAppShell` now writes body route state:
 
-`/css/gate-ui-ownership-correction.css` is active as the final UI ownership boundary for:
+- `data-gate-active-page`
+- `gate-watermark-page`
+- `gate-watermark-board`
+- `gate-watermark-processing`
+- `gate-watermark-squadron`
 
-- hiding phone-only sheet/scrim artifacts outside mobile drawer state
-- desktop guard against accidental phone sheet display
-- suppressing legacy `body::before` app watermark
-- centering page-level watermarks behind board-style content
+`/css/gate-ui-ownership-correction.css` now owns a body-level viewport watermark through `body.gate-app-shell-ready.gate-watermark-page::after`.
 
-## Runtime pattern after Phase 7E
+The old page-level watermark pseudo-elements on `#page-board.active::before`, `#page-processing.active::before`, and `#page-squadron.active::before` are explicitly disabled. This prevents the watermark from becoming scroll-bound through page transforms or isolated page stacking contexts.
+
+`/css/gate-mobile-corrective.css` no longer adjusts page-level watermark pseudo-elements. Phone watermark placement also uses the body-level route-state watermark.
+
+## Runtime pattern after Phase 7G
 
 The runtime is still a monolithic base app plus injected controllers, but the major operational workflow surfaces now have active owners and UI ownership boundaries.
 
 `GateHooks` / `gate-ui-hooks.js` is the active owner for lifecycle hook registration/execution and wrapping base `renderAll()` and `showPage()`.
 
-`GateAppShell` is the active owner for:
-
-- `showPage`
-- `buildNav`
-- `.page.active` state
-- role-aware nav rendering
-- page isolation
-- mobile drawer state
-- mobile drawer scrim/backdrop state
-- mobile pointer/touch routing and synthetic-click suppression
-- moving system controls into/out of the mobile drawer/sheet
-- Week Group chip display
+`GateAppShell` is the active owner for `showPage`, `buildNav`, `.page.active` state, body route state, role-aware nav rendering, page isolation, mobile drawer state, mobile drawer scrim/backdrop state, mobile pointer/touch routing and synthetic-click suppression, moving system controls into/out of the mobile drawer/sheet, and Week Group chip display.
 
 `GatePermissionGuard` is responsible for role/action protection.
 
@@ -193,9 +151,9 @@ The runtime is still a monolithic base app plus injected controllers, but the ma
 
 `GateArchiveController` owns Archive / Reporting / Closeout.
 
-`GateRenderStabilityStyleGuard` is a style-only guard for desktop Status Board / Processing visual stability.
+`GateRenderStabilityStyleGuard` is a style-only guard for desktop Status Board / Processing visual stability and does not own watermark placement.
 
-`gate-ui-ownership-correction.css` owns final UI artifact hiding and page-level watermark boundaries.
+`gate-ui-ownership-correction.css` owns final UI artifact hiding and body-level viewport watermark boundaries.
 
 `prc-dash-final-audit.js` has been narrowed to document identity support, Squadron Board rendering, close-dorm final-time safety compatibility, and compatibility `GateDormBoardController` API.
 
@@ -211,6 +169,6 @@ The runtime is still a monolithic base app plus injected controllers, but the ma
 3. Input/archive metadata bridge:
    - `GateInputPageController` still helps preserve receiving-window metadata for archive payloads.
 
-## Phase 7E conclusion
+## Phase 7G conclusion
 
-Navigation / App Shell / Mobile Shell, lifecycle hooks, Status Board metrics, Status Board dorm columns, Active Buses En Route, Processing page/modal behavior, Airport/local arrival bus workflow, Input / Week Group initialization, Archive / Reporting / Closeout, phone-only navigation artifact hiding, and page-level watermark boundaries now have active ownership separation. Additional polish should only proceed after desktop and phone validation of the 7E correction.
+Navigation / App Shell / Mobile Shell, lifecycle hooks, Status Board metrics, Status Board dorm columns, Active Buses En Route, Processing page/modal behavior, Airport/local arrival bus workflow, Input / Week Group initialization, Archive / Reporting / Closeout, phone-only navigation artifact hiding, and body-level viewport watermark boundaries now have active ownership separation. Additional polish should only proceed after desktop and phone validation of the 7G viewport watermark correction.

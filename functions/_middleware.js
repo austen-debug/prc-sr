@@ -8,7 +8,7 @@ const UI_STYLESHEETS = [
   '<link rel="stylesheet" href="/css/gate-utilities-access.css?v=phase-7c-mobile-corrective-20260709">',
   '<link rel="stylesheet" href="/css/gate-premium-metrics.css?v=premium-metrics-20260709d">',
   '<link rel="stylesheet" href="/css/gate-app-shell.css?v=phase-7g-viewport-watermark-20260709">',
-  '<link rel="stylesheet" href="/css/gate-mobile-corrective.css?v=phase-7g-viewport-watermark-20260709">',
+  '<link rel="stylesheet" href="/css/gate-mobile-corrective.css?v=phase-7h-ui-patch-retirement-20260709">',
   '<link rel="stylesheet" href="/css/gate-ui-ownership-correction.css?v=phase-7g-viewport-watermark-20260709">'
 ];
 
@@ -33,8 +33,6 @@ const UI_HEAD_SCRIPTS = [
   '<script src="/js/gate-permission-guard.js?v=phase-1a-permission-guard-20260709" defer></script>',
   '<script src="/js/gate-app-shell-controller.js?v=phase-7g-viewport-watermark-20260709" defer></script>',
   '<script src="/js/prc-dash-modal-mobile-validation.js?v=phase-7e-ui-ownership-20260709" defer></script>',
-  '<script src="/js/gate-tablet-processing-modal-fix.js?v=tablet-processing-modal-20260707" defer></script>',
-  '<script src="/js/gate-airport-phone-layout-fix.js?v=airport-phone-hard-fix-20260707" defer></script>',
   '<script src="/js/gate-render-stability-fix.js?v=phase-7f-watermark-owner-20260709" defer></script>',
   '<script src="/js/prc-dash-processing-loaded-summary.js" defer></script>',
   '<script src="/js/gate-premium-metrics-controller.js?v=premium-metrics-20260709d" defer></script>',

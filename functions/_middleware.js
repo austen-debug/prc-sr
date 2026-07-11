@@ -35,7 +35,7 @@ const UI_HEAD_SCRIPTS = [
   '<script src="/js/prc-dash-modal-mobile-validation.js?v=phase-7e-ui-ownership-20260709" defer></script>',
   '<script src="/js/gate-tablet-processing-modal-fix.js?v=tablet-processing-modal-20260707" defer></script>',
   '<script src="/js/gate-airport-phone-layout-fix.js?v=airport-phone-hard-fix-20260707" defer></script>',
-  '<script src="/js/gate-render-stability-fix.js?v=phase-7b-style-guard-20260709" defer></script>',
+  '<script src="/js/gate-render-stability-fix.js?v=phase-7f-watermark-owner-20260709" defer></script>',
   '<script src="/js/prc-dash-processing-loaded-summary.js" defer></script>',
   '<script src="/js/gate-premium-metrics-controller.js?v=premium-metrics-20260709d" defer></script>',
   '<script src="/js/prc-dash-overtime-audit.js" defer></script>'

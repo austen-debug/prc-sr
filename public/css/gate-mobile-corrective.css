@@ -1,5 +1,5 @@
-/* GATE Phase 7D Mobile Corrective Layer
-   Phone-only overrides. This layer forces a fail-safe sheet menu, readable metrics, and low-visibility watermarks. */
+/* GATE Phase 7G Mobile Corrective Layer
+   Phone-only overrides. This layer owns the phone sheet and phone metrics; watermark placement is body-level in gate-ui-ownership-correction.css. */
 
 @media (max-width: 767px), (pointer: coarse) and (max-width: 1024px) {
   :root {
@@ -110,8 +110,6 @@
     display: block !important;
   }
 
-  /* The legacy inline nav menu is kept for compatibility but hidden on phone.
-     The fail-safe phone sheet below owns visible mobile navigation. */
   body.gate-app-shell-ready #main-nav-menu,
   body.gate-app-shell-ready #nav-links,
   body.gate-app-shell-ready .nav-group-left {
@@ -320,22 +318,6 @@
     background: none !important;
     background-image: none !important;
     visibility: hidden !important;
-  }
-
-  body.gate-app-shell-ready.gate-app-shell-mobile #page-board.active::before,
-  body.gate-app-shell-ready.gate-app-shell-mobile #page-processing.active::before,
-  body.gate-app-shell-ready.gate-app-shell-mobile #page-squadron.active::before {
-    width: min(86vw, 520px) !important;
-    height: min(86vw, 520px) !important;
-    top: 58% !important;
-    opacity: 0.022 !important;
-    filter: grayscale(100%) !important;
-  }
-
-  body.theme-light.gate-app-shell-ready.gate-app-shell-mobile #page-board.active::before,
-  body.theme-light.gate-app-shell-ready.gate-app-shell-mobile #page-processing.active::before,
-  body.theme-light.gate-app-shell-ready.gate-app-shell-mobile #page-squadron.active::before {
-    opacity: 0.018 !important;
   }
 
   #page-board .dorm-dashboard,

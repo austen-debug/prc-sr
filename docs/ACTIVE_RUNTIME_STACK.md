@@ -1,7 +1,7 @@
 # GATE Active Runtime Stack
 
-Status: Phase 7G updated baseline
-Scope: Documents the active served runtime after workflow ownership consolidation, UI ownership correction, and the viewport-fixed watermark contract.
+Status: Phase 7H updated baseline
+Scope: Documents the active served runtime after workflow ownership consolidation, UI ownership correction, viewport-fixed watermark contract, and retirement of the remaining active page-specific UI patch scripts.
 
 ## Purpose
 
@@ -18,7 +18,7 @@ Injected directly by middleware:
 5. `/css/gate-utilities-access.css?v=phase-7c-mobile-corrective-20260709`
 6. `/css/gate-premium-metrics.css?v=premium-metrics-20260709d`
 7. `/css/gate-app-shell.css?v=phase-7g-viewport-watermark-20260709`
-8. `/css/gate-mobile-corrective.css?v=phase-7g-viewport-watermark-20260709`
+8. `/css/gate-mobile-corrective.css?v=phase-7h-ui-patch-retirement-20260709`
 9. `/css/gate-ui-ownership-correction.css?v=phase-7g-viewport-watermark-20260709`
 
 Imported by `gate-utilities-access.css`:
@@ -51,12 +51,10 @@ Injected by middleware in current order:
 16. `/js/gate-permission-guard.js?v=phase-1a-permission-guard-20260709`
 17. `/js/gate-app-shell-controller.js?v=phase-7g-viewport-watermark-20260709`
 18. `/js/prc-dash-modal-mobile-validation.js?v=phase-7e-ui-ownership-20260709`
-19. `/js/gate-tablet-processing-modal-fix.js?v=tablet-processing-modal-20260707`
-20. `/js/gate-airport-phone-layout-fix.js?v=airport-phone-hard-fix-20260707`
-21. `/js/gate-render-stability-fix.js?v=phase-7f-watermark-owner-20260709`
-22. `/js/prc-dash-processing-loaded-summary.js`
-23. `/js/gate-premium-metrics-controller.js?v=premium-metrics-20260709d`
-24. `/js/prc-dash-overtime-audit.js`
+19. `/js/gate-render-stability-fix.js?v=phase-7f-watermark-owner-20260709`
+20. `/js/prc-dash-processing-loaded-summary.js`
+21. `/js/gate-premium-metrics-controller.js?v=premium-metrics-20260709d`
+22. `/js/prc-dash-overtime-audit.js`
 
 ## Removed from active runtime in Phase 1A
 
@@ -92,6 +90,15 @@ This file remains in the repository for traceability but is no longer loaded by 
 1. `/js/prc-dash-print-report.js`
 
 Reason: `GateArchiveController` is now the only active owner for archive print/PDF and current summary print.
+
+## Removed from active runtime in Phase 7H
+
+These files remain in the repository for traceability but are no longer loaded by middleware:
+
+1. `/js/gate-airport-phone-layout-fix.js?v=airport-phone-hard-fix-20260707`
+2. `/js/gate-tablet-processing-modal-fix.js?v=tablet-processing-modal-20260707`
+
+Reason: their visual behavior is now folded into `/css/gate-mobile-corrective.css?v=phase-7h-ui-patch-retirement-20260709`, avoiding JavaScript inline style mutation, body mutation observers, and runtime style injection for purely visual concerns.
 
 ## Narrowed in Phase 6
 
@@ -131,7 +138,18 @@ The old page-level watermark pseudo-elements on `#page-board.active::before`, `#
 
 `/css/gate-mobile-corrective.css` no longer adjusts page-level watermark pseudo-elements. Phone watermark placement also uses the body-level route-state watermark.
 
-## Runtime pattern after Phase 7G
+## Added in Phase 7H
+
+`/css/gate-mobile-corrective.css` now also owns:
+
+- Airport page phone form stacking
+- Airport phone log table horizontal scrolling
+- tablet Processing dorm modal reachability
+- tablet Processing modal sticky action section
+
+These behaviors replaced the removed active JavaScript patch files.
+
+## Runtime pattern after Phase 7H
 
 The runtime is still a monolithic base app plus injected controllers, but the major operational workflow surfaces now have active owners and UI ownership boundaries.
 
@@ -155,20 +173,18 @@ The runtime is still a monolithic base app plus injected controllers, but the ma
 
 `gate-ui-ownership-correction.css` owns final UI artifact hiding and body-level viewport watermark boundaries.
 
+`gate-mobile-corrective.css` owns the remaining phone/tablet presentation contracts formerly handled by page-specific UI patch scripts.
+
 `prc-dash-final-audit.js` has been narrowed to document identity support, Squadron Board rendering, close-dorm final-time safety compatibility, and compatibility `GateDormBoardController` API.
 
 ## Remaining active overlap areas
 
-1. Page-specific UI patches still active but scoped:
-   - `gate-airport-phone-layout-fix.js`
-   - `gate-tablet-processing-modal-fix.js`
-
-2. Legacy base shell:
+1. Legacy base shell:
    - `public/index.html` and `gate-index-legacy-shell.css` still contain legacy CSS/markup being overridden by canonical controllers and final correction layers.
 
-3. Input/archive metadata bridge:
+2. Input/archive metadata bridge:
    - `GateInputPageController` still helps preserve receiving-window metadata for archive payloads.
 
-## Phase 7G conclusion
+## Phase 7H conclusion
 
-Navigation / App Shell / Mobile Shell, lifecycle hooks, Status Board metrics, Status Board dorm columns, Active Buses En Route, Processing page/modal behavior, Airport/local arrival bus workflow, Input / Week Group initialization, Archive / Reporting / Closeout, phone-only navigation artifact hiding, and body-level viewport watermark boundaries now have active ownership separation. Additional polish should only proceed after desktop and phone validation of the 7G viewport watermark correction.
+Navigation / App Shell / Mobile Shell, lifecycle hooks, Status Board metrics, Status Board dorm columns, Active Buses En Route, Processing page/modal behavior, Airport/local arrival bus workflow, Input / Week Group initialization, Archive / Reporting / Closeout, phone-only navigation artifact hiding, body-level viewport watermark boundaries, Airport phone layout, and tablet Processing modal reachability now have active ownership separation. The next recommended work is a validation pass, then Phase 8 workflow validation matrix.

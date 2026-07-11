@@ -1,7 +1,7 @@
 # GATE Active Runtime Stack
 
-Status: Phase 7B updated baseline
-Scope: Documents the active served runtime after App Shell, Status Board, Processing, Airport/local arrival, Input/Week Group initialization, Archive/Reporting/Closeout, lifecycle hook ownership cleanup, legacy print-report runtime removal, initial mobile UI stabilization, and render stability guard cleanup.
+Status: Phase 7E updated baseline
+Scope: Documents the active served runtime after workflow ownership consolidation and UI ownership correction.
 
 ## Purpose
 
@@ -15,23 +15,19 @@ Injected directly by middleware:
 2. `/css/gate-base-tokens.css`
 3. `/css/gate-layout-pages.css`
 4. `/css/gate-components.css`
-5. `/css/gate-utilities-access.css`
+5. `/css/gate-utilities-access.css?v=phase-7c-mobile-corrective-20260709`
 6. `/css/gate-premium-metrics.css?v=premium-metrics-20260709d`
-7. `/css/gate-app-shell.css?v=phase-7-mobile-shell-20260709`
+7. `/css/gate-app-shell.css?v=phase-7d-mobile-sheet-20260709`
+8. `/css/gate-mobile-corrective.css?v=phase-7d-mobile-sheet-20260709`
+9. `/css/gate-ui-ownership-correction.css?v=phase-7e-ui-ownership-20260709`
 
 Imported by `gate-utilities-access.css`:
 
 1. `/css/gate-board-presentation.css`
 2. `/css/gate-theme-unified-contract.css`
 3. `/css/gate-clean-ui-pass.css`
-4. `/css/gate-mobile-ui-polish.css`
 
-Legacy / important note:
-
-- `public/index.html` still contains substantial inline CSS and original shell layout rules.
-- Some CSS is also injected dynamically by JavaScript controllers.
-- `gate-app-shell.css` is the final active CSS owner for app shell/nav/page isolation presentation, mobile drawer presentation, and mobile watermark correction.
-- `gate-premium-metrics.css` is the active component style layer for the canonical four-card Status Board metric row.
+Important note: `gate-mobile-ui-polish.css` remains in the repository for traceability, but it is no longer imported by the active utility stylesheet.
 
 ## Active JavaScript load path
 
@@ -53,8 +49,8 @@ Injected by middleware in current order:
 14. `/js/gate-input-page-controller.js?v=phase-4-input-20260709`
 15. `/js/gate-archive-controller.js?v=phase-5-archive-20260709`
 16. `/js/gate-permission-guard.js?v=phase-1a-permission-guard-20260709`
-17. `/js/gate-app-shell-controller.js?v=phase-7-mobile-shell-20260709`
-18. `/js/prc-dash-modal-mobile-validation.js`
+17. `/js/gate-app-shell-controller.js?v=phase-7d-mobile-sheet-20260709`
+18. `/js/prc-dash-modal-mobile-validation.js?v=phase-7e-ui-ownership-20260709`
 19. `/js/gate-tablet-processing-modal-fix.js?v=tablet-processing-modal-20260707`
 20. `/js/gate-airport-phone-layout-fix.js?v=airport-phone-hard-fix-20260707`
 21. `/js/gate-render-stability-fix.js?v=phase-7b-style-guard-20260709`
@@ -95,11 +91,11 @@ This file remains in the repository for traceability but is no longer loaded by 
 
 1. `/js/prc-dash-print-report.js`
 
-Reason: `GateArchiveController` is now the only active owner for archive print/PDF and current summary print. Removing the legacy print helper prevents duplicate `printArchiveSpreadsheet`, duplicate `printCurrentSummaryReport`, and duplicate Current Summary button binding.
+Reason: `GateArchiveController` is now the only active owner for archive print/PDF and current summary print.
 
 ## Narrowed in Phase 6
 
-`/js/gate-ui-hooks.js` remains active, but it is now lifecycle-only.
+`/js/gate-ui-hooks.js` remains active, but it is lifecycle-only.
 
 It owns:
 
@@ -121,7 +117,7 @@ It no longer owns:
 
 ## Narrowed in Phase 7B
 
-`/js/gate-render-stability-fix.js` remains active, but it is now style-only.
+`/js/gate-render-stability-fix.js` remains active, but it is style-only.
 
 It owns:
 
@@ -137,17 +133,42 @@ It no longer owns:
 - document mousemove handling
 - lifecycle hook subscriptions
 
-## Runtime pattern after Phase 7B
+## Narrowed in Phase 7E
 
-The runtime is still a monolithic base app plus injected controllers, but the major operational workflow surfaces now have active owners.
+`/js/prc-dash-modal-mobile-validation.js` remains active, but it is now a modal/touch helper only.
 
-`GateHooks` / `gate-ui-hooks.js` is the active owner for:
+It owns:
 
-- lifecycle hook registration
-- lifecycle hook execution
-- wrapping base `renderAll()` and `showPage()` so canonical controllers can react consistently
+- `gate-modal-open` body state
+- `gate-touch-access-mode` body state
+- Processing card long-press context-menu dispatch for instructor touch devices
+- modal/touch state refresh
 
-`GateAppShell` is the final active owner for:
+It no longer owns:
+
+- board CSS
+- watermark CSS
+- fullscreen board CSS
+- Airport page mobile layout CSS
+- dorm modal visual CSS
+- active-bus card CSS
+- broad runtime style injection
+- navigation/menu behavior
+
+`/css/gate-ui-ownership-correction.css` is active as the final UI ownership boundary for:
+
+- hiding phone-only sheet/scrim artifacts outside mobile drawer state
+- desktop guard against accidental phone sheet display
+- suppressing legacy `body::before` app watermark
+- centering page-level watermarks behind board-style content
+
+## Runtime pattern after Phase 7E
+
+The runtime is still a monolithic base app plus injected controllers, but the major operational workflow surfaces now have active owners and UI ownership boundaries.
+
+`GateHooks` / `gate-ui-hooks.js` is the active owner for lifecycle hook registration/execution and wrapping base `renderAll()` and `showPage()`.
+
+`GateAppShell` is the active owner for:
 
 - `showPage`
 - `buildNav`
@@ -155,126 +176,41 @@ The runtime is still a monolithic base app plus injected controllers, but the ma
 - role-aware nav rendering
 - page isolation
 - mobile drawer state
-- mobile drawer scrim/backdrop
+- mobile drawer scrim/backdrop state
 - mobile pointer/touch routing and synthetic-click suppression
-- moving system controls into/out of the mobile drawer
+- moving system controls into/out of the mobile drawer/sheet
 - Week Group chip display
-- mobile watermark positioning/scaling for board-style pages
 
-`GatePermissionGuard` is responsible for:
+`GatePermissionGuard` is responsible for role/action protection.
 
-- protected action guards
-- instructor-only form blocking
-- Squadron limited interaction blocking
-- Airman allowed local arrival support
-- non-instructor context-menu blocking
+`GateStatusBoardController` owns Status Board dorm columns, dorm cards, active bus panel, and board timer text refresh.
 
-Status Board metrics are served as source-owned markup by middleware:
+`GateProcessingController` owns Processing page/modal behavior.
 
-- `stat-arrived`
-- `stat-expected`
-- `stat-last`
-- `stat-local`
+`GateBusWorkflowController` owns airport/local arrival bus workflow.
 
-The served base runtime writes directly to those IDs. `gate-premium-metrics-controller.js` is now a passive sync/cleanup guard only, not a card-creation layer.
+`GateInputPageController` owns Input / Week Group initialization.
 
-`GateStatusBoardController` is the active owner for:
+`GateArchiveController` owns Archive / Reporting / Closeout.
 
-- Status Board dorm columns
-- Status Board dorm card rendering handoff
-- Active Buses En Route panel
-- board timer text refresh
-- legacy `renderDormColumns` / `buildBoardDormCard` compatibility functions
+`GateRenderStabilityStyleGuard` is a style-only guard for desktop Status Board / Processing visual stability.
 
-`GateProcessingController` is the active owner for:
+`gate-ui-ownership-correction.css` owns final UI artifact hiding and page-level watermark boundaries.
 
-- Processing dorm card rendering
-- Processing dorm modal open/close
-- Airman-safe modal close behavior
-- assigned Airman save
-- load save
-- phase update
-- open dorm
-- close dorm
-- reopen dorm
-- instructor edit modal workflow
-- final-time edit commit
-- Processing instructor context menu
-- legacy Processing global compatibility functions
+`prc-dash-final-audit.js` has been narrowed to document identity support, Squadron Board rendering, close-dorm final-time safety compatibility, and compatibility `GateDormBoardController` API.
 
-`GateBusWorkflowController` is the active owner for:
+## Remaining active overlap areas
 
-- airport bus form submission
-- local arrival form submission
-- active bus arrival confirmation
-- airport/local bus edit modal open/close
-- local bus modal open/close
-- combined airport/local bus log rendering
-- Space Force bus fields and table column
-- bus-related surface refresh after create/update/arrival confirmation
-- legacy airport/local bus global compatibility functions
-
-`GateInputPageController` is the active owner for:
-
-- batch grid rendering
-- batch row state
-- clear row behavior
-- horizontal tab flow
-- Total Expected calculation
-- Week Group initialization
-- receiving Day One / Day Two windows
-- Space Force dorm checkbox column
-- Band / Space Force mutual exclusion
-- dorm payload validation before create
-- receiving-window and Space Force metadata injection into dorm/archive payloads
-- legacy Input global compatibility functions
-
-`GateArchiveController` is the active owner for:
-
-- closeout confirmation handoff
-- archive payload construction
-- archive creation
-- archive verification before live records are cleared
-- live dorm/bus/sound-event deletion after archive verification
-- active Week Group / last Airport config clearing
-- Input grid reset after closeout
-- archive history rendering
-- archive search/filter
-- archive edit modal open/close
-- archive edit save
-- archive print/PDF output
-- current summary print output
-- receiving-window metadata preservation
-- Space Force dorm/bus metadata preservation
-- legacy archive/print/closeout global compatibility functions
-
-`GateRenderStabilityStyleGuard` is a style-only guard for:
-
-- desktop Status Board visual stability
-- desktop Processing visual stability
-
-`prc-dash-final-audit.js` has been narrowed to:
-
-- document identity support
-- Squadron Board creation/rendering
-- close-dorm final-time safety compatibility
-- compatibility `GateDormBoardController` API
-
-## Remaining high-risk active overlap areas
-
-The remaining active overlap is now primarily page-specific UI polish:
-
-1. Mobile/page-specific patches
+1. Page-specific UI patches still active but scoped:
    - `gate-airport-phone-layout-fix.js`
-   - `prc-dash-modal-mobile-validation.js`
    - `gate-tablet-processing-modal-fix.js`
 
-2. Legacy base shell
-   - `public/index.html` still contains legacy inline CSS, legacy functions, and legacy page markup that are being overridden by canonical controllers.
+2. Legacy base shell:
+   - `public/index.html` and `gate-index-legacy-shell.css` still contain legacy CSS/markup being overridden by canonical controllers and final correction layers.
 
-3. Input/archive metadata bridge
-   - `GateInputPageController` still helps preserve receiving-window metadata for archive payloads. This is acceptable for the Phase 7B baseline, but should eventually be folded fully into `GateArchiveController`.
+3. Input/archive metadata bridge:
+   - `GateInputPageController` still helps preserve receiving-window metadata for archive payloads.
 
-## Phase 7B conclusion
+## Phase 7E conclusion
 
-Navigation / App Shell / Mobile Shell, lifecycle hooks, Status Board metrics, Status Board dorm columns, Active Buses En Route, Processing page/modal behavior, Airport/local arrival bus workflow, Input / Week Group initialization, Archive / Reporting / Closeout, mobile drawer behavior, mobile board watermark presentation, and desktop render-stability styling now have active canonical owners or style-only guards. The next recommended work is device validation followed by page-by-page mobile polish.
+Navigation / App Shell / Mobile Shell, lifecycle hooks, Status Board metrics, Status Board dorm columns, Active Buses En Route, Processing page/modal behavior, Airport/local arrival bus workflow, Input / Week Group initialization, Archive / Reporting / Closeout, phone-only navigation artifact hiding, and page-level watermark boundaries now have active ownership separation. Additional polish should only proceed after desktop and phone validation of the 7E correction.

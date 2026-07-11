@@ -103,27 +103,10 @@ body.theme-light.gate-app-shell-ready.gate-watermark-processing::after {
   }
 }
 
-/* Content must remain above the body-level viewport watermark. */
-body.gate-app-shell-ready .page.active,
-body.gate-app-shell-ready .security-banner-fixed,
-body.gate-app-shell-ready .app-nav.command-header-bar,
-body.gate-app-shell-ready #gate-mobile-nav-sheet,
-body.gate-app-shell-ready #gate-mobile-menu-scrim,
-body.gate-app-shell-ready .gate-shell-toast,
-body.gate-app-shell-ready .modal,
-body.gate-app-shell-ready [role='dialog'] {
+/* Active page content scrolls over the viewport-fixed watermark. */
+body.gate-app-shell-ready .page.active {
   position: relative !important;
   z-index: 1 !important;
-}
-
-body.gate-app-shell-ready .security-banner-fixed,
-body.gate-app-shell-ready .app-nav.command-header-bar,
-body.gate-app-shell-ready #gate-mobile-nav-sheet,
-body.gate-app-shell-ready #gate-mobile-menu-scrim,
-body.gate-app-shell-ready .gate-shell-toast,
-body.gate-app-shell-ready .modal,
-body.gate-app-shell-ready [role='dialog'] {
-  z-index: revert-layer;
 }
 
 /* Desktop guard: phone sheet must remain hidden even if JS toggles mobile drawer state accidentally. */

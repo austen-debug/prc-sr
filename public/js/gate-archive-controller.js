@@ -1,4 +1,4 @@
-// GATE Phase 8B Archive / Reporting / Closeout Controller
+// GATE Phase 8C Archive / Reporting / Closeout Controller
 // Canonical owner for closeout archive creation/verification, archive management, archive edit, and print/current summary handoffs.
 (function () {
   'use strict';
@@ -99,12 +99,16 @@
     return parsed;
   }
 
+  function truthyFlag(value) {
+    return value === true || value === 'true' || value === '1' || value === 1;
+  }
+
   function isSpaceForceDorm(dorm) {
-    return dorm && (dorm.space_force === true || dorm.space_force === 'true' || dorm.is_space_force === true || dorm.is_space_force === 'true');
+    return dorm && (truthyFlag(dorm.space_force) || truthyFlag(dorm.is_space_force));
   }
 
   function isBandDorm(dorm) {
-    return dorm && (dorm.band === true || dorm.band === 'true');
+    return dorm && truthyFlag(dorm.band);
   }
 
   function dormLoad(dorm) {
@@ -265,8 +269,8 @@
     const windows = collectWindows({ weekGroup, dorms });
     const arrivedBuses = buses.filter(bus => bus.status === 'arrived');
     const totalArrived = arrivedBuses.reduce((sum, bus) => sum + n(bus.otw_count), 0);
-    const femaleTotal = buses.reduce((sum, bus) => sum + n(bus.female_count), 0);
-    const natTotal = buses.reduce((sum, bus) => sum + n(bus.nat_count), 0);
+    const femaleTotal = arrivedBuses.reduce((sum, bus) => sum + n(bus.female_count), 0);
+    const natTotal = arrivedBuses.reduce((sum, bus) => sum + n(bus.nat_count), 0);
     const spaceForceTotal = buses.reduce((sum, bus) => sum + n(bus.space_force_count), 0);
     const arrivedSpaceForceTotal = arrivedBuses.reduce((sum, bus) => sum + n(bus.space_force_count), 0);
     const loadedTotal = dorms.reduce((sum, dorm) => sum + n(dorm.current_load), 0);
@@ -372,7 +376,7 @@
       try { if (typeof renderAll === 'function') renderAll(); } catch (_) {}
       try { window.runGateHooks?.('afterCloseout', { weekGroup, archiveId: result.data.__backendId, source: 'gate-archive-controller' }); } catch (_) {}
       try { window.runGateHooks?.('afterDataChanged', { weekGroup, archiveId: result.data.__backendId, source: 'gate-archive-controller' }); } catch (_) {}
-      renderArchiveManagementView({ force: true });
+      renderArchiveManagementView();
       showCloseoutMessage(`Week group ${weekGroup} archived and cleared.`);
       window.setTimeout(() => showCloseoutMessage(''), 6000);
     } catch (error) {
@@ -502,7 +506,7 @@
       if (!result?.isOk) throw new Error(result?.error || 'Failed to save archive.');
       syncLocalRecord(result.data || payload);
       closeArchiveEditModalCanonical();
-      renderArchiveManagementView({ force: true });
+      renderArchiveManagementView();
       try { window.runGateHooks?.('afterDataChanged', { source: 'gate-archive-edit-save' }); } catch (_) {}
     } catch (error) {
       showArchiveMessage(`Archive save failed: ${error.message}`, true);
@@ -594,25 +598,27 @@
   }
 
   function receivingSummary(dorms, buses, windows) {
-    const afExpected = dorms.filter(d => !isSpaceForceDorm(d)).reduce((sum, d) => sum + n(d.max_load), 0);
-    const sfExpected = dorms.filter(isSpaceForceDorm).reduce((sum, d) => sum + n(d.max_load), 0);
+    const totalProjected = dorms.reduce((sum, dorm) => sum + n(dorm.max_load), 0);
+    const sfProjected = dorms.filter(isSpaceForceDorm).reduce((sum, dorm) => sum + n(dorm.max_load), 0);
     const nightDefs = [
       ['Receiving Night One', windows.receiving_day_one_start, windows.receiving_day_one_end],
       ['Receiving Night Two', windows.receiving_day_two_start, windows.receiving_day_two_end]
     ];
-    let afCum = 0;
-    let sfCum = 0;
+    let processedCum = 0;
     let natCum = 0;
+    let sfCum = 0;
     return nightDefs.map(([label, start, end]) => {
       const hasWindow = Boolean(timestamp(start) && timestamp(end));
       const windowBuses = hasWindow ? buses.filter(bus => inWindow(busTime(bus), start, end)) : [];
-      const afToday = windowBuses.reduce((sum, bus) => sum + busAirForceCount(bus), 0);
-      const sfToday = windowBuses.reduce((sum, bus) => sum + busSpaceForceCount(bus), 0);
+      const processedToday = windowBuses.reduce((sum, bus) => sum + n(bus.otw_count), 0);
       const natToday = windowBuses.reduce((sum, bus) => sum + n(bus.nat_count), 0);
-      afCum += afToday;
-      sfCum += sfToday;
+      const sfToday = windowBuses.reduce((sum, bus) => sum + busSpaceForceCount(bus), 0);
+      processedCum += processedToday;
       natCum += natToday;
-      return `<div class="night"><div class="night-title">${esc(label)} <span class="night-date">${esc(formatDateTime(start))}</span></div><div class="night-text">${hasWindow ? `Processed ${afToday} AF / ${sfToday} SF tonight. Cumulative: ${afCum} AF, ${sfCum} SF, ${afCum + sfCum} of ${afExpected + sfExpected} total projected trainees. Naturalization requests: ${natToday} tonight / ${natCum} cumulative.` : `${label} date/time window is not configured.`}</div></div>`;
+      sfCum += sfToday;
+      const standardSentence = `Tonight, the PRC processed ${processedToday} of the projected ${totalProjected} trainees for a total of ${processedCum}. ${natToday} trainees requested naturalization for a total of ${natCum}.`;
+      const sfSentence = (sfProjected > 0 || sfToday > 0 || sfCum > 0) ? ` The PRC processed ${sfToday} Space Force trainees out of the projected ${sfProjected} Space Force trainees, for a total of ${sfCum} Space Force trainees.` : '';
+      return `<div class="night"><div class="night-title">${esc(label)} <span class="night-date">${esc(formatDateTime(start))}</span></div><div class="night-text">${hasWindow ? esc(standardSentence + sfSentence) : `${esc(label)} date/time window is not configured.`}</div></div>`;
     }).join('');
   }
 
@@ -728,8 +734,8 @@
     try { printArchiveSpreadsheet = printArchiveReport; } catch (_) {}
   }
 
-  function scheduleRender(options = {}) {
-    if (renderQueued && !options.force) return;
+  function scheduleRender() {
+    if (renderQueued) return;
     renderQueued = true;
     requestAnimationFrame(() => {
       renderQueued = false;
@@ -754,16 +760,16 @@
       closeArchiveEditModal: closeArchiveEditModalCanonical,
       printArchiveReport,
       printCurrentSummaryReport,
-      refresh: () => scheduleRender({ force: true })
+      refresh: scheduleRender
     });
   }
 
   function registerHooksOnce() {
     if (hooksRegistered || typeof window.registerGateHook !== 'function') return;
-    window.registerGateHook('afterRenderAll', () => scheduleRender({ force: true }));
-    window.registerGateHook('afterPageChange', () => scheduleRender());
-    window.registerGateHook('afterDataChanged', () => scheduleRender({ force: true }));
-    window.registerGateHook('afterModalOpen', () => scheduleRender());
+    window.registerGateHook('afterRenderAll', scheduleRender);
+    window.registerGateHook('afterPageChange', scheduleRender);
+    window.registerGateHook('afterDataChanged', scheduleRender);
+    window.registerGateHook('afterModalOpen', scheduleRender);
     hooksRegistered = true;
   }
 

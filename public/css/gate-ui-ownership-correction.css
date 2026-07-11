@@ -1,0 +1,110 @@
+/* GATE Phase 7E UI Ownership Correction
+   Final authority for phone-only artifact hiding and app watermark ownership boundaries. */
+
+/* Phone-only shell artifacts must never render as normal body content on desktop. */
+#gate-mobile-nav-sheet,
+#gate-mobile-menu-scrim {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+@media (max-width: 767px), (pointer: coarse) and (max-width: 1024px) {
+  body.gate-app-shell-ready.gate-mobile-drawer-open #gate-mobile-menu-scrim {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+  }
+
+  body.gate-app-shell-ready.gate-mobile-drawer-open #gate-mobile-nav-sheet,
+  body.gate-app-shell-ready #gate-mobile-nav-sheet.gate-mobile-sheet-open {
+    display: grid !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+  }
+}
+
+/* Legacy body-level watermark is no longer an active app-page owner. */
+body.gate-app-shell-ready::before,
+body.gate-app-shell-ready.fullscreen-board::before,
+body.gate-app-shell-ready.gate-app-shell-mobile::before,
+body.gate-app-shell-ready.gate-app-shell-desktop::before {
+  display: none !important;
+  content: none !important;
+  opacity: 0 !important;
+  background: none !important;
+  background-image: none !important;
+  visibility: hidden !important;
+}
+
+/* Page-level watermark boundary: visible behind content, centered in viewport, not tied to scroll-top. */
+@media (min-width: 768px) {
+  body.gate-app-shell-ready #page-board.active,
+  body.gate-app-shell-ready #page-processing.active,
+  body.gate-app-shell-ready #page-squadron.active {
+    position: relative !important;
+    isolation: isolate !important;
+  }
+
+  body.gate-app-shell-ready #page-board.active::before,
+  body.gate-app-shell-ready #page-processing.active::before,
+  body.gate-app-shell-ready #page-squadron.active::before {
+    content: '' !important;
+    display: block !important;
+    position: fixed !important;
+    left: 50% !important;
+    top: 52% !important;
+    width: min(64vw, 980px) !important;
+    height: min(64vw, 980px) !important;
+    transform: translate3d(-50%, -50%, 0) !important;
+    pointer-events: none !important;
+    z-index: 0 !important;
+    background-image: url('/assets/gate_emblem_white.png') !important;
+    background-repeat: no-repeat !important;
+    background-position: center center !important;
+    background-size: contain !important;
+    opacity: 0.085 !important;
+    filter: grayscale(100%) !important;
+    mix-blend-mode: normal !important;
+  }
+
+  body.theme-light.gate-app-shell-ready #page-board.active::before,
+  body.theme-light.gate-app-shell-ready #page-processing.active::before,
+  body.theme-light.gate-app-shell-ready #page-squadron.active::before {
+    background-image: url('/assets/gate_emblem_blue.png') !important;
+    opacity: 0.045 !important;
+  }
+
+  body.gate-app-shell-ready #page-processing.active::before {
+    width: min(56vw, 820px) !important;
+    height: min(56vw, 820px) !important;
+    opacity: 0.06 !important;
+  }
+
+  body.theme-light.gate-app-shell-ready #page-processing.active::before {
+    opacity: 0.035 !important;
+  }
+
+  body.gate-app-shell-ready #page-board.active > *,
+  body.gate-app-shell-ready #page-processing.active > *,
+  body.gate-app-shell-ready #page-squadron.active > * {
+    position: relative !important;
+    z-index: 1 !important;
+  }
+}
+
+/* Desktop guard: phone sheet must remain hidden even if JS toggles mobile drawer state accidentally. */
+@media (hover: hover) and (pointer: fine) {
+  body.gate-app-shell-ready #gate-mobile-nav-sheet,
+  body.gate-app-shell-ready #gate-mobile-menu-scrim,
+  body.gate-app-shell-ready.gate-mobile-drawer-open #gate-mobile-nav-sheet,
+  body.gate-app-shell-ready.gate-mobile-drawer-open #gate-mobile-menu-scrim {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
+}

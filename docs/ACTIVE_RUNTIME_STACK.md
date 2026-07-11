@@ -1,7 +1,7 @@
 # GATE Active Runtime Stack
 
-Status: Phase 7H updated baseline
-Scope: Documents the active served runtime after workflow ownership consolidation, UI ownership correction, viewport-fixed watermark contract, and retirement of the remaining active page-specific UI patch scripts.
+Status: Phase 8 static validation baseline
+Scope: Documents the active served runtime after workflow ownership consolidation, UI ownership correction, viewport-fixed watermark contract, remaining UI patch retirement, mobile Processing modal close correction, and static workflow validation.
 
 ## Purpose
 
@@ -19,7 +19,7 @@ Injected directly by middleware:
 6. `/css/gate-premium-metrics.css?v=premium-metrics-20260709d`
 7. `/css/gate-app-shell.css?v=phase-7g-viewport-watermark-20260709`
 8. `/css/gate-mobile-corrective.css?v=phase-7h-ui-patch-retirement-20260709`
-9. `/css/gate-ui-ownership-correction.css?v=phase-7g-viewport-watermark-20260709`
+9. `/css/gate-ui-ownership-correction.css?v=phase-7i-mobile-modal-close-20260709`
 
 Imported by `gate-utilities-access.css`:
 
@@ -100,6 +100,14 @@ These files remain in the repository for traceability but are no longer loaded b
 
 Reason: their visual behavior is now folded into `/css/gate-mobile-corrective.css?v=phase-7h-ui-patch-retirement-20260709`, avoiding JavaScript inline style mutation, body mutation observers, and runtime style injection for purely visual concerns.
 
+## Removed during Phase 7I correction
+
+A temporary file was created and then removed before it became active runtime:
+
+1. `/css/gate-processing-modal-mobile-close.css`
+
+Reason: Processing modal mobile close behavior was folded into the existing active UI ownership stylesheet instead of creating another one-off active CSS file.
+
 ## Narrowed in Phase 6
 
 `/js/gate-ui-hooks.js` remains active, but it is lifecycle-only.
@@ -132,7 +140,7 @@ It no longer owns board CSS, watermark CSS, fullscreen board CSS, Airport page m
 - `gate-watermark-processing`
 - `gate-watermark-squadron`
 
-`/css/gate-ui-ownership-correction.css` now owns a body-level viewport watermark through `body.gate-app-shell-ready.gate-watermark-page::after`.
+`/css/gate-ui-ownership-correction.css` owns a body-level viewport watermark through `body.gate-app-shell-ready.gate-watermark-page::after`.
 
 The old page-level watermark pseudo-elements on `#page-board.active::before`, `#page-processing.active::before`, and `#page-squadron.active::before` are explicitly disabled. This prevents the watermark from becoming scroll-bound through page transforms or isolated page stacking contexts.
 
@@ -149,7 +157,19 @@ The old page-level watermark pseudo-elements on `#page-board.active::before`, `#
 
 These behaviors replaced the removed active JavaScript patch files.
 
-## Runtime pattern after Phase 7H
+## Added in Phase 7I
+
+`/css/gate-ui-ownership-correction.css` now also owns mobile Processing dorm modal close affordance:
+
+- phone modal overlay scroll containment
+- phone modal content height bounds
+- sticky modal header
+- visible BACK affordance using the existing close button
+- modal title truncation protection
+
+This keeps Processing modal workflow in `GateProcessingController` and handles only the presentation/close affordance in the existing UI ownership stylesheet.
+
+## Runtime pattern after Phase 8 static validation
 
 The runtime is still a monolithic base app plus injected controllers, but the major operational workflow surfaces now have active owners and UI ownership boundaries.
 
@@ -171,13 +191,13 @@ The runtime is still a monolithic base app plus injected controllers, but the ma
 
 `GateRenderStabilityStyleGuard` is a style-only guard for desktop Status Board / Processing visual stability and does not own watermark placement.
 
-`gate-ui-ownership-correction.css` owns final UI artifact hiding and body-level viewport watermark boundaries.
+`gate-ui-ownership-correction.css` owns final UI artifact hiding, body-level viewport watermark boundaries, and mobile Processing modal close affordance.
 
 `gate-mobile-corrective.css` owns the remaining phone/tablet presentation contracts formerly handled by page-specific UI patch scripts.
 
 `prc-dash-final-audit.js` has been narrowed to document identity support, Squadron Board rendering, close-dorm final-time safety compatibility, and compatibility `GateDormBoardController` API.
 
-## Remaining active overlap areas
+## Remaining active cautions
 
 1. Legacy base shell:
    - `public/index.html` and `gate-index-legacy-shell.css` still contain legacy CSS/markup being overridden by canonical controllers and final correction layers.
@@ -185,6 +205,9 @@ The runtime is still a monolithic base app plus injected controllers, but the ma
 2. Input/archive metadata bridge:
    - `GateInputPageController` still helps preserve receiving-window metadata for archive payloads.
 
-## Phase 7H conclusion
+3. Live validation required:
+   - Phase 8 static validation passes the ownership chain, but browser/device validation is still required for workflow and UI acceptance.
 
-Navigation / App Shell / Mobile Shell, lifecycle hooks, Status Board metrics, Status Board dorm columns, Active Buses En Route, Processing page/modal behavior, Airport/local arrival bus workflow, Input / Week Group initialization, Archive / Reporting / Closeout, phone-only navigation artifact hiding, body-level viewport watermark boundaries, Airport phone layout, and tablet Processing modal reachability now have active ownership separation. The next recommended work is a validation pass, then Phase 8 workflow validation matrix.
+## Phase 8 conclusion
+
+Static validation passes for runtime ownership and canonical workflow wiring. The next required step is live/manual validation across Instructor desktop, Instructor phone, Airman phone, and Squadron desktop before starting new development or additional polish.

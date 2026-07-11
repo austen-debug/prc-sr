@@ -1,4 +1,4 @@
-// GATE Phase 5 Archive / Reporting / Closeout Controller
+// GATE Phase 8B Archive / Reporting / Closeout Controller
 // Canonical owner for closeout archive creation/verification, archive management, archive edit, and print/current summary handoffs.
 (function () {
   'use strict';
@@ -115,8 +115,12 @@
     return bus.arrived_at || bus.departed_at || bus.created_at || bus.updated_at || '';
   }
 
-  function dormTime(dorm) {
-    return dorm.closed_at || dorm.close_time || dorm.processed_at || dorm.updated_at || dorm.created_at || '';
+  function busSpaceForceCount(bus) {
+    return Math.min(n(bus.space_force_count), n(bus.otw_count));
+  }
+
+  function busAirForceCount(bus) {
+    return Math.max(n(bus.otw_count) - busSpaceForceCount(bus), 0);
   }
 
   function timestamp(value) {
@@ -535,7 +539,7 @@
     return `<button type="button" class="gate-archive-record-card" data-archive-id="${esc(archive.__backendId)}" data-owner="gate-archive-controller"><span><span class="gate-archive-record-title">${esc(archive.week_group || 'Archived Week Group')}</span><span class="gate-archive-record-meta">Archived ${esc(time)}</span></span><span class="gate-archive-record-stats"><span class="gate-archive-stat-pill">${n(archive.dorm_count)} Dorms</span><span class="gate-archive-stat-pill">${n(archive.bus_count)} Buses</span><span class="gate-archive-stat-pill">${n(archive.total_arrived)} Arrived</span><span class="gate-archive-stat-pill">${n(archive.female_total)} Female</span><span class="gate-archive-stat-pill">${n(archive.nat_total)} NAT</span><span class="gate-archive-stat-pill">${archiveSpaceForceTotal(archive)} Space Force</span></span></button>`;
   }
 
-  function renderArchiveManagementView(options = {}) {
+  function renderArchiveManagementView() {
     const container = document.getElementById('archive-history');
     if (!container) return;
     const search = document.getElementById('gate-archive-search');
@@ -601,10 +605,10 @@
     let natCum = 0;
     return nightDefs.map(([label, start, end]) => {
       const hasWindow = Boolean(timestamp(start) && timestamp(end));
-      const dayDorms = hasWindow ? dorms.filter(d => inWindow(dormTime(d), start, end)) : [];
-      const afToday = dayDorms.filter(d => !isSpaceForceDorm(d)).reduce((sum, d) => sum + dormLoad(d), 0);
-      const sfToday = dayDorms.filter(isSpaceForceDorm).reduce((sum, d) => sum + dormLoad(d), 0);
-      const natToday = hasWindow ? buses.filter(b => inWindow(busTime(b), start, end)).reduce((sum, b) => sum + n(b.nat_count), 0) : 0;
+      const windowBuses = hasWindow ? buses.filter(bus => inWindow(busTime(bus), start, end)) : [];
+      const afToday = windowBuses.reduce((sum, bus) => sum + busAirForceCount(bus), 0);
+      const sfToday = windowBuses.reduce((sum, bus) => sum + busSpaceForceCount(bus), 0);
+      const natToday = windowBuses.reduce((sum, bus) => sum + n(bus.nat_count), 0);
       afCum += afToday;
       sfCum += sfToday;
       natCum += natToday;

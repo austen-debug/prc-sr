@@ -14,12 +14,14 @@ import {
 } from '../../../public/app/data/index.mjs';
 import {
   calculateConfirmedArrivalTotals,
+  calculateCapacityTotals,
   selectActiveBuses
 } from '../../../public/app/domain/operational-metrics.mjs';
 import { calculateReceivingSummary } from '../../../public/app/domain/receiving.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const fixture = JSON.parse(await readFile(resolve(here, '../fixtures/B2-P1-F011-record-compatibility.json'), 'utf8'));
+const historicalFixture = JSON.parse(await readFile(resolve(here, '../fixtures/B2-P1-F001-receiving-parity.json'), 'utf8'));
 const options = { timeZone: fixture.operationalTimeZone };
 
 test('datetime-local values normalize through the explicit operational time zone', () => {
@@ -83,6 +85,29 @@ test('normalized Build 1 records preserve receiving calculation parity', () => {
   assert.equal(summary.confirmed.total, 44);
   assert.equal(summary.nights[0].totals.total, 44);
   assert.equal(summary.nights[0].totals.spaceForce, 4);
+});
+
+test('compatibility normalization preserves the historical F001 parity baseline', () => {
+  const result = normalizePersistedRecords(historicalFixture.records, options);
+  const domainRecords = toCanonicalDomainRecords(result.records);
+  const capacity = calculateCapacityTotals(domainRecords, historicalFixture.weekGroup);
+  const confirmed = calculateConfirmedArrivalTotals(domainRecords, historicalFixture.weekGroup);
+  const active = selectActiveBuses(domainRecords, historicalFixture.weekGroup);
+  const summary = calculateReceivingSummary({
+    records: domainRecords,
+    weekGroup: historicalFixture.weekGroup,
+    windows: historicalFixture.receivingWindows
+  });
+
+  assert.equal(capacity.total, historicalFixture.expected.projectedTotal);
+  assert.equal(confirmed.total, historicalFixture.expected.confirmedArrived);
+  assert.equal(active.length, historicalFixture.expected.activeBusCount);
+  assert.equal(summary.nights[0].totals.total, historicalFixture.expected.nightOne.processed);
+  assert.equal(summary.nights[0].totals.naturalization, historicalFixture.expected.nightOne.naturalization);
+  assert.equal(summary.nights[1].totals.total, historicalFixture.expected.nightTwo.processed);
+  assert.equal(summary.nights[1].totals.naturalization, historicalFixture.expected.nightTwo.naturalization);
+  assert.equal(summary.nights[1].cumulative.total, historicalFixture.expected.nightTwo.cumulativeProcessed);
+  assert.equal(summary.nights[1].cumulative.naturalization, historicalFixture.expected.nightTwo.cumulativeNaturalization);
 });
 
 test('malformed archive arrays produce warnings instead of exceptions', () => {

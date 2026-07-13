@@ -1,0 +1,38 @@
+name: Build 2 Domain Tests
+
+on:
+  push:
+    paths:
+      - 'public/app/domain/**'
+      - 'tests/build-2/**'
+      - '.github/workflows/build-2-domain-tests.yml'
+  pull_request:
+    paths:
+      - 'public/app/domain/**'
+      - 'tests/build-2/**'
+      - '.github/workflows/build-2-domain-tests.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-2-domain-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  domain-tests:
+    name: Canonical domain parity
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Run Build 2 domain tests
+        run: node --test tests/build-2/domain/*.test.mjs

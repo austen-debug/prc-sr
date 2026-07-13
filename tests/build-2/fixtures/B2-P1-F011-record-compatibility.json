@@ -1,0 +1,78 @@
+{
+  "fixtureId": "B2-P1-F011",
+  "title": "Build 1 record compatibility and canonical normalization",
+  "operationalTimeZone": "America/Chicago",
+  "records": [
+    {
+      "__backendId": "cfg-active-week",
+      "type": "config",
+      "key": "active_wg",
+      "value": "26-28"
+    },
+    {
+      "__backendId": "bus-arrived-local-time",
+      "type": "bus",
+      "week_group": "26-28",
+      "bus_id": "4",
+      "bus_type": "airport",
+      "status": "ARRIVED",
+      "otw_count": "44",
+      "female_count": "7",
+      "nat_count": "3",
+      "space_force_count": "4",
+      "departed_at": "2026-07-07T11:30",
+      "arrived_at": "2026-07-07T12:00"
+    },
+    {
+      "__backendId": "bus-active",
+      "type": "bus",
+      "week_group": "26-28",
+      "bus_id": "5",
+      "status": "OTW",
+      "otw_count": 20,
+      "female_count": 6,
+      "nat_count": 2,
+      "space_force_count": 5,
+      "departed_at": "2026-07-07T12:15",
+      "arrived_at": ""
+    },
+    {
+      "__backendId": "dorm-legacy",
+      "type": "dorm",
+      "week_group": "26-28",
+      "dorm_name": "DORM 01",
+      "max_load": "40",
+      "current_load": "45",
+      "space_force": "true",
+      "receiving_day_one_start": "2026-07-07T12:00",
+      "receiving_day_one_end": "2026-07-08T15:00"
+    },
+    {
+      "__backendId": "archive-legacy",
+      "type": "archive",
+      "week_group": "26-28",
+      "archived_at": "2026-07-09T17:00:00Z",
+      "total_expected": 60,
+      "total_arrived": 44,
+      "space_force_total": 9,
+      "arrived_space_force_total": 4,
+      "bus_data": "[{\"type\":\"bus\",\"status\":\"arrived\",\"otw_count\":44,\"space_force_count\":4,\"arrived_at\":\"2026-07-07T12:00\"},{\"type\":\"bus\",\"status\":\"active\",\"otw_count\":20,\"space_force_count\":5,\"departed_at\":\"2026-07-07T12:15\"}]",
+      "dorm_data": "[{\"type\":\"dorm\",\"dorm_name\":\"DORM 01\",\"max_load\":60,\"space_force\":\"true\",\"receiving_day_one_start\":\"2026-07-07T12:00\",\"receiving_day_one_end\":\"2026-07-08T15:00\"}]"
+    },
+    {
+      "__backendId": "future-record",
+      "type": "future_extension",
+      "week_group": "26-28",
+      "custom": { "preserve": true }
+    }
+  ],
+  "expected": {
+    "canonicalConfigKey": "week_group",
+    "summerLocalNoonUtc": "2026-07-07T17:00:00.000Z",
+    "confirmedArrived": 44,
+    "activeBusCount": 1,
+    "constrainedDormLoad": 40,
+    "archiveConfirmedSpaceForce": 4,
+    "unknownRecordPreserved": true
+  }
+}

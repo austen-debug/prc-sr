@@ -1,5 +1,5 @@
-/* GATE Phase 7I UI Ownership Correction
-   Final authority for phone-only artifact hiding, body-level viewport watermark ownership, and critical mobile modal close reachability. */
+/* GATE Phase 8D UI Ownership Correction
+   Final authority for phone-only artifact hiding, body-level viewport watermark ownership, critical mobile modal close reachability, and mobile metric containment. */
 
 /* Phone-only shell artifacts must never render as normal body content on desktop. */
 #gate-mobile-nav-sheet,
@@ -107,6 +107,49 @@ body.theme-light.gate-app-shell-ready.gate-watermark-processing::after {
 body.gate-app-shell-ready .page.active {
   position: relative !important;
   z-index: 1 !important;
+}
+
+/* Phase 8D: mobile Status Board metric containment.
+   Each card owns its content box; time values are reduced and padded so adjacent cards never visually touch. */
+@media (max-width: 767px), (pointer: coarse) and (max-width: 767px) {
+  #page-board .gate-metrics-container {
+    column-gap: 12px !important;
+    row-gap: 12px !important;
+  }
+
+  #page-board .gate-metrics-container .metric-card {
+    min-width: 0 !important;
+    padding: 13px 14px 12px !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+  }
+
+  #page-board .gate-metrics-container .metric-header,
+  #page-board .gate-metrics-container .metric-label,
+  #page-board .gate-metrics-container .metric-value {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  #page-board .gate-metrics-container .metric-value {
+    padding-inline: 2px !important;
+    font-size: clamp(2rem, 10.2vw, 3rem) !important;
+    letter-spacing: -0.055em !important;
+    line-height: 0.94 !important;
+    text-align: left !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: clip !important;
+  }
+
+  #page-board #stat-last,
+  #page-board #stat-local {
+    padding-inline: 1px 4px !important;
+    font-size: clamp(1.52rem, 7.25vw, 2.05rem) !important;
+    letter-spacing: -0.075em !important;
+    line-height: 1 !important;
+  }
 }
 
 /* Phase 7I: phone Processing modal close affordance. Workflow behavior remains owned by GateProcessingController. */

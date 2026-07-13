@@ -1,0 +1,40 @@
+name: Build 2 Data Tests
+
+on:
+  push:
+    paths:
+      - 'public/app/data/**'
+      - 'tests/build-2/data/**'
+      - 'tests/build-2/fixtures/**'
+      - '.github/workflows/build-2-data-tests.yml'
+  pull_request:
+    paths:
+      - 'public/app/data/**'
+      - 'tests/build-2/data/**'
+      - 'tests/build-2/fixtures/**'
+      - '.github/workflows/build-2-data-tests.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-2-data-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  data-tests:
+    name: Record compatibility parity
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Run Build 2 data tests
+        run: node --test tests/build-2/data/*.test.mjs

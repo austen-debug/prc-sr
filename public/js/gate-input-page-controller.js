@@ -372,6 +372,30 @@
     return String(row.dorm_name || '').trim() || `Dorm ${Number(row.rowIndex || 0) + 1}`;
   }
 
+  function normalizeDormIdentityPart(value) {
+    return String(value || '').trim().replace(/\s+/g, ' ').toUpperCase();
+  }
+
+  function dormIdentity(row) {
+    const squadron = normalizeDormIdentityPart(row?.sdq);
+    const dorm = normalizeDormIdentityPart(normalizedDormName(row || {}));
+    return Object.freeze({
+      squadron,
+      dorm,
+      key: `${squadron}::${dorm}`
+    });
+  }
+
+  function findDuplicateDormIdentity(rows = []) {
+    const seen = new Set();
+    for (const row of Array.isArray(rows) ? rows : []) {
+      const identity = dormIdentity(row);
+      if (seen.has(identity.key)) return identity;
+      seen.add(identity.key);
+    }
+    return null;
+  }
+
   function preflightInitialization() {
     const weekGroup = getWeekGroupInputValue();
     if (!weekGroup) return { ok: false, message: 'Week Group ID required.' };
@@ -388,9 +412,11 @@
     const invalidLoad = rows.find(row => n(row.load) <= 0 || n(row.load) > 60);
     if (invalidLoad) return { ok: false, message: 'Dorm loads must be between 1 and 60.' };
 
-    const names = rows.map(row => normalizedDormName(row).toUpperCase());
-    const duplicate = names.find((name, index) => names.indexOf(name) !== index);
-    if (duplicate) return { ok: false, message: `Duplicate dorm name detected: ${duplicate}.` };
+    const duplicate = findDuplicateDormIdentity(rows);
+    if (duplicate) {
+      const squadronLabel = duplicate.squadron || 'UNSPECIFIED SQUADRON';
+      return { ok: false, message: `Duplicate Squadron/Dorm combination detected: ${squadronLabel} + ${duplicate.dorm}.` };
+    }
 
     const existingDorms = allDataSafe().filter(record => record.type === 'dorm' && record.week_group === weekGroup);
     if (existingDorms.length) return { ok: false, message: `${weekGroup} already has live dorm records. Close out/archive before initializing it again.` };
@@ -723,6 +749,7 @@
       collectReceivingWindows: collectReceivingWindowsForReport,
       validateReceivingWindows,
       preflightInitialization,
+      findDuplicateDormIdentity,
       getRows: batchRowsSafe
     });
   }

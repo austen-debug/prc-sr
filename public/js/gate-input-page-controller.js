@@ -35,6 +35,10 @@
       .replaceAll("'", '&#039;');
   }
 
+  function recordDisplay() {
+    return window.GateRecordDisplay || null;
+  }
+
   function activeWeekGroup() {
     try { return typeof getActiveWG === 'function' ? getActiveWG() : ''; } catch (_) { return ''; }
   }
@@ -435,7 +439,17 @@
 
   function buildDormPayload(row, weekGroup, windows) {
     const spaceForce = Boolean(row.space_force);
+    const displayOrder = Number(row.rowIndex) + 1;
     const now = new Date().toISOString();
+    const identitySource = {
+      week_group: weekGroup,
+      sdq: String(row.sdq || '').trim(),
+      dorm_name: normalizedDormName(row)
+    };
+    const identity = recordDisplay()?.dormIdentityKey
+      ? recordDisplay().dormIdentityKey(identitySource)
+      : `${normalizeDormIdentityPart(weekGroup)}::${normalizeDormIdentityPart(row.sdq)}::${normalizeDormIdentityPart(normalizedDormName(row))}`;
+
     return Object.assign({}, windows, {
       type: 'dorm',
       dorm_name: normalizedDormName(row),
@@ -448,6 +462,10 @@
       band: row.band && !spaceForce ? 'true' : 'false',
       space_force: spaceForce ? 'true' : 'false',
       is_space_force: spaceForce ? 'true' : 'false',
+      display_order: displayOrder,
+      input_order: displayOrder,
+      source_row_index: Number(row.rowIndex),
+      dorm_identity: identity,
       state: 'empty',
       phase: '',
       opened_at: '',
@@ -538,17 +556,25 @@
   }
 
   function isSpaceForceDorm(dorm) {
-    return dorm && (dorm.space_force === true || dorm.space_force === 'true' || dorm.is_space_force === true || dorm.is_space_force === 'true');
+    const flags = recordDisplay()?.normalizeDormFlags?.(dorm);
+    return flags ? flags.spaceForce : Boolean(dorm && (dorm.space_force === true || dorm.space_force === 'true' || dorm.is_space_force === true || dorm.is_space_force === 'true'));
   }
 
-  function findBatchRowForDormPayload(payload) {
-    return batchRowsSafe().find(row => (
-      String(normalizedDormName(row)).trim() === String(payload.dorm_name || '').trim() &&
-      String(row.sdq || '').trim() === String(payload.sdq || '').trim() &&
-      String(row.sec || '').trim() === String(payload.section || '').trim() &&
-      String(row.inter_sec || '').trim() === String(payload.inter_sec || '').trim() &&
-      n(row.load) === n(payload.max_load)
-    )) || null;
+  function isBandDorm(dorm) {
+    const flags = recordDisplay()?.normalizeDormFlags?.(dorm);
+    return flags ? flags.band : Boolean(dorm && (dorm.band === true || dorm.band === 'true'));
+  }
+
+  function matchingDormIdentity(left, right, weekGroup = '') {
+    const display = recordDisplay();
+    if (display?.dormIdentityKey) {
+      const leftRecord = { ...left, week_group: left?.week_group || weekGroup };
+      const rightRecord = { ...right, week_group: right?.week_group || weekGroup };
+      return display.dormIdentityKey(leftRecord) === display.dormIdentityKey(rightRecord);
+    }
+    return normalizeDormIdentityPart(left?.week_group || weekGroup) === normalizeDormIdentityPart(right?.week_group || weekGroup)
+      && normalizeDormIdentityPart(left?.sdq) === normalizeDormIdentityPart(right?.sdq)
+      && normalizeDormIdentityPart(left?.dorm_name || left?.name) === normalizeDormIdentityPart(right?.dorm_name || right?.name);
   }
 
   function patchDataSdk() {
@@ -558,12 +584,16 @@
 
     window.dataSdk.create = function gateInputCreate(payload) {
       if (payload && payload.type === 'dorm') {
-        const row = findBatchRowForDormPayload(payload);
         const windows = readWindowInputs(payload.week_group || '');
+        const normalizedFlags = recordDisplay()?.normalizeDormFlags?.(payload);
+        const spaceForce = normalizedFlags ? normalizedFlags.spaceForce : isSpaceForceDorm(payload);
+        const band = normalizedFlags ? normalizedFlags.band : (!spaceForce && isBandDorm(payload));
+        const identity = payload.dorm_identity || (recordDisplay()?.dormIdentityKey ? recordDisplay().dormIdentityKey(payload) : '');
         payload = Object.assign({}, payload, windows, {
-          space_force: row && row.space_force ? 'true' : (payload.space_force || 'false'),
-          is_space_force: row && row.space_force ? 'true' : (payload.is_space_force || payload.space_force || 'false'),
-          band: row && row.space_force ? 'false' : (payload.band || 'false')
+          band: band ? 'true' : 'false',
+          space_force: spaceForce ? 'true' : 'false',
+          is_space_force: spaceForce ? 'true' : 'false',
+          dorm_identity: identity
         });
       }
 
@@ -574,10 +604,20 @@
           const dorms = JSON.parse(payload.dorm_data || '[]');
           const liveDorms = allDataSafe().filter(record => record.type === 'dorm' && record.week_group === payload.week_group);
           dormData = JSON.stringify(dorms.map(dorm => {
-            const live = liveDorms.find(item => String(item.dorm_name || '') === String(dorm.dorm_name || dorm.name || '')) || {};
+            const live = liveDorms.find(item => matchingDormIdentity(item, dorm, payload.week_group)) || {};
+            const liveFlags = recordDisplay()?.normalizeDormFlags?.(live);
+            const archivedSpaceForce = isSpaceForceDorm(dorm);
+            const archivedBand = isBandDorm(dorm);
+            const spaceForce = liveFlags ? liveFlags.spaceForce : (Object.keys(live).length ? isSpaceForceDorm(live) : archivedSpaceForce);
+            const band = liveFlags ? liveFlags.band : (Object.keys(live).length ? isBandDorm(live) : archivedBand);
             return Object.assign({}, dorm, windows, {
-              space_force: isSpaceForceDorm(live) ? 'true' : (dorm.space_force || dorm.is_space_force || 'false'),
-              is_space_force: isSpaceForceDorm(live) ? 'true' : (dorm.is_space_force || dorm.space_force || 'false')
+              display_order: live.display_order ?? dorm.display_order,
+              input_order: live.input_order ?? dorm.input_order,
+              source_row_index: live.source_row_index ?? dorm.source_row_index,
+              dorm_identity: live.dorm_identity || dorm.dorm_identity || (recordDisplay()?.dormIdentityKey ? recordDisplay().dormIdentityKey({ ...dorm, week_group: payload.week_group }) : ''),
+              band: band ? 'true' : 'false',
+              space_force: spaceForce ? 'true' : 'false',
+              is_space_force: spaceForce ? 'true' : 'false'
             });
           }));
         } catch (_) {}
@@ -750,6 +790,7 @@
       validateReceivingWindows,
       preflightInitialization,
       findDuplicateDormIdentity,
+      buildDormPayload,
       getRows: batchRowsSafe
     });
   }

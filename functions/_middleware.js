@@ -5,8 +5,8 @@ const UI_STYLESHEETS = [
   '<link rel="stylesheet" href="/css/gate-base-tokens.css">',
   '<link rel="stylesheet" href="/css/gate-layout-pages.css">',
   '<link rel="stylesheet" href="/css/gate-components.css">',
-  '<link rel="stylesheet" href="/css/gate-utilities-access.css?v=phase-7c-mobile-corrective-20260709">',
-  '<link rel="stylesheet" href="/css/gate-premium-metrics.css?v=premium-metrics-20260709d">',
+  '<link rel="stylesheet" href="/css/gate-utilities-access.css?v=status-board-light-clarity-20260714">',
+  '<link rel="stylesheet" href="/css/gate-premium-metrics.css?v=status-board-active-bus-strip-20260714">',
   '<link rel="stylesheet" href="/css/gate-app-shell.css?v=phase-7g-viewport-watermark-20260709">',
   '<link rel="stylesheet" href="/css/gate-mobile-corrective.css?v=phase-7h-ui-patch-retirement-20260709">',
   '<link rel="stylesheet" href="/css/gate-ui-ownership-correction.css?v=phase-8d-mobile-metric-containment-20260709">'
@@ -40,6 +40,10 @@ const UI_HEAD_SCRIPTS = [
 ];
 
 const STATUS_BOARD_METRICS_HTML = `<div class="board-header gate-premium-metrics-enabled" data-owner="gate-status-metrics-source" data-phase="1B">
+     <section class="metric-block gate-active-buses-block" aria-label="Active buses en route">
+      <div class="gate-active-buses-label">Active Buses En Route</div>
+      <div id="active-buses" class="flex gap-2 flex-wrap items-center"></div>
+     </section>
      <div class="gate-metrics-container">
       <div class="metric-card arrived-card">
        <div class="metric-header">
@@ -66,10 +70,6 @@ const STATUS_BOARD_METRICS_HTML = `<div class="board-header gate-premium-metrics
        </div>
        <div class="metric-value" id="stat-local">00:00</div>
       </div>
-     </div>
-     <div class="metric-block gate-active-buses-block">
-      <div class="text-xs uppercase tracking-wider font-medium text-muted mb-1">Active Buses En Route</div>
-      <div id="active-buses" class="flex gap-2 flex-wrap items-center"></div>
      </div>
     </div>`;
 

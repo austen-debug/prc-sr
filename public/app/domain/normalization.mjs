@@ -6,6 +6,34 @@ export function normalizeWeekGroup(value) {
   return normalizeText(value).toUpperCase();
 }
 
+export function normalizeDormIdentityPart(value) {
+  return normalizeText(value).replace(/\s+/g, ' ').toUpperCase();
+}
+
+export function createDormIdentity(record = {}) {
+  const rawDormName = record.dormName ?? record.dorm_name ?? record.name;
+  const rowIndex = Number(record.rowIndex);
+  const fallbackDormName = Number.isFinite(rowIndex) ? `Dorm ${rowIndex + 1}` : '';
+  const squadron = normalizeDormIdentityPart(record.squadron ?? record.sdq);
+  const dorm = normalizeDormIdentityPart(normalizeText(rawDormName) || fallbackDormName);
+
+  return Object.freeze({
+    squadron,
+    dorm,
+    key: `${squadron}::${dorm}`
+  });
+}
+
+export function findDuplicateDormIdentity(records = []) {
+  const seen = new Set();
+  for (const record of Array.isArray(records) ? records : []) {
+    const identity = createDormIdentity(record);
+    if (seen.has(identity.key)) return identity;
+    seen.add(identity.key);
+  }
+  return null;
+}
+
 export function toNonNegativeNumber(value, { integer = true } = {}) {
   const parsed = Number(value);
   if (!Number.isFinite(parsed)) return 0;
@@ -77,6 +105,7 @@ export function normalizeDormRecord(record = {}) {
     type: 'dorm',
     weekGroup: normalizeWeekGroup(record.week_group),
     name: normalizeText(record.dorm_name || record.name),
+    sdq: normalizeText(record.sdq),
     capacity,
     load,
     spaceForce,

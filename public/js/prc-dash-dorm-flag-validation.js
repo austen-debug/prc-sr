@@ -121,7 +121,7 @@
 
   function validateCards() {
     const dorms = activeDorms();
-    document.querySelectorAll('#page-board [data-dorm-id], #page-squadron [data-dorm-id], #proc-dorm-grid [data-dorm-id]').forEach(card => {
+    document.querySelectorAll('#page-board .dorm-card[data-dorm-id], #page-squadron .dorm-card[data-dorm-id], #proc-dorm-grid .proc-card[data-dorm-id]').forEach(card => {
       const dorm = dormById(cardDormId(card), dorms);
       if (dorm) setFlags(card, dorm);
     });

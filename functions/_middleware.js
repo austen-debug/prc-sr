@@ -43,38 +43,38 @@ const UI_HEAD_SCRIPTS = [
 ];
 
 const STATUS_BOARD_METRICS_HTML = `<div class="board-header gate-premium-metrics-enabled" data-owner="gate-status-metrics-source" data-phase="1B">
-       <div class="gate-metrics-container">
-        <div class="metric-card arrived-card">
-         <div class="metric-header">
-          <span class="status-dot led-green" aria-hidden="true"></span>
-          <span class="metric-label">ARRIVED</span>
-         </div>
-         <div class="metric-value" id="stat-arrived">0</div>
+      <div class="gate-metrics-container">
+       <div class="metric-card arrived-card">
+        <div class="metric-header">
+         <span class="status-dot led-green" aria-hidden="true"></span>
+         <span class="metric-label">ARRIVED</span>
         </div>
-        <div class="metric-card expected-card">
-         <div class="metric-header">
-          <span class="metric-label">EXPECTED</span>
-         </div>
-         <div class="metric-value" id="stat-expected">0</div>
-        </div>
-        <div class="metric-card last-card">
-         <div class="metric-header">
-          <span class="metric-label">LAST</span>
-         </div>
-         <div class="metric-value" id="stat-last">00:00</div>
-        </div>
-        <div class="metric-card local-card">
-         <div class="metric-header">
-          <span class="metric-label">LOCAL</span>
-         </div>
-         <div class="metric-value" id="stat-local">00:00</div>
-        </div>
+        <div class="metric-value" id="stat-arrived">0</div>
        </div>
-       <section class="gate-active-buses-block" aria-label="Active buses en route">
-        <div class="gate-active-buses-label">ACTIVE BUSES</div>
-        <div id="active-buses" class="flex gap-2 flex-wrap items-center"></div>
-       </section>
-      </div>`;
+       <div class="metric-card expected-card">
+        <div class="metric-header">
+         <span class="metric-label">EXPECTED</span>
+        </div>
+        <div class="metric-value" id="stat-expected">0</div>
+       </div>
+       <div class="metric-card last-card">
+        <div class="metric-header">
+         <span class="metric-label">LAST</span>
+        </div>
+        <div class="metric-value" id="stat-last">00:00</div>
+       </div>
+       <div class="metric-card local-card">
+        <div class="metric-header">
+         <span class="metric-label">LOCAL</span>
+        </div>
+        <div class="metric-value" id="stat-local">00:00</div>
+       </div>
+      </div>
+      <section class="gate-active-buses-block" aria-label="Active buses en route">
+       <div class="gate-active-buses-label">ACTIVE BUSES</div>
+       <div id="active-buses" class="flex gap-2 flex-wrap items-center"></div>
+      </section>
+     </div>`;
 
 function jsonResponse(data, status = 200) {
   return new Response(JSON.stringify(data), {

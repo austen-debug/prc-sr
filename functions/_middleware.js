@@ -10,7 +10,8 @@ const UI_STYLESHEETS = [
   '<link rel="stylesheet" href="/css/gate-app-shell.css?v=phase-7g-viewport-watermark-20260709">',
   '<link rel="stylesheet" href="/css/gate-mobile-corrective.css?v=phase-7h-ui-patch-retirement-20260709">',
   '<link rel="stylesheet" href="/css/gate-ui-ownership-correction.css?v=phase-8d-mobile-metric-containment-20260709">',
-  '<link rel="stylesheet" href="/css/gate-light-mode-command-contrast.css?v=light-command-contrast-20260714">'
+  '<link rel="stylesheet" href="/css/gate-light-mode-command-contrast.css?v=light-command-contrast-20260714">',
+  '<link rel="stylesheet" href="/css/gate-light-mode-grid-correction.css?v=light-grid-correction-20260714">'
 ];
 
 const UI_INLINE_ASSETS = [];

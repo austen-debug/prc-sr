@@ -146,6 +146,31 @@ Rules:
 - legacy `assigned_airman` maps to canonical `assignedStaff` without changing the stored Build 1 field;
 - receiving-window fields are normalized through the operational timezone.
 
+### Dorm operational identity
+
+A dorm is uniquely identified within an Input initialization set by the composite pair:
+
+```text
+normalized Squadron/SDQ + normalized Dorm Name
+```
+
+Canonical key format:
+
+```text
+SQUADRON::DORM
+```
+
+Normalization trims surrounding whitespace, collapses repeated internal whitespace, and compares case-insensitively.
+
+Required behavior:
+
+- `324 + A04` and `326 + A04` are valid because the squadrons differ;
+- `324 + A04` and `324 + A04` are duplicates and must be rejected;
+- `324 + A04` and `324 + A05` are valid because the dorm names differ;
+- Section and Inter Section are descriptive organizational fields and are not part of the current dorm uniqueness key.
+
+Build 1 Input preflight and Build 2 domain/repository validation must enforce the same composite rule. A future identity-policy change requires an explicit migration decision and fixture updates.
+
 The assignment field remains restricted to staff assignment. It must never become a trainee-name field.
 
 ## Archive normalization

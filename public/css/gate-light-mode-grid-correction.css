@@ -1,0 +1,40 @@
+/* GATE light-mode grid and dorm-edge correction
+   Final light-theme owner for the application canvas and Status Board card perimeter. */
+
+body.theme-light {
+  --bg-canvas: #6f89a5;
+  --grid-line-color: rgba(24, 57, 92, 0.18);
+  background-color: #6f89a5 !important;
+  background-image:
+    linear-gradient(var(--grid-line-color) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line-color) 1px, transparent 1px) !important;
+  background-size: 24px 24px !important;
+  background-position: 0 0 !important;
+  background-attachment: fixed !important;
+}
+
+body.theme-light::after {
+  background: none !important;
+}
+
+/* Legacy board-presentation selectors assigned state colors to the left edge.
+   Operational state must not create a red card edge. */
+body.theme-light #page-board .dorm-column .gate-dorm-card.gate-component-dorm-card.gate-dorm-state-empty,
+body.theme-light #page-board .dorm-column .gate-dorm-card.gate-component-dorm-card.gate-dorm-state-open,
+body.theme-light #page-board .dorm-column .gate-dorm-card.gate-component-dorm-card.gate-dorm-state-closed,
+body.theme-light #page-squadron .dorm-column .gate-dorm-card.gate-component-dorm-card.gate-dorm-state-empty,
+body.theme-light #page-squadron .dorm-column .gate-dorm-card.gate-component-dorm-card.gate-dorm-state-open,
+body.theme-light #page-squadron .dorm-column .gate-dorm-card.gate-component-dorm-card.gate-dorm-state-closed {
+  border-left: 1px solid #8294a7 !important;
+}
+
+/* Female dorms retain the only red card perimeter, including the left edge. */
+body.theme-light #page-board .dorm-column .gate-dorm-card.gate-component-dorm-card.border-female,
+body.theme-light #page-board .dorm-column .gate-dorm-card.gate-component-dorm-card[data-female-dorm='true'],
+body.theme-light #page-squadron .dorm-column .gate-dorm-card.gate-component-dorm-card.border-female,
+body.theme-light #page-squadron .dorm-column .gate-dorm-card.gate-component-dorm-card[data-female-dorm='true'] {
+  border: 3px solid var(--gate-light-female, #b4233b) !important;
+  box-shadow:
+    0 0 0 1px rgba(180, 35, 59, 0.14),
+    0 5px 16px rgba(20, 49, 91, 0.12) !important;
+}

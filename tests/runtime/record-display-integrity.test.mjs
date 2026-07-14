@@ -22,16 +22,18 @@ test('canonical display contract preserves explicit Input order and legacy creat
     { __backendId: 'b', week_group: 'WG', sdq: '2', dorm_name: 'Alpha', display_order: 2 },
     { __backendId: 'a', week_group: 'WG', sdq: '1', dorm_name: 'Zulu', display_order: 1 }
   ]);
-  assert.deepEqual(explicit.map(record => record.__backendId), ['a', 'b']);
+  assert.deepEqual(Array.from(explicit, record => record.__backendId), ['a', 'b']);
 
   const legacy = contract.sortDorms([
     { __backendId: 'later', week_group: 'WG', sdq: '1', dorm_name: 'Alpha', created_at: '2026-07-14T02:00:00Z' },
     { __backendId: 'earlier', week_group: 'WG', sdq: '9', dorm_name: 'Zulu', created_at: '2026-07-14T01:00:00Z' }
   ]);
-  assert.deepEqual(legacy.map(record => record.__backendId), ['earlier', 'later']);
+  assert.deepEqual(Array.from(legacy, record => record.__backendId), ['earlier', 'later']);
 
   assert.equal(contract.dormIdentityKey({ week_group: 'wg', sdq: ' 321 TRS ', dorm_name: 'a-1' }), 'WG::321 TRS::A-1');
-  assert.deepEqual(contract.normalizeDormFlags({ band: 'true', space_force: 'true' }), { band: false, spaceForce: true });
+  const flags = contract.normalizeDormFlags({ band: 'true', space_force: 'true' });
+  assert.equal(flags.band, false);
+  assert.equal(flags.spaceForce, true);
 });
 
 test('active dorm consumers use the canonical record display contract', async () => {

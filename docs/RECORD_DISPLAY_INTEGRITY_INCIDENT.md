@@ -53,7 +53,8 @@ Order precedence:
 2. input_order
 3. source_row_index / row_index
 4. persisted created_at
-5. stable dorm identity and original source position
+5. original backend/source position when timestamps tie
+6. stable dorm identity as the final deterministic fallback
 ```
 
 ## Implemented corrections
@@ -75,7 +76,7 @@ All three consumers use `GateRecordDisplay.sortDorms()`.
 
 ### Dorm designation rendering
 
-Band and Space Force validation is record-ID bound. Card-index fallback and the broad `MutationObserver` were removed.
+Band and Space Force validation is record-ID bound. Card-index fallback and the broad `MutationObserver` were removed. Validation is restricted to dorm-card elements so timer elements that also carry record IDs cannot receive designation markup.
 
 ### Archive compatibility
 
@@ -85,7 +86,7 @@ Dorm reconciliation uses Week Group + Squadron + Dorm identity. It no longer use
 
 The remediation does **not** automatically rewrite existing live or archived records.
 
-Legacy records without explicit order metadata display using persisted record creation order, which reflects sequential Input creation under the current initialization workflow.
+Legacy records without explicit order metadata display using persisted record creation order, with original backend/source position preserved when timestamps are equal. This reflects sequential Input creation under the current initialization workflow as closely as the existing data permits.
 
 If a specific existing record still carries an incorrect `band`, `space_force`, or `is_space_force` value after a hard refresh, that is a stored-record defect. It must be corrected deliberately by record identity; GATE must not infer the intended designation from card position.
 
@@ -99,6 +100,7 @@ If a specific existing record still carries an incorrect `band`, `space_force`, 
 - persisted Input order and identity fields;
 - absence of batch-row re-matching;
 - absence of card-index designation assignment;
+- card-only designation validation;
 - absence of the former broad designation observer.
 
 ## Live acceptance criteria

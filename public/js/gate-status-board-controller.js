@@ -12,6 +12,10 @@
     return window.GateComponents || null;
   }
 
+  function recordDisplay() {
+    return window.GateRecordDisplay || null;
+  }
+
   function n(value) {
     const parsed = Number(value || 0);
     return Number.isFinite(parsed) ? parsed : 0;
@@ -36,38 +40,12 @@
     try { return Array.isArray(allData) ? allData : []; } catch (_) { return []; }
   }
 
-  function explicitDormOrder(dorm) {
-    const value = dorm?.display_order ?? dorm?.input_order ?? dorm?.row_index;
-    if (value === '' || value === null || typeof value === 'undefined') return null;
-    const parsed = Number(value);
-    return Number.isFinite(parsed) ? parsed : null;
-  }
-
-  function createdDormOrder(dorm) {
-    const parsed = Date.parse(dorm?.created_at || '');
-    return Number.isFinite(parsed) ? parsed : null;
-  }
-
   function getDorms() {
     const wg = activeWeekGroup();
-    return records()
+    const dorms = records()
       .filter(record => record?.type === 'dorm')
-      .filter(record => !wg || record.week_group === wg)
-      .map((record, sourceIndex) => ({ record, sourceIndex }))
-      .sort((left, right) => {
-        const leftExplicit = explicitDormOrder(left.record);
-        const rightExplicit = explicitDormOrder(right.record);
-        if (leftExplicit !== null && rightExplicit !== null && leftExplicit !== rightExplicit) return leftExplicit - rightExplicit;
-        if (leftExplicit !== null && rightExplicit === null) return -1;
-        if (leftExplicit === null && rightExplicit !== null) return 1;
-
-        const leftCreated = createdDormOrder(left.record);
-        const rightCreated = createdDormOrder(right.record);
-        if (leftCreated !== null && rightCreated !== null && leftCreated !== rightCreated) return leftCreated - rightCreated;
-
-        return left.sourceIndex - right.sourceIndex;
-      })
-      .map(entry => entry.record);
+      .filter(record => !wg || record.week_group === wg);
+    return recordDisplay()?.sortDorms ? recordDisplay().sortDorms(dorms) : dorms;
   }
 
   function getActiveBuses() {
@@ -84,6 +62,7 @@
       dorm.__backendId,
       dorm.display_order,
       dorm.input_order,
+      dorm.source_row_index,
       dorm.row_index,
       dorm.created_at,
       dorm.dorm_name,
@@ -247,7 +226,8 @@
     boardDormCard.__gateStatusBoardController = true;
 
     const boardDormColumns = function gateStatusBoardDormColumns(dorms) {
-      renderColumns(Array.isArray(dorms) ? dorms : getDorms(), { force: true });
+      const orderedDorms = recordDisplay()?.sortDorms ? recordDisplay().sortDorms(dorms) : dorms;
+      renderColumns(Array.isArray(orderedDorms) ? orderedDorms : getDorms(), { force: true });
     };
     boardDormColumns.__gateStatusBoardController = true;
 

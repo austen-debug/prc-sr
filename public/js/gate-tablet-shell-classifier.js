@@ -4,7 +4,7 @@
   'use strict';
 
   const LEGACY_SHELL_QUERY = '(max-width: 767px), (pointer: coarse) and (max-width: 1024px) and (max-height: 560px)';
-  const TABLET_CONSOLE_QUERY = '(pointer: coarse) and (min-width: 768px) and (max-width: 1366px) and (min-height: 561px)';
+  const TABLET_CONSOLE_QUERY = '(any-pointer: coarse) and (min-width: 768px) and (max-width: 1366px) and (min-height: 561px)';
   const RESPONSIVE_SHELL_QUERY = `${LEGACY_SHELL_QUERY}, ${TABLET_CONSOLE_QUERY}`;
 
   if (window.__gateTabletShellClassifierInstalled || typeof window.matchMedia !== 'function') return;

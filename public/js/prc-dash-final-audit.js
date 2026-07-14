@@ -13,6 +13,10 @@
     return window.GateComponents || null;
   }
 
+  function recordDisplay() {
+    return window.GateRecordDisplay || null;
+  }
+
   function n(value) {
     const parsed = Number(value || 0);
     return Number.isFinite(parsed) ? parsed : 0;
@@ -57,9 +61,8 @@
 
   function dormsForActiveWeek() {
     const wg = activeWeekGroup();
-    return recordsByType('dorm')
-      .filter(dorm => !wg || dorm.week_group === wg)
-      .sort((a, b) => String(a.dorm_name || '').localeCompare(String(b.dorm_name || ''), undefined, { numeric: true }));
+    const dorms = recordsByType('dorm').filter(dorm => !wg || dorm.week_group === wg);
+    return recordDisplay()?.sortDorms ? recordDisplay().sortDorms(dorms) : dorms;
   }
 
   function busesForActiveWeek() {
@@ -70,6 +73,11 @@
   function dormSignature(dorms, buses) {
     const dormPart = dorms.map(dorm => [
       dorm.__backendId,
+      dorm.display_order,
+      dorm.input_order,
+      dorm.source_row_index,
+      dorm.row_index,
+      dorm.created_at,
       dorm.dorm_name,
       dorm.sdq,
       dorm.section,
@@ -259,30 +267,26 @@
     requestAnimationFrame(() => runPass(options));
   }
 
-  function exposeController() {
-    window.GateDormBoardController = Object.freeze({
-      isCanonicalOwner: false,
-      handoffOwner: 'gate-status-board-controller',
-      renderStatusBoard: function renderStatusBoard() { window.GateStatusBoardController?.render?.({ force: true }); },
-      renderSquadronBoard: function renderSquadronBoardPublic() { renderSquadronBoard({ force: true }); },
-      ensureSquadronPage,
-      patchCloseDormTiming,
-      computeDormElapsedTimer,
-      refresh: function refresh() {
-        window.GateStatusBoardController?.scheduleRender?.({ force: true });
-        schedulePass({ force: true });
-      }
-    });
+  function registerHooks() {
+    window.registerGateHook?.('afterRenderAll', () => schedulePass({ force: true }));
+    window.registerGateHook?.('afterDataChanged', () => schedulePass({ force: true }));
+    window.registerGateHook?.('afterPageChange', () => schedulePass());
   }
 
   function start() {
     if (installed) return;
     installed = true;
-    exposeController();
-    window.registerGateHook?.('afterRenderAll', () => schedulePass({ force: true }));
-    window.registerGateHook?.('afterDataChanged', () => schedulePass({ force: true }));
-    window.registerGateHook?.('afterPageChange', () => schedulePass());
-    window.setInterval(() => renderSquadronBoard(), 1000);
+    ensureDocumentIdentity();
+    ensureSquadronPage();
+    patchCloseDormTiming();
+    registerHooks();
+    window.GateDormBoardController = Object.freeze({
+      isCanonicalOwner: false,
+      handoffOwner: 'gate-status-board-controller',
+      refresh: () => schedulePass({ force: true }),
+      renderSquadronBoard,
+      computeDormElapsedTimer
+    });
     schedulePass({ force: true });
   }
 

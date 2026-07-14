@@ -38,3 +38,50 @@ body.theme-light #page-squadron .dorm-column .gate-dorm-card.gate-component-dorm
     0 0 0 1px rgba(180, 35, 59, 0.14),
     0 5px 16px rgba(20, 49, 91, 0.12) !important;
 }
+
+/* Universal fullscreen Status Board contract.
+   Fullscreen removes the command navigation and clears the fixed security banner
+   before the first metric row on desktop, tablet, and phone. */
+html body.fullscreen-board {
+  --gate-fullscreen-banner-clearance:
+    calc(max(
+      var(--security-height, 22px),
+      var(--gate-shell-banner-height, 28px),
+      var(--gate-tablet-banner-height, 0px)
+    ) + 12px);
+}
+
+html body.fullscreen-board .app-nav,
+html body.fullscreen-board .app-nav.command-header-bar,
+html body.fullscreen-board .command-header-bar,
+html body.fullscreen-board.gate-app-shell-ready.gate-app-shell-mobile .app-nav,
+html body.fullscreen-board.gate-app-shell-ready.gate-app-shell-mobile .app-nav.command-header-bar,
+html body.fullscreen-board.gate-app-shell-ready.gate-app-shell-mobile .command-header-bar {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+html body.fullscreen-board #gate-mobile-menu-scrim,
+html body.fullscreen-board #gate-mobile-nav-sheet {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+html body.fullscreen-board #page-board,
+html body.fullscreen-board #page-board.active,
+html body.fullscreen-board.gate-app-shell-ready #page-board.active,
+html body.fullscreen-board.gate-app-shell-ready.gate-app-shell-mobile #page-board.page.active {
+  --gate-current-board-top: var(--gate-fullscreen-banner-clearance) !important;
+  padding-top: var(--gate-fullscreen-banner-clearance) !important;
+  scroll-padding-top: var(--gate-fullscreen-banner-clearance) !important;
+  box-sizing: border-box !important;
+}
+
+html body.fullscreen-board #page-board .board-header,
+html body.fullscreen-board #page-board .board-header.gate-premium-metrics-enabled {
+  margin-top: 0 !important;
+  transform: none !important;
+}

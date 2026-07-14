@@ -1,0 +1,164 @@
+/* GATE fullscreen Status Board containment contract
+   Final responsive owner for the board viewport, metric row, and Active Buses block. */
+
+:root {
+  --gate-fullscreen-banner-px: 28px;
+  --gate-fullscreen-gap: 12px;
+  --gate-fullscreen-card-height: clamp(78px, 10.5dvh, 94px);
+}
+
+body.fullscreen-board,
+body.gate-fullscreen-board-active {
+  overflow: hidden !important;
+}
+
+body.fullscreen-board .app-nav,
+body.fullscreen-board .app-nav.command-header-bar,
+body.fullscreen-board .command-header-bar,
+body.gate-fullscreen-board-active .app-nav,
+body.gate-fullscreen-board-active .app-nav.command-header-bar,
+body.gate-fullscreen-board-active .command-header-bar,
+body.fullscreen-board #gate-mobile-menu-scrim,
+body.fullscreen-board #gate-mobile-nav-sheet,
+body.gate-fullscreen-board-active #gate-mobile-menu-scrim,
+body.gate-fullscreen-board-active #gate-mobile-nav-sheet {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+body.fullscreen-board #page-board,
+body.fullscreen-board #page-board.active,
+body.gate-fullscreen-board-active #page-board,
+body.gate-fullscreen-board-active #page-board.active,
+body.fullscreen-board.gate-app-shell-ready.gate-app-shell-mobile #page-board.page.active,
+body.gate-fullscreen-board-active.gate-app-shell-ready.gate-app-shell-mobile #page-board.page.active {
+  position: fixed !important;
+  inset: var(--gate-fullscreen-banner-px) 0 0 0 !important;
+  width: 100vw !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  padding: var(--gate-fullscreen-gap) var(--gate-fullscreen-gap) 0 !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  box-sizing: border-box !important;
+  scroll-padding-top: var(--gate-fullscreen-gap) !important;
+}
+
+body.fullscreen-board #page-board .board-header.gate-premium-metrics-enabled,
+body.gate-fullscreen-board-active #page-board .board-header.gate-premium-metrics-enabled {
+  flex: 0 0 auto !important;
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(100px, 1fr)) minmax(220px, 1.6fr) !important;
+  grid-template-areas: 'arrived expected last local active' !important;
+  grid-auto-rows: min-content !important;
+  align-items: start !important;
+  align-content: start !important;
+  gap: clamp(8px, 0.8vw, 12px) !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  margin: 0 0 10px !important;
+  padding: 0 !important;
+  overflow: visible !important;
+  transform: none !important;
+  box-sizing: border-box !important;
+}
+
+body.fullscreen-board #page-board .gate-metrics-container,
+body.gate-fullscreen-board-active #page-board .gate-metrics-container {
+  display: contents !important;
+}
+
+body.fullscreen-board #page-board .arrived-card,
+body.gate-fullscreen-board-active #page-board .arrived-card { grid-area: arrived !important; }
+body.fullscreen-board #page-board .expected-card,
+body.gate-fullscreen-board-active #page-board .expected-card { grid-area: expected !important; }
+body.fullscreen-board #page-board .last-card,
+body.gate-fullscreen-board-active #page-board .last-card { grid-area: last !important; }
+body.fullscreen-board #page-board .local-card,
+body.gate-fullscreen-board-active #page-board .local-card { grid-area: local !important; }
+body.fullscreen-board #page-board .gate-active-buses-block,
+body.gate-fullscreen-board-active #page-board .gate-active-buses-block { grid-area: active !important; }
+
+body.fullscreen-board #page-board .gate-metrics-container .metric-card,
+body.gate-fullscreen-board-active #page-board .gate-metrics-container .metric-card,
+body.fullscreen-board #page-board .gate-active-buses-block,
+body.gate-fullscreen-board-active #page-board .gate-active-buses-block {
+  align-self: start !important;
+  width: 100% !important;
+  height: var(--gate-fullscreen-card-height) !important;
+  min-height: var(--gate-fullscreen-card-height) !important;
+  max-height: var(--gate-fullscreen-card-height) !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+}
+
+body.fullscreen-board #page-board .gate-active-buses-block,
+body.gate-fullscreen-board-active #page-board .gate-active-buses-block {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  grid-template-rows: auto minmax(0, 1fr) !important;
+  align-content: start !important;
+  gap: 6px !important;
+  padding: 10px 12px !important;
+}
+
+body.fullscreen-board #page-board #active-buses,
+body.gate-fullscreen-board-active #page-board #active-buses {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+  gap: 8px !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  max-height: 52px !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  padding: 0 0 2px !important;
+  scrollbar-width: thin !important;
+}
+
+body.fullscreen-board #page-board #active-buses > *,
+body.gate-fullscreen-board-active #page-board #active-buses > * {
+  flex: 0 0 auto !important;
+}
+
+body.fullscreen-board #page-board .dorm-dashboard,
+body.gate-fullscreen-board-active #page-board .dorm-dashboard {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+}
+
+@media (max-width: 767px) {
+  :root {
+    --gate-fullscreen-gap: 8px;
+    --gate-fullscreen-card-height: 72px;
+  }
+
+  body.fullscreen-board #page-board .board-header.gate-premium-metrics-enabled,
+  body.gate-fullscreen-board-active #page-board .board-header.gate-premium-metrics-enabled {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    grid-template-areas:
+      'arrived expected'
+      'last local'
+      'active active' !important;
+    gap: 8px !important;
+    margin-bottom: 8px !important;
+  }
+
+  body.fullscreen-board #page-board .gate-active-buses-block,
+  body.gate-fullscreen-board-active #page-board .gate-active-buses-block {
+    height: 76px !important;
+    min-height: 76px !important;
+    max-height: 76px !important;
+  }
+}

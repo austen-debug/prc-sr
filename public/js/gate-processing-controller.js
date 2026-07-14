@@ -27,6 +27,10 @@
       .replaceAll("'", '&#039;');
   }
 
+  function recordDisplay() {
+    return window.GateRecordDisplay || null;
+  }
+
   function records() {
     try { return Array.isArray(allData) ? allData : []; } catch (_) { return []; }
   }
@@ -45,10 +49,10 @@
 
   function processingDorms() {
     const wg = activeWeekGroup();
-    return records()
+    const dorms = records()
       .filter(record => record?.type === 'dorm')
-      .filter(record => !wg || record.week_group === wg)
-      .sort((a, b) => String(a.dorm_name || '').localeCompare(String(b.dorm_name || ''), undefined, { numeric: true }));
+      .filter(record => !wg || record.week_group === wg);
+    return recordDisplay()?.sortDorms ? recordDisplay().sortDorms(dorms) : dorms;
   }
 
   function normalizeUpper(value) {
@@ -123,8 +127,9 @@
 
   function processingCard(dorm) {
     const female = String(dorm?.sex || '').toLowerCase() === 'female';
-    const band = dorm?.band === true || dorm?.band === 'true';
-    const spaceForce = dorm?.space_force === true || dorm?.space_force === 'true' || dorm?.is_space_force === true || dorm?.is_space_force === 'true';
+    const normalizedFlags = recordDisplay()?.normalizeDormFlags?.(dorm);
+    const band = normalizedFlags ? normalizedFlags.band : (dorm?.band === true || dorm?.band === 'true');
+    const spaceForce = normalizedFlags ? normalizedFlags.spaceForce : (dorm?.space_force === true || dorm?.space_force === 'true' || dorm?.is_space_force === true || dorm?.is_space_force === 'true');
     const borderClass = female ? 'border-female' : (spaceForce ? 'border-space-force' : (band ? 'border-band' : ''));
     const closedClass = dorm.state === 'closed' ? 'dorm-closed' : '';
     const assignedAirmanHtml = dorm.assigned_airman
@@ -153,7 +158,8 @@
   function renderProcessingPageCanonical(dorms) {
     const grid = document.getElementById('proc-dorm-grid');
     if (!grid) return;
-    const list = Array.isArray(dorms) ? dorms : processingDorms();
+    const source = Array.isArray(dorms) ? dorms : processingDorms();
+    const list = recordDisplay()?.sortDorms ? recordDisplay().sortDorms(source) : source;
     grid.dataset.component = 'processing-dorm-grid';
     grid.dataset.owner = 'gate-processing-controller';
     grid.innerHTML = list.length
@@ -228,7 +234,10 @@
     if (name) name.textContent = dorm.dorm_name || '';
     if (info) {
       const sexLabel = String(dorm.sex || '').toLowerCase() === 'female' ? '♀ Female' : '♂ Male';
-      const flags = [dorm.band === 'true' ? '🎵 Band' : '', (dorm.space_force === true || dorm.space_force === 'true' || dorm.is_space_force === true || dorm.is_space_force === 'true') ? 'Space Force' : ''].filter(Boolean).join(' | ');
+      const normalizedFlags = recordDisplay()?.normalizeDormFlags?.(dorm);
+      const band = normalizedFlags ? normalizedFlags.band : (dorm.band === true || dorm.band === 'true');
+      const spaceForce = normalizedFlags ? normalizedFlags.spaceForce : (dorm.space_force === true || dorm.space_force === 'true' || dorm.is_space_force === true || dorm.is_space_force === 'true');
+      const flags = [band ? '🎵 Band' : '', spaceForce ? 'Space Force' : ''].filter(Boolean).join(' | ');
       info.innerHTML = `${[esc(dorm.sdq), esc(dorm.section), esc(dorm.inter_sec)].filter(Boolean).join(' · ')} | ${sexLabel}${flags ? ` | ${esc(flags)}` : ''} | Max: ${n(dorm.max_load)}`;
     }
     if (airman) airman.value = dorm.assigned_airman || '';
@@ -491,6 +500,8 @@
     const isClosed = String(dorm.state || '').toLowerCase() === 'closed';
     const rawFinalTime = value('edit-closed-timer');
     const finalTime = isClosed ? normalizeFinalTime(rawFinalTime, dorm.closed_timer || '00:00') : dorm.closed_timer;
+    const existingFlags = recordDisplay()?.normalizeDormFlags?.(dorm);
+    const isSpaceForce = existingFlags ? existingFlags.spaceForce : (dorm.space_force === true || dorm.space_force === 'true' || dorm.is_space_force === true || dorm.is_space_force === 'true');
 
     return {
       ...dorm,
@@ -499,7 +510,7 @@
       section: String(value('edit-section') || '').trim(),
       inter_sec: String(value('edit-inter-sec') || '').trim(),
       sex: value('edit-sex') || dorm.sex || 'male',
-      band: checked('edit-band') ? 'true' : 'false',
+      band: !isSpaceForce && checked('edit-band') ? 'true' : 'false',
       max_load: maxLoad,
       current_load: currentLoad,
       notes: String(value('edit-notes') || '').trim(),

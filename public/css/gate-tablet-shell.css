@@ -1,7 +1,7 @@
 /* GATE tablet instructor-console shell
    Final owner for tablet navigation geometry. Phone and desktop remain controlled by their existing contracts. */
 
-@media (pointer: coarse) and (min-width: 768px) and (max-width: 1366px) and (min-height: 561px) {
+@media (any-pointer: coarse) and (min-width: 768px) and (max-width: 1366px) and (min-height: 561px) {
   :root {
     --gate-tablet-banner-height: 26px;
     --gate-tablet-nav-height: 64px;
@@ -233,7 +233,7 @@
   }
 }
 
-@media (pointer: coarse) and (orientation: landscape) and (min-width: 768px) and (max-width: 1366px) and (min-height: 561px) {
+@media (any-pointer: coarse) and (orientation: landscape) and (min-width: 768px) and (max-width: 1366px) and (min-height: 561px) {
   body.gate-app-shell-ready.gate-app-shell-mobile #gate-mobile-nav-sheet .gate-mobile-sheet-routes,
   body.gate-app-shell-ready.gate-app-shell-mobile #gate-mobile-nav-sheet .gate-shell-system-controls {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;

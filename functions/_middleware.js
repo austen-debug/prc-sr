@@ -40,7 +40,7 @@ const UI_HEAD_SCRIPTS = [
 ];
 
 const STATUS_BOARD_METRICS_HTML = `<div class="board-header gate-premium-metrics-enabled" data-owner="gate-status-metrics-source" data-phase="1B">
-     <section class="metric-block gate-active-buses-block" aria-label="Active buses en route">
+     <section class="gate-active-buses-block" aria-label="Active buses en route">
       <div class="gate-active-buses-label">Active Buses En Route</div>
       <div id="active-buses" class="flex gap-2 flex-wrap items-center"></div>
      </section>

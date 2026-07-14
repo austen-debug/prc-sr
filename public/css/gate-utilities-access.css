@@ -1,4 +1,4 @@
-@import url('/css/gate-board-presentation.css');
+@import url('/css/gate-board-presentation.css?v=status-board-light-clarity-20260714');
 @import url('/css/gate-theme-unified-contract.css');
 @import url('/css/gate-clean-ui-pass.css');
 
@@ -81,52 +81,7 @@
   }
 }
 
-/* Light-mode Status Board clarity contract.
-   Visual-only: strengthens component separation without changing card geometry or workflow. */
-body.theme-light #page-board .dorm-column {
-  border-color: #aebaca !important;
-  background: rgba(226, 232, 240, 0.78) !important;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08), 0 8px 20px rgba(15, 23, 42, 0.06) !important;
-}
-
-body.theme-light #page-board .dorm-col-header {
-  border-bottom-color: #aebaca !important;
-  background: #e8eef5 !important;
-  color: #334155 !important;
-}
-
-body.theme-light #page-board .dorm-col-content {
-  background: rgba(241, 245, 249, 0.92) !important;
-}
-
-body.theme-light #page-board .gate-dorm-card,
-body.theme-light #page-board .dorm-card {
-  border: 1px solid #94a3b8 !important;
-  background-color: #ffffff !important;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.10), 0 5px 14px rgba(15, 23, 42, 0.07) !important;
-}
-
-body.theme-light #page-board .gate-dorm-card.gate-dorm-state-empty:not(.border-female):not([data-female-dorm='true']),
-body.theme-light #page-board .dorm-card.gate-dorm-state-empty:not(.border-female):not([data-female-dorm='true']) {
-  border-inline-start: 4px solid var(--brand-red, #720522) !important;
-}
-
-body.theme-light #page-board .gate-dorm-card.gate-dorm-state-open:not(.border-female):not([data-female-dorm='true']),
-body.theme-light #page-board .dorm-card.gate-dorm-state-open:not(.border-female):not([data-female-dorm='true']) {
-  border-inline-start: 4px solid #64748b !important;
-}
-
-body.theme-light #page-board .gate-dorm-card.gate-dorm-state-closed:not(.border-female):not([data-female-dorm='true']),
-body.theme-light #page-board .dorm-card.gate-dorm-state-closed:not(.border-female):not([data-female-dorm='true']) {
-  border-inline-start: 4px solid var(--brand-green, #007a33) !important;
-}
-
-body.theme-light #page-board .gate-dorm-card:hover,
-body.theme-light #page-board .dorm-card:hover {
-  border-color: #64748b !important;
-  box-shadow: 0 2px 4px rgba(15, 23, 42, 0.12), 0 10px 24px rgba(15, 23, 42, 0.10) !important;
-}
-
+/* Female dorm ownership remains here because it is an access/operational indicator override. */
 #page-board .gate-dorm-card.border-female,
 #page-board .dorm-card.border-female,
 #page-board .gate-dorm-card[data-female-dorm='true'],

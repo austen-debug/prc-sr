@@ -36,12 +36,38 @@
     try { return Array.isArray(allData) ? allData : []; } catch (_) { return []; }
   }
 
+  function explicitDormOrder(dorm) {
+    const value = dorm?.display_order ?? dorm?.input_order ?? dorm?.row_index;
+    if (value === '' || value === null || typeof value === 'undefined') return null;
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+
+  function createdDormOrder(dorm) {
+    const parsed = Date.parse(dorm?.created_at || '');
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+
   function getDorms() {
     const wg = activeWeekGroup();
     return records()
       .filter(record => record?.type === 'dorm')
       .filter(record => !wg || record.week_group === wg)
-      .sort((a, b) => String(a.dorm_name || '').localeCompare(String(b.dorm_name || ''), undefined, { numeric: true }));
+      .map((record, sourceIndex) => ({ record, sourceIndex }))
+      .sort((left, right) => {
+        const leftExplicit = explicitDormOrder(left.record);
+        const rightExplicit = explicitDormOrder(right.record);
+        if (leftExplicit !== null && rightExplicit !== null && leftExplicit !== rightExplicit) return leftExplicit - rightExplicit;
+        if (leftExplicit !== null && rightExplicit === null) return -1;
+        if (leftExplicit === null && rightExplicit !== null) return 1;
+
+        const leftCreated = createdDormOrder(left.record);
+        const rightCreated = createdDormOrder(right.record);
+        if (leftCreated !== null && rightCreated !== null && leftCreated !== rightCreated) return leftCreated - rightCreated;
+
+        return left.sourceIndex - right.sourceIndex;
+      })
+      .map(entry => entry.record);
   }
 
   function getActiveBuses() {
@@ -56,6 +82,10 @@
   function dormSignature(dorms) {
     return dorms.map(dorm => [
       dorm.__backendId,
+      dorm.display_order,
+      dorm.input_order,
+      dorm.row_index,
+      dorm.created_at,
       dorm.dorm_name,
       dorm.assigned_airman,
       dorm.auditorium_location,

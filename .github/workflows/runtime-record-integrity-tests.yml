@@ -1,0 +1,60 @@
+name: Runtime Record Integrity
+
+on:
+  push:
+    paths:
+      - 'functions/_middleware.js'
+      - 'public/js/gate-record-display-contract.js'
+      - 'public/js/gate-status-board-controller.js'
+      - 'public/js/gate-processing-controller.js'
+      - 'public/js/gate-input-page-controller.js'
+      - 'public/js/prc-dash-final-audit.js'
+      - 'public/js/prc-dash-dorm-flag-validation.js'
+      - 'tests/runtime/**'
+      - '.github/workflows/runtime-record-integrity-tests.yml'
+  pull_request:
+    paths:
+      - 'functions/_middleware.js'
+      - 'public/js/gate-record-display-contract.js'
+      - 'public/js/gate-status-board-controller.js'
+      - 'public/js/gate-processing-controller.js'
+      - 'public/js/gate-input-page-controller.js'
+      - 'public/js/prc-dash-final-audit.js'
+      - 'public/js/prc-dash-dorm-flag-validation.js'
+      - 'tests/runtime/**'
+      - '.github/workflows/runtime-record-integrity-tests.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: runtime-record-integrity-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  record-integrity:
+    name: Dorm record identity and display integrity
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Parse active JavaScript
+        run: |
+          node --check functions/_middleware.js
+          node --check public/js/gate-record-display-contract.js
+          node --check public/js/gate-status-board-controller.js
+          node --check public/js/gate-processing-controller.js
+          node --check public/js/gate-input-page-controller.js
+          node --check public/js/prc-dash-final-audit.js
+          node --check public/js/prc-dash-dorm-flag-validation.js
+
+      - name: Run record display integrity tests
+        run: node --test tests/runtime/record-display-integrity.test.mjs

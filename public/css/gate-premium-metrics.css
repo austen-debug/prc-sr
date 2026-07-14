@@ -207,7 +207,7 @@ body.theme-light #page-board .gate-metrics-container .arrived-card .metric-value
   }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 767px) {
   #page-board .board-header.gate-premium-metrics-enabled {
     grid-template-columns: minmax(0, 1fr) !important;
     gap: 0.75rem !important;

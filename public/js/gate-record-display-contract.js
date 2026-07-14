@@ -68,10 +68,9 @@
     if (leftCreated !== null && rightCreated === null) return -1;
     if (leftCreated === null && rightCreated !== null) return 1;
 
-    const identityDifference = dormIdentityKey(left).localeCompare(dormIdentityKey(right), undefined, { numeric: true, sensitivity: 'base' });
-    if (identityDifference !== 0) return identityDifference;
+    if (leftEntry.sourceIndex !== rightEntry.sourceIndex) return leftEntry.sourceIndex - rightEntry.sourceIndex;
 
-    return leftEntry.sourceIndex - rightEntry.sourceIndex;
+    return dormIdentityKey(left).localeCompare(dormIdentityKey(right), undefined, { numeric: true, sensitivity: 'base' });
   }
 
   function sortDorms(records = []) {

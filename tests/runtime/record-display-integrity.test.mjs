@@ -30,6 +30,12 @@ test('canonical display contract preserves explicit Input order and legacy creat
   ]);
   assert.deepEqual(Array.from(legacy, record => record.__backendId), ['earlier', 'later']);
 
+  const tiedLegacy = contract.sortDorms([
+    { __backendId: 'first-source-record', week_group: 'WG', sdq: '9', dorm_name: 'Zulu', created_at: '2026-07-14T01:00:00Z' },
+    { __backendId: 'second-source-record', week_group: 'WG', sdq: '1', dorm_name: 'Alpha', created_at: '2026-07-14T01:00:00Z' }
+  ]);
+  assert.deepEqual(Array.from(tiedLegacy, record => record.__backendId), ['first-source-record', 'second-source-record']);
+
   assert.equal(contract.dormIdentityKey({ week_group: 'wg', sdq: ' 321 TRS ', dorm_name: 'a-1' }), 'WG::321 TRS::A-1');
   const flags = contract.normalizeDormFlags({ band: 'true', space_force: 'true' });
   assert.equal(flags.band, false);
@@ -61,11 +67,14 @@ test('Input owns dorm identity and never re-matches a created dorm to the live g
   assert.doesNotMatch(input, /liveDorms\.find\(item => String\(item\.dorm_name/);
 });
 
-test('dorm designation validation is identity-bound and non-observing', async () => {
+test('dorm designation validation is identity-bound, card-scoped, and non-observing', async () => {
   const flags = await source('public/js/prc-dash-dorm-flag-validation.js');
 
   assert.match(flags, /cardDormId/);
   assert.match(flags, /dormById/);
+  assert.match(flags, /#page-board \.dorm-card\[data-dorm-id\]/);
+  assert.match(flags, /#proc-dorm-grid \.proc-card\[data-dorm-id\]/);
+  assert.doesNotMatch(flags, /#page-board \[data-dorm-id\]/);
   assert.doesNotMatch(flags, /dorms\[index\]/);
   assert.doesNotMatch(flags, /MutationObserver/);
   assert.doesNotMatch(flags, /getDormFromCard/);
@@ -84,5 +93,6 @@ test('middleware loads the record display contract before all dorm consumers', a
   assert.ok(recordContract < status);
   assert.ok(recordContract < processing);
   assert.ok(recordContract < input);
-  assert.match(middleware, /prc-dash-dorm-flag-validation\.js\?v=record-display-integrity-20260714/);
+  assert.match(middleware, /gate-record-display-contract\.js\?v=record-display-integrity-20260714b/);
+  assert.match(middleware, /prc-dash-dorm-flag-validation\.js\?v=record-display-integrity-20260714b/);
 });

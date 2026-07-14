@@ -11,7 +11,8 @@ const UI_STYLESHEETS = [
   '<link rel="stylesheet" href="/css/gate-mobile-corrective.css?v=phase-7h-ui-patch-retirement-20260709">',
   '<link rel="stylesheet" href="/css/gate-ui-ownership-correction.css?v=phase-8d-mobile-metric-containment-20260709">',
   '<link rel="stylesheet" href="/css/gate-light-mode-command-contrast.css?v=light-command-contrast-20260714">',
-  '<link rel="stylesheet" href="/css/gate-light-mode-grid-correction.css?v=light-grid-correction-20260714">'
+  '<link rel="stylesheet" href="/css/gate-light-mode-grid-correction.css?v=light-grid-correction-20260714">',
+  '<link rel="stylesheet" href="/css/gate-tablet-shell.css?v=tablet-shell-20260714">'
 ];
 
 const UI_INLINE_ASSETS = [];
@@ -35,6 +36,7 @@ const UI_HEAD_SCRIPTS = [
   '<script src="/js/gate-input-page-controller.js?v=record-display-integrity-20260714" defer></script>',
   '<script src="/js/gate-archive-controller.js?v=phase-8c-report-wording-20260709" defer></script>',
   '<script src="/js/gate-permission-guard.js?v=phase-1a-permission-guard-20260709" defer></script>',
+  '<script src="/js/gate-tablet-shell-classifier.js?v=tablet-shell-20260714" defer></script>',
   '<script src="/js/gate-app-shell-controller.js?v=phase-7g-viewport-watermark-20260709" defer></script>',
   '<script src="/js/prc-dash-modal-mobile-validation.js?v=phase-7e-ui-ownership-20260709" defer></script>',
   '<script src="/js/gate-render-stability-fix.js?v=phase-7f-watermark-owner-20260709" defer></script>',

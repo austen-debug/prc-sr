@@ -1,0 +1,266 @@
+/* GATE tablet instructor-console shell
+   Final owner for tablet navigation geometry. Phone and desktop remain controlled by their existing contracts. */
+
+@media (any-pointer: coarse) and (min-width: 768px) and (max-width: 1366px) and (min-height: 561px) {
+  :root {
+    --gate-tablet-banner-height: 26px;
+    --gate-tablet-nav-height: 64px;
+    --gate-tablet-safe-x: max(16px, env(safe-area-inset-left), env(safe-area-inset-right));
+    --gate-tablet-drawer-top: calc(var(--gate-tablet-banner-height) + var(--gate-tablet-nav-height) + 10px);
+  }
+
+  body.gate-app-shell-ready.gate-app-shell-mobile {
+    overflow-x: hidden !important;
+  }
+
+  body.gate-app-shell-ready.gate-app-shell-mobile .security-banner-fixed {
+    position: fixed !important;
+    inset: 0 0 auto 0 !important;
+    height: var(--gate-tablet-banner-height) !important;
+    min-height: var(--gate-tablet-banner-height) !important;
+    max-height: var(--gate-tablet-banner-height) !important;
+    padding: 0 var(--gate-tablet-safe-x) !important;
+    font-size: 0.66rem !important;
+    z-index: 12100 !important;
+  }
+
+  body.gate-app-shell-ready.gate-app-shell-mobile .app-nav.command-header-bar,
+  body.gate-app-shell-ready.gate-app-shell-mobile .app-nav,
+  body.gate-app-shell-ready.gate-app-shell-mobile .command-header-bar {
+    position: fixed !important;
+    inset: var(--gate-tablet-banner-height) 0 auto 0 !important;
+    width: 100vw !important;
+    height: var(--gate-tablet-nav-height) !important;
+    min-height: var(--gate-tablet-nav-height) !important;
+    max-height: var(--gate-tablet-nav-height) !important;
+    display: grid !important;
+    grid-template-columns: clamp(112px, 15vw, 162px) minmax(0, 1fr) auto !important;
+    grid-template-areas: 'brand week menu' !important;
+    align-items: center !important;
+    gap: clamp(10px, 1.2vw, 18px) !important;
+    padding: 8px var(--gate-tablet-safe-x) !important;
+    overflow: visible !important;
+    box-sizing: border-box !important;
+    z-index: 12080 !important;
+  }
+
+  body.gate-app-shell-ready.gate-app-shell-mobile .app-nav.command-header-bar::before,
+  body.gate-app-shell-ready.gate-app-shell-mobile .app-nav::before,
+  body.gate-app-shell-ready.gate-app-shell-mobile .command-header-bar::before {
+    content: '' !important;
+    display: block !important;
+    grid-area: brand !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    height: 38px !important;
+    min-height: 38px !important;
+    margin: 0 !important;
+    background: url('/assets/gate_submark_white.png') no-repeat left center / contain !important;
+    opacity: 0.96 !important;
+  }
+
+  body.theme-light.gate-app-shell-ready.gate-app-shell-mobile .app-nav.command-header-bar::before,
+  body.theme-light.gate-app-shell-ready.gate-app-shell-mobile .app-nav::before,
+  body.theme-light.gate-app-shell-ready.gate-app-shell-mobile .command-header-bar::before {
+    background-image: url('/assets/gate_submark_white.png') !important;
+  }
+
+  body.gate-app-shell-ready.gate-app-shell-mobile .app-nav.command-header-bar .nav-group-right,
+  body.gate-app-shell-ready.gate-app-shell-mobile .app-nav .nav-group-right,
+  body.gate-app-shell-ready.gate-app-shell-mobile .command-header-bar .nav-group-right {
+    display: contents !important;
+  }
+
+  body.gate-app-shell-ready.gate-app-shell-mobile #week-group-display {
+    grid-area: week !important;
+    justify-self: start !important;
+    align-self: center !important;
+    width: min(100%, 320px) !important;
+    min-width: 0 !important;
+    max-width: 320px !important;
+    height: 44px !important;
+    min-height: 44px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    padding: 0 0.9rem !important;
+    overflow: hidden !important;
+    white-space: nowrap !important;
+    text-overflow: ellipsis !important;
+    border-radius: 12px !important;
+    font-size: clamp(0.76rem, 1.35vw, 0.9rem) !important;
+    letter-spacing: 0.055em !important;
+    box-sizing: border-box !important;
+  }
+
+  body.gate-app-shell-ready.gate-app-shell-mobile #mobile-menu-trigger {
+    grid-area: menu !important;
+    display: inline-flex !important;
+    position: relative !important;
+    inset: auto !important;
+    align-items: center !important;
+    justify-content: center !important;
+    justify-self: end !important;
+    width: 128px !important;
+    min-width: 128px !important;
+    max-width: 128px !important;
+    height: 44px !important;
+    min-height: 44px !important;
+    max-height: 44px !important;
+    padding: 0 0.9rem !important;
+    border-radius: 12px !important;
+    font-size: 0.74rem !important;
+    font-weight: 950 !important;
+    letter-spacing: 0.08em !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    transform: none !important;
+    z-index: 12090 !important;
+  }
+
+  body.gate-app-shell-ready.gate-app-shell-mobile #main-nav-menu,
+  body.gate-app-shell-ready.gate-app-shell-mobile #nav-links,
+  body.gate-app-shell-ready.gate-app-shell-mobile .nav-group-left {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
+
+  body.gate-app-shell-ready.gate-app-shell-mobile #gate-mobile-menu-scrim {
+    position: fixed !important;
+    inset: var(--gate-tablet-drawer-top) 0 0 0 !important;
+    z-index: 12060 !important;
+    display: none !important;
+    background: rgba(2, 6, 23, 0.34) !important;
+    -webkit-backdrop-filter: blur(2px) !important;
+    backdrop-filter: blur(2px) !important;
+  }
+
+  body.gate-app-shell-ready.gate-app-shell-mobile.gate-mobile-drawer-open #gate-mobile-menu-scrim {
+    display: block !important;
+  }
+
+  body.gate-app-shell-ready.gate-app-shell-mobile #gate-mobile-nav-sheet {
+    position: fixed !important;
+    top: var(--gate-tablet-drawer-top) !important;
+    right: var(--gate-tablet-safe-x) !important;
+    left: auto !important;
+    z-index: 12070 !important;
+    display: none !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 12px !important;
+    width: min(720px, calc(100vw - (var(--gate-tablet-safe-x) * 2))) !important;
+    max-width: calc(100vw - (var(--gate-tablet-safe-x) * 2)) !important;
+    max-height: calc(100dvh - var(--gate-tablet-drawer-top) - max(18px, env(safe-area-inset-bottom))) !important;
+    margin: 0 !important;
+    padding: 16px !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    border: 1px solid rgba(184, 190, 199, 0.34) !important;
+    border-radius: 18px !important;
+    background: rgba(8, 18, 31, 0.985) !important;
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.58) !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    box-sizing: border-box !important;
+  }
+
+  body.theme-light.gate-app-shell-ready.gate-app-shell-mobile #gate-mobile-nav-sheet {
+    background: rgba(239, 244, 249, 0.99) !important;
+    border-color: #718399 !important;
+    box-shadow: 0 24px 64px rgba(20, 49, 91, 0.28) !important;
+  }
+
+  body.gate-app-shell-ready.gate-app-shell-mobile #gate-mobile-nav-sheet.gate-mobile-sheet-open,
+  body.gate-app-shell-ready.gate-app-shell-mobile.gate-mobile-drawer-open #gate-mobile-nav-sheet {
+    display: grid !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+  }
+
+  body.gate-app-shell-ready.gate-app-shell-mobile #gate-mobile-nav-sheet .gate-mobile-sheet-routes,
+  body.gate-app-shell-ready.gate-app-shell-mobile #gate-mobile-nav-sheet .gate-shell-system-controls {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 10px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  body.gate-app-shell-ready.gate-app-shell-mobile #gate-mobile-nav-sheet .gate-mobile-sheet-system {
+    display: grid !important;
+    gap: 10px !important;
+    margin-top: 2px !important;
+    padding-top: 12px !important;
+    border-top: 1px solid rgba(184, 190, 199, 0.20) !important;
+  }
+
+  body.gate-app-shell-ready.gate-app-shell-mobile #gate-mobile-nav-sheet button {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    height: 46px !important;
+    min-height: 46px !important;
+    max-height: 46px !important;
+    padding: 0 0.95rem !important;
+    border-radius: 12px !important;
+    font-size: 0.82rem !important;
+    text-align: left !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    box-sizing: border-box !important;
+  }
+
+  body.gate-app-shell-ready.gate-app-shell-mobile .page.active,
+  body.gate-app-shell-ready.gate-app-shell-mobile #page-board.active,
+  body.gate-app-shell-ready.gate-app-shell-mobile #page-squadron.active {
+    padding-top: calc(var(--gate-tablet-banner-height) + var(--gate-tablet-nav-height) + 12px) !important;
+    padding-left: var(--gate-tablet-safe-x) !important;
+    padding-right: var(--gate-tablet-safe-x) !important;
+    max-width: 100vw !important;
+    box-sizing: border-box !important;
+  }
+
+  body.fullscreen-board.gate-app-shell-ready.gate-app-shell-mobile #page-board.active {
+    padding-top: var(--gate-tablet-banner-height) !important;
+  }
+}
+
+@media (any-pointer: coarse) and (orientation: landscape) and (min-width: 768px) and (max-width: 1366px) and (min-height: 561px) {
+  body.gate-app-shell-ready.gate-app-shell-mobile #gate-mobile-nav-sheet .gate-mobile-sheet-routes,
+  body.gate-app-shell-ready.gate-app-shell-mobile #gate-mobile-nav-sheet .gate-shell-system-controls {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  body.gate-app-shell-ready.gate-app-shell-mobile #page-board .board-header.gate-premium-metrics-enabled {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    grid-template-areas:
+      'arrived expected'
+      'last local'
+      'active active' !important;
+    gap: 10px !important;
+  }
+
+  body.gate-app-shell-ready.gate-app-shell-mobile #page-board .gate-metrics-container {
+    display: contents !important;
+  }
+
+  body.gate-app-shell-ready.gate-app-shell-mobile #page-board .gate-active-buses-block {
+    min-height: 92px !important;
+  }
+
+  body.gate-app-shell-ready.gate-app-shell-mobile #page-board .dorm-dashboard,
+  body.gate-app-shell-ready.gate-app-shell-mobile #page-squadron .dorm-dashboard {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: clamp(0.62rem, 0.9vw, 0.9rem) !important;
+  }
+}

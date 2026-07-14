@@ -9,7 +9,8 @@ const UI_STYLESHEETS = [
   '<link rel="stylesheet" href="/css/gate-premium-metrics.css?v=status-board-active-bus-strip-20260714">',
   '<link rel="stylesheet" href="/css/gate-app-shell.css?v=phase-7g-viewport-watermark-20260709">',
   '<link rel="stylesheet" href="/css/gate-mobile-corrective.css?v=phase-7h-ui-patch-retirement-20260709">',
-  '<link rel="stylesheet" href="/css/gate-ui-ownership-correction.css?v=phase-8d-mobile-metric-containment-20260709">'
+  '<link rel="stylesheet" href="/css/gate-ui-ownership-correction.css?v=phase-8d-mobile-metric-containment-20260709">',
+  '<link rel="stylesheet" href="/css/gate-light-mode-command-contrast.css?v=light-command-contrast-20260714">'
 ];
 
 const UI_INLINE_ASSETS = [];
@@ -41,38 +42,38 @@ const UI_HEAD_SCRIPTS = [
 ];
 
 const STATUS_BOARD_METRICS_HTML = `<div class="board-header gate-premium-metrics-enabled" data-owner="gate-status-metrics-source" data-phase="1B">
-     <section class="gate-active-buses-block" aria-label="Active buses en route">
-      <div class="gate-active-buses-label">Active Buses En Route</div>
-      <div id="active-buses" class="flex gap-2 flex-wrap items-center"></div>
-     </section>
-     <div class="gate-metrics-container">
-      <div class="metric-card arrived-card">
-       <div class="metric-header">
-        <span class="status-dot led-green" aria-hidden="true"></span>
-        <span class="metric-label">ARRIVED</span>
+      <div class="gate-metrics-container">
+       <div class="metric-card arrived-card">
+        <div class="metric-header">
+         <span class="status-dot led-green" aria-hidden="true"></span>
+         <span class="metric-label">ARRIVED</span>
+        </div>
+        <div class="metric-value" id="stat-arrived">0</div>
        </div>
-       <div class="metric-value" id="stat-arrived">0</div>
-      </div>
-      <div class="metric-card expected-card">
-       <div class="metric-header">
-        <span class="metric-label">EXPECTED</span>
+       <div class="metric-card expected-card">
+        <div class="metric-header">
+         <span class="metric-label">EXPECTED</span>
+        </div>
+        <div class="metric-value" id="stat-expected">0</div>
        </div>
-       <div class="metric-value" id="stat-expected">0</div>
-      </div>
-      <div class="metric-card last-card">
-       <div class="metric-header">
-        <span class="metric-label">LAST ARRIVAL</span>
+       <div class="metric-card last-card">
+        <div class="metric-header">
+         <span class="metric-label">LAST</span>
+        </div>
+        <div class="metric-value" id="stat-last">00:00</div>
        </div>
-       <div class="metric-value" id="stat-last">00:00</div>
-      </div>
-      <div class="metric-card local-card">
-       <div class="metric-header">
-        <span class="metric-label">LOCAL TIME</span>
+       <div class="metric-card local-card">
+        <div class="metric-header">
+         <span class="metric-label">LOCAL</span>
+        </div>
+        <div class="metric-value" id="stat-local">00:00</div>
        </div>
-       <div class="metric-value" id="stat-local">00:00</div>
       </div>
-     </div>
-    </div>`;
+      <section class="gate-active-buses-block" aria-label="Active buses en route">
+       <div class="gate-active-buses-label">ACTIVE BUSES</div>
+       <div id="active-buses" class="flex gap-2 flex-wrap items-center"></div>
+      </section>
+     </div>`;
 
 function jsonResponse(data, status = 200) {
   return new Response(JSON.stringify(data), {

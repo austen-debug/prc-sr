@@ -1,10 +1,12 @@
-// PRC GATE dorm flag validation
-// Behavior-only layer for dorm flag rendering and Space Force edit preservation.
-// Board card styles are owned by /css/gate-clean-ui-pass.css; Processing chip styles are owned by /css/prc-dash-dorm-cards.css.
+// GATE dorm designation validation
+// Identity-bound support for dorm flag rendering and Space Force edit preservation.
 (function () {
+  'use strict';
+
   let started = false;
   let sdkPatched = false;
   let editOpenPatched = false;
+  let hooksRegistered = false;
   let passScheduled = false;
 
   function n(value) {
@@ -13,6 +15,7 @@
   }
 
   function esc(value) {
+    if (typeof window.GateComponents?.esc === 'function') return window.GateComponents.esc(value);
     if (typeof escapeHtml === 'function') return escapeHtml(value);
     return String(value ?? '')
       .replaceAll('&', '&amp;')
@@ -20,6 +23,10 @@
       .replaceAll('>', '&gt;')
       .replaceAll('"', '&quot;')
       .replaceAll("'", '&#039;');
+  }
+
+  function recordDisplay() {
+    return window.GateRecordDisplay || null;
   }
 
   function getAllDataSafe() {
@@ -32,46 +39,42 @@
 
   function activeDorms() {
     const wg = getActiveWeekGroupSafe();
-    return getAllDataSafe().filter(record => record && record.type === 'dorm' && record.week_group === wg);
-  }
-
-  function isFemale(dorm) {
-    const sex = String(dorm?.sex || '').trim().toLowerCase();
-    return sex === 'female' || sex === 'f';
-  }
-
-  function isBand(dorm) {
-    return dorm && (dorm.band === true || dorm.band === 'true');
-  }
-
-  function isSpaceForce(dorm) {
-    return dorm && (dorm.space_force === true || dorm.space_force === 'true' || dorm.is_space_force === true || dorm.is_space_force === 'true');
+    const dorms = getAllDataSafe().filter(record => record && record.type === 'dorm' && record.week_group === wg);
+    return recordDisplay()?.sortDorms ? recordDisplay().sortDorms(dorms) : dorms;
   }
 
   function effectiveFlags(dorm) {
-    const female = isFemale(dorm);
-    const spaceForce = isSpaceForce(dorm);
-    const band = !spaceForce && isBand(dorm);
+    const normalized = recordDisplay()?.normalizeDormFlags?.(dorm);
+    const female = String(dorm?.sex || '').trim().toLowerCase() === 'female' || String(dorm?.sex || '').trim().toLowerCase() === 'f';
+    if (normalized) return { female, band: normalized.band, spaceForce: normalized.spaceForce, hasBanner: normalized.band || normalized.spaceForce };
+    const spaceForce = dorm && (dorm.space_force === true || dorm.space_force === 'true' || dorm.is_space_force === true || dorm.is_space_force === 'true');
+    const band = !spaceForce && dorm && (dorm.band === true || dorm.band === 'true');
     return { female, band, spaceForce, hasBanner: band || spaceForce };
   }
 
-  function flagHtml(dorm) {
-    const flags = effectiveFlags(dorm);
+  function flagHtml(flags) {
     const chips = [];
     if (flags.band) chips.push('<span class="gate-dorm-flag-chip flag-band">Band</span>');
     if (flags.spaceForce) chips.push('<span class="gate-dorm-flag-chip flag-space-force">Space Force</span>');
     return chips.length ? `<div class="gate-dorm-flags">${chips.join('')}</div>` : '';
   }
 
-  function bannerHtml(dorm) {
-    const flags = effectiveFlags(dorm);
+  function bannerHtml(flags) {
     if (flags.spaceForce) return '<div class="gate-dorm-top-banner banner-space-force">Space Force</div>';
     if (flags.band) return '<div class="gate-dorm-top-banner banner-band">Band</div>';
     return '';
   }
 
-  function applyCardClasses(card, dorm) {
-    const flags = effectiveFlags(dorm);
+  function cardDormId(card) {
+    return String(card?.dataset?.dormId || '').trim();
+  }
+
+  function dormById(id, dorms = activeDorms()) {
+    if (!id) return null;
+    return dorms.find(dorm => String(dorm.__backendId || '') === String(id)) || null;
+  }
+
+  function applyCardClasses(card, flags) {
     card.classList.toggle('border-female', flags.female);
     card.classList.toggle('border-band', flags.band);
     card.classList.toggle('border-space-force', flags.spaceForce);
@@ -84,86 +87,44 @@
 
   function setFlags(card, dorm) {
     if (!card || !dorm) return;
-    applyCardClasses(card, dorm);
-
     const flags = effectiveFlags(dorm);
+    applyCardClasses(card, flags);
+
     const isBoardCard = Boolean(card.closest('#page-board, #page-squadron'));
-    const sig = `${isBoardCard ? 'banner' : 'chip'}|${flags.female}|${flags.band}|${flags.spaceForce}`;
-    const hasBoardBanner = Boolean(card.querySelector('.gate-dorm-top-banner'));
-    const hasProcFlags = Boolean(card.querySelector('.gate-dorm-flags'));
+    const signature = `${dorm.__backendId || ''}|${isBoardCard ? 'banner' : 'chip'}|${flags.female}|${flags.band}|${flags.spaceForce}`;
     const shouldShowIndicator = flags.band || flags.spaceForce;
-
-    if (
-      card.dataset.dormFlagSig === sig &&
-      ((isBoardCard && (hasBoardBanner || !shouldShowIndicator)) || (!isBoardCard && (hasProcFlags || !shouldShowIndicator)))
-    ) return;
-
-    card.dataset.dormFlagSig = sig;
-
     const existingFlags = card.querySelector('.gate-dorm-flags');
-    if (existingFlags) existingFlags.remove();
-
     const existingBanner = card.querySelector('.gate-dorm-top-banner');
-    if (existingBanner) existingBanner.remove();
+
+    if (card.dataset.dormFlagSig === signature) {
+      if (isBoardCard && (existingBanner || !shouldShowIndicator)) return;
+      if (!isBoardCard && (existingFlags || !shouldShowIndicator)) return;
+    }
+
+    card.dataset.dormFlagSig = signature;
+    existingFlags?.remove();
+    existingBanner?.remove();
 
     if (!shouldShowIndicator) return;
-
     if (isBoardCard) {
-      const banner = bannerHtml(dorm);
+      const banner = bannerHtml(flags);
       if (banner) card.insertAdjacentHTML('afterbegin', banner);
       return;
     }
 
-    const html = flagHtml(dorm);
+    const html = flagHtml(flags);
     if (!html) return;
     const info = card.querySelector('.gate-dorm-info') || card.querySelector('.text-xs.text-muted.font-bold.uppercase') || card.querySelector('.text-xl.font-black.font-tabular');
     if (info) info.insertAdjacentHTML('afterend', html);
     else card.insertAdjacentHTML('beforeend', html);
   }
 
-  function dormsForColumn(columnId) {
+  function validateCards() {
     const dorms = activeDorms();
-    if (columnId.includes('empty')) return dorms.filter(d => d.state === 'empty');
-    if (columnId.includes('open')) return dorms.filter(d => d.state === 'open');
-    if (columnId.includes('closed')) return dorms.filter(d => d.state === 'closed');
-    return dorms;
-  }
-
-  function cardDormId(card) {
-    const datasetId = String(card?.dataset?.dormId || '').trim();
-    if (datasetId) return datasetId;
-
-    const onclick = card?.getAttribute?.('onclick') || '';
-    const contextmenu = card?.getAttribute?.('oncontextmenu') || '';
-    const idMatch = onclick.match(/openDormModal\('([^']+)'\)/) || contextmenu.match(/openDormEditModal\([^,]+,\s*'([^']+)'\)/);
-    return idMatch ? idMatch[1] : '';
-  }
-
-  function getDormFromCard(card, fallback, dorms = activeDorms()) {
-    const id = cardDormId(card);
-    if (id) {
-      const match = dorms.find(dorm => String(dorm.__backendId || '') === id);
-      if (match) return match;
-    }
-    return fallback || null;
-  }
-
-  function validateBoardCards() {
-    ['col-empty', 'col-open', 'col-closed', 'squadron-col-empty', 'squadron-col-open', 'squadron-col-closed'].forEach(columnId => {
-      const col = document.getElementById(columnId);
-      if (!col) return;
-      const dorms = dormsForColumn(columnId);
-      col.querySelectorAll('.dorm-card, .gate-dorm-card').forEach((card, index) => {
-        setFlags(card, getDormFromCard(card, dorms[index], dorms));
-      });
+    document.querySelectorAll('#page-board [data-dorm-id], #page-squadron [data-dorm-id], #proc-dorm-grid [data-dorm-id]').forEach(card => {
+      const dorm = dormById(cardDormId(card), dorms);
+      if (dorm) setFlags(card, dorm);
     });
-  }
-
-  function validateProcessingCards() {
-    const grid = document.getElementById('proc-dorm-grid');
-    if (!grid) return;
-    const dorms = activeDorms();
-    grid.querySelectorAll('.proc-card').forEach((card, index) => setFlags(card, getDormFromCard(card, dorms[index], dorms)));
   }
 
   function ensureEditSpaceForceField() {
@@ -180,29 +141,21 @@
     `);
   }
 
-  function getEditDorm() {
-    let id = '';
-    try { id = editDormId || ''; } catch (_) { id = ''; }
-    if (id) return getAllDataSafe().find(record => record && record.type === 'dorm' && record.__backendId === id) || null;
-
-    const name = document.getElementById('edit-dorm-name')?.value || '';
-    const sdq = document.getElementById('edit-sdq')?.value || '';
-    const section = document.getElementById('edit-section')?.value || '';
-    const inter = document.getElementById('edit-inter-sec')?.value || '';
-    return activeDorms().find(dorm => (
-      String(dorm.dorm_name || '') === String(name || '') &&
-      String(dorm.sdq || '') === String(sdq || '') &&
-      String(dorm.section || '') === String(section || '') &&
-      String(dorm.inter_sec || '') === String(inter || '')
-    )) || null;
+  function activeEditDormId() {
+    try { return String(editDormId || ''); } catch (_) { return ''; }
   }
 
-  function syncEditSpaceForceField() {
+  function activeModalDormId() {
+    try { return String(modalDormId || ''); } catch (_) { return ''; }
+  }
+
+  function syncEditSpaceForceField(id = activeEditDormId()) {
     const modal = document.getElementById('dorm-edit-modal');
     const input = document.getElementById('edit-space-force');
     if (!modal || modal.classList.contains('hidden') || !input || input.dataset.userTouched === 'true') return;
-    const dorm = getEditDorm();
-    input.checked = isSpaceForce(dorm);
+    const dorm = dormById(id, getAllDataSafe());
+    const flags = effectiveFlags(dorm);
+    input.checked = flags.spaceForce;
     if (input.checked) {
       const bandInput = document.getElementById('edit-band');
       if (bandInput) bandInput.checked = false;
@@ -212,19 +165,15 @@
   function patchEditOpen() {
     if (editOpenPatched || typeof openDormEditModal !== 'function') return;
     const originalOpen = openDormEditModal;
-    const patchedOpen = function patchedOpenDormEditModal(event, id) {
+    const patchedOpen = function gateIdentityBoundOpenDormEditModal(event, id) {
       const result = originalOpen.apply(this, arguments);
       ensureEditSpaceForceField();
       const input = document.getElementById('edit-space-force');
-      const bandInput = document.getElementById('edit-band');
-      const dorm = getAllDataSafe().find(record => record && record.type === 'dorm' && record.__backendId === id);
-      if (input) {
-        input.dataset.userTouched = 'false';
-        input.checked = isSpaceForce(dorm);
-      }
-      if (bandInput && input?.checked) bandInput.checked = false;
+      if (input) input.dataset.userTouched = 'false';
+      syncEditSpaceForceField(id);
       return result;
     };
+    patchedOpen.__gateDormFlagIdentityBound = true;
     window.openDormEditModal = patchedOpen;
     try { openDormEditModal = patchedOpen; } catch (_) {}
     editOpenPatched = true;
@@ -233,17 +182,27 @@
   function patchDataSdkUpdate() {
     if (sdkPatched || !window.dataSdk || typeof window.dataSdk.update !== 'function') return;
     const originalUpdate = window.dataSdk.update.bind(window.dataSdk);
-    window.dataSdk.update = function patchedDormFlagUpdate(payload) {
-      if (payload && payload.type === 'dorm') {
+    window.dataSdk.update = function gateIdentityBoundDormFlagUpdate(payload) {
+      const editModal = document.getElementById('dorm-edit-modal');
+      const editedId = activeEditDormId();
+      if (
+        payload &&
+        payload.type === 'dorm' &&
+        payload.__backendId &&
+        editedId &&
+        String(payload.__backendId) === editedId &&
+        editModal &&
+        !editModal.classList.contains('hidden')
+      ) {
         const sfInput = document.getElementById('edit-space-force');
         const bandInput = document.getElementById('edit-band');
-        const editModal = document.getElementById('dorm-edit-modal');
-        if (sfInput && editModal && !editModal.classList.contains('hidden')) {
-          payload = Object.assign({}, payload, {
-            space_force: sfInput.checked ? 'true' : 'false',
-            band: sfInput.checked ? 'false' : (bandInput && bandInput.checked ? 'true' : payload.band)
-          });
-        }
+        const spaceForce = Boolean(sfInput?.checked);
+        const band = !spaceForce && Boolean(bandInput?.checked);
+        payload = Object.assign({}, payload, {
+          band: band ? 'true' : 'false',
+          space_force: spaceForce ? 'true' : 'false',
+          is_space_force: spaceForce ? 'true' : 'false'
+        });
       }
       return originalUpdate(payload);
     };
@@ -253,21 +212,15 @@
   function updateDormModalInfo() {
     const modal = document.getElementById('dorm-modal');
     const info = document.getElementById('modal-dorm-info');
-    const name = document.getElementById('modal-dorm-name')?.textContent || '';
-    if (!modal || modal.classList.contains('hidden') || !info || !name) return;
-
-    const dorms = activeDorms();
-    let modalId = '';
-    try { modalId = modalDormId || ''; } catch (_) { modalId = ''; }
-    const dorm = (modalId ? dorms.find(record => record.__backendId === modalId) : null)
-      || dorms.find(record => String(record.dorm_name || '') === String(name || ''));
+    if (!modal || modal.classList.contains('hidden') || !info) return;
+    const dorm = dormById(activeModalDormId());
     if (!dorm) return;
 
     const flags = effectiveFlags(dorm);
-    const base = `${[esc(dorm.sdq), esc(dorm.section), esc(dorm.inter_sec)].filter(Boolean).join(' · ')} | ${flags.female ? '♀ Female' : '♂ Male'}${flags.band ? ' | Band' : ''}${flags.spaceForce ? ' | Space Force' : ''} | Max: ${n(dorm.max_load)}`;
-    if (info.dataset.flagSig !== base) {
-      info.innerHTML = base;
-      info.dataset.flagSig = base;
+    const text = `${[esc(dorm.sdq), esc(dorm.section), esc(dorm.inter_sec)].filter(Boolean).join(' · ')} | ${flags.female ? '♀ Female' : '♂ Male'}${flags.band ? ' | Band' : ''}${flags.spaceForce ? ' | Space Force' : ''} | Max: ${n(dorm.max_load)}`;
+    if (info.dataset.flagSig !== text) {
+      info.innerHTML = text;
+      info.dataset.flagSig = text;
     }
   }
 
@@ -276,19 +229,17 @@
     if (!target || !target.classList) return;
 
     if (target.classList.contains('batch-space-force') && target.checked) {
-      const row = target.closest('[data-row]') || target.closest('div');
       const index = Number(target.dataset.row);
-      const bandInput = row?.querySelector?.('.batch-band');
+      const bandInput = document.querySelector(`.batch-band[data-row="${index}"]`);
       if (bandInput) bandInput.checked = false;
-      if (Array.isArray(batchRows) && Number.isFinite(index) && batchRows[index]) batchRows[index].band = false;
+      try { if (Array.isArray(batchRows) && Number.isFinite(index) && batchRows[index]) batchRows[index].band = false; } catch (_) {}
     }
 
     if (target.classList.contains('batch-band') && target.checked) {
-      const row = target.closest('[data-row]') || target.closest('div');
       const index = Number(target.dataset.row);
-      const sfInput = row?.querySelector?.('.batch-space-force');
+      const sfInput = document.querySelector(`.batch-space-force[data-row="${index}"]`);
       if (sfInput) sfInput.checked = false;
-      if (Array.isArray(batchRows) && Number.isFinite(index) && batchRows[index]) batchRows[index].space_force = false;
+      try { if (Array.isArray(batchRows) && Number.isFinite(index) && batchRows[index]) batchRows[index].space_force = false; } catch (_) {}
     }
 
     if (target.id === 'edit-space-force' && target.checked) {
@@ -308,8 +259,7 @@
     patchEditOpen();
     patchDataSdkUpdate();
     syncEditSpaceForceField();
-    validateBoardCards();
-    validateProcessingCards();
+    validateCards();
     updateDormModalInfo();
   }
 
@@ -319,29 +269,28 @@
     requestAnimationFrame(runPass);
   }
 
-  function observeRenderTargets() {
-    const observer = new MutationObserver(schedulePass);
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true,
-      attributes: true,
-      attributeFilter: ['class', 'onclick', 'oncontextmenu']
-    });
+  function registerHooks() {
+    if (hooksRegistered || typeof window.registerGateHook !== 'function') return;
+    window.registerGateHook('afterRenderAll', schedulePass);
+    window.registerGateHook('afterDataChanged', schedulePass);
+    window.registerGateHook('afterPageChange', schedulePass);
+    window.registerGateHook('afterModalOpen', schedulePass);
+    hooksRegistered = true;
   }
 
   function start() {
     if (started) return;
     started = true;
     document.addEventListener('change', event => {
-      if (event.target && event.target.id === 'edit-space-force') event.target.dataset.userTouched = 'true';
+      if (event.target?.id === 'edit-space-force') event.target.dataset.userTouched = 'true';
       enforceImpossibleFlagCombination(event);
       schedulePass();
     }, true);
     document.addEventListener('click', schedulePass, true);
-    observeRenderTargets();
+    registerHooks();
     schedulePass();
   }
 
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, { once: true });
   else start();
 })();

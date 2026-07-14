@@ -1,10 +1,12 @@
 /* GATE fullscreen Status Board containment contract
-   Final responsive owner for the board viewport, metric row, and Active Buses block. */
+   Final responsive owner for the board viewport, compact telemetry row,
+   and Active Buses presentation. Normal Status Board layouts are unchanged. */
 
 :root {
   --gate-fullscreen-banner-px: 28px;
-  --gate-fullscreen-gap: 12px;
-  --gate-fullscreen-card-height: clamp(78px, 10.5dvh, 94px);
+  --gate-fullscreen-gap: 10px;
+  --gate-fullscreen-metric-height: 54px;
+  --gate-fullscreen-bus-height: 54px;
 }
 
 body.fullscreen-board,
@@ -47,24 +49,21 @@ body.gate-fullscreen-board-active.gate-app-shell-ready.gate-app-shell-mobile #pa
   flex-direction: column !important;
   box-sizing: border-box !important;
   scroll-padding-top: var(--gate-fullscreen-gap) !important;
+  transform: none !important;
+  backface-visibility: visible !important;
+  will-change: auto !important;
 }
 
 body.fullscreen-board #page-board .board-header.gate-premium-metrics-enabled,
 body.gate-fullscreen-board-active #page-board .board-header.gate-premium-metrics-enabled {
   flex: 0 0 auto !important;
   display: grid !important;
-  grid-template-columns: repeat(4, minmax(100px, 1fr)) minmax(220px, 1.6fr) !important;
-  grid-template-areas: 'arrived expected last local active' !important;
-  grid-auto-rows: min-content !important;
-  align-items: start !important;
-  align-content: start !important;
-  gap: clamp(8px, 0.8vw, 12px) !important;
   width: 100% !important;
   min-width: 0 !important;
   height: auto !important;
   min-height: 0 !important;
   max-height: none !important;
-  margin: 0 0 10px !important;
+  margin: 0 0 8px !important;
   padding: 0 !important;
   overflow: visible !important;
   transform: none !important;
@@ -87,48 +86,195 @@ body.gate-fullscreen-board-active #page-board .local-card { grid-area: local !im
 body.fullscreen-board #page-board .gate-active-buses-block,
 body.gate-fullscreen-board-active #page-board .gate-active-buses-block { grid-area: active !important; }
 
-body.fullscreen-board #page-board .gate-metrics-container .metric-card,
-body.gate-fullscreen-board-active #page-board .gate-metrics-container .metric-card,
-body.fullscreen-board #page-board .gate-active-buses-block,
-body.gate-fullscreen-board-active #page-board .gate-active-buses-block {
-  align-self: start !important;
-  width: 100% !important;
-  height: var(--gate-fullscreen-card-height) !important;
-  min-height: var(--gate-fullscreen-card-height) !important;
-  max-height: var(--gate-fullscreen-card-height) !important;
-  margin: 0 !important;
-  box-sizing: border-box !important;
-  overflow: hidden !important;
+/* Fullscreen telemetry uses opaque, non-animated surfaces to avoid fixed-layer
+   compositing flashes on desktop displays and wall-mounted monitors. */
+body.fullscreen-board #page-board .board-header,
+body.fullscreen-board #page-board .board-header *,
+body.gate-fullscreen-board-active #page-board .board-header,
+body.gate-fullscreen-board-active #page-board .board-header * {
+  animation: none !important;
+  transition: none !important;
+  will-change: auto !important;
+  backface-visibility: visible !important;
 }
 
-body.fullscreen-board #page-board .gate-active-buses-block,
-body.gate-fullscreen-board-active #page-board .gate-active-buses-block {
-  display: grid !important;
-  grid-template-columns: minmax(0, 1fr) !important;
-  grid-template-rows: auto minmax(0, 1fr) !important;
-  align-content: start !important;
-  gap: 6px !important;
-  padding: 10px 12px !important;
+body.fullscreen-board #page-board .metric-card,
+body.gate-fullscreen-board-active #page-board .metric-card {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  background: #111d30 !important;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.24) !important;
 }
 
-body.fullscreen-board #page-board #active-buses,
-body.gate-fullscreen-board-active #page-board #active-buses {
-  display: flex !important;
-  flex-wrap: nowrap !important;
-  align-items: center !important;
-  gap: 8px !important;
-  min-width: 0 !important;
-  min-height: 0 !important;
-  max-height: 52px !important;
-  overflow-x: auto !important;
-  overflow-y: hidden !important;
-  padding: 0 0 2px !important;
-  scrollbar-width: thin !important;
+body.fullscreen-board #page-board .metric-card::before,
+body.gate-fullscreen-board-active #page-board .metric-card::before {
+  display: none !important;
+  content: none !important;
 }
 
-body.fullscreen-board #page-board #active-buses > *,
-body.gate-fullscreen-board-active #page-board #active-buses > * {
-  flex: 0 0 auto !important;
+body.theme-light.fullscreen-board #page-board .metric-card,
+body.theme-light.gate-fullscreen-board-active #page-board .metric-card {
+  background: #e7edf3 !important;
+  box-shadow: 0 3px 10px rgba(20, 49, 91, 0.12) !important;
+}
+
+@media (min-width: 768px) {
+  body.fullscreen-board #page-board .board-header.gate-premium-metrics-enabled,
+  body.gate-fullscreen-board-active #page-board .board-header.gate-premium-metrics-enabled {
+    grid-template-columns: repeat(4, minmax(88px, 112px)) minmax(420px, 1fr) !important;
+    grid-template-areas: 'arrived expected last local active' !important;
+    grid-auto-rows: var(--gate-fullscreen-metric-height) !important;
+    align-items: start !important;
+    align-content: start !important;
+    justify-content: stretch !important;
+    gap: 8px !important;
+  }
+
+  body.fullscreen-board #page-board .gate-metrics-container .metric-card,
+  body.gate-fullscreen-board-active #page-board .gate-metrics-container .metric-card {
+    align-self: start !important;
+    width: 100% !important;
+    height: var(--gate-fullscreen-metric-height) !important;
+    min-height: var(--gate-fullscreen-metric-height) !important;
+    max-height: var(--gate-fullscreen-metric-height) !important;
+    margin: 0 !important;
+    padding: 7px 10px !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+    justify-content: center !important;
+  }
+
+  body.fullscreen-board #page-board .gate-metrics-container .metric-header,
+  body.gate-fullscreen-board-active #page-board .gate-metrics-container .metric-header {
+    gap: 4px !important;
+    line-height: 1 !important;
+  }
+
+  body.fullscreen-board #page-board .gate-metrics-container .metric-label,
+  body.gate-fullscreen-board-active #page-board .gate-metrics-container .metric-label {
+    font-size: 8px !important;
+    line-height: 1 !important;
+    letter-spacing: 0.065em !important;
+  }
+
+  body.fullscreen-board #page-board .gate-metrics-container .metric-value,
+  body.gate-fullscreen-board-active #page-board .gate-metrics-container .metric-value {
+    margin-top: 3px !important;
+    font-size: clamp(1.05rem, 1.55vw, 1.38rem) !important;
+    line-height: 1 !important;
+    letter-spacing: -0.02em !important;
+  }
+
+  body.fullscreen-board #page-board .gate-active-buses-block,
+  body.gate-fullscreen-board-active #page-board .gate-active-buses-block {
+    align-self: start !important;
+    display: grid !important;
+    grid-template-columns: max-content minmax(0, 1fr) !important;
+    grid-template-rows: minmax(0, 1fr) !important;
+    align-items: center !important;
+    align-content: center !important;
+    gap: 10px !important;
+    width: 100% !important;
+    height: var(--gate-fullscreen-bus-height) !important;
+    min-height: var(--gate-fullscreen-bus-height) !important;
+    max-height: var(--gate-fullscreen-bus-height) !important;
+    margin: 0 !important;
+    padding: 7px 10px !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    background: #10233d !important;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.24) !important;
+  }
+
+  body.theme-light.fullscreen-board #page-board .gate-active-buses-block,
+  body.theme-light.gate-fullscreen-board-active #page-board .gate-active-buses-block {
+    background: #234a78 !important;
+  }
+
+  body.fullscreen-board #page-board .gate-active-buses-label,
+  body.gate-fullscreen-board-active #page-board .gate-active-buses-label {
+    align-self: center !important;
+    margin: 0 !important;
+    color: #ffffff !important;
+    font-size: 9px !important;
+    line-height: 1 !important;
+    letter-spacing: 0.075em !important;
+    white-space: nowrap !important;
+  }
+
+  body.fullscreen-board #page-board #active-buses,
+  body.gate-fullscreen-board-active #page-board #active-buses {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    gap: 8px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    height: 38px !important;
+    min-height: 38px !important;
+    max-height: 38px !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    padding: 0 0 2px !important;
+    scrollbar-width: thin !important;
+  }
+
+  body.fullscreen-board #page-board #active-buses > *,
+  body.gate-fullscreen-board-active #page-board #active-buses > * {
+    flex: 0 0 auto !important;
+  }
+
+  body.fullscreen-board #page-board #active-buses .prc-bus-card,
+  body.fullscreen-board #page-board #active-buses .gate-component-active-bus-card,
+  body.gate-fullscreen-board-active #page-board #active-buses .prc-bus-card,
+  body.gate-fullscreen-board-active #page-board #active-buses .gate-component-active-bus-card {
+    display: inline-flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 7px !important;
+    width: max-content !important;
+    min-width: max-content !important;
+    max-width: none !important;
+    height: 34px !important;
+    min-height: 34px !important;
+    max-height: 34px !important;
+    margin: 0 !important;
+    padding: 0 10px !important;
+    overflow: hidden !important;
+    border-radius: 7px !important;
+    line-height: 1 !important;
+    white-space: nowrap !important;
+    transform: none !important;
+  }
+
+  body.fullscreen-board #page-board #active-buses .prc-bus-card > span,
+  body.gate-fullscreen-board-active #page-board #active-buses .prc-bus-card > span {
+    display: inline-flex !important;
+    align-items: center !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    font-size: 10px !important;
+    line-height: 1 !important;
+    white-space: nowrap !important;
+  }
+
+  body.fullscreen-board #page-board #active-buses .prc-bus-card .prc-bus-card-title,
+  body.gate-fullscreen-board-active #page-board #active-buses .prc-bus-card .prc-bus-card-title {
+    font-size: 11px !important;
+    font-weight: 900 !important;
+  }
+
+  body.fullscreen-board #page-board #active-buses .prc-bus-card .prc-bus-card-line,
+  body.fullscreen-board #page-board #active-buses .prc-bus-card .prc-bus-card-dept,
+  body.gate-fullscreen-board-active #page-board #active-buses .prc-bus-card .prc-bus-card-line,
+  body.gate-fullscreen-board-active #page-board #active-buses .prc-bus-card .prc-bus-card-dept {
+    padding-left: 7px !important;
+    border-left: 1px solid rgba(255, 255, 255, 0.34) !important;
+    font-weight: 800 !important;
+  }
 }
 
 body.fullscreen-board #page-board .dorm-dashboard,
@@ -141,7 +287,7 @@ body.gate-fullscreen-board-active #page-board .dorm-dashboard {
 @media (max-width: 767px) {
   :root {
     --gate-fullscreen-gap: 8px;
-    --gate-fullscreen-card-height: 72px;
+    --gate-fullscreen-metric-height: 72px;
   }
 
   body.fullscreen-board #page-board .board-header.gate-premium-metrics-enabled,
@@ -151,14 +297,32 @@ body.gate-fullscreen-board-active #page-board .dorm-dashboard {
       'arrived expected'
       'last local'
       'active active' !important;
+    grid-auto-rows: min-content !important;
+    align-items: start !important;
     gap: 8px !important;
     margin-bottom: 8px !important;
   }
 
+  body.fullscreen-board #page-board .gate-metrics-container .metric-card,
+  body.gate-fullscreen-board-active #page-board .gate-metrics-container .metric-card {
+    height: var(--gate-fullscreen-metric-height) !important;
+    min-height: var(--gate-fullscreen-metric-height) !important;
+    max-height: var(--gate-fullscreen-metric-height) !important;
+  }
+
   body.fullscreen-board #page-board .gate-active-buses-block,
   body.gate-fullscreen-board-active #page-board .gate-active-buses-block {
-    height: 76px !important;
-    min-height: 76px !important;
-    max-height: 76px !important;
+    height: auto !important;
+    min-height: 92px !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  body.fullscreen-board #page-board #active-buses,
+  body.gate-fullscreen-board-active #page-board #active-buses {
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
   }
 }

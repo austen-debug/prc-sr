@@ -129,32 +129,41 @@
     return dorms;
   }
 
+  function cardDormId(card) {
+    const datasetId = String(card?.dataset?.dormId || '').trim();
+    if (datasetId) return datasetId;
+
+    const onclick = card?.getAttribute?.('onclick') || '';
+    const contextmenu = card?.getAttribute?.('oncontextmenu') || '';
+    const idMatch = onclick.match(/openDormModal\('([^']+)'\)/) || contextmenu.match(/openDormEditModal\([^,]+,\s*'([^']+)'\)/);
+    return idMatch ? idMatch[1] : '';
+  }
+
+  function getDormFromCard(card, fallback, dorms = activeDorms()) {
+    const id = cardDormId(card);
+    if (id) {
+      const match = dorms.find(dorm => String(dorm.__backendId || '') === id);
+      if (match) return match;
+    }
+    return fallback || null;
+  }
+
   function validateBoardCards() {
     ['col-empty', 'col-open', 'col-closed', 'squadron-col-empty', 'squadron-col-open', 'squadron-col-closed'].forEach(columnId => {
       const col = document.getElementById(columnId);
       if (!col) return;
       const dorms = dormsForColumn(columnId);
-      col.querySelectorAll('.dorm-card, .gate-dorm-card').forEach((card, index) => setFlags(card, dorms[index]));
+      col.querySelectorAll('.dorm-card, .gate-dorm-card').forEach((card, index) => {
+        setFlags(card, getDormFromCard(card, dorms[index], dorms));
+      });
     });
-  }
-
-  function getDormFromCard(card, fallback) {
-    const onclick = card?.getAttribute?.('onclick') || '';
-    const contextmenu = card?.getAttribute?.('oncontextmenu') || '';
-    const idMatch = onclick.match(/openDormModal\('([^']+)'\)/) || contextmenu.match(/openDormEditModal\([^,]+,\s*'([^']+)'\)/);
-    const id = idMatch ? idMatch[1] : '';
-    if (id) {
-      const match = activeDorms().find(dorm => dorm.__backendId === id);
-      if (match) return match;
-    }
-    return fallback || null;
   }
 
   function validateProcessingCards() {
     const grid = document.getElementById('proc-dorm-grid');
     if (!grid) return;
     const dorms = activeDorms();
-    grid.querySelectorAll('.proc-card').forEach((card, index) => setFlags(card, getDormFromCard(card, dorms[index])));
+    grid.querySelectorAll('.proc-card').forEach((card, index) => setFlags(card, getDormFromCard(card, dorms[index], dorms)));
   }
 
   function ensureEditSpaceForceField() {
@@ -246,8 +255,14 @@
     const info = document.getElementById('modal-dorm-info');
     const name = document.getElementById('modal-dorm-name')?.textContent || '';
     if (!modal || modal.classList.contains('hidden') || !info || !name) return;
-    const dorm = activeDorms().find(record => String(record.dorm_name || '') === String(name || ''));
+
+    const dorms = activeDorms();
+    let modalId = '';
+    try { modalId = modalDormId || ''; } catch (_) { modalId = ''; }
+    const dorm = (modalId ? dorms.find(record => record.__backendId === modalId) : null)
+      || dorms.find(record => String(record.dorm_name || '') === String(name || ''));
     if (!dorm) return;
+
     const flags = effectiveFlags(dorm);
     const base = `${[esc(dorm.sdq), esc(dorm.section), esc(dorm.inter_sec)].filter(Boolean).join(' · ')} | ${flags.female ? '♀ Female' : '♂ Male'}${flags.band ? ' | Band' : ''}${flags.spaceForce ? ' | Space Force' : ''} | Max: ${n(dorm.max_load)}`;
     if (info.dataset.flagSig !== base) {

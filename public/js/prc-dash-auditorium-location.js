@@ -123,10 +123,22 @@
   }
 
   function cardId(card) {
+    const datasetId = String(card?.dataset?.dormId || '').trim();
+    if (datasetId) return datasetId;
+
     const onclick = card?.getAttribute?.('onclick') || '';
     const contextmenu = card?.getAttribute?.('oncontextmenu') || '';
     const match = onclick.match(/openDormModal\('([^']+)'\)/) || contextmenu.match(/openDormEditModal\([^,]+,\s*'([^']+)'\)/);
     return match ? match[1] : '';
+  }
+
+  function dormForCard(card, fallback, dorms = activeDorms()) {
+    const id = cardId(card);
+    if (id) {
+      const match = dorms.find(item => String(item.__backendId || '') === id);
+      if (match) return match;
+    }
+    return fallback || null;
   }
 
   function setLocation(card, dorm) {
@@ -166,7 +178,9 @@
       const col = document.getElementById(columnId);
       if (!col) return;
       const dorms = boardDormsForColumn(columnId);
-      col.querySelectorAll('.dorm-card, .gate-dorm-card').forEach((card, index) => setLocation(card, dorms[index]));
+      col.querySelectorAll('.dorm-card, .gate-dorm-card').forEach((card, index) => {
+        setLocation(card, dormForCard(card, dorms[index], dorms));
+      });
     });
   }
 
@@ -175,9 +189,7 @@
     if (!grid) return;
     const dorms = activeDorms();
     grid.querySelectorAll('.proc-card').forEach((card, index) => {
-      const id = cardId(card);
-      const dorm = id ? dorms.find(item => item.__backendId === id) : dorms[index];
-      setLocation(card, dorm);
+      setLocation(card, dormForCard(card, dorms[index], dorms));
     });
   }
 

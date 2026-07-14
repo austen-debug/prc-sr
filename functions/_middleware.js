@@ -15,6 +15,7 @@ const UI_STYLESHEETS = [
 const UI_INLINE_ASSETS = [];
 
 const UI_HEAD_SCRIPTS = [
+  '<script src="/js/gate-record-display-contract.js?v=record-display-integrity-20260714" defer></script>',
   '<script src="/js/gate-component-contracts.js" defer></script>',
   '<script src="/js/gate-ui-hooks.js?v=phase-6-hooks-20260709" defer></script>',
   '<script src="/js/gate-branding-controller.js" defer></script>',
@@ -22,13 +23,13 @@ const UI_HEAD_SCRIPTS = [
   '<script src="/js/prc-dash-sat-arrivals.js" defer></script>',
   '<script src="/js/prc-dash-space-force.js" defer></script>',
   '<script src="/js/prc-dash-dorm-reopen.js" defer></script>',
-  '<script src="/js/prc-dash-final-audit.js" defer></script>',
-  '<script src="/js/gate-status-board-controller.js?v=phase-1c-status-board-20260709" defer></script>',
-  '<script src="/js/gate-processing-controller.js?v=phase-2-processing-20260709b" defer></script>',
+  '<script src="/js/prc-dash-final-audit.js?v=record-display-integrity-20260714" defer></script>',
+  '<script src="/js/gate-status-board-controller.js?v=record-display-integrity-20260714" defer></script>',
+  '<script src="/js/gate-processing-controller.js?v=record-display-integrity-20260714" defer></script>',
   '<script src="/js/prc-dash-dorm-flag-validation.js" defer></script>',
   '<script src="/js/prc-dash-auditorium-location.js" defer></script>',
   '<script src="/js/gate-bus-workflow-controller.js?v=phase-3-bus-workflow-20260709" defer></script>',
-  '<script src="/js/gate-input-page-controller.js?v=build-2-phase-1c-dorm-identity-20260714" defer></script>',
+  '<script src="/js/gate-input-page-controller.js?v=record-display-integrity-20260714" defer></script>',
   '<script src="/js/gate-archive-controller.js?v=phase-8c-report-wording-20260709" defer></script>',
   '<script src="/js/gate-permission-guard.js?v=phase-1a-permission-guard-20260709" defer></script>',
   '<script src="/js/gate-app-shell-controller.js?v=phase-7g-viewport-watermark-20260709" defer></script>',

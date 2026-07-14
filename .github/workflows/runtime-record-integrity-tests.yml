@@ -48,7 +48,7 @@ jobs:
 
       - name: Parse active JavaScript
         run: |
-          node --check functions/_middleware.js
+          node --input-type=module --check < functions/_middleware.js
           node --check public/js/gate-record-display-contract.js
           node --check public/js/gate-status-board-controller.js
           node --check public/js/gate-processing-controller.js

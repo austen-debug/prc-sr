@@ -58,8 +58,48 @@ body.theme-light {
   min-width: 0;
 }
 
+/* Active buses are a separate command strip above the summary metrics. */
 #page-board .gate-active-buses-block {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  align-items: center;
+  gap: 0.85rem;
+  width: 100%;
   min-width: 0;
+  min-height: 58px;
+  padding: 10px 12px;
+  border: 1px solid rgba(184, 190, 199, 0.28);
+  border-radius: 12px;
+  background: rgba(13, 22, 41, 0.48);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+  box-sizing: border-box;
+  -webkit-backdrop-filter: blur(14px) saturate(125%);
+  backdrop-filter: blur(14px) saturate(125%);
+}
+
+body.theme-light #page-board .gate-active-buses-block,
+:root[data-theme="light"] #page-board .gate-active-buses-block {
+  border-color: #cbd5e1;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.09);
+}
+
+#page-board .gate-active-buses-label {
+  color: var(--metric-text-muted);
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+#page-board #active-buses {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  flex-wrap: wrap;
 }
 
 #page-board .gate-metrics-container .metric-card {
@@ -85,6 +125,14 @@ body.theme-light {
     0 4px 20px rgba(0, 0, 0, 0.25),
     inset 0 1px 1px rgba(255, 255, 255, 0.08);
   isolation: isolate;
+}
+
+body.theme-light #page-board .gate-metrics-container .metric-card,
+:root[data-theme="light"] #page-board .gate-metrics-container .metric-card {
+  border-color: #cbd5e1;
+  box-shadow:
+    0 4px 16px rgba(15, 23, 42, 0.09),
+    inset 0 1px 1px rgba(255, 255, 255, 0.72);
 }
 
 #page-board .gate-metrics-container .metric-card::before {
@@ -160,6 +208,31 @@ body.theme-light #page-board .gate-metrics-container .arrived-card .metric-value
 }
 
 @media (max-width: 640px) {
+  #page-board .board-header.gate-premium-metrics-enabled {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 0.75rem !important;
+  }
+
+  #page-board .gate-active-buses-block {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.55rem;
+    min-height: 0;
+    padding: 11px 12px;
+  }
+
+  #page-board .gate-active-buses-label {
+    white-space: normal;
+  }
+
+  #page-board #active-buses {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 2px;
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
+  }
+
   #page-board .gate-metrics-container {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.62rem;

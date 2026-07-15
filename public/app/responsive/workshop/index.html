@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en" data-gate-theme="dark" data-gate-density="standard">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>GATE Responsive Composition Workshop</title>
+  <link rel="stylesheet" href="../../design/themes/gdl-foundations.css">
+  <link rel="stylesheet" href="../../components/gate-components.css">
+  <link rel="stylesheet" href="../../shell/gate-shell.css">
+  <link rel="stylesheet" href="../gate-responsive.css">
+  <link rel="stylesheet" href="./workshop.css">
+</head>
+<body>
+  <a class="gate-shell-skip-link" href="#responsive-workshop-main">Skip to posture fixtures</a>
+  <header class="responsive-workshop-header">
+    <div>
+      <p>GATE Build 2 · Phase 2D</p>
+      <h1>Responsive Composition Workshop</h1>
+      <p>Six postures generated from width, height, orientation, and input capability.</p>
+    </div>
+  </header>
+  <main id="responsive-workshop-main" class="responsive-workshop-main" tabindex="-1">
+    <section class="responsive-workshop-summary" aria-labelledby="summary-title">
+      <h2 id="summary-title">Contract summary</h2>
+      <p id="responsive-workshop-status" role="status" aria-live="polite"></p>
+    </section>
+    <section id="responsive-workshop-grid" class="responsive-workshop-grid" aria-label="Responsive posture fixtures"></section>
+  </main>
+  <script type="module" src="./workshop.mjs"></script>
+</body>
+</html>

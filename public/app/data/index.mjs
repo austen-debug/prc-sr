@@ -1,4 +1,5 @@
 import { GateArchiveRepository } from './repositories/archive-repository.mjs';
+import { GateAuditRepository } from './repositories/audit-repository.mjs';
 import { GateBusRepository } from './repositories/bus-repository.mjs';
 import { GateConfigRepository } from './repositories/config-repository.mjs';
 import { GateDormRepository } from './repositories/dorm-repository.mjs';
@@ -17,6 +18,7 @@ export function createGateRepositories({ client } = {}) {
     buses: new GateBusRepository({ client }),
     dorms: new GateDormRepository({ client }),
     archives: new GateArchiveRepository({ client }),
-    config: new GateConfigRepository({ client })
+    config: new GateConfigRepository({ client }),
+    audit: new GateAuditRepository({ client })
   });
 }

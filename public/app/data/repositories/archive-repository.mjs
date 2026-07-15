@@ -9,6 +9,16 @@ import { repositoryOk, validationFailure } from '../repository-result.mjs';
 
 export const ARCHIVE_KINDS = Object.freeze(['closeout', 'amendment']);
 
+function safeManifest(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+  return {
+    busIds: Array.isArray(value.busIds) ? value.busIds.map(normalizeText).filter(Boolean) : [],
+    dormIds: Array.isArray(value.dormIds) ? value.dormIds.map(normalizeText).filter(Boolean) : [],
+    soundEventIds: Array.isArray(value.soundEventIds) ? value.soundEventIds.map(normalizeText).filter(Boolean) : [],
+    configIds: Array.isArray(value.configIds) ? value.configIds.map(normalizeText).filter(Boolean) : []
+  };
+}
+
 export class GateArchiveRepository extends BaseRepository {
   constructor({ client }) {
     super({ client, type: 'archive' });
@@ -38,6 +48,7 @@ export class GateArchiveRepository extends BaseRepository {
     const parentArchiveId = normalizeText(command.parentArchiveId);
     const amendmentReason = normalizeText(command.amendmentReason);
     const amendmentNumber = toNonNegativeNumber(command.amendmentNumber);
+    const closeoutManifest = safeManifest(command.closeoutManifest);
 
     if (!weekGroup) return validationFailure('Week Group is required to create an archive snapshot.');
     if (!busData || !dormData) return validationFailure('Archive snapshots require busData and dormData arrays.');
@@ -70,6 +81,7 @@ export class GateArchiveRepository extends BaseRepository {
       parent_archive_id: parentArchiveId,
       amendment_reason: amendmentReason,
       amendment_number: amendmentNumber,
+      closeout_manifest: closeoutManifest,
       total_expected: totalExpected,
       total_arrived: totalArrived,
       total_loaded: totalLoaded,

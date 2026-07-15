@@ -105,6 +105,24 @@ function confirmedSpaceForceFromBuses(buses) {
   return buses.filter(bus => bus.confirmedArrival).reduce((sum, bus) => sum + bus.spaceForce, 0);
 }
 
+function normalizeCloseoutManifest(record) {
+  const value = record?.closeout_manifest && typeof record.closeout_manifest === 'object' && !Array.isArray(record.closeout_manifest)
+    ? record.closeout_manifest
+    : {};
+  const recordVersions = Object.freeze(Object.fromEntries(
+    Object.entries(value.recordVersions || {})
+      .map(([id, version]) => [normalizeText(id), normalizeRecordVersion(version)])
+      .filter(([id]) => Boolean(id))
+  ));
+  return Object.freeze({
+    busIds: Object.freeze((Array.isArray(value.busIds) ? value.busIds : []).map(normalizeText).filter(Boolean)),
+    dormIds: Object.freeze((Array.isArray(value.dormIds) ? value.dormIds : []).map(normalizeText).filter(Boolean)),
+    soundEventIds: Object.freeze((Array.isArray(value.soundEventIds) ? value.soundEventIds : []).map(normalizeText).filter(Boolean)),
+    configIds: Object.freeze((Array.isArray(value.configIds) ? value.configIds : []).map(normalizeText).filter(Boolean)),
+    recordVersions
+  });
+}
+
 function normalizeArchivePayload(record, context, warnings) {
   const busDataResult = parseLegacyArray(record.bus_data, { field: 'bus_data' });
   const dormDataResult = parseLegacyArray(record.dorm_data, { field: 'dorm_data' });
@@ -137,6 +155,7 @@ function normalizeArchivePayload(record, context, warnings) {
     parentArchiveId: normalizeText(record.parent_archive_id),
     amendmentReason: normalizeText(record.amendment_reason),
     amendmentNumber: toNonNegativeNumber(record.amendment_number),
+    closeoutManifest: normalizeCloseoutManifest(record),
     totalExpected: toNonNegativeNumber(record.total_expected),
     totalArrived: toNonNegativeNumber(record.total_arrived),
     totalLoaded: toNonNegativeNumber(record.total_loaded),

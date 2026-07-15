@@ -1,6 +1,6 @@
 # GATE Build 2 — Foundation Alignment Gate B Execution Report
 
-Status: IMPLEMENTED — CI VALIDATION PENDING  
+Status: COMPLETE / STAGED  
 Runtime status: staged; Build 1 remains operational and unchanged
 
 ## Objective
@@ -16,21 +16,36 @@ public/app/data/provenance.mjs
 
 ## Source corrected
 
-- `record-normalizer.mjs` now creates immutable canonical entities with creator/updater role provenance.
-- `toCanonicalDomainRecord(s)` now passes canonical entities through unchanged.
+- `record-normalizer.mjs` creates immutable canonical entities with creator/updater role provenance.
+- `toCanonicalDomainRecord(s)` passes canonical entities through unchanged.
 - domain normalization reads canonical payload fields only.
 - active Week Group selection reads canonical config entities only.
 - typed repositories require recognized `actorRole` for create, update, and delete requests.
 - compatibility transport writes retain Build 1 field shapes only at the data boundary.
 
-## Validation added
+## Validation
 
 ```text
 tests/build-2/data/canonical-entities.test.mjs
 .github/workflows/build-2-gate-b-tests.yml
 ```
 
-Validation covers canonical entity identity, immutability, role provenance, unknown historical provenance, direct domain handoff, rejection of raw legacy records by domain selectors, config alias containment, unknown-record recovery, repository actor-role requirements, historical parity, and Build 1 isolation.
+Validation covers canonical identity, immutability, role provenance, unknown historical provenance, direct domain handoff, rejection of raw legacy records, alias containment, unknown-record recovery, repository actor-role requirements, historical parity, and Build 1 isolation.
+
+Final implementation-head results:
+
+```text
+PASS — Build 2 Gate B Tests
+PASS — Build 2 Data Tests
+PASS — Build 2 Domain Tests
+PASS — Build 2 Phase 1 Validation
+PASS — Build 2 Foundation Alignment Tests
+PASS — Build 2 Component Tests
+PASS — Build 2 Shell Tests
+PASS — Build 2 Responsive Tests
+PASS — Build 2 Accessibility Tests
+PASS — Build 1 middleware isolation
+```
 
 ## Security and data controls
 
@@ -47,15 +62,19 @@ No active Build 1 controller, stylesheet, route, report, API behavior, authentic
 ## Closure gate
 
 ```text
-PENDING — canonical entity tests
-PENDING — repository provenance tests
-PENDING — historical domain and parity regression
-PENDING — Phase 2 regression
-PENDING — Build 1 middleware isolation
-PENDING — final status update
+PASS — immutable canonical entity contract
+PASS — direct canonical domain handoff
+PASS — Build 1 aliases contained at the compatibility boundary
+PASS — creator and updater role provenance
+PASS — recognized actorRole required for staged writes
+PASS — unknown historical provenance remains unknown
+PASS — unknown record types remain recoverable
+PASS — historical operational parity
+PASS — full Phase 2 regression
+PASS — Build 1 runtime isolation
 ```
 
-## Next after closure
+## Next
 
 ```text
 Foundation Alignment Gate C

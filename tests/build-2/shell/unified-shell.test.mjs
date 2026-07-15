@@ -125,25 +125,24 @@ test('navigation models expose only permitted routes and one aria-current page',
   assert.deepEqual(model.filter(route => route.ariaCurrent === 'page').map(route => route.id), ['processing']);
 });
 
-test('shell renderers provide skip navigation, landmarks, current-route semantics, and modal sheet structure', () => {
+test('shell renderers provide skip navigation, landmarks, current-route semantics, modal sheet structure, and escaping', () => {
   const state = createShellState({ role: 'airman', activeRoute: 'processing', navigationMode: 'sheet', navigationOpen: true, weekGroup: 'WG 26-01' });
   const navigation = renderGateNavigation(state);
-  const shell = renderGateAppShell({ state, title: '<img src=x onerror=alert(1)>', content: '<section>Trusted component output</section>' });
+  const shell = renderGateAppShell({ state, title: '<script>alert(1)</script>', content: '<section>Trusted component output</section>' });
 
   assert.match(shell, /href="#gate-shell-main"/);
   assert.match(shell, /<header class="gate-shell-header">/);
   assert.match(shell, /<main class="gate-shell-main"/);
   assert.match(shell, /aria-label="Active week group: WG 26-01"/);
-  assert.doesNotMatch(shell, /<img/i);
-  assert.match(shell, /&lt;img/);
+  assert.doesNotMatch(shell, /<script/i);
+  assert.match(shell, /&lt;script/);
   assert.match(navigation, /role="dialog"/);
   assert.match(navigation, /aria-modal="true"/);
   assert.match(navigation, /aria-current="page"/);
   assert.doesNotMatch(navigation, /data-gate-route="airport"/);
-  assert.doesNotMatch(shell, /<[^>]+\son[a-z]+\s*=/i);
 });
 
-test('shell core has no DOM, API, repository, or generic-record dependency', async () => {
+test('shell core has no DOM, API, repository, generic-record, or inline-handler dependency', async () => {
   const paths = [
     'public/app/shell/route-registry.mjs',
     'public/app/shell/permission-registry.mjs',
@@ -155,6 +154,7 @@ test('shell core has no DOM, API, repository, or generic-record dependency', asy
   const source = (await Promise.all(paths.map(repositoryFile))).join('\n');
   assert.doesNotMatch(source, /\b(?:document|window|localStorage|sessionStorage)\b/);
   assert.doesNotMatch(source, /fetch\s*\(|\/api\/records|generic record|Gate\w+Repository/);
+  assert.doesNotMatch(source, /\son[a-z]+\s*=/i);
 });
 
 test('shell CSS uses GDL tokens and explicit presentations without device-specific page repair rules', async () => {

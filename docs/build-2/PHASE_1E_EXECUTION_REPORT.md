@@ -2,65 +2,69 @@
 
 ## Parity and Data Integrity Validation
 
-Status: IMPLEMENTED — CI VALIDATION PENDING
+Status: COMPLETE
 Runtime status: inactive; Build 1 remains operational and unchanged
 
 ## Objective
 
 Validate the complete Phase 1 chain across operational definitions, canonical calculations, legacy normalization, typed repositories, report models, and archive read models before any Build 2 runtime integration.
 
-## Validation matrix
+## Validation coverage
 
-Phase 1E adds executable coverage for:
-
-- the 911 projected / 818 Night One / 39 Night Two / 857 cumulative historical scenario through the existing F001 fixture;
+- historical 911 projected / 818 Night One / 39 Night Two / 857 cumulative fixture;
 - active bus exclusion;
 - local confirmed-arrival inclusion;
-- no-Space-Force report suppression;
-- Air Force and Space Force separation;
-- NAT nightly and cumulative totals;
-- edited arrived-bus counts without duplicate accumulation;
-- confirmed arrivals outside configured windows;
-- receiving windows crossing midnight;
-- half-open receiving-window boundaries;
+- Air Force, Space Force, female, and NAT eligibility parity;
+- edited arrived-bus values without duplicate accumulation;
+- out-of-window confirmed arrivals;
+- midnight-crossing and half-open receiving windows;
 - malformed legacy timestamps;
-- empty Week Groups;
-- partial Week Groups;
+- empty and partial Week Groups;
+- Space Force suppression;
 - archive/live total parity;
-- Build 1 reference selector and Build 2 selector comparison against the same record set.
+- Build 1 reference selector compared with Build 2 against the same records.
 
-## Added validation source
+## Validation source
 
 ```text
 tests/build-2/parity/phase-1e-parity.test.mjs
 .github/workflows/build-2-phase-1-validation.yml
 ```
 
-The Phase 1 workflow executes all three layers:
+## CI result
 
-```bash
-node --test tests/build-2/domain/*.test.mjs
-node --test tests/build-2/data/*.test.mjs
-node --test tests/build-2/parity/*.test.mjs
+```text
+Build 2 Domain Tests        PASS
+Build 2 Phase 1 Validation PASS
+Domain calculations        PASS
+Normalization/repositories PASS
+Phase 1 parity matrix      PASS
 ```
 
-## Data-integrity assertions
+## Phase 1 exit decision
 
-1. Only `status: arrived` records with valid `arrived_at` values contribute to arrival, processing, female, NAT, or Space Force totals.
-2. Active/en-route buses remain visible as active but do not enter confirmed-arrival totals.
-3. Local arrivals use the same eligibility rule as airport arrivals.
-4. Edited records contribute their current persisted values once; record identity prevents positional or duplicate accumulation.
-5. Confirmed arrivals outside receiving windows remain confirmed but are listed as unassigned to a receiving night.
-6. Receiving windows are half-open and may cross midnight.
-7. Malformed timestamps produce compatibility warnings and cannot create confirmed arrival eligibility.
-8. Empty and partial Week Groups produce deterministic zero or partial totals without exceptions.
-9. Archive normalized totals match the canonical live summary when produced from the same record population.
-10. Space Force report sections are hidden only when both projected and confirmed Space Force totals are zero.
+```text
+PASS — metric provenance documented
+PASS — shared calculations canonical
+PASS — only confirmed arrivals count as processed
+PASS — AF, SF, female, and NAT share one eligible bus set
+PASS — historical fixtures exact
+PASS — Build 1 records normalize without data loss
+PASS — repository contracts validated
+PASS — conflict capability limits documented
+PASS — no active UI or compatibility layer added
+PASS — documentation matches implementation
+```
 
-## Runtime and rollback boundary
+GATE Build 2 Phase 1 is complete. This does not activate Build 2 in production.
 
-No Build 2 module is added to middleware. No Build 1 controller, API route, authentication behavior, record, or visible interface is modified. Rollback consists only of removing the inactive test and documentation files.
+## Runtime boundary
 
-## Closure gate
+No Build 2 module is added to middleware. No Build 1 controller, API route, authentication behavior, persisted record, or visible interface is modified.
 
-Phase 1E and Build 2 Phase 1 close only after the pull-request workflow passes all domain, data, repository, and parity suites. After successful CI, the Build 2 index will be updated to mark Phase 1 complete and identify Phase 2 as the next program stage.
+## Next stage
+
+```text
+GATE Build 2 — Phase 2
+GATE Design Language and Responsive Application Shell
+```

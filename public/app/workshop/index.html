@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en" data-gate-theme="dark" data-gate-density="standard">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>GATE Component Workshop — Build 2</title>
+  <meta name="description" content="Inactive Build 2 workshop for GATE Design Language components.">
+  <link rel="stylesheet" href="../design/themes/gdl-foundations.css">
+  <link rel="stylesheet" href="../components/gate-components.css">
+  <link rel="stylesheet" href="./workshop.css">
+</head>
+<body>
+  <a class="workshop-skip-link" href="#gate-workshop">Skip to component workshop</a>
+  <aside class="workshop-controls" aria-label="Workshop presentation controls">
+    <label for="workshop-theme">Theme</label>
+    <select id="workshop-theme">
+      <option value="dark">Dark</option>
+      <option value="light">Light</option>
+    </select>
+    <label for="workshop-density">Density</label>
+    <select id="workshop-density">
+      <option value="command">Command</option>
+      <option value="standard" selected>Standard</option>
+      <option value="touch">Touch</option>
+    </select>
+  </aside>
+  <main id="gate-workshop" class="workshop-shell" aria-label="GATE component workshop"></main>
+  <noscript>This inactive workshop requires JavaScript to render its reference fixtures.</noscript>
+  <script type="module" src="./workshop.mjs"></script>
+</body>
+</html>

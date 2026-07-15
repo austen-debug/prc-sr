@@ -1,6 +1,6 @@
 # GATE Build 2 Documentation Index
 
-Status: Foundation Alignment Gate B implemented; validation pending  
+Status: Foundation Alignment Gate B complete; Gate C next  
 Runtime status: Build 1 remains active; Build 2 foundation assets are staged and not loaded by the operational runtime.
 
 ## Governing documents
@@ -39,7 +39,7 @@ Runtime status: Build 1 remains active; Build 2 foundation assets are staged and
 32. [`PHASE_2E_EXECUTION_REPORT.md`](./PHASE_2E_EXECUTION_REPORT.md) — Phase 2E implementation and validation closure.
 33. [`PHASE_2_EXIT_REPORT.md`](./PHASE_2_EXIT_REPORT.md) — Phase 2 foundation closure; superseded by alignment gates for Phase 3 entry.
 34. [`GATE_A_EXECUTION_REPORT.md`](./GATE_A_EXECUTION_REPORT.md) — completed Gate A record.
-35. [`GATE_B_EXECUTION_REPORT.md`](./GATE_B_EXECUTION_REPORT.md) — Gate B implementation and validation status.
+35. [`GATE_B_EXECUTION_REPORT.md`](./GATE_B_EXECUTION_REPORT.md) — completed Gate B record.
 
 ## Build 2 source
 
@@ -84,15 +84,15 @@ tests/build-2/accessibility/*.test.mjs
 ```text
 Phase 1A — Operational Truth Registry             COMPLETE
 Phase 1B — Canonical Domain Core                  COMPLETE / STAGED
-Phase 1C — Compatibility Boundary                 GATE B IMPLEMENTED / VALIDATION PENDING
+Phase 1C — Compatibility and Canonical Entity     COMPLETE / STAGED
 Phase 1D — Typed Repository Core                  CORE COMPLETE; GATE C REQUIRED
 Phase 1E — Parity Validation                      COMPLETE FOR IMPLEMENTED SCOPE
 
 Phase 2A–2E — Application Foundation              COMPLETE / STAGED
 
 Foundation Alignment Gate A                       COMPLETE / STAGED
-Foundation Alignment Gate B                       IMPLEMENTED / VALIDATION PENDING
-Foundation Alignment Gate C                       NEXT AFTER GATE B
+Foundation Alignment Gate B                       COMPLETE / STAGED
+Foundation Alignment Gate C                       NEXT
 Foundation Alignment Gates D–F                    NOT STARTED
 
 Phase 3 — Feature Migration and Legacy Retirement BLOCKED UNTIL GATES A–F CLOSE

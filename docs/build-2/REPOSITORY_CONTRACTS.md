@@ -1,30 +1,33 @@
 # GATE Build 2 — Repository Contracts
 
-Status: Phase 1D implemented — inactive in runtime  
+Status: Foundation Alignment Gate C implemented; validation pending  
 Operational baseline: Build 1 remains active
 
 ## Purpose
 
-The repository boundary prevents feature modules and future GATE Design Language components from reading and writing generic persistence records directly.
+The repository boundary prevents feature modules and components from using generic persistence records directly.
 
 ```text
-Feature command
-    ↓
+Feature or workflow command
+        ↓
 Typed repository
-    ↓
+        ↓
 Records client
-    ↓
-Transport
-    ↓
-Persistent records API
+        ↓
+Version-aware transport
+        ↓
+Server-authoritative records API
 ```
 
-Repositories own operational validation, Build 1 payload translation, normalized return values, persistence error translation, and future conflict requirements. They do not render UI or calculate shared operational metrics.
+Repositories own command validation, compatibility translation, canonical return values, actor-role requirements, expected-version forwarding, and persistence error translation. They do not render UI or calculate shared operational metrics.
 
 ## Source structure
 
 ```text
 public/app/data/
+├── canonical-entity.mjs
+├── provenance.mjs
+├── record-normalizer.mjs
 ├── repository-result.mjs
 ├── records-client.mjs
 ├── index.mjs
@@ -34,218 +37,98 @@ public/app/data/
     ├── dorm-repository.mjs
     ├── archive-repository.mjs
     ├── config-repository.mjs
+    ├── audit-repository.mjs
     └── index.mjs
 ```
 
 ## Result contract
 
-Every repository operation returns a result object rather than exposing transport-specific responses:
+Every operation returns either:
 
 ```js
-{
-  ok: true,
-  data,
-  error: null,
-  meta
-}
+{ ok: true, data, error: null, meta }
 ```
 
 or:
 
 ```js
-{
-  ok: false,
-  data: null,
-  error: GateRepositoryError,
-  meta
-}
+{ ok: false, data: null, error: GateRepositoryError, meta }
 ```
 
-Stable error codes include:
+Stable errors include validation, not found, conflict, unavailable conflict detection, unauthorized, forbidden, network, transport, persistence, and unsupported operation.
 
-- `validation_error`
-- `not_found`
-- `conflict`
-- `conflict_detection_unavailable`
-- `unauthorized`
-- `forbidden`
-- `network_error`
-- `transport_error`
-- `persistence_error`
-- `unsupported_operation`
-
-UI consumers may map these codes to presentation states, but may not infer operational success from HTTP status or exception text.
-
-## Records client
-
-`createRecordsClient()` owns:
-
-- transport execution;
-- transport-response normalization;
-- persisted-record normalization through Phase 1C;
-- network and persistence error translation;
-- capability reporting;
-- optional conditional-write requirements.
-
-`createFetchRecordsTransport()` is the Build 1 HTTP adapter for `/api/records`.
-
-### Current Build 1 capabilities
+## Records API capabilities
 
 ```js
 {
-  recordVersioning: false,
-  conditionalWrites: false,
+  recordVersioning: true,
+  conditionalWrites: true,
   transactions: false,
-  batchWrites: false
+  batchWrites: false,
+  appendOnlyAudit: true,
+  serverRoleProvenance: true
 }
 ```
 
-These are explicit limitations, not assumed capabilities.
+New records begin at version `1`. Historical records without a version normalize to `0`. Each successful update increments one version.
 
-A command may set `requireConflictDetection: true`. When the active transport cannot enforce record versions, the operation returns `conflict_detection_unavailable` and does not write. This prevents future critical workflows from silently claiming stale-write protection before the backend provides it.
+Build 2 updates and deletes send the current version through `If-Match`. A stale request returns HTTP `409` and maps to repository error `conflict`.
 
-Conditional headers are emitted only by a transport that declares conditional-write support.
+Build 1 requests without `If-Match` remain compatible and still advance the authoritative version.
 
 ## Base repository
 
-`BaseRepository` owns shared persistence behavior:
+`BaseRepository` owns typed listing, Week Group filtering, lookup, compatibility transport restoration, actor-role validation, expected-version forwarding, and warning propagation.
 
-- type-specific listing;
-- Week Group filtering;
-- record lookup by backend identity;
-- Build 1 raw-record restoration;
-- typed create/update/delete handoff;
-- compatibility-warning propagation;
-- expected-record-version forwarding.
+Conflict detection is enabled by default. An explicit `requireConflictDetection: false` is reserved for documented legacy compatibility and is prohibited for migrated critical workflows.
 
-Domain repositories own commands. The base repository does not contain Airport, Processing, Archive, or configuration business rules.
+## Domain repositories
 
-## Bus repository
+`GateBusRepository` owns airport dispatch, local arrival, arrival confirmation, and count correction.
 
-`GateBusRepository` owns:
+`GateDormRepository` owns dorm creation, load update, open, close, reopen, and final-time correction.
 
-- active-bus reads;
-- confirmed-arrival reads;
-- airport bus dispatch;
-- local arrival creation;
-- explicit arrival confirmation;
-- count edits.
+`GateArchiveRepository` persists pre-calculated immutable snapshots. Closeout orchestration remains Gate D.
 
-Rules:
+`GateConfigRepository` owns normalized config reads and writes and rejects credential-oriented keys.
 
-- Week Group is required;
-- airport bus number is required;
-- local originating destination is required;
-- total must be between 1 and 44;
-- female, naturalization, and Space Force counts may not exceed total;
-- airport dispatch creates `status: active`;
-- local arrival creates `status: arrived` with `arrived_at`;
-- arrival confirmation is an explicit state transition;
-- count edits preserve arrival identity and timestamp.
+## Audit repository
 
-## Dorm repository
+`GateAuditRepository` owns append-only operational events. It exposes listing, lookup, and `append()` while rejecting update and delete.
 
-`GateDormRepository` owns:
+Events contain event identity, entity identity, verified actor role, occurrence time, prior/resulting versions, summary, and restricted operational metadata. Metadata may not include trainee-identifying or orders information.
 
-- dorm creation;
-- load updates;
-- open;
-- close;
-- reopen;
-- final-time correction.
+Gate D will determine which critical workflows require successful audit persistence before reporting completion.
 
-Rules:
+## Server authorization boundary
 
-- capacity must be between 1 and 60;
-- Band and Space Force are mutually exclusive;
-- load may not exceed capacity;
-- a closed dorm uses the explicit reopen command;
-- reopen sends `manual_reopen_override` for Build 1 backend compatibility;
-- final-time correction applies only to a closed dorm;
-- final time uses `MM:SS`;
-- correction sends `manual_closed_timer_override`.
+A route-local API middleware verifies the signed session cookie and supplies the verified role to the records function.
 
-The backend remains the final protection layer for dorm state and close timing.
+- Request-body role fields are not authoritative.
+- Instructor and Airman access remain available for Build 1 continuity.
+- Squadron is read-only and receives a reduced projection.
+- Squadron login remains inactive.
+- Command-specific Instructor/Airman restrictions move into named Gate D workflows.
 
-## Archive repository
+## Append-only enforcement
 
-`GateArchiveRepository` owns persistence of a pre-calculated archive snapshot.
+Audit immutability is enforced through repository rejection, API `405 append_only` responses, and D1 update/delete triggers.
 
-It does not calculate operational totals. Phase 1B domain selectors and a future archive snapshot builder must supply:
-
-- projected total;
-- confirmed-arrived total;
-- loaded total;
-- female total;
-- naturalization total;
-- confirmed Space Force total;
-- bus and dorm snapshots;
-- receiving windows.
-
-For Build 1 compatibility, the one canonical confirmed Space Force value is written to both:
+## Remaining limitations
 
 ```text
-space_force_total
-arrived_space_force_total
+transactions: false
+batchWrites: false
 ```
 
-This avoids perpetuating the prior broad-versus-arrived divergence while legacy readers remain active.
-
-Archive closeout still requires create, backend verification, and only then deletion of eligible live records. Phase 1D does not activate closeout integration.
-
-## Config repository
-
-`GateConfigRepository` owns normalized config-key reads and writes, including active Week Group aliases.
-
-It rejects persistence of keys ending in credential-oriented terms such as:
-
-- `username`
-- `password`
-- `secret`
-- `token`
-- `credential`
-
-Cloudflare environment bindings—including future Squadron Board credentials—remain server-side secrets and may not enter config records, client bundles, logs, archives, or documentation values.
-
-## Squadron access boundary
-
-Future Squadron Board authentication may consume server-side bindings named:
-
-```text
-SQUADRON_USERNAME
-SQUADRON_PASSWORD
-```
-
-Phase 1D does not activate them.
-
-Required future contract:
-
-1. authentication occurs only in a server-side function;
-2. successful authentication maps to role `squadron`;
-3. session data contains role and expiration, never the password;
-4. the existing `prc_sr_session` cookie name remains unless a separately approved migration changes it;
-5. authorization restricts the role to Squadron Board and approved read-only data;
-6. API authorization is enforced server-side, not only through hidden navigation;
-7. Squadron users cannot mutate bus, dorm, config, or archive records.
-
-## Integration gate
-
-The repository layer remains inactive until:
-
-- record versioning and stale-write behavior are approved for critical writes;
-- repository commands are compared against Build 1 workflows;
-- server-side role authorization is defined;
-- affected feature owners are identified;
-- rollback is documented;
-- integration tests cover API behavior;
-- no feature continues direct generic-record writes after migration.
+Week Group initialization, closeout, amendment, and other multi-record operations remain blocked pending Gate D orchestration and recovery behavior.
 
 ## Prohibited patterns
 
 - UI components calling `/api/records` directly;
-- feature controllers constructing generic records independently;
-- reports writing records;
-- credentials stored as config records;
-- optimistic critical writes without rollback and conflict behavior;
-- claiming conflict protection while the backend ignores record versions;
-- separate mobile and desktop persistence paths.
+- migrated features constructing generic records independently;
+- critical Build 2 writes without expected versions;
+- trusting client-supplied role fields;
+- audit-event update or deletion;
+- credentials or trainee-identifying data in records or audit metadata;
+- device-specific persistence paths.

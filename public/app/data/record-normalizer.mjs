@@ -35,9 +35,7 @@ function timestampValue(value, context, warnings, label) {
 
 function normalizeReceivingWindows(record, context, warnings) {
   const windows = {};
-  for (const field of WINDOW_FIELDS) {
-    windows[field] = timestampValue(record?.[field], context, warnings, field);
-  }
+  for (const field of WINDOW_FIELDS) windows[field] = timestampValue(record?.[field], context, warnings, field);
   return Object.freeze(windows);
 }
 
@@ -63,7 +61,6 @@ function normalizeBusPayload(record, context, warnings) {
     confirmedArrival: status === 'arrived' && Boolean(arrivedAt),
     active: status === 'active'
   };
-
   if (status === 'arrived' && !arrivedAt) warnings.push('Arrived bus is missing a valid arrived_at timestamp and is not a confirmed arrival.');
   if (status === 'active' && arrivedAt) warnings.push('Active bus contains arrived_at but remains ineligible until status is arrived.');
   return Object.freeze(payload);
@@ -73,7 +70,6 @@ function normalizeDormPayload(record, context, warnings) {
   const capacity = toNonNegativeNumber(record.max_load ?? record.capacity);
   const requestedLoad = toNonNegativeNumber(record.current_load ?? record.loaded);
   if (requestedLoad > capacity) warnings.push(`current_load ${requestedLoad} exceeded max_load ${capacity} and was constrained.`);
-
   return Object.freeze({
     name: normalizeText(record.dorm_name || record.name),
     sdq: normalizeText(record.sdq),
@@ -104,9 +100,7 @@ function normalizeConfigPayload(record, aliasesUsed) {
 }
 
 function confirmedSpaceForceFromBuses(buses) {
-  return buses
-    .filter(bus => bus.confirmedArrival)
-    .reduce((sum, bus) => sum + bus.spaceForce, 0);
+  return buses.filter(bus => bus.confirmedArrival).reduce((sum, bus) => sum + bus.spaceForce, 0);
 }
 
 function normalizeArchivePayload(record, context, warnings) {
@@ -114,13 +108,11 @@ function normalizeArchivePayload(record, context, warnings) {
   const dormDataResult = parseLegacyArray(record.dorm_data, { field: 'dorm_data' });
   if (busDataResult.warning) warnings.push(busDataResult.warning);
   if (dormDataResult.warning) warnings.push(dormDataResult.warning);
-
   const buses = busDataResult.value.map(bus => normalizeBusPayload(bus, context, warnings));
   const dorms = dormDataResult.value.map(dorm => normalizeDormPayload(dorm, context, warnings));
   const derivedArrivedSpaceForce = confirmedSpaceForceFromBuses(buses);
   const explicitArrivedSpaceForce = toNonNegativeNumber(record.arrived_space_force_total);
   const broadLegacySpaceForce = toNonNegativeNumber(record.space_force_total);
-
   let spaceForceTotal = explicitArrivedSpaceForce || derivedArrivedSpaceForce;
   if (!spaceForceTotal && broadLegacySpaceForce && buses.every(bus => bus.status === 'unknown')) {
     spaceForceTotal = broadLegacySpaceForce;
@@ -129,10 +121,8 @@ function normalizeArchivePayload(record, context, warnings) {
   if (broadLegacySpaceForce && broadLegacySpaceForce !== spaceForceTotal) {
     warnings.push(`Legacy space_force_total ${broadLegacySpaceForce} differs from confirmed-arrival Space Force total ${spaceForceTotal}.`);
   }
-
   const firstDormWithWindows = dormDataResult.value.find(dorm => WINDOW_FIELDS.some(field => dorm?.[field])) || {};
   const windowSource = Object.fromEntries(WINDOW_FIELDS.map(field => [field, record[field] ?? firstDormWithWindows[field] ?? '']));
-
   return Object.freeze({
     archivedAt: timestampValue(record.archived_at || record.created_at, context, warnings, 'archived_at'),
     archiveSchemaVersion: normalizeText(record.archive_schema_version),
@@ -149,11 +139,29 @@ function normalizeArchivePayload(record, context, warnings) {
   });
 }
 
+function normalizeAuditPayload(record, context, warnings) {
+  const metadata = record.metadata && typeof record.metadata === 'object' && !Array.isArray(record.metadata)
+    ? cloneLegacyRecord(record.metadata)
+    : {};
+  return Object.freeze({
+    eventType: normalizeText(record.event_type ?? record.eventType),
+    entityType: normalizeText(record.entity_type ?? record.entityType).toLowerCase(),
+    entityId: normalizeText(record.entity_id ?? record.entityId),
+    actorRole: normalizeActorRole(record.actor_role ?? record.actorRole),
+    occurredAt: timestampValue(record.occurred_at ?? record.occurredAt ?? record.created_at, context, warnings, 'occurred_at'),
+    priorVersion: normalizeRecordVersion(record.prior_version ?? record.priorVersion),
+    resultingVersion: normalizeRecordVersion(record.resulting_version ?? record.resultingVersion),
+    summary: normalizeText(record.summary),
+    metadata: Object.freeze(metadata)
+  });
+}
+
 function payloadFor(record, type, context, warnings, aliasesUsed) {
   if (type === 'bus') return normalizeBusPayload(record, context, warnings);
   if (type === 'dorm') return normalizeDormPayload(record, context, warnings);
   if (type === 'config') return normalizeConfigPayload(record, aliasesUsed);
   if (type === 'archive') return normalizeArchivePayload(record, context, warnings);
+  if (type === 'audit_event') return normalizeAuditPayload(record, context, warnings);
   warnings.push(`Unsupported record type "${type || 'unknown'}" preserved as an opaque payload.`);
   return Object.freeze(cloneLegacyRecord(record));
 }
@@ -176,7 +184,6 @@ export function normalizePersistedRecord(record = {}, options = {}) {
   const createdByRole = legacyRole(record, 'created');
   const updatedByRole = legacyRole(record, 'updated', createdByRole);
   const payload = payloadFor(record, type, context, warnings, aliasesUsed);
-
   return createCanonicalEntity({
     id: normalizeText(record.__backendId || record.id),
     type,
@@ -226,6 +233,5 @@ export function toCanonicalDomainRecord(entity) {
 }
 
 export function toCanonicalDomainRecords(entities = []) {
-  return Object.freeze((Array.isArray(entities) ? entities : [])
-    .filter(entity => isCanonicalEntity(entity)));
+  return Object.freeze((Array.isArray(entities) ? entities : []).filter(entity => isCanonicalEntity(entity)));
 }

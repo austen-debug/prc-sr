@@ -40,7 +40,6 @@ export class BaseRepository {
         'A record id is required.'
       ));
     }
-
     const result = await this.list();
     if (!result.ok) return result;
     const record = result.data.find(item => item.id === normalizedId);
@@ -71,7 +70,6 @@ export class BaseRepository {
         'A persisted record envelope is required for update.'
       ));
     }
-
     const provenance = updateProvenanceFields(options.actorRole, options.timestamp || rawPatch?.updated_at);
     if (!provenance.valid) return validationFailure(provenance.error);
     const raw = {
@@ -81,10 +79,9 @@ export class BaseRepository {
       __backendId: envelope.id,
       type: this.type
     };
-
     return this.client.update(raw, {
       expectedRecordVersion: envelope.recordVersion,
-      requireConflictDetection: Boolean(options.requireConflictDetection)
+      requireConflictDetection: options.requireConflictDetection !== false
     });
   }
 
@@ -102,7 +99,7 @@ export class BaseRepository {
       },
       {
         expectedRecordVersion: existing.data.recordVersion,
-        requireConflictDetection: Boolean(options.requireConflictDetection)
+        requireConflictDetection: options.requireConflictDetection !== false
       }
     );
   }

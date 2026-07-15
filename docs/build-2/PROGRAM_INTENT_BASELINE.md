@@ -1,7 +1,7 @@
 # GATE Build 2 — Program Intent Baseline
 
 Status: GOVERNING BASELINE  
-Runtime status: Build 1 remains operational; Build 2 remains staged
+Runtime status: Build 1 UI remains operational; the shared records API has the Gate C compatibility contract; Build 2 feature assets remain staged
 
 ## Mission
 
@@ -71,7 +71,7 @@ The following workflows require confirmed server persistence and may not claim s
 - archive create, verify, amendment, deletion, and closeout;
 - active Week Group changes.
 
-Write-heavy migration remains blocked until stale-write conflict protection and required audit behavior are available.
+Server-enforced stale-write protection and append-only audit storage are available after Gate C. Write-heavy route migration remains blocked until Gate D binds those controls into named critical-workflow orchestration and recovery behavior.
 
 ## Archive rule
 
@@ -112,8 +112,8 @@ COMPLETE / STAGED AFTER GATE A
 Phase 1C — Compatibility and Canonical Entity Boundary
 COMPLETE / STAGED AFTER GATE B
 
-Phase 1D — Typed Repository Core
-CORE COMPLETE; GATE C WILL ADD VERSIONING AND AUDIT
+Phase 1D — Repository, Record Versioning, and Append-Only Audit
+COMPLETE AFTER GATE C
 
 Phase 1E — Parity Validation
 COMPLETE FOR THE IMPLEMENTED FOUNDATION
@@ -130,8 +130,8 @@ BLOCKED UNTIL FOUNDATION ALIGNMENT GATES A–F CLOSE
 ```text
 Gate A — Program baseline and canonical domain completion       COMPLETE / STAGED
 Gate B — Canonical entities and role provenance                 COMPLETE / STAGED
-Gate C — Backend versioning and append-only audit events        NEXT
-Gate D — Critical workflow orchestration                        NOT STARTED
+Gate C — Backend versioning and append-only audit events        COMPLETE
+Gate D — Critical workflow orchestration                        NEXT
 Gate E — Synchronization and degraded operation                 NOT STARTED
 Gate F — Consolidated revalidation and corrected Phase 1 exit   NOT STARTED
 ```

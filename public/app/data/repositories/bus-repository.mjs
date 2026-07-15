@@ -109,7 +109,7 @@ export class GateBusRepository extends BaseRepository {
     }, {
       actorRole: command.actorRole,
       timestamp: arrivedAt,
-      requireConflictDetection: Boolean(command.requireConflictDetection)
+      requireConflictDetection: command.requireConflictDetection
     });
   }
 
@@ -129,7 +129,7 @@ export class GateBusRepository extends BaseRepository {
     }, {
       actorRole: command.actorRole,
       timestamp: updatedAt,
-      requireConflictDetection: Boolean(command.requireConflictDetection)
+      requireConflictDetection: command.requireConflictDetection
     });
   }
 }

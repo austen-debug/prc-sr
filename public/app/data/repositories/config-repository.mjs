@@ -47,7 +47,7 @@ export class GateConfigRepository extends BaseRepository {
     }, {
       actorRole: command.actorRole,
       timestamp,
-      requireConflictDetection: Boolean(command.requireConflictDetection)
+      requireConflictDetection: command.requireConflictDetection
     });
   }
 

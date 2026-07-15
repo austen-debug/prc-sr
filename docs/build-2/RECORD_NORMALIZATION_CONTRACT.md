@@ -1,30 +1,29 @@
 # GATE Build 2 — Record Normalization Contract
 
-Status: Build 2, Phase 1C
-Runtime status: Inactive compatibility boundary; Build 1 remains authoritative.
+Status: Phase 1C core, corrected by Foundation Alignment Gate B  
+Runtime status: staged compatibility boundary; Build 1 remains authoritative
 
 ## Purpose
 
-This contract defines how persisted Build 1 JSON records are converted into stable Build 2 envelopes and canonical domain inputs without destructive migration, silent data loss, or runtime ownership changes.
-
-The boundary exists between persistence and domain logic:
+Convert persisted Build 1 JSON records into stable canonical Build 2 entities without destructive migration, silent data loss, or runtime ownership changes.
 
 ```text
 Build 1 generic JSON records
         ↓
 legacy compatibility and normalization
         ↓
-Build 2 record envelopes
+canonical Build 2 entities
         ↓
-canonical domain-record adapter
-        ↓
-Phase 1B selectors and calculations
+Build 2 domain selectors and summaries
 ```
+
+No canonical-to-legacy-to-domain adapter is permitted. Build 1-shaped reconstruction exists only for rollback and compatibility transport writes.
 
 ## Canonical envelope
 
 ```js
 {
+  contractVersion,
   id,
   type,
   schemaVersion,
@@ -32,6 +31,8 @@ Phase 1B selectors and calculations
   weekGroup,
   createdAt,
   updatedAt,
+  createdByRole,
+  updatedByRole,
   payload,
   compatibility: {
     source,
@@ -43,217 +44,88 @@ Phase 1B selectors and calculations
 }
 ```
 
-### Envelope rules
+Rules:
 
 - `id` normalizes `__backendId` or `id`.
-- `type` is normalized to lowercase.
-- `schemaVersion` preserves an existing schema value or receives a Build 1 legacy default.
-- unversioned Build 1 records receive `recordVersion: 0`.
-- `weekGroup` normalizes `week_group` or `weekGroup`.
-- canonical timestamps are ISO-8601 UTC instants.
+- `type` is lowercase.
+- `schemaVersion` preserves an existing schema value or receives a legacy default.
+- unversioned records receive `recordVersion: 0`.
+- `weekGroup` normalizes at the compatibility boundary.
+- timestamps are ISO-8601 UTC instants or `null`.
+- `createdByRole` and `updatedByRole` are canonical roles.
+- absent historical provenance becomes `unknown`; it is never fabricated.
 - `payload` is typed according to record type.
-- `compatibility` records aliases and warnings rather than silently hiding repairs.
-- `raw` preserves a JSON-safe copy of the original record for rollback and forensic comparison.
+- `raw` preserves a JSON-safe copy for rollback and Build 1-compatible transport updates.
 
 ## Operational timezone
 
-Build 1 receiving-window fields may contain browser `datetime-local` values with no timezone offset.
+Offset-free `datetime-local` values are interpreted through explicit operational timezone context. The compatibility default is `America/Chicago`.
 
-Phase 1C converts those values through an explicit operational timezone. The current compatibility default is:
+- explicit offsets are preserved as instants;
+- nonexistent daylight-saving wall times are rejected with warnings;
+- ambiguous wall times resolve to the earliest matching instant and warn;
+- domain modules receive canonical UTC instants only.
 
-```text
-America/Chicago
-```
+## Alias ownership
 
-This matches the PRC operating location and supports daylight-saving changes through the platform timezone database.
+Build 1 aliases are legal only inside compatibility and transport modules.
 
-Rules:
-
-1. timestamps with `Z` or a numeric offset are preserved as explicit instants;
-2. offset-free `datetime-local` values are interpreted using the configured operational timezone;
-3. nonexistent daylight-saving wall times are rejected with a warning;
-4. ambiguous daylight-saving wall times resolve deterministically to the earliest matching instant and produce a warning;
-5. domain calculations receive canonical UTC instants only.
-
-The timezone must become repository/configuration context before runtime integration. UI components may not perform timezone conversion independently.
-
-## Config compatibility
-
-Canonical config aliases:
+Config aliases normalize before domain handoff:
 
 ```text
-active_wg
-active-week-group
-weekgroup
-week_group
-        ↓
-week_group
+active_wg | active-week-group | weekgroup | week_group → week_group
+last-arrival | last_arrival | last_airport             → last_airport
 ```
+
+Domain modules consume only `entity.payload.key`, `entity.weekGroup`, and typed canonical payload fields.
+
+## Typed payloads
+
+Bus payloads contain normalized identity, status, counts, service partitions, and timestamps. Confirmed arrival requires `status === arrived` and valid `arrivedAt`.
+
+Dorm payloads contain canonical identity, organizational fields, flags, capacity/load, state/phase, timestamps, staff assignment, location, notes, and receiving windows. Load is constrained to capacity with a warning.
+
+Archive payloads normalize stringified or array bus/dorm snapshots. Invalid arrays warn and become empty arrays. Confirmed-arrival Space Force truth takes precedence over broad legacy totals.
+
+Unknown record types remain opaque canonical entities and retain their complete raw source.
+
+## Dorm operational identity
+
+The canonical uniqueness key is:
 
 ```text
-last-arrival
-last_arrival
-last_airport
-        ↓
-last_airport
+normalized SDQ + normalized dorm name
+SDQ::DORM
 ```
 
-Alias use is recorded in `compatibility.aliasesUsed`.
+Section and Inter Section remain descriptive fields. Staff assignment may not become a trainee-name field.
 
-## Bus normalization
+## Role provenance
 
-Canonical bus payload:
+Canonical roles are `instructor`, `airman`, `squadron`, `system`, and `unknown`.
 
-```js
-{
-  busId,
-  busType,
-  destination,
-  originatingDestination,
-  status,
-  total,
-  female,
-  naturalization,
-  spaceForce,
-  airForce,
-  createdAt,
-  departedAt,
-  arrivedAt,
-  confirmedArrival,
-  active
-}
-```
+New Build 2 repository writes require a recognized `actorRole`:
 
-Rules:
+- create writes set `created_by_role` and `updated_by_role`;
+- update and delete requests set `updated_by_role`;
+- missing or invalid actor roles fail validation before transport execution.
 
-- negative or non-finite counts normalize to zero;
-- female, NAT, and Space Force counts cannot exceed the bus total;
-- Air Force equals `max(total - spaceForce, 0)`;
-- `active`, `otw`, and `en route` normalize to active;
-- confirmed arrival requires both normalized `status === arrived` and a valid `arrivedAt`;
-- an active record containing `arrived_at` remains ineligible until its status is arrived;
-- an arrived record without valid `arrived_at` is flagged and excluded from confirmed-arrival calculations.
+Server authorization and append-only audit events remain Gate C responsibilities.
 
-## Dorm normalization
+## Direct domain handoff
 
-Canonical dorm payload includes identity, organizational fields, flags, capacity, load, state, phase, timing, staff assignment, notes, and receiving windows.
+`toCanonicalDomainRecord()` and `toCanonicalDomainRecords()` now validate and return canonical entities unchanged. They no longer create records containing `week_group`, `otw_count`, `dorm_name`, or other Build 1 aliases.
 
-Rules:
+`restoreBuild1Record()` remains available only for lossless rollback and compatibility updates.
 
-- capacity and load are finite non-negative integers;
-- load is constrained to capacity and a warning is emitted when the source exceeds it;
-- `space_force` and `is_space_force` normalize to one Boolean field;
-- legacy `assigned_airman` maps to canonical `assignedStaff` without changing the stored Build 1 field;
-- receiving-window fields are normalized through the operational timezone.
+## Warning policy
 
-### Dorm operational identity
+Normalization remains non-throwing where safe recovery is possible. Warnings cover invalid timestamps, absent arrival timestamps, ambiguous local times, constrained counts/loads, invalid archive arrays, total divergence, unknown types, and aliases.
 
-A dorm is uniquely identified within an Input initialization set by the composite pair:
+## Security boundary
 
-```text
-normalized Squadron/SDQ + normalized Dorm Name
-```
+Squadron credentials remain server-side Cloudflare bindings. They are never embedded in records, client bundles, logs, fixtures, or documentation values. Successful authentication will map to canonical role `squadron`; server authorization remains mandatory.
 
-Canonical key format:
+## Runtime gate
 
-```text
-SQUADRON::DORM
-```
-
-Normalization trims surrounding whitespace, collapses repeated internal whitespace, and compares case-insensitively.
-
-Required behavior:
-
-- `324 + A04` and `326 + A04` are valid because the squadrons differ;
-- `324 + A04` and `324 + A04` are duplicates and must be rejected;
-- `324 + A04` and `324 + A05` are valid because the dorm names differ;
-- Section and Inter Section are descriptive organizational fields and are not part of the current dorm uniqueness key.
-
-Build 1 Input preflight and Build 2 domain/repository validation must enforce the same composite rule. A future identity-policy change requires an explicit migration decision and fixture updates.
-
-The assignment field remains restricted to staff assignment. It must never become a trainee-name field.
-
-## Archive normalization
-
-Archive `bus_data` and `dorm_data` may be JSON strings or arrays. Invalid values produce warnings and empty arrays rather than exceptions.
-
-Canonical archive Space Force truth uses this precedence:
-
-1. explicit `arrived_space_force_total`;
-2. Space Force total derived from confirmed-arrived archived buses;
-3. legacy broad `space_force_total` only when archived bus arrival status is unavailable.
-
-A disagreement between broad legacy `space_force_total` and confirmed-arrival truth is recorded as a warning.
-
-Archive normalization does not mutate the historical record. It creates a canonical read model while preserving the original snapshot.
-
-## Unknown record types
-
-Unknown and future record types are preserved as opaque payloads. The compatibility boundary must not delete or reject records simply because Build 2 does not yet understand their schema.
-
-## Round-trip and rollback
-
-`restoreBuild1Record(envelope)` returns the preserved original JSON record.
-
-This guarantees that Phase 1C can be removed without requiring a database rollback because:
-
-- no persisted record is rewritten;
-- no schema migration is executed;
-- no active API path is changed;
-- no Build 2 module is loaded by middleware.
-
-## Domain adapter
-
-`toCanonicalDomainRecord()` converts supported envelopes into the canonical record shape currently consumed by Phase 1B selectors.
-
-The adapter exists to validate parity during migration. It is not a persistence writer and may not be used to bypass the future typed repository layer.
-
-## Error and warning policy
-
-Normalization is non-throwing for malformed persisted data whenever safe recovery is possible.
-
-Warnings include:
-
-- invalid timestamps;
-- missing confirmed-arrival timestamps;
-- ambiguous local times;
-- constrained counts or loads;
-- invalid archive JSON;
-- archive total divergence;
-- unknown record types;
-- compatibility aliases.
-
-Future repositories must surface material warnings to diagnostics and audit tooling. UI components should receive normalized entities, not raw warning-repair logic.
-
-## Access-control boundary
-
-The following Cloudflare environment bindings are reserved for future Squadron Board-only authentication:
-
-```text
-SQUADRON_USERNAME
-SQUADRON_PASSWORD
-```
-
-Security rules:
-
-- values remain server-side Cloudflare secrets;
-- values are never embedded in JavaScript bundles, HTML, logs, documentation, or records;
-- successful authentication will map to canonical role `squadron`;
-- the Squadron role will be authorized only for Squadron Board routes and explicitly approved read APIs;
-- hiding UI controls is not authorization;
-- API and route enforcement must occur server-side;
-- the existing `prc_sr_session` cookie name remains unchanged unless a separately approved session migration occurs.
-
-Current Build 1 login code authenticates only MTI and Airman credentials. Phase 1C records the future Squadron boundary but does not activate or alter authentication.
-
-## Integration gate
-
-The compatibility boundary may enter runtime only after:
-
-1. repository contracts are implemented;
-2. operational timezone is supplied by server/config context;
-3. Build 1 and Build 2 record-set parity is measured;
-4. material warnings have an operational handling policy;
-5. API authorization is reviewed for every role;
-6. rollback is documented;
-7. middleware integration is explicit and versioned.
+This boundary remains staged until Gates C–F and the route-specific migration gate approve authorization, conflict behavior, audit, orchestration, synchronization, degraded operation, rollback, and retirement of the corresponding Build 1 owner.

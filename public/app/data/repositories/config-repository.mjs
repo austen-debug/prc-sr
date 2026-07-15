@@ -33,19 +33,22 @@ export class GateConfigRepository extends BaseRepository {
 
     const existing = await this.getByKey(requested);
     if (!existing.ok) return existing;
+    const timestamp = command.updatedAt || command.createdAt || new Date().toISOString();
     if (!existing.data) {
-      return this.createRaw({
-        key: requested,
-        value: normalizedValue,
-        created_at: new Date().toISOString()
+      return this.createRaw({ key: requested, value: normalizedValue }, {
+        actorRole: command.actorRole,
+        timestamp
       });
     }
 
     return this.updateEnvelope(existing.data, {
       key: requested,
-      value: normalizedValue,
-      updated_at: new Date().toISOString()
-    }, { requireConflictDetection: Boolean(command.requireConflictDetection) });
+      value: normalizedValue
+    }, {
+      actorRole: command.actorRole,
+      timestamp,
+      requireConflictDetection: Boolean(command.requireConflictDetection)
+    });
   }
 
   async getActiveWeekGroup() {

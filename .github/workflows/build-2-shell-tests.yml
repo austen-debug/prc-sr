@@ -62,8 +62,20 @@ jobs:
       - name: Validate shell state and selectors
         run: node --test --test-name-pattern="denied route|shell state transitions|navigation overlay|persistence states|shell store|navigation models" tests/build-2/shell/unified-shell.test.mjs
 
-      - name: Validate shell renderers and isolation
-        run: node --test --test-name-pattern="shell renderers|shell core|shell CSS|shell workshop|Build 1 middleware" tests/build-2/shell/unified-shell.test.mjs
+      - name: Validate shell markup
+        run: node --test --test-name-pattern="shell renderers" tests/build-2/shell/unified-shell.test.mjs
+
+      - name: Validate shell core isolation
+        run: node --test --test-name-pattern="shell core" tests/build-2/shell/unified-shell.test.mjs
+
+      - name: Validate shell CSS contract
+        run: node --test --test-name-pattern="shell CSS" tests/build-2/shell/unified-shell.test.mjs
+
+      - name: Validate shell workshop
+        run: node --test --test-name-pattern="shell workshop" tests/build-2/shell/unified-shell.test.mjs
+
+      - name: Validate Build 1 middleware isolation
+        run: node --test --test-name-pattern="Build 1 middleware" tests/build-2/shell/unified-shell.test.mjs
 
       - name: Validate complete unified shell suite
         run: node --test tests/build-2/shell/*.test.mjs

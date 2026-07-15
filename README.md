@@ -48,7 +48,6 @@ Airman access supports live processing execution without exposing instructor-onl
 Airman functions include:
 
 - View Status Board
-- View Squadron Board when available
 - Acknowledge bus arrivals
 - Open Processing
 - Add local buses and local arrivals
@@ -58,7 +57,11 @@ Airman functions include:
 - Enable sound
 - Use fullscreen Status Board
 
-Airman access does not initialize week groups, dispatch airport buses, open or close dorms, right-click edit dorm records, close out week groups, or access Archives.
+Airman access does not include Squadron Board and does not initialize week groups, dispatch airport buses, open or close dorms, right-click edit dorm records, close out week groups, or access Archives.
+
+### Squadron Access
+
+Squadron access is read-only and limited to Squadron Board. Squadron credentials are supplied through server-side Cloudflare environment bindings and may not be persisted in application records or exposed in client assets.
 
 ## Operational Workflow
 

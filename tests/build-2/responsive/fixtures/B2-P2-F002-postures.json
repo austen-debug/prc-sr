@@ -1,0 +1,32 @@
+[
+  {
+    "id": "desktop-landscape-fine",
+    "input": { "width": 1440, "height": 900, "pointer": "fine", "hover": true, "keyboard": true },
+    "expected": { "postureId": "desktop-landscape", "navigationMode": "persistent", "density": "command", "minimumTarget": 32, "hoverEnhancements": true, "keyboardShortcuts": true }
+  },
+  {
+    "id": "desktop-vertical-fine",
+    "input": { "width": 1080, "height": 1920, "pointer": "fine", "hover": true, "keyboard": true },
+    "expected": { "postureId": "desktop-vertical", "navigationMode": "compact", "density": "standard", "minimumTarget": 40, "hoverEnhancements": true, "keyboardShortcuts": true }
+  },
+  {
+    "id": "tablet-landscape-touch",
+    "input": { "width": 1024, "height": 768, "pointer": "coarse", "hover": false, "keyboard": false },
+    "expected": { "postureId": "tablet-landscape", "navigationMode": "compact", "density": "touch", "minimumTarget": 44, "hoverEnhancements": false, "keyboardShortcuts": false }
+  },
+  {
+    "id": "tablet-portrait-touch",
+    "input": { "width": 820, "height": 1180, "pointer": "coarse", "hover": false, "keyboard": false, "safeArea": { "top": 24, "right": 0, "bottom": 20, "left": 0 } },
+    "expected": { "postureId": "tablet-portrait", "navigationMode": "sheet", "density": "touch", "minimumTarget": 44, "hoverEnhancements": false, "keyboardShortcuts": false }
+  },
+  {
+    "id": "phone-landscape-touch",
+    "input": { "width": 740, "height": 360, "pointer": "coarse", "hover": false, "keyboard": false, "safeArea": { "top": 0, "right": 18, "bottom": 0, "left": 18 } },
+    "expected": { "postureId": "phone-landscape", "navigationMode": "sheet", "density": "touch", "minimumTarget": 44, "hoverEnhancements": false, "keyboardShortcuts": false }
+  },
+  {
+    "id": "phone-portrait-touch",
+    "input": { "width": 390, "height": 844, "pointer": "coarse", "hover": false, "keyboard": false, "reducedMotion": true, "safeArea": { "top": 47, "right": 0, "bottom": 34, "left": 0 } },
+    "expected": { "postureId": "phone-portrait", "navigationMode": "sheet", "density": "touch", "minimumTarget": 44, "hoverEnhancements": false, "keyboardShortcuts": false }
+  }
+]

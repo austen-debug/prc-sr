@@ -1,6 +1,6 @@
 # GATE Build 2 Documentation Index
 
-Status: Build 2, Phase 2A implemented; validation pending  
+Status: Build 2, Phase 2A complete; Phase 2B next  
 Runtime status: Build 1 remains active; no Build 2 runtime asset is loaded.
 
 ## Governing documents
@@ -26,17 +26,7 @@ Runtime status: Build 1 remains active; no Build 2 runtime asset is loaded.
 ```text
 public/app/
 ├── domain/
-│   ├── normalization.mjs
-│   ├── operational-metrics.mjs
-│   ├── receiving.mjs
-│   └── index.mjs
 ├── data/
-│   ├── legacy-compatibility.mjs
-│   ├── record-normalizer.mjs
-│   ├── repository-result.mjs
-│   ├── records-client.mjs
-│   ├── index.mjs
-│   └── repositories/
 └── design/
     ├── index.mjs
     ├── tokens/
@@ -67,8 +57,8 @@ tests/build-2/design/gdl-foundations.test.mjs
 ```text
 Build 2 Phase 1 — Operational Truth and Data Foundation COMPLETE
 
-Phase 2A — GDL Foundations                     IMPLEMENTED / VALIDATION PENDING
-Phase 2B — Component Workshop                  NEXT AFTER 2A CLOSURE
+Phase 2A — GDL Foundations                     COMPLETE / INACTIVE
+Phase 2B — Component Workshop                  NEXT
 Phase 2C — Unified Application Shell           NOT STARTED
 Phase 2D — Responsive Composition Contracts    NOT STARTED
 Phase 2E — Accessibility Foundation            NOT STARTED

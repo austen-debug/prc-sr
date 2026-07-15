@@ -3,6 +3,7 @@ name: Build 2 Foundation Alignment Tests
 on:
   push:
     paths:
+      - 'README.md'
       - 'public/app/domain/**'
       - 'tests/build-2/domain/**'
       - 'docs/build-2/PROGRAM_INTENT_BASELINE.md'
@@ -13,6 +14,7 @@ on:
       - '.github/workflows/build-2-foundation-alignment-tests.yml'
   pull_request:
     paths:
+      - 'README.md'
       - 'public/app/domain/**'
       - 'tests/build-2/domain/**'
       - 'docs/build-2/PROGRAM_INTENT_BASELINE.md'
@@ -60,11 +62,17 @@ jobs:
           node --test tests/build-2/responsive/*.test.mjs
           node --test tests/build-2/accessibility/*.test.mjs
 
-      - name: Validate governing status and migration order
+      - name: Validate governing status, roles, and migration order
         run: |
           grep -q '1. Status Board' docs/build-2/PROGRAM_INTENT_BASELINE.md
           grep -q 'Phase 3 — Feature Migration and Legacy Retirement BLOCKED' docs/build-2/INDEX.md
           grep -q 'Foundation Alignment Gate B' docs/build-2/GATE_A_EXECUTION_REPORT.md
+          grep -q 'Airman access does not include Squadron Board' README.md
+          grep -q 'Squadron access is read-only and limited to Squadron Board' README.md
+          if grep -q 'View Squadron Board when available' README.md; then
+            echo 'README contains obsolete Airman Squadron Board access.'
+            exit 1
+          fi
 
       - name: Validate Build 1 runtime isolation
         run: |

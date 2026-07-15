@@ -5,32 +5,36 @@ Purpose: map governing intent to implementation, validation, runtime ownership, 
 
 | Requirement | Source owner | Validation | Runtime status | Remaining gate |
 |---|---|---|---|---|
-| No trainee PII expansion | Program baseline, repository/config/audit safeguards | normalization, repository, server, component fixtures | Build 1 active; Build 2 staged | Continuous |
+| No trainee PII expansion | Program baseline, repository/config/audit safeguards | normalization, repository, server, workflow, component fixtures | Build 1 active; Build 2 staged | Continuous |
 | Confirmed-arrival eligibility | `domain/operational-metrics.mjs` | operational truth and parity suites | Staged | Phase 3 consumer migration |
 | Receiving Night One/Two from `arrived_at` | `domain/receiving.mjs` | historical 818/39 and boundary fixtures | Staged | Archives/Reports migration |
 | Air Force, Space Force, female, NAT share one arrival set | `domain/operational-metrics.mjs` | domain and parity suites | Staged | Phase 3 consumer migration |
-| Active Week Group has one owner | `domain/week-groups.mjs` | Gate A and Gate B entity suites | Staged | Phase 3 integration |
+| Active Week Group has one owner | `domain/week-groups.mjs` and initialization workflow | Gate A, Gate B, and Gate D suites | Staged | Phase 3 integration |
 | Last arrival is derived | `domain/arrivals.mjs` | Gate A domain suite | Staged | Status Board migration |
 | Manifested bus log differs from arrived total | `domain/buses.mjs` | Gate A and parity suites | Staged | Airport migration |
 | Dorm state grouping has one owner | `domain/dorms.mjs` | Gate A domain suite | Staged | Status/Squadron migration |
-| Processing assignment and phase summaries have one owner | `domain/processing.mjs` | Gate A domain suite | Staged | Processing migration |
+| Processing assignment and phase summaries have one owner | `domain/processing.mjs` | Gate A and Gate D suites | Staged | Processing migration |
 | Timer/overtime calculation is deterministic | `domain/timers.mjs` | Gate A domain suite | Staged | Status/Processing integration |
 | Status and Squadron summaries share truth | `domain/summaries.mjs` | Gate A domain suite | Staged | Status then Squadron migration |
 | Current Summary and Archive Report share a model | `domain/reports.mjs` | Gate A domain suite | Staged | Archives/Reports migration |
-| Archive snapshot is immutable and canonical | `domain/archives.mjs` | Gate A domain suite | Staged | Gate D closeout orchestration |
+| Archive snapshot is immutable and canonical | `domain/archives.mjs`, archive workflow | Gate A and Gate D suites | Staged | Phase 3 Archives migration |
 | Build 1 records normalize without silent loss | `data/record-normalizer.mjs` | normalization, entity, parity suites | Staged compatibility boundary | Continuous migration validation |
 | Domain consumes canonical entities directly | `data/canonical-entity.mjs`, `domain/normalization.mjs` | Gate B canonical entity suite | Staged | Phase 3 consumers |
 | Legacy aliases stop at compatibility boundary | `data/legacy-compatibility.mjs`, `record-normalizer.mjs` | Gate B entity and config tests | Staged | Continuous enforcement |
-| Creator/updater role provenance | data provenance plus records API | Gate B and Gate C tests | Server-enforced | Gate D workflow binding |
+| Creator/updater role provenance | data provenance plus records API | Gate B and Gate C tests | Server-enforced | Route-specific authorization |
 | Unknown records remain recoverable | `record-normalizer.mjs` | normalization and Gate B entity suites | Staged | Continuous |
-| Typed operational repositories | `data/repositories/*` | repository suite | Staged | Gate D workflow consumption |
-| Critical writes require confirmed server success | repository result and records API contracts | repository and server integration suites | Available | Gate D orchestration |
-| Server-enforced stale-write protection | `functions/api/records.js`, records client | Gate C conditional write tests | Implemented; Build 1 compatible | Gate D workflow use |
-| Append-only audit events | `GateAuditRepository`, records API, D1 triggers | Gate C repository/server/schema tests | Implemented | Gate D required-event policy |
-| Server-derived role provenance | API session bridge and records contract | Gate C session/provenance tests | Implemented | Route-specific authorization |
-| Squadron read-only records boundary | records API projection | Gate C server tests | Implemented; login inactive | Phase 3 Squadron migration |
-| Transactional Week Group initialization | future workflow orchestrator | future failure/recovery suite | Not implemented | Gate D |
-| Verified archive closeout | future workflow orchestrator | future create/verify/audit/clear/verify suite | Build 1 remains active | Gate D |
+| Typed operational repositories | `data/repositories/*` | repository suite | Staged | Phase 3 workflow consumers |
+| Critical writes require confirmed server success | Gate D workflow result and verification contracts | Gate D workflow suite | Implemented / staged | Route activation evidence |
+| Server-enforced stale-write protection | records API and client | Gate C and Gate D conflict tests | Implemented | Continuous |
+| Append-only audit events | audit repository, records API, D1 triggers | Gate C and Gate D tests | Implemented | Apply D1 migration to existing environment |
+| Server-derived role provenance | API session bridge and records contract | Gate C tests | Implemented | Route-specific authorization |
+| Squadron read-only records boundary | records API projection | Gate C tests | Implemented; login inactive | Phase 3 Squadron migration |
+| Operation-scoped idempotency | `public/app/workflows/*`, archive/audit repositories | Gate D replay and resume tests | Implemented / staged | Gate E synchronization integration |
+| Week Group initialization orchestration | `initialize-week-group.mjs` | Gate D success, validation, partial, resume, compensation tests | Implemented / staged | Phase 3 Input migration |
+| Arrival and dorm transition orchestration | arrival and dorm workflows | Gate D verify/audit/conflict tests | Implemented / staged | Phase 3 Airport/Processing migration |
+| Verified archive closeout | `archive-workflows.mjs` | Gate D create/verify/audit/clear/verify and resume tests | Implemented / staged | Phase 3 Archives migration |
+| Immutable archive amendment | `amendArchiveWorkflow` | Gate D parent-preservation and lineage test | Implemented / staged | Phase 3 Archives migration |
+| Explicit partial-failure recovery | workflow results and recovery workflows | Gate D audit retry, initialization resume/compensation, closeout resume tests | Implemented / staged | Gate E degraded-state presentation |
 | Cross-tab authoritative refetch | future synchronization service | future multi-tab suite | Not implemented | Gate E |
 | Explicit offline/stale/last-sync behavior | shell/accessibility contracts plus future service | future degraded-operation suite | Presentation contracts staged | Gate E |
 | One GATE Design Language | `design/*` | GDL suite | Staged | Route migration use |

@@ -5,11 +5,41 @@ import {
   toNonNegativeNumber
 } from '../../domain/normalization.mjs';
 import { BaseRepository } from './base-repository.mjs';
-import { validationFailure } from '../repository-result.mjs';
+import { repositoryOk, validationFailure } from '../repository-result.mjs';
+
+export const ARCHIVE_KINDS = Object.freeze(['closeout', 'amendment']);
+
+function safeManifest(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+  const recordVersions = {};
+  for (const [id, version] of Object.entries(value.recordVersions || {})) {
+    const normalizedId = normalizeText(id);
+    if (normalizedId) recordVersions[normalizedId] = toNonNegativeNumber(version);
+  }
+  return {
+    busIds: Array.isArray(value.busIds) ? value.busIds.map(normalizeText).filter(Boolean) : [],
+    dormIds: Array.isArray(value.dormIds) ? value.dormIds.map(normalizeText).filter(Boolean) : [],
+    soundEventIds: Array.isArray(value.soundEventIds) ? value.soundEventIds.map(normalizeText).filter(Boolean) : [],
+    configIds: Array.isArray(value.configIds) ? value.configIds.map(normalizeText).filter(Boolean) : [],
+    recordVersions
+  };
+}
 
 export class GateArchiveRepository extends BaseRepository {
   constructor({ client }) {
     super({ client, type: 'archive' });
+  }
+
+  async findByOperation(operationId) {
+    const requested = normalizeText(operationId);
+    if (!requested) return validationFailure('Archive operation id is required.');
+    const result = await this.list();
+    if (!result.ok) return result;
+    const record = result.data.find(item => normalizeText(item.payload?.operationId) === requested) || null;
+    return repositoryOk(record, {
+      found: Boolean(record),
+      capabilities: this.client.capabilities
+    });
   }
 
   async createSnapshot(command = {}) {
@@ -17,8 +47,21 @@ export class GateArchiveRepository extends BaseRepository {
     const archivedAt = normalizeTimestamp(command.archivedAt) || new Date().toISOString();
     const busData = Array.isArray(command.busData) ? command.busData : null;
     const dormData = Array.isArray(command.dormData) ? command.dormData : null;
+    const archiveKind = ARCHIVE_KINDS.includes(normalizeText(command.archiveKind).toLowerCase())
+      ? normalizeText(command.archiveKind).toLowerCase()
+      : 'closeout';
+    const operationId = normalizeText(command.operationId);
+    const parentArchiveId = normalizeText(command.parentArchiveId);
+    const amendmentReason = normalizeText(command.amendmentReason);
+    const amendmentNumber = toNonNegativeNumber(command.amendmentNumber);
+    const closeoutManifest = safeManifest(command.closeoutManifest);
+
     if (!weekGroup) return validationFailure('Week Group is required to create an archive snapshot.');
     if (!busData || !dormData) return validationFailure('Archive snapshots require busData and dormData arrays.');
+    if (!operationId) return validationFailure('Archive snapshots require an operation id.');
+    if (archiveKind === 'amendment' && (!parentArchiveId || !amendmentReason)) {
+      return validationFailure('Archive amendments require a parent archive id and amendment reason.');
+    }
 
     const totalExpected = toNonNegativeNumber(command.totalExpected);
     const totalArrived = toNonNegativeNumber(command.totalArrived);
@@ -39,6 +82,12 @@ export class GateArchiveRepository extends BaseRepository {
       archived_at: archivedAt,
       archive_schema_version: normalizeText(command.archiveSchemaVersion || 'build-2-v1'),
       closeout_safety_version: normalizeText(command.closeoutSafetyVersion || 'verified-create-before-delete'),
+      archive_kind: archiveKind,
+      operation_id: operationId,
+      parent_archive_id: parentArchiveId,
+      amendment_reason: amendmentReason,
+      amendment_number: amendmentNumber,
+      closeout_manifest: closeoutManifest,
       total_expected: totalExpected,
       total_arrived: totalArrived,
       total_loaded: totalLoaded,

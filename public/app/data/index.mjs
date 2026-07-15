@@ -3,6 +3,7 @@ import { GateAuditRepository } from './repositories/audit-repository.mjs';
 import { GateBusRepository } from './repositories/bus-repository.mjs';
 import { GateConfigRepository } from './repositories/config-repository.mjs';
 import { GateDormRepository } from './repositories/dorm-repository.mjs';
+import { GateSoundEventRepository } from './repositories/sound-event-repository.mjs';
 
 export * from './canonical-entity.mjs';
 export * from './legacy-compatibility.mjs';
@@ -19,6 +20,7 @@ export function createGateRepositories({ client } = {}) {
     dorms: new GateDormRepository({ client }),
     archives: new GateArchiveRepository({ client }),
     config: new GateConfigRepository({ client }),
-    audit: new GateAuditRepository({ client })
+    audit: new GateAuditRepository({ client }),
+    soundEvents: new GateSoundEventRepository({ client })
   });
 }

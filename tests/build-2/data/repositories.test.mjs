@@ -109,17 +109,19 @@ test('config repository refuses credential persistence', async () => {
   assert.equal(secret.error.code, RepositoryErrorCode.VALIDATION);
 });
 
-test('archive repository writes canonical Space Force and provenance fields', async () => {
+test('archive repository writes canonical lineage, Space Force, and provenance fields', async () => {
   const { repositories, transport } = setup();
-  const result = await repositories.archives.createSnapshot({ actorRole: ACTOR, weekGroup: 'WG', archivedAt: '2026-07-09T17:00:00Z', totalExpected: 977, totalArrived: 975, totalLoaded: 970, femaleTotal: 120, naturalizationTotal: 56, spaceForceTotal: 118, busData: [], dormData: [] });
+  const result = await repositories.archives.createSnapshot({ actorRole: ACTOR, operationId: 'archive:test', archiveKind: 'closeout', weekGroup: 'WG', archivedAt: '2026-07-09T17:00:00Z', totalExpected: 977, totalArrived: 975, totalLoaded: 970, femaleTotal: 120, naturalizationTotal: 56, spaceForceTotal: 118, busData: [], dormData: [], closeoutManifest: { busIds: ['b1'], recordVersions: { b1: 2 } } });
   assert.equal(result.ok, true);
   assert.equal(transport.records[0].space_force_total, 118);
+  assert.equal(transport.records[0].operation_id, 'archive:test');
+  assert.equal(result.data.payload.closeoutManifest.recordVersions.b1, 2);
   assert.equal(transport.records[0].created_by_role, ACTOR);
 });
 
-test('audit repository appends canonical events and refuses mutation', async () => {
+test('audit repository appends canonical events idempotently and refuses mutation', async () => {
   const { repositories, transport } = setup();
-  const event = await repositories.audit.append({
+  const command = {
     actorRole: ACTOR,
     eventType: 'bus.arrival_confirmed',
     weekGroup: 'WG',
@@ -129,12 +131,15 @@ test('audit repository appends canonical events and refuses mutation', async () 
     resultingVersion: 3,
     occurredAt: '2026-07-07T18:30:00Z',
     summary: 'Arrival confirmed.',
-    metadata: { count: 40 }
-  });
+    metadata: { count: 40, operationId: 'audit:test' }
+  };
+  const event = await repositories.audit.appendOnce(command);
+  const replay = await repositories.audit.appendOnce(command);
   assert.equal(event.ok, true);
+  assert.equal(replay.meta.unchanged, true);
   assert.equal(event.data.payload.eventType, 'bus.arrival_confirmed');
   assert.equal(event.data.payload.actorRole, ACTOR);
-  assert.equal(transport.records[0].type, 'audit_event');
+  assert.equal(transport.records.filter(record => record.type === 'audit_event').length, 1);
   assert.equal((await repositories.audit.deleteById(event.data.id)).error.code, RepositoryErrorCode.VALIDATION);
   assert.equal((await repositories.audit.updateEnvelope(event.data)).error.code, RepositoryErrorCode.VALIDATION);
 });
@@ -143,6 +148,17 @@ test('audit repository rejects prohibited trainee metadata', async () => {
   const { repositories } = setup();
   const result = await repositories.audit.append({ actorRole: ACTOR, eventType: 'test', entityType: 'bus', entityId: '1', metadata: { trainee_name: 'not allowed' } });
   assert.equal(result.error.code, RepositoryErrorCode.VALIDATION);
+});
+
+test('sound-event repository clears only the requested Week Group', async () => {
+  const { repositories, transport } = setup([
+    { __backendId: 's1', type: 'sound_event', week_group: 'WG', event: 'overtime' },
+    { __backendId: 's2', type: 'sound_event', week_group: 'OTHER', event: 'overtime' }
+  ]);
+  const result = await repositories.soundEvents.clearWeekGroup('WG', { actorRole: ACTOR, timestamp: '2026-07-07T18:30:00Z' });
+  assert.equal(result.ok, true);
+  assert.equal(transport.records.some(record => record.__backendId === 's1'), false);
+  assert.equal(transport.records.some(record => record.__backendId === 's2'), true);
 });
 
 test('repositories fail closed when a version-capable backend is unavailable', async () => {

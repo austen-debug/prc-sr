@@ -1,6 +1,6 @@
 # GATE Build 2 Documentation Index
 
-Status: Build 2, Phase 2B complete; Phase 2C next  
+Status: Build 2, Phase 2C implemented; validation pending  
 Runtime status: Build 1 remains active; no Build 2 runtime asset is loaded.
 
 ## Governing documents
@@ -23,6 +23,10 @@ Runtime status: Build 1 remains active; no Build 2 runtime asset is loaded.
 16. [`COMPONENT_CONTRACTS.md`](./COMPONENT_CONTRACTS.md) — canonical component ownership, inputs, states, events, accessibility, and responsiveness.
 17. [`COMPONENT_WORKSHOP.md`](./COMPONENT_WORKSHOP.md) — inactive reference environment, fixtures, interactions, and tooling decision.
 18. [`PHASE_2B_EXECUTION_REPORT.md`](./PHASE_2B_EXECUTION_REPORT.md) — Phase 2B implementation and validation closure.
+19. [`APP_SHELL_CONTRACT.md`](./APP_SHELL_CONTRACT.md) — canonical shell state, events, navigation presentations, and host responsibilities.
+20. [`ROUTE_PERMISSION_REGISTRY.md`](./ROUTE_PERMISSION_REGISTRY.md) — route labels, role access, defaults, and permission rules.
+21. [`FRONTEND_ARCHITECTURE_ADR.md`](./FRONTEND_ARCHITECTURE_ADR.md) — standards-based ES module architecture decision.
+22. [`PHASE_2C_EXECUTION_REPORT.md`](./PHASE_2C_EXECUTION_REPORT.md) — Phase 2C implementation and validation boundary.
 
 ## Build 2 source
 
@@ -32,7 +36,17 @@ public/app/
 ├── data/
 ├── design/
 ├── components/
-└── workshop/
+├── workshop/
+└── shell/
+    ├── route-registry.mjs
+    ├── permission-registry.mjs
+    ├── shell-state.mjs
+    ├── shell-store.mjs
+    ├── selectors.mjs
+    ├── renderers.mjs
+    ├── gate-shell.css
+    ├── index.mjs
+    └── workshop/
 ```
 
 All Build 2 modules remain inactive and absent from the active middleware manifest.
@@ -46,11 +60,13 @@ tests/build-2/data/repositories.test.mjs
 tests/build-2/parity/phase-1e-parity.test.mjs
 tests/build-2/design/gdl-foundations.test.mjs
 tests/build-2/components/component-workshop.test.mjs
+tests/build-2/shell/unified-shell.test.mjs
 .github/workflows/build-2-domain-tests.yml
 .github/workflows/build-2-data-tests.yml
 .github/workflows/build-2-phase-1-validation.yml
 .github/workflows/build-2-design-tests.yml
 .github/workflows/build-2-component-tests.yml
+.github/workflows/build-2-shell-tests.yml
 ```
 
 ## Current execution position
@@ -60,11 +76,11 @@ Build 2 Phase 1 — Operational Truth and Data Foundation COMPLETE
 
 Phase 2A — GDL Foundations                     COMPLETE / INACTIVE
 Phase 2B — Component Workshop                  COMPLETE / INACTIVE
-Phase 2C — Unified Application Shell           NEXT
-Phase 2D — Responsive Composition Contracts    NOT STARTED
+Phase 2C — Unified Application Shell           IMPLEMENTED / VALIDATION PENDING
+Phase 2D — Responsive Composition Contracts    NEXT AFTER 2C CLOSURE
 Phase 2E — Accessibility Foundation            NOT STARTED
 ```
 
 ## Integration rule
 
-No Build 2 source enters the active runtime until calculation parity, repository validation, server-side authorization, persistence capabilities, affected consumers, rollback, and legacy retirement are approved. Phase 2 design and component assets remain inactive until component, shell, responsive, accessibility, and feature-migration gates are satisfied.
+No Build 2 source enters the active runtime until calculation parity, repository validation, server-side authorization, persistence capabilities, affected consumers, rollback, and legacy retirement are approved. Phase 2 design, component, and shell assets remain inactive until shell, responsive, accessibility, and feature-migration gates are satisfied.

@@ -1,0 +1,255 @@
+/* GATE Build 2 Phase 2C — inactive unified application shell. */
+.gate-app-shell {
+  min-block-size: 100dvh;
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  background: var(--gate-surface-canvas);
+  color: var(--gate-text-primary);
+  font: inherit;
+  container-type: inline-size;
+  container-name: gate-app-shell;
+}
+
+.gate-shell-skip-link {
+  position: fixed;
+  inset-block-start: var(--gate-space-3);
+  inset-inline-start: var(--gate-space-3);
+  z-index: var(--gate-layer-notification);
+  padding: var(--gate-space-3) var(--gate-space-4);
+  border: var(--gate-space-1) solid var(--gate-border-strong);
+  border-radius: var(--gate-radius-sm);
+  background: var(--gate-surface-raised);
+  color: var(--gate-text-primary);
+  transform: translateY(-200%);
+}
+
+.gate-shell-skip-link:focus {
+  transform: none;
+}
+
+.gate-shell-header {
+  position: relative;
+  z-index: var(--gate-layer-navigation);
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--gate-layout-gap);
+  min-block-size: var(--gate-control-height);
+  padding: var(--gate-space-3) var(--gate-space-5);
+  border-block-end: var(--gate-space-1) solid var(--gate-border-default);
+  background: var(--gate-surface-command);
+  color: var(--gate-text-primary);
+}
+
+.gate-shell-brand {
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.gate-shell-week-group {
+  display: grid;
+  gap: var(--gate-space-1);
+  min-inline-size: 0;
+  color: var(--gate-text-secondary);
+}
+
+.gate-shell-week-group span {
+  font-size: 0.75em;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.gate-shell-week-group strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--gate-text-primary);
+}
+
+.gate-shell-navigation {
+  display: flex;
+  align-items: center;
+  gap: var(--gate-space-2);
+  min-inline-size: 0;
+}
+
+.gate-shell-navigation--persistent {
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.gate-shell-route,
+.gate-shell-menu-trigger,
+.gate-shell-system-control,
+.gate-shell-navigation--sheet header button {
+  min-block-size: var(--gate-control-height);
+  min-inline-size: var(--gate-target-touch-min);
+  border: var(--gate-space-1) solid var(--gate-border-default);
+  border-radius: var(--gate-radius-sm);
+  background: var(--gate-surface-panel);
+  color: var(--gate-text-primary);
+  font: inherit;
+  cursor: pointer;
+}
+
+.gate-shell-route {
+  padding-inline: var(--gate-space-4);
+  white-space: nowrap;
+}
+
+.gate-shell-route--active {
+  border-color: var(--gate-border-strong);
+  background: var(--gate-surface-raised);
+}
+
+.gate-shell-route__short {
+  display: none;
+}
+
+.gate-shell-system-controls {
+  display: flex;
+  gap: var(--gate-space-2);
+  justify-content: flex-end;
+}
+
+.gate-shell-system-control {
+  padding-inline: var(--gate-space-3);
+}
+
+.gate-shell-menu-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--gate-space-2);
+  padding-inline: var(--gate-space-4);
+}
+
+.gate-shell-navigation--compact {
+  position: absolute;
+  inset-block-start: calc(100% + var(--gate-space-2));
+  inset-inline-end: var(--gate-space-5);
+  z-index: var(--gate-layer-sheet);
+  display: grid;
+  min-inline-size: min(22rem, calc(100vw - (var(--gate-space-5) * 2)));
+  padding: var(--gate-space-3);
+  border: var(--gate-space-1) solid var(--gate-border-default);
+  border-radius: var(--gate-radius-md);
+  background: var(--gate-surface-raised);
+}
+
+.gate-shell-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: calc(var(--gate-layer-sheet) - 1);
+  background: color-mix(in srgb, var(--gate-surface-canvas) 72%, transparent);
+}
+
+.gate-shell-navigation--sheet {
+  position: fixed;
+  inset-block: 0;
+  inset-inline-end: 0;
+  z-index: var(--gate-layer-sheet);
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  inline-size: min(28rem, 92vw);
+  padding: calc(var(--gate-safe-top) + var(--gate-space-5)) calc(var(--gate-safe-right) + var(--gate-space-5)) calc(var(--gate-safe-bottom) + var(--gate-space-5)) var(--gate-space-5);
+  border-inline-start: var(--gate-space-1) solid var(--gate-border-default);
+  background: var(--gate-surface-raised);
+}
+
+.gate-shell-navigation--sheet header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--gate-space-4);
+}
+
+.gate-shell-navigation--sheet nav {
+  display: grid;
+  align-content: start;
+  gap: var(--gate-space-3);
+  overflow-y: auto;
+  padding-block-start: var(--gate-space-5);
+}
+
+.gate-shell-status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gate-space-3);
+  min-block-size: var(--gate-space-5);
+  padding: var(--gate-space-2) var(--gate-space-5);
+  border-block-end: var(--gate-space-1) solid var(--gate-border-default);
+  background: var(--gate-surface-panel);
+  color: var(--gate-text-secondary);
+}
+
+.gate-shell-status__connectivity,
+.gate-shell-status__notice,
+.gate-shell-status[data-gate-persistence-state='failed'] .gate-shell-status__persistence,
+.gate-shell-status[data-gate-persistence-state='conflict'] .gate-shell-status__persistence {
+  color: var(--gate-state-failed);
+}
+
+.gate-shell-status[data-gate-persistence-state='saving'] .gate-shell-status__persistence,
+.gate-shell-status[data-gate-persistence-state='stale'] .gate-shell-status__persistence {
+  color: var(--gate-state-warning);
+}
+
+.gate-shell-status[data-gate-persistence-state='saved'] .gate-shell-status__persistence {
+  color: var(--gate-state-saved);
+}
+
+.gate-shell-main {
+  min-block-size: 0;
+  overflow: auto;
+  padding: var(--gate-card-padding);
+}
+
+.gate-shell-route:focus-visible,
+.gate-shell-menu-trigger:focus-visible,
+.gate-shell-system-control:focus-visible,
+.gate-shell-navigation--sheet header button:focus-visible {
+  outline: var(--gate-space-1) solid var(--gate-border-strong);
+  outline-offset: var(--gate-space-1);
+}
+
+[data-gate-navigation-mode='compact'] .gate-shell-header,
+[data-gate-navigation-mode='sheet'] .gate-shell-header {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+}
+
+[data-gate-navigation-mode='compact'] .gate-shell-week-group,
+[data-gate-navigation-mode='sheet'] .gate-shell-week-group {
+  justify-self: center;
+}
+
+[data-gate-navigation-mode='compact'] .gate-shell-system-controls,
+[data-gate-navigation-mode='sheet'] .gate-shell-system-controls {
+  display: none;
+}
+
+@container gate-app-shell (max-width: 54rem) {
+  .gate-shell-route__label {
+    display: none;
+  }
+
+  .gate-shell-route__short {
+    display: inline;
+  }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .gate-shell-route:hover,
+  .gate-shell-menu-trigger:hover,
+  .gate-shell-system-control:hover {
+    border-color: var(--gate-border-strong);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gate-shell-skip-link,
+  .gate-shell-navigation--sheet,
+  .gate-shell-navigation--compact {
+    transition: none;
+  }
+}

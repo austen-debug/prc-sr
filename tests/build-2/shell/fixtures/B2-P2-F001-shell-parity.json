@@ -1,0 +1,22 @@
+{
+  "fixtureId": "B2-P2-F001",
+  "description": "Build 1 route, label, and role-access baseline for the Build 2 unified shell.",
+  "routes": [
+    { "id": "board", "label": "Status Board", "pageId": "page-board" },
+    { "id": "airport", "label": "Airport", "pageId": "page-airport" },
+    { "id": "input", "label": "Input", "pageId": "page-input" },
+    { "id": "processing", "label": "Processing", "pageId": "page-processing" },
+    { "id": "archives", "label": "Archives", "pageId": "page-archives" },
+    { "id": "squadron", "label": "Squadron Board", "pageId": "page-squadron" }
+  ],
+  "roles": {
+    "instructor": ["board", "airport", "input", "processing", "archives", "squadron"],
+    "airman": ["board", "processing"],
+    "squadron": ["squadron"]
+  },
+  "defaults": {
+    "instructor": "board",
+    "airman": "board",
+    "squadron": "squadron"
+  }
+}

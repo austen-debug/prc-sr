@@ -1,0 +1,81 @@
+name: Build 2 Shell Tests
+
+on:
+  push:
+    paths:
+      - 'public/app/shell/**'
+      - 'tests/build-2/shell/**'
+      - 'docs/build-2/APP_SHELL_CONTRACT.md'
+      - 'docs/build-2/ROUTE_PERMISSION_REGISTRY.md'
+      - 'docs/build-2/FRONTEND_ARCHITECTURE_ADR.md'
+      - 'docs/build-2/PHASE_2C_EXECUTION_REPORT.md'
+      - 'docs/build-2/INDEX.md'
+      - '.github/workflows/build-2-shell-tests.yml'
+  pull_request:
+    paths:
+      - 'public/app/shell/**'
+      - 'tests/build-2/shell/**'
+      - 'docs/build-2/APP_SHELL_CONTRACT.md'
+      - 'docs/build-2/ROUTE_PERMISSION_REGISTRY.md'
+      - 'docs/build-2/FRONTEND_ARCHITECTURE_ADR.md'
+      - 'docs/build-2/PHASE_2C_EXECUTION_REPORT.md'
+      - 'docs/build-2/INDEX.md'
+      - '.github/workflows/build-2-shell-tests.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-2-shell-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  unified-shell:
+    name: Route registry, shell state, renderers, and isolation
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Validate Phase 1 foundation
+        run: |
+          node --test tests/build-2/domain/*.test.mjs
+          node --test tests/build-2/data/*.test.mjs
+          node --test tests/build-2/parity/*.test.mjs
+
+      - name: Validate GDL foundations
+        run: node --test tests/build-2/design/*.test.mjs
+
+      - name: Validate component workshop
+        run: node --test tests/build-2/components/*.test.mjs
+
+      - name: Validate shell registry and permissions
+        run: node --test --test-name-pattern="registry|parity fixture|unknown roles|route access" tests/build-2/shell/unified-shell.test.mjs
+
+      - name: Validate shell state and selectors
+        run: node --test --test-name-pattern="denied route|shell state transitions|navigation overlay|persistence states|shell store|navigation models" tests/build-2/shell/unified-shell.test.mjs
+
+      - name: Validate shell markup
+        run: node --test --test-name-pattern="shell renderers" tests/build-2/shell/unified-shell.test.mjs
+
+      - name: Validate shell core isolation
+        run: node --test --test-name-pattern="shell core" tests/build-2/shell/unified-shell.test.mjs
+
+      - name: Validate shell CSS contract
+        run: node --test --test-name-pattern="shell CSS" tests/build-2/shell/unified-shell.test.mjs
+
+      - name: Validate shell workshop
+        run: node --test --test-name-pattern="shell workshop" tests/build-2/shell/unified-shell.test.mjs
+
+      - name: Validate Build 1 middleware isolation
+        run: node --test --test-name-pattern="Build 1 middleware" tests/build-2/shell/unified-shell.test.mjs
+
+      - name: Validate complete unified shell suite
+        run: node --test tests/build-2/shell/*.test.mjs

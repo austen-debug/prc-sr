@@ -1,6 +1,6 @@
 # GATE Build 2 Documentation Index
 
-Status: Build 2, Phase 2D implemented; validation pending  
+Status: Build 2, Phase 2D complete; Phase 2E next  
 Runtime status: Build 1 remains active; no Build 2 runtime asset is loaded.
 
 ## Governing documents
@@ -29,7 +29,7 @@ Runtime status: Build 1 remains active; no Build 2 runtime asset is loaded.
 22. [`PHASE_2C_EXECUTION_REPORT.md`](./PHASE_2C_EXECUTION_REPORT.md) — Phase 2C implementation and validation closure.
 23. [`RESPONSIVE_COMPOSITION_CONTRACTS.md`](./RESPONSIVE_COMPOSITION_CONTRACTS.md) — six postures, capability inputs, safe-area rules, and ownership boundaries.
 24. [`RESPONSIVE_VALIDATION_MATRIX.md`](./RESPONSIVE_VALIDATION_MATRIX.md) — posture fixtures, thresholds, capability cases, and container boundaries.
-25. [`PHASE_2D_EXECUTION_REPORT.md`](./PHASE_2D_EXECUTION_REPORT.md) — Phase 2D implementation and validation boundary.
+25. [`PHASE_2D_EXECUTION_REPORT.md`](./PHASE_2D_EXECUTION_REPORT.md) — Phase 2D implementation and validation closure.
 
 ## Build 2 source
 
@@ -80,8 +80,8 @@ Build 2 Phase 1 — Operational Truth and Data Foundation COMPLETE
 Phase 2A — GDL Foundations                     COMPLETE / INACTIVE
 Phase 2B — Component Workshop                  COMPLETE / INACTIVE
 Phase 2C — Unified Application Shell           COMPLETE / INACTIVE
-Phase 2D — Responsive Composition Contracts    IMPLEMENTED / VALIDATION PENDING
-Phase 2E — Accessibility Foundation            NEXT AFTER 2D CLOSURE
+Phase 2D — Responsive Composition Contracts    COMPLETE / INACTIVE
+Phase 2E — Accessibility Foundation            NEXT
 ```
 
 ## Integration rule

@@ -1,0 +1,77 @@
+name: Build 2 Accessibility Tests
+
+on:
+  push:
+    paths:
+      - 'public/app/accessibility/**'
+      - 'public/app/components/renderers-operational.mjs'
+      - 'tests/build-2/accessibility/**'
+      - 'docs/build-2/ACCESSIBILITY_FOUNDATION.md'
+      - 'docs/build-2/ACCESSIBILITY_VALIDATION_MATRIX.md'
+      - 'docs/build-2/PHASE_2E_EXECUTION_REPORT.md'
+      - 'docs/build-2/PHASE_2_EXIT_REPORT.md'
+      - 'docs/build-2/INDEX.md'
+      - '.github/workflows/build-2-accessibility-tests.yml'
+  pull_request:
+    paths:
+      - 'public/app/accessibility/**'
+      - 'public/app/components/renderers-operational.mjs'
+      - 'tests/build-2/accessibility/**'
+      - 'docs/build-2/ACCESSIBILITY_FOUNDATION.md'
+      - 'docs/build-2/ACCESSIBILITY_VALIDATION_MATRIX.md'
+      - 'docs/build-2/PHASE_2E_EXECUTION_REPORT.md'
+      - 'docs/build-2/PHASE_2_EXIT_REPORT.md'
+      - 'docs/build-2/INDEX.md'
+      - '.github/workflows/build-2-accessibility-tests.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-2-accessibility-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  accessibility-foundation:
+    name: WCAG contracts, overlays, announcements, reflow, and isolation
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Validate Phase 1 foundation
+        run: |
+          node --test tests/build-2/domain/*.test.mjs
+          node --test tests/build-2/data/*.test.mjs
+          node --test tests/build-2/parity/*.test.mjs
+
+      - name: Validate GDL foundations
+        run: node --test tests/build-2/design/*.test.mjs
+
+      - name: Validate component workshop
+        run: node --test tests/build-2/components/*.test.mjs
+
+      - name: Validate unified shell
+        run: node --test tests/build-2/shell/*.test.mjs
+
+      - name: Validate responsive composition
+        run: node --test tests/build-2/responsive/*.test.mjs
+
+      - name: Validate accessibility contracts and state semantics
+        run: node --test --test-name-pattern="WCAG|operational and persistence|focus order|overlay descriptors|announcements" tests/build-2/accessibility/accessibility-foundation.test.mjs
+
+      - name: Validate overlays and live regions
+        run: node --test --test-name-pattern="GateDialog|overlay controller|live announcer" tests/build-2/accessibility/accessibility-foundation.test.mjs
+
+      - name: Validate CSS, workshop, and Build 1 isolation
+        run: node --test --test-name-pattern="accessibility CSS|accessibility workshop|Build 1 middleware" tests/build-2/accessibility/accessibility-foundation.test.mjs
+
+      - name: Validate complete accessibility suite
+        run: node --test tests/build-2/accessibility/*.test.mjs

@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en" data-gate-theme="dark" data-gate-density="touch">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>GATE Accessibility Workshop</title>
+  <link rel="stylesheet" href="../../design/themes/gdl-foundations.css">
+  <link rel="stylesheet" href="../../components/gate-components.css">
+  <link rel="stylesheet" href="../../shell/gate-shell.css">
+  <link rel="stylesheet" href="../../responsive/gate-responsive.css">
+  <link rel="stylesheet" href="../gate-accessibility.css">
+  <link rel="stylesheet" href="./workshop.css">
+</head>
+<body>
+  <a class="gate-shell-skip-link" href="#accessibility-main">Skip to accessibility examples</a>
+  <header class="accessibility-workshop-header">
+    <div>
+      <p>Build 2 · Phase 2E</p>
+      <h1>Accessibility Foundation Workshop</h1>
+    </div>
+    <div class="accessibility-workshop-controls" aria-label="Workshop display controls">
+      <label>Theme
+        <select id="accessibility-theme">
+          <option value="dark">Dark</option>
+          <option value="light">Light</option>
+        </select>
+      </label>
+      <label>Density
+        <select id="accessibility-density">
+          <option value="touch">Touch</option>
+          <option value="standard">Standard</option>
+          <option value="command">Command</option>
+        </select>
+      </label>
+    </div>
+  </header>
+  <main id="accessibility-main" tabindex="-1">
+    <section aria-labelledby="keyboard-title">
+      <h2 id="keyboard-title">Keyboard and focus</h2>
+      <p>Use Tab and Shift+Tab. Open an overlay, cycle through its controls, close it with Escape, and confirm focus returns to the trigger.</p>
+      <div id="accessibility-actions" class="accessibility-workshop-grid"></div>
+    </section>
+    <section aria-labelledby="status-title">
+      <h2 id="status-title">Status and non-color communication</h2>
+      <p>Every state includes visible text and a distinct marker. Routine and blocking announcements use separate live regions.</p>
+      <div id="accessibility-states" class="accessibility-workshop-grid"></div>
+    </section>
+    <section aria-labelledby="reflow-title">
+      <h2 id="reflow-title">Reflow and zoom</h2>
+      <p>This region remains operable at 200% zoom and at a 320 CSS-pixel viewport without two-dimensional page scrolling.</p>
+      <div id="accessibility-reflow" class="gate-responsive-region"></div>
+    </section>
+  </main>
+  <div id="accessibility-overlays"></div>
+  <script type="module" src="./workshop.mjs"></script>
+</body>
+</html>

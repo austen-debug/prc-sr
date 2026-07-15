@@ -1,6 +1,6 @@
 # GATE Build 2 Documentation Index
 
-Status: Build 2, Phase 2E implemented; validation pending  
+Status: Build 2 Phase 2 complete; Phase 3 migration-readiness audit next  
 Runtime status: Build 1 remains active; Build 2 foundation assets are staged and not loaded by the operational runtime.
 
 ## Governing documents
@@ -32,8 +32,8 @@ Runtime status: Build 1 remains active; Build 2 foundation assets are staged and
 25. [`PHASE_2D_EXECUTION_REPORT.md`](./PHASE_2D_EXECUTION_REPORT.md) — Phase 2D implementation and validation closure.
 26. [`ACCESSIBILITY_FOUNDATION.md`](./ACCESSIBILITY_FOUNDATION.md) — WCAG 2.2 AA keyboard, focus, touch, overlay, announcement, contrast, motion, and reflow contracts.
 27. [`ACCESSIBILITY_VALIDATION_MATRIX.md`](./ACCESSIBILITY_VALIDATION_MATRIX.md) — automated and route-migration accessibility evidence requirements.
-28. [`PHASE_2E_EXECUTION_REPORT.md`](./PHASE_2E_EXECUTION_REPORT.md) — Phase 2E implementation and validation boundary.
-29. [`PHASE_2_EXIT_REPORT.md`](./PHASE_2_EXIT_REPORT.md) — consolidated Phase 2 exit review and Phase 3 entry conditions.
+28. [`PHASE_2E_EXECUTION_REPORT.md`](./PHASE_2E_EXECUTION_REPORT.md) — Phase 2E implementation and validation closure.
+29. [`PHASE_2_EXIT_REPORT.md`](./PHASE_2_EXIT_REPORT.md) — consolidated Phase 2 closure and Phase 3 entry conditions.
 
 ## Build 2 source
 
@@ -84,15 +84,18 @@ tests/build-2/accessibility/accessibility-foundation.test.mjs
 
 ```text
 Build 2 Phase 1 — Operational Truth and Data Foundation COMPLETE
+Build 2 Phase 2 — GDL and Responsive Application Foundation COMPLETE / STAGED
 
 Phase 2A — GDL Foundations                     COMPLETE / STAGED
 Phase 2B — Component Workshop                  COMPLETE / STAGED
 Phase 2C — Unified Application Shell           COMPLETE / STAGED
 Phase 2D — Responsive Composition Contracts    COMPLETE / STAGED
-Phase 2E — Accessibility Foundation            IMPLEMENTED / VALIDATION PENDING
-Phase 3  — Feature Migration and Retirement    NEXT AFTER PHASE 2 CLOSURE
+Phase 2E — Accessibility Foundation            COMPLETE / STAGED
+
+Phase 3 — Feature Migration and Legacy Retirement NEXT
+First package — Migration-readiness audit and route selection
 ```
 
 ## Integration rule
 
-No Build 2 source enters the active runtime until calculation parity, repository validation, server-side authorization, persistence capabilities, affected consumers, rollback, and legacy retirement are approved. Phase 2 assets remain staged until Phase 2E closes and a Phase 3 route-specific migration gate authorizes activation.
+Phase 2 completion does not activate Build 2. No Build 2 source enters the operational runtime until a Phase 3 route-specific migration gate approves calculation parity, repository use, server-side authorization, persistence behavior, responsive and accessibility evidence, affected consumers, rollback, and corresponding Build 1 retirement.

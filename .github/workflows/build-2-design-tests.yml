@@ -1,0 +1,51 @@
+name: Build 2 Design Tests
+
+on:
+  push:
+    paths:
+      - 'public/app/design/**'
+      - 'tests/build-2/design/**'
+      - 'docs/build-2/PHASE_2_CHARTER.md'
+      - 'docs/build-2/GDL_*.md'
+      - 'docs/build-2/PHASE_2A_EXECUTION_REPORT.md'
+      - '.github/workflows/build-2-design-tests.yml'
+  pull_request:
+    paths:
+      - 'public/app/design/**'
+      - 'tests/build-2/design/**'
+      - 'docs/build-2/PHASE_2_CHARTER.md'
+      - 'docs/build-2/GDL_*.md'
+      - 'docs/build-2/PHASE_2A_EXECUTION_REPORT.md'
+      - '.github/workflows/build-2-design-tests.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-2-design-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  design-foundations:
+    name: GDL foundations
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Validate GDL foundations
+        run: node --test tests/build-2/design/*.test.mjs
+
+      - name: Verify Build 1 middleware isolation
+        run: |
+          if grep -q "public/app/design\|gdl-foundations" functions/_middleware.js; then
+            echo "Build 2 design assets must remain inactive during Phase 2A."
+            exit 1
+          fi

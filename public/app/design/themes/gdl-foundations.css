@@ -1,0 +1,104 @@
+/* GATE Design Language — Build 2 Phase 2A. Inactive until a later migration gate. */
+:root {
+  --gate-space-1: 2px;
+  --gate-space-2: 4px;
+  --gate-space-3: 8px;
+  --gate-space-4: 12px;
+  --gate-space-5: 16px;
+  --gate-space-6: 20px;
+  --gate-space-7: 24px;
+  --gate-space-8: 32px;
+  --gate-space-9: 40px;
+  --gate-space-10: 48px;
+
+  --gate-radius-none: 0;
+  --gate-radius-xs: 2px;
+  --gate-radius-sm: 4px;
+  --gate-radius-md: 8px;
+  --gate-radius-lg: 12px;
+  --gate-radius-pill: 999px;
+
+  --gate-layer-base: 0;
+  --gate-layer-sticky: 100;
+  --gate-layer-navigation: 300;
+  --gate-layer-sheet: 500;
+  --gate-layer-dialog: 700;
+  --gate-layer-notification: 900;
+
+  --gate-motion-fast: 120ms;
+  --gate-motion-standard: 180ms;
+  --gate-motion-deliberate: 260ms;
+
+  --gate-target-touch-min: 44px;
+  --gate-safe-top: env(safe-area-inset-top, 0px);
+  --gate-safe-right: env(safe-area-inset-right, 0px);
+  --gate-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --gate-safe-left: env(safe-area-inset-left, 0px);
+
+  --gate-state-arrived: #2f8f63;
+  --gate-state-enroute: #3b9db4;
+  --gate-state-processing: #3f7fb5;
+  --gate-state-closed: #c8d2dc;
+  --gate-state-overtime: #b43b45;
+  --gate-state-warning: #c58a1b;
+  --gate-state-failed: #d4535c;
+  --gate-state-saved: #2f8f63;
+  --gate-state-pending: #c58a1b;
+  --gate-state-stale: #3b9db4;
+  --gate-state-conflict: #b43b45;
+}
+
+:root,
+[data-gate-theme='dark'] {
+  --gate-surface-canvas: #07111f;
+  --gate-surface-panel: #0b1728;
+  --gate-surface-raised: #11243c;
+  --gate-surface-command: #11243c;
+  --gate-text-primary: #ffffff;
+  --gate-text-secondary: #c8d2dc;
+  --gate-text-muted: #85b4d8;
+  --gate-border-default: #245987;
+  --gate-border-strong: #3f7fb5;
+}
+
+[data-gate-theme='light'] {
+  --gate-surface-canvas: #c8d2dc;
+  --gate-surface-panel: #e8edf2;
+  --gate-surface-raised: #ffffff;
+  --gate-surface-command: #11243c;
+  --gate-text-primary: #07111f;
+  --gate-text-secondary: #11243c;
+  --gate-text-muted: #245987;
+  --gate-border-default: #85b4d8;
+  --gate-border-strong: #245987;
+}
+
+[data-gate-density='command'] {
+  --gate-control-height: 32px;
+  --gate-row-height: 32px;
+  --gate-card-padding: 8px;
+  --gate-layout-gap: 8px;
+}
+
+:root,
+[data-gate-density='standard'] {
+  --gate-control-height: 40px;
+  --gate-row-height: 40px;
+  --gate-card-padding: 16px;
+  --gate-layout-gap: 12px;
+}
+
+[data-gate-density='touch'] {
+  --gate-control-height: 48px;
+  --gate-row-height: 48px;
+  --gate-card-padding: 20px;
+  --gate-layout-gap: 16px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --gate-motion-fast: 0ms;
+    --gate-motion-standard: 0ms;
+    --gate-motion-deliberate: 0ms;
+  }
+}

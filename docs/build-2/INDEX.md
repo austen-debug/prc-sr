@@ -1,6 +1,6 @@
 # GATE Build 2 Documentation Index
 
-Status: Build 2, Phase 1 complete; Phase 2 next  
+Status: Build 2, Phase 2A complete; Phase 2B next  
 Runtime status: Build 1 remains active; no Build 2 runtime asset is loaded.
 
 ## Governing documents
@@ -16,29 +16,24 @@ Runtime status: Build 1 remains active; no Build 2 runtime asset is loaded.
 9. [`PHASE_1D_EXECUTION_REPORT.md`](./PHASE_1D_EXECUTION_REPORT.md) — repository implementation report.
 10. [`PHASE_1E_EXECUTION_REPORT.md`](./PHASE_1E_EXECUTION_REPORT.md) — parity and data-integrity closure report.
 11. [`VALIDATION_FIXTURES.md`](./VALIDATION_FIXTURES.md) — parity and data-integrity scenarios.
+12. [`PHASE_2_CHARTER.md`](./PHASE_2_CHARTER.md) — design language, component, shell, responsive, and accessibility workstreams.
+13. [`GDL_FOUNDATIONS.md`](./GDL_FOUNDATIONS.md) — GATE Design Language principles and foundation contracts.
+14. [`GDL_TOKEN_REGISTRY.md`](./GDL_TOKEN_REGISTRY.md) — semantic token names, scales, density modes, and versioning.
+15. [`PHASE_2A_EXECUTION_REPORT.md`](./PHASE_2A_EXECUTION_REPORT.md) — Phase 2A implementation and validation boundary.
 
 ## Build 2 source
 
 ```text
 public/app/
 ├── domain/
-│   ├── normalization.mjs
-│   ├── operational-metrics.mjs
-│   ├── receiving.mjs
-│   └── index.mjs
-└── data/
-    ├── legacy-compatibility.mjs
-    ├── record-normalizer.mjs
-    ├── repository-result.mjs
-    ├── records-client.mjs
+├── data/
+└── design/
     ├── index.mjs
-    └── repositories/
-        ├── base-repository.mjs
-        ├── bus-repository.mjs
-        ├── dorm-repository.mjs
-        ├── archive-repository.mjs
-        ├── config-repository.mjs
-        └── index.mjs
+    ├── tokens/
+    │   ├── foundations.mjs
+    │   └── semantic.mjs
+    └── themes/
+        └── gdl-foundations.css
 ```
 
 All Build 2 modules remain inactive and absent from the active middleware manifest.
@@ -50,30 +45,25 @@ tests/build-2/domain/operational-truth.test.mjs
 tests/build-2/data/record-normalization.test.mjs
 tests/build-2/data/repositories.test.mjs
 tests/build-2/parity/phase-1e-parity.test.mjs
+tests/build-2/design/gdl-foundations.test.mjs
 .github/workflows/build-2-domain-tests.yml
 .github/workflows/build-2-data-tests.yml
 .github/workflows/build-2-phase-1-validation.yml
-```
-
-```bash
-node --test tests/build-2/domain/*.test.mjs
-node --test tests/build-2/data/*.test.mjs
-node --test tests/build-2/parity/*.test.mjs
+.github/workflows/build-2-design-tests.yml
 ```
 
 ## Current execution position
 
 ```text
-Phase 1A — Operational Truth Registry                 COMPLETE
-Phase 1B — Canonical Domain Calculations              COMPLETE / INACTIVE
-Phase 1C — Record Normalization Boundary              COMPLETE / INACTIVE
-Phase 1D — Typed Repository Boundary                  COMPLETE / INACTIVE
-Phase 1E — Parity and Data Integrity Validation       COMPLETE
-
 Build 2 Phase 1 — Operational Truth and Data Foundation COMPLETE
-Build 2 Phase 2 — GATE Design Language and Responsive Application Shell NEXT
+
+Phase 2A — GDL Foundations                     COMPLETE / INACTIVE
+Phase 2B — Component Workshop                  NEXT
+Phase 2C — Unified Application Shell           NOT STARTED
+Phase 2D — Responsive Composition Contracts    NOT STARTED
+Phase 2E — Accessibility Foundation            NOT STARTED
 ```
 
 ## Integration rule
 
-No Build 2 source enters the active runtime until calculation parity, repository validation, server-side authorization, persistence capabilities, affected consumers, rollback, and legacy retirement are approved.
+No Build 2 source enters the active runtime until calculation parity, repository validation, server-side authorization, persistence capabilities, affected consumers, rollback, and legacy retirement are approved. Phase 2 design assets remain inactive until component and shell migration gates are satisfied.

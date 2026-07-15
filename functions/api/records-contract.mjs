@@ -1,5 +1,6 @@
 const ROLE_SET = new Set(['instructor', 'airman', 'squadron', 'system']);
 const WRITE_ROLE_SET = new Set(['instructor', 'airman', 'system']);
+const PROHIBITED_METADATA_KEY = /^(?:trainee_name|first_name|last_name|ssn|social_security|dod_id|edipi|orders?)$/i;
 
 export const RECORDS_API_CAPABILITIES = Object.freeze({
   recordVersioning: true,
@@ -27,9 +28,7 @@ export function parseExpectedRecordVersion(value) {
   const raw = String(value ?? '').trim();
   if (!raw) return Object.freeze({ supplied: false, valid: true, value: null });
   const normalized = raw.replace(/^W\//i, '').replace(/^"|"$/g, '');
-  if (!/^\d+$/.test(normalized)) {
-    return Object.freeze({ supplied: true, valid: false, value: null });
-  }
+  if (!/^\d+$/.test(normalized)) return Object.freeze({ supplied: true, valid: false, value: null });
   return Object.freeze({ supplied: true, valid: true, value: Number(normalized) });
 }
 
@@ -69,6 +68,14 @@ export function isAuditEvent(record = {}) {
   return String(record.type || '').trim().toLowerCase() === 'audit_event';
 }
 
+function containsProhibitedMetadata(value) {
+  if (!value || typeof value !== 'object') return false;
+  if (Array.isArray(value)) return value.some(containsProhibitedMetadata);
+  return Object.entries(value).some(([key, child]) => (
+    PROHIBITED_METADATA_KEY.test(key) || containsProhibitedMetadata(child)
+  ));
+}
+
 export function validateAuditEvent(record = {}) {
   const errors = [];
   if (!String(record.event_type || '').trim()) errors.push('event_type is required.');
@@ -78,6 +85,10 @@ export function validateAuditEvent(record = {}) {
   const resultingVersion = Number(record.resulting_version ?? 0);
   if (!Number.isFinite(priorVersion) || priorVersion < 0) errors.push('prior_version must be a non-negative number.');
   if (!Number.isFinite(resultingVersion) || resultingVersion < 0) errors.push('resulting_version must be a non-negative number.');
+  if (Number.isFinite(priorVersion) && Number.isFinite(resultingVersion) && resultingVersion < priorVersion) {
+    errors.push('resulting_version cannot be lower than prior_version.');
+  }
+  if (containsProhibitedMetadata(record.metadata)) errors.push('metadata contains prohibited trainee or orders fields.');
   return Object.freeze({ valid: errors.length === 0, errors: Object.freeze(errors) });
 }
 

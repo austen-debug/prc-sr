@@ -68,13 +68,20 @@ export function buildArchiveSnapshot({
   const loads = calculateLoadTotals(records, normalizedWeekGroup);
   const buses = selectConfirmedArrivals(records, normalizedWeekGroup).map(archiveBus);
   const dorms = selectDorms(records, normalizedWeekGroup).map(archiveDorm);
-  const receivingDocument = buildArchiveReportModel({
+  const documentModel = buildArchiveReportModel({
     records,
     weekGroup: normalizedWeekGroup,
     windows,
     generatedAt,
     archivedAt: archivedTimestamp
   });
+  const receivingDocument = {
+    context: documentModel.context,
+    weekGroup: documentModel.weekGroup,
+    generatedAt: documentModel.generatedAt,
+    archivedAt: documentModel.archivedAt,
+    report: documentModel.report
+  };
 
   return deepFreeze({
     schemaVersion: ARCHIVE_SNAPSHOT_SCHEMA_VERSION,

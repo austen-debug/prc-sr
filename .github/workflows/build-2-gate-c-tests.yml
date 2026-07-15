@@ -9,6 +9,7 @@ on:
       - 'public/app/data/**'
       - 'tests/build-2/server/**'
       - 'tests/build-2/data/**'
+      - 'docs/build-2/PROGRAM_INTENT_BASELINE.md'
       - 'docs/build-2/BACKEND_VERSIONING_AUDIT_CONTRACT.md'
       - 'docs/build-2/REPOSITORY_CONTRACTS.md'
       - 'docs/build-2/GATE_C_EXECUTION_REPORT.md'
@@ -23,6 +24,7 @@ on:
       - 'public/app/data/**'
       - 'tests/build-2/server/**'
       - 'tests/build-2/data/**'
+      - 'docs/build-2/PROGRAM_INTENT_BASELINE.md'
       - 'docs/build-2/BACKEND_VERSIONING_AUDIT_CONTRACT.md'
       - 'docs/build-2/REPOSITORY_CONTRACTS.md'
       - 'docs/build-2/GATE_C_EXECUTION_REPORT.md'
@@ -76,7 +78,7 @@ jobs:
           node --test tests/build-2/responsive/*.test.mjs
           node --test tests/build-2/accessibility/*.test.mjs
 
-      - name: Validate Gate C source boundaries
+      - name: Validate Gate C source and governance boundaries
         run: |
           grep -q 'recordVersioning: true' functions/api/records-contract.mjs
           grep -q "headers.get('If-Match')" functions/api/records.js
@@ -86,6 +88,8 @@ jobs:
           grep -q 'GateAuditRepository' public/app/data/index.mjs
           grep -q 'requireConflictDetection: options.requireConflictDetection !== false' public/app/data/repositories/base-repository.mjs
           grep -q 'Foundation Alignment Gate D' docs/build-2/GATE_C_EXECUTION_REPORT.md
+          grep -q 'Gate C — Backend versioning and append-only audit events        COMPLETE' docs/build-2/PROGRAM_INTENT_BASELINE.md
+          grep -q 'Foundation Alignment Gate D                       NEXT' docs/build-2/INDEX.md
           if grep -q 'SQUADRON_USERNAME' functions/api/login.js; then
             echo 'Gate C must not activate Squadron login.'
             exit 1

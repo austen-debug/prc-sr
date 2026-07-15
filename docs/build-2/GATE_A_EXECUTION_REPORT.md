@@ -1,6 +1,6 @@
 # GATE Build 2 — Foundation Alignment Gate A Execution Report
 
-Status: IMPLEMENTED — CI VALIDATION PENDING  
+Status: COMPLETE / STAGED  
 Runtime status: staged; Build 1 remains operational and unchanged
 
 ## Objective
@@ -36,6 +36,19 @@ They establish active Week Group context, confirmed/local/last-arrival summaries
 
 The suite covers active Week Group aliases, arrival eligibility, local and last arrival, bus semantics, dorm state, processing transitions, timer determinism, limited Squadron output, Current Summary/archive parity, archive immutability, and the historical 911 projected / 857 confirmed fixture.
 
+Final implementation-head results:
+
+```text
+PASS — Build 2 Foundation Alignment Tests
+PASS — Build 2 Domain Tests
+PASS — Build 2 Phase 1 Validation
+PASS — Build 2 Component Tests
+PASS — Build 2 Shell Tests
+PASS — Build 2 Responsive Tests
+PASS — Build 2 Accessibility Tests
+PASS — Build 1 middleware isolation
+```
+
 ## Runtime boundary
 
 No Build 1 controller, stylesheet, middleware asset, API route, authentication behavior, persisted record, report, or visible workflow is changed. Gate A does not implement server versioning, audit events, transaction orchestration, synchronization, degraded operation, or route activation.
@@ -43,14 +56,19 @@ No Build 1 controller, stylesheet, middleware asset, API route, authentication b
 ## Closure gate
 
 ```text
-PENDING — Gate A domain suite
-PENDING — Phase 1 data and parity regression
-PENDING — Phase 2 regression
-PENDING — Build 1 middleware isolation
-PENDING — final program-status update
+PASS — governing baseline and traceability controls
+PASS — approved Status Board-first migration order
+PASS — active Week Group domain owner
+PASS — arrival, bus, dorm, processing, and timer owners
+PASS — shared Status/Squadron summaries
+PASS — shared Current Summary and Archive Report model
+PASS — immutable archive snapshot builder
+PASS — historical operational fixture
+PASS — complete Phase 1 and Phase 2 regression
+PASS — Build 1 runtime isolation
 ```
 
-## Next after closure
+## Next
 
 ```text
 Foundation Alignment Gate B

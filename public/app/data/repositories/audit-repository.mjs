@@ -1,7 +1,7 @@
 import { normalizeText, normalizeTimestamp, normalizeWeekGroup, toNonNegativeNumber } from '../../domain/normalization.mjs';
 import { normalizeActorRole } from '../canonical-entity.mjs';
 import { BaseRepository } from './base-repository.mjs';
-import { validationFailure } from '../repository-result.mjs';
+import { repositoryOk, validationFailure } from '../repository-result.mjs';
 
 const PROHIBITED_METADATA_KEY = /^(?:trainee_name|first_name|last_name|ssn|social_security|dod_id|edipi|orders?)$/i;
 
@@ -16,6 +16,25 @@ function containsProhibitedMetadata(value) {
 export class GateAuditRepository extends BaseRepository {
   constructor({ client }) {
     super({ client, type: 'audit_event' });
+  }
+
+  async findByOperation({ operationId = '', eventType = '', entityId = '' } = {}) {
+    const requestedOperationId = normalizeText(operationId);
+    const requestedEventType = normalizeText(eventType).toLowerCase();
+    const requestedEntityId = normalizeText(entityId);
+    if (!requestedOperationId) return validationFailure('Audit operation id is required.');
+
+    const result = await this.list();
+    if (!result.ok) return result;
+    const record = result.data.find(item => (
+      normalizeText(item.payload?.metadata?.operationId) === requestedOperationId
+      && (!requestedEventType || normalizeText(item.payload?.eventType).toLowerCase() === requestedEventType)
+      && (!requestedEntityId || normalizeText(item.payload?.entityId) === requestedEntityId)
+    )) || null;
+    return repositoryOk(record, {
+      found: Boolean(record),
+      capabilities: this.client.capabilities
+    });
   }
 
   async append(command = {}) {
@@ -52,6 +71,22 @@ export class GateAuditRepository extends BaseRepository {
       actorRole: command.actorRole,
       timestamp: occurredAt
     });
+  }
+
+  async appendOnce(command = {}) {
+    const operationId = normalizeText(command?.metadata?.operationId);
+    if (!operationId) return validationFailure('Idempotent audit append requires metadata.operationId.');
+    const existing = await this.findByOperation({
+      operationId,
+      eventType: command.eventType,
+      entityId: command.entityId
+    });
+    if (!existing.ok) return existing;
+    if (existing.data) return repositoryOk(existing.data, {
+      unchanged: true,
+      capabilities: this.client.capabilities
+    });
+    return this.append(command);
   }
 
   async updateEnvelope() {

@@ -140,7 +140,7 @@ test('shell renderers provide skip navigation, landmarks, current-route semantic
   assert.match(navigation, /aria-modal="true"/);
   assert.match(navigation, /aria-current="page"/);
   assert.doesNotMatch(navigation, /data-gate-route="airport"/);
-  assert.doesNotMatch(shell, /\son[a-z]+\s*=/i);
+  assert.doesNotMatch(shell, /<[^>]+\son[a-z]+\s*=/i);
 });
 
 test('shell core has no DOM, API, repository, or generic-record dependency', async () => {

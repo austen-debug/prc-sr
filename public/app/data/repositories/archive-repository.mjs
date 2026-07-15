@@ -50,11 +50,13 @@ export class GateArchiveRepository extends BaseRepository {
       dorm_data: dormData,
       notes: normalizeText(command.notes),
       ...(command.receivingWindows || {})
-    });
+    }, { actorRole: command.actorRole, timestamp: archivedAt });
   }
 
   async deleteSnapshot(id, command = {}) {
     return this.deleteById(id, {
+      actorRole: command.actorRole,
+      timestamp: command.updatedAt,
       requireConflictDetection: Boolean(command.requireConflictDetection)
     });
   }

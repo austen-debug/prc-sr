@@ -65,10 +65,9 @@ export class GateBusRepository extends BaseRepository {
       nat_count: counts.naturalization,
       space_force_count: counts.spaceForce,
       status: 'active',
-      created_at: departedAt,
       departed_at: departedAt,
       arrived_at: ''
-    });
+    }, { actorRole: command.actorRole, timestamp: departedAt });
   }
 
   async createLocalArrival(command = {}) {
@@ -92,10 +91,9 @@ export class GateBusRepository extends BaseRepository {
       nat_count: counts.naturalization,
       space_force_count: counts.spaceForce,
       status: 'arrived',
-      created_at: arrivedAt,
       departed_at: arrivedAt,
       arrived_at: arrivedAt
-    });
+    }, { actorRole: command.actorRole, timestamp: arrivedAt });
   }
 
   async confirmArrival(id, command = {}) {
@@ -107,9 +105,12 @@ export class GateBusRepository extends BaseRepository {
     const arrivedAt = commandTimestamp(command.arrivedAt);
     return this.updateEnvelope(existing.data, {
       status: 'arrived',
-      arrived_at: arrivedAt,
-      updated_at: arrivedAt
-    }, { requireConflictDetection: Boolean(command.requireConflictDetection) });
+      arrived_at: arrivedAt
+    }, {
+      actorRole: command.actorRole,
+      timestamp: arrivedAt,
+      requireConflictDetection: Boolean(command.requireConflictDetection)
+    });
   }
 
   async updateCounts(id, command = {}) {
@@ -118,13 +119,17 @@ export class GateBusRepository extends BaseRepository {
     const counts = countSet(command);
     const validationError = validateCounts(counts);
     if (validationError) return validationFailure(validationError, counts);
+    const updatedAt = commandTimestamp(command.updatedAt);
 
     return this.updateEnvelope(existing.data, {
       otw_count: counts.total,
       female_count: counts.female,
       nat_count: counts.naturalization,
-      space_force_count: counts.spaceForce,
-      updated_at: commandTimestamp(command.updatedAt)
-    }, { requireConflictDetection: Boolean(command.requireConflictDetection) });
+      space_force_count: counts.spaceForce
+    }, {
+      actorRole: command.actorRole,
+      timestamp: updatedAt,
+      requireConflictDetection: Boolean(command.requireConflictDetection)
+    });
   }
 }

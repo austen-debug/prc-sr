@@ -6,55 +6,36 @@ import {
   findDuplicateDormIdentity
 } from '../../../public/app/domain/index.mjs';
 
-test('same dorm name is allowed when squadrons differ', () => {
-  const duplicate = findDuplicateDormIdentity([
-    { sdq: '324', dorm_name: 'A04' },
-    { sdq: '326', dorm_name: 'A04' }
-  ]);
+const dorm = (sdq, name, extra = {}) => ({
+  type: 'dorm',
+  schemaVersion: 'build-2.dorm.v1',
+  payload: { sdq, name, ...extra }
+});
 
-  assert.equal(duplicate, null);
+test('same dorm name is allowed when squadrons differ', () => {
+  assert.equal(findDuplicateDormIdentity([dorm('324', 'A04'), dorm('326', 'A04')]), null);
 });
 
 test('same squadron and dorm combination is rejected', () => {
-  const duplicate = findDuplicateDormIdentity([
-    { sdq: '324', dorm_name: 'A04' },
-    { sdq: '324', dorm_name: 'A04' }
-  ]);
-
-  assert.deepEqual(duplicate, {
-    squadron: '324',
-    dorm: 'A04',
-    key: '324::A04'
+  assert.deepEqual(findDuplicateDormIdentity([dorm('324', 'A04'), dorm('324', 'A04')]), {
+    squadron: '324', dorm: 'A04', key: '324::A04'
   });
 });
 
 test('composite identity comparison is case and whitespace insensitive', () => {
-  const duplicate = findDuplicateDormIdentity([
-    { squadron: ' 324 ', dormName: ' a04 ' },
-    { sdq: '324', dorm_name: 'A04' }
-  ]);
-
+  const duplicate = findDuplicateDormIdentity([dorm(' 324 ', ' a04 '), dorm('324', 'A04')]);
   assert.equal(duplicate?.key, '324::A04');
 });
 
 test('different dorms in the same squadron remain valid', () => {
-  const duplicate = findDuplicateDormIdentity([
-    { sdq: '324', dorm_name: 'A04' },
-    { sdq: '324', dorm_name: 'A05' }
-  ]);
-
-  assert.equal(duplicate, null);
+  assert.equal(findDuplicateDormIdentity([dorm('324', 'A04'), dorm('324', 'A05')]), null);
 });
 
-test('unnamed input rows retain deterministic row-based identities', () => {
+test('unnamed canonical input rows retain deterministic row-based identities', () => {
   assert.deepEqual(createDormIdentity({ sdq: '324', rowIndex: 0 }), {
-    squadron: '324',
-    dorm: 'DORM 1',
-    key: '324::DORM 1'
+    squadron: '324', dorm: 'DORM 1', key: '324::DORM 1'
   });
   assert.deepEqual(createDormIdentity({ sdq: '324', rowIndex: 1 }), {
-    squadron: '324',
-    dorm: 'DORM 2',
-    key: '324::DORM 2'
+    squadron: '324', dorm: 'DORM 2', key: '324::DORM 2'
   });
 });

@@ -1,28 +1,16 @@
-import {
-  matchesWeekGroup,
-  normalizeBusRecord,
-  normalizeDormRecord,
-  normalizeText,
-  normalizeWeekGroup
-} from './normalization.mjs';
+import { matchesWeekGroup, normalizeBusRecord, normalizeDormRecord, normalizeText, normalizeWeekGroup } from './normalization.mjs';
 
 function recordsOfType(records, type) {
   const requestedType = normalizeText(type).toLowerCase();
-  return Array.isArray(records)
-    ? records.filter(record => normalizeText(record?.type).toLowerCase() === requestedType)
-    : [];
+  return Array.isArray(records) ? records.filter(record => normalizeText(record?.type).toLowerCase() === requestedType) : [];
 }
 
 export function selectBuses(records, weekGroup) {
-  return recordsOfType(records, 'bus')
-    .map(normalizeBusRecord)
-    .filter(bus => matchesWeekGroup(bus, weekGroup));
+  return recordsOfType(records, 'bus').map(normalizeBusRecord).filter(Boolean).filter(bus => matchesWeekGroup(bus, weekGroup));
 }
 
 export function selectDorms(records, weekGroup) {
-  return recordsOfType(records, 'dorm')
-    .map(normalizeDormRecord)
-    .filter(dorm => matchesWeekGroup(dorm, weekGroup));
+  return recordsOfType(records, 'dorm').map(normalizeDormRecord).filter(Boolean).filter(dorm => matchesWeekGroup(dorm, weekGroup));
 }
 
 export function selectConfirmedArrivals(records, weekGroup) {
@@ -42,32 +30,17 @@ export function calculateBusTotals(buses = []) {
     totals.female += bus.female;
     totals.naturalization += bus.naturalization;
     return totals;
-  }, {
-    busCount: 0,
-    total: 0,
-    airForce: 0,
-    spaceForce: 0,
-    female: 0,
-    naturalization: 0
-  });
+  }, { busCount: 0, total: 0, airForce: 0, spaceForce: 0, female: 0, naturalization: 0 });
 }
 
 export function calculateConfirmedArrivalTotals(records, weekGroup) {
   const buses = selectConfirmedArrivals(records, weekGroup);
-  return Object.freeze({
-    weekGroup: normalizeWeekGroup(weekGroup),
-    buses: Object.freeze([...buses]),
-    ...calculateBusTotals(buses)
-  });
+  return Object.freeze({ weekGroup: normalizeWeekGroup(weekGroup), buses: Object.freeze([...buses]), ...calculateBusTotals(buses) });
 }
 
 export function calculateManifestedBusTotals(records, weekGroup) {
   const buses = selectBuses(records, weekGroup);
-  return Object.freeze({
-    weekGroup: normalizeWeekGroup(weekGroup),
-    buses: Object.freeze([...buses]),
-    ...calculateBusTotals(buses)
-  });
+  return Object.freeze({ weekGroup: normalizeWeekGroup(weekGroup), buses: Object.freeze([...buses]), ...calculateBusTotals(buses) });
 }
 
 export function calculateCapacityTotals(records, weekGroup) {
@@ -79,12 +52,7 @@ export function calculateCapacityTotals(records, weekGroup) {
     else result.airForce += dorm.capacity;
     return result;
   }, { dormCount: 0, total: 0, airForce: 0, spaceForce: 0 });
-
-  return Object.freeze({
-    weekGroup: normalizeWeekGroup(weekGroup),
-    dorms: Object.freeze([...dorms]),
-    ...totals
-  });
+  return Object.freeze({ weekGroup: normalizeWeekGroup(weekGroup), dorms: Object.freeze([...dorms]), ...totals });
 }
 
 export function calculateLoadTotals(records, weekGroup) {
@@ -95,12 +63,7 @@ export function calculateLoadTotals(records, weekGroup) {
     result.capacity += dorm.capacity;
     return result;
   }, { dormCount: 0, loaded: 0, capacity: 0 });
-
-  return Object.freeze({
-    weekGroup: normalizeWeekGroup(weekGroup),
-    dorms: Object.freeze([...dorms]),
-    ...totals
-  });
+  return Object.freeze({ weekGroup: normalizeWeekGroup(weekGroup), dorms: Object.freeze([...dorms]), ...totals });
 }
 
 export function calculateAssignmentSummary(records, weekGroup) {

@@ -14,6 +14,11 @@ import {
   normalizeRecordVersion,
   parseLegacyArray
 } from './legacy-compatibility.mjs';
+import {
+  createCanonicalEntity,
+  isCanonicalEntity,
+  normalizeActorRole
+} from './canonical-entity.mjs';
 
 const WINDOW_FIELDS = Object.freeze([
   'receiving_day_one_start',
@@ -153,6 +158,13 @@ function payloadFor(record, type, context, warnings, aliasesUsed) {
   return Object.freeze(cloneLegacyRecord(record));
 }
 
+function legacyRole(record, field, fallback = 'unknown') {
+  const aliases = field === 'created'
+    ? [record.created_by_role, record.createdByRole, record.actor_role, record.actorRole]
+    : [record.updated_by_role, record.updatedByRole, record.actor_role, record.actorRole];
+  return normalizeActorRole(aliases.find(value => normalizeText(value)) || fallback);
+}
+
 export function normalizePersistedRecord(record = {}, options = {}) {
   const context = { timeZone: options.timeZone || DEFAULT_OPERATIONAL_TIME_ZONE };
   const warnings = [];
@@ -161,9 +173,11 @@ export function normalizePersistedRecord(record = {}, options = {}) {
   const raw = cloneLegacyRecord(record);
   const createdAt = timestampValue(record.created_at, context, warnings, 'created_at');
   const updatedAt = timestampValue(record.updated_at, context, warnings, 'updated_at');
+  const createdByRole = legacyRole(record, 'created');
+  const updatedByRole = legacyRole(record, 'updated', createdByRole);
   const payload = payloadFor(record, type, context, warnings, aliasesUsed);
 
-  return Object.freeze({
+  return createCanonicalEntity({
     id: normalizeText(record.__backendId || record.id),
     type,
     schemaVersion: legacySchemaVersion(record),
@@ -171,14 +185,16 @@ export function normalizePersistedRecord(record = {}, options = {}) {
     weekGroup: legacyWeekGroup(record),
     createdAt,
     updatedAt,
+    createdByRole,
+    updatedByRole,
     payload,
-    compatibility: Object.freeze({
+    compatibility: {
       source: 'build-1',
       operationalTimeZone: context.timeZone,
-      aliasesUsed: Object.freeze(aliasesUsed),
-      warnings: Object.freeze(warnings)
-    }),
-    raw: Object.freeze(raw)
+      aliasesUsed,
+      warnings
+    },
+    raw
   });
 }
 
@@ -196,62 +212,20 @@ export function restoreBuild1Record(envelope) {
   return cloneLegacyRecord(envelope?.raw || {});
 }
 
-export function toCanonicalDomainRecord(envelope) {
-  if (!envelope || typeof envelope !== 'object') return null;
-  const { id, type, weekGroup, payload } = envelope;
-  if (type === 'bus') {
-    return {
-      __backendId: id,
-      type: 'bus',
-      week_group: weekGroup,
-      bus_id: payload.busId,
-      bus_type: payload.busType,
-      destination: payload.destination,
-      originating_destination: payload.originatingDestination,
-      status: payload.status,
-      otw_count: payload.total,
-      female_count: payload.female,
-      nat_count: payload.naturalization,
-      space_force_count: payload.spaceForce,
-      created_at: payload.createdAt,
-      departed_at: payload.departedAt,
-      arrived_at: payload.arrivedAt
-    };
-  }
-  if (type === 'dorm') {
-    return {
-      __backendId: id,
-      type: 'dorm',
-      week_group: weekGroup,
-      dorm_name: payload.name,
-      sdq: payload.sdq,
-      section: payload.section,
-      inter_sec: payload.interSection,
-      sex: payload.sex,
-      band: payload.band,
-      space_force: payload.spaceForce,
-      is_space_force: payload.spaceForce,
-      max_load: payload.capacity,
-      current_load: payload.load,
-      state: payload.state,
-      phase: payload.phase,
-      opened_at: payload.openedAt,
-      closed_at: payload.closedAt,
-      closed_timer: payload.closedTimer,
-      assigned_airman: payload.assignedStaff,
-      auditorium_location: payload.auditoriumLocation,
-      notes: payload.notes,
-      ...payload.receivingWindows
-    };
-  }
-  if (type === 'config') {
-    return { __backendId: id, type: 'config', key: payload.key, value: payload.value };
-  }
-  return restoreBuild1Record(envelope);
+export function toBuild1Record(envelope, patch = {}) {
+  return {
+    ...restoreBuild1Record(envelope),
+    ...cloneLegacyRecord(patch),
+    __backendId: envelope?.id || patch.__backendId || '',
+    type: envelope?.type || patch.type || 'unknown'
+  };
 }
 
-export function toCanonicalDomainRecords(envelopes = []) {
-  return (Array.isArray(envelopes) ? envelopes : [])
-    .map(toCanonicalDomainRecord)
-    .filter(Boolean);
+export function toCanonicalDomainRecord(entity) {
+  return isCanonicalEntity(entity) ? entity : null;
+}
+
+export function toCanonicalDomainRecords(entities = []) {
+  return Object.freeze((Array.isArray(entities) ? entities : [])
+    .filter(entity => isCanonicalEntity(entity)));
 }

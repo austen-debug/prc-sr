@@ -51,11 +51,30 @@ export class GateConfigRepository extends BaseRepository {
     });
   }
 
+  async clear(key, command = {}) {
+    const requested = normalizedKey(key);
+    if (!requested) return validationFailure('Configuration key is required.');
+    const existing = await this.getByKey(requested);
+    if (!existing.ok) return existing;
+    if (!existing.data) return repositoryOk(null, {
+      unchanged: true,
+      found: false,
+      capabilities: this.client.capabilities
+    });
+    if (!existing.data.payload.value) return repositoryOk(existing.data, {
+      unchanged: true,
+      found: true,
+      capabilities: this.client.capabilities
+    });
+    return this.set(requested, '', command);
+  }
+
   async getActiveWeekGroup() {
     const result = await this.getByKey('week_group');
     if (!result.ok) return result;
     return repositoryOk(normalizeWeekGroup(result.data?.payload?.value || ''), {
       found: Boolean(result.data),
+      record: result.data || null,
       capabilities: this.client.capabilities
     });
   }
@@ -64,5 +83,13 @@ export class GateConfigRepository extends BaseRepository {
     const value = normalizeWeekGroup(weekGroup);
     if (!value) return validationFailure('Active Week Group is required.');
     return this.set('week_group', value, command);
+  }
+
+  async clearActiveWeekGroup(command = {}) {
+    return this.clear('week_group', command);
+  }
+
+  async clearLastAirport(command = {}) {
+    return this.clear('last_airport', command);
   }
 }

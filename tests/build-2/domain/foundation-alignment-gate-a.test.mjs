@@ -21,12 +21,14 @@ import {
   validateArchiveSnapshot,
   validateWeekGroupId
 } from '../../../public/app/domain/index.mjs';
+import { normalizePersistedRecords } from '../../../public/app/data/index.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const historicalFixture = JSON.parse(await readFile(resolve(here, '../fixtures/B2-P1-F001-receiving-parity.json'), 'utf8'));
+const canonicalize = records => normalizePersistedRecords(records, { timeZone: 'America/Chicago' }).records;
 
-const records = [
-  { type: 'config', key: 'week_group', value: 'wg-42' },
+const legacyRecords = [
+  { type: 'config', key: 'active_wg', value: 'wg-42' },
   { __backendId: 'D1', type: 'dorm', week_group: 'WG-42', dorm_name: 'A1', sdq: '321', state: 'empty', max_load: 50, current_load: 0 },
   { __backendId: 'D2', type: 'dorm', week_group: 'WG-42', dorm_name: 'A2', sdq: '321', state: 'open', phase: 'in_processing', max_load: 60, current_load: 20, opened_at: '2026-07-15T00:00:00Z', assigned_airman: 'Staff Member', auditorium_location: 'Auditorium 1' },
   { __backendId: 'D3', type: 'dorm', week_group: 'WG-42', dorm_name: 'A3', sdq: '322', state: 'closed', phase: 'complete', max_load: 40, current_load: 40, opened_at: '2026-07-15T00:00:00Z', closed_at: '2026-07-15T00:10:00Z', closed_timer: '10:00' },
@@ -34,6 +36,8 @@ const records = [
   { __backendId: 'B1', type: 'bus', week_group: 'WG-42', bus_id: '12', bus_type: 'airport', status: 'arrived', otw_count: 44, female_count: 5, nat_count: 2, space_force_count: 4, departed_at: '2026-07-15T01:00:00Z', arrived_at: '2026-07-15T02:00:00Z' },
   { __backendId: 'B2', type: 'bus', week_group: 'WG-42', bus_id: '13', bus_type: 'airport', status: 'active', otw_count: 20, departed_at: '2026-07-15T02:15:00Z' }
 ];
+const records = canonicalize(legacyRecords);
+const historicalRecords = canonicalize(historicalFixture.records);
 
 const windows = {
   receiving_day_one_start: '2026-07-15T00:00:00Z',
@@ -42,7 +46,7 @@ const windows = {
   receiving_day_two_end: '2026-07-15T03:00:00Z'
 };
 
-test('active Week Group ownership normalizes aliases and validates context', () => {
+test('active Week Group ownership consumes the normalized canonical config key', () => {
   assert.equal(selectActiveWeekGroup(records), 'WG-42');
   assert.equal(buildWeekGroupContext(records).records.length, 6);
   assert.equal(validateWeekGroupId('').valid, false);
@@ -83,19 +87,8 @@ test('dorm and processing owners group states, phases, and transition eligibilit
 });
 
 test('timer owner is deterministic and preserves final-time corrections', () => {
-  const running = calculateTimerState({
-    state: 'open',
-    openedAt: '2026-07-15T00:00:00Z',
-    now: '2026-07-15T00:20:00Z',
-    overtimeThresholdSeconds: 900
-  });
-  const closed = calculateTimerState({
-    state: 'closed',
-    openedAt: '2026-07-15T00:00:00Z',
-    closedAt: '2026-07-15T00:09:00Z',
-    closedTimer: '10:00',
-    now: '2026-07-15T01:00:00Z'
-  });
+  const running = calculateTimerState({ state: 'open', openedAt: '2026-07-15T00:00:00Z', now: '2026-07-15T00:20:00Z', overtimeThresholdSeconds: 900 });
+  const closed = calculateTimerState({ state: 'closed', openedAt: '2026-07-15T00:00:00Z', closedAt: '2026-07-15T00:09:00Z', closedTimer: '10:00', now: '2026-07-15T01:00:00Z' });
   assert.deepEqual(running, { state: 'open', running: true, overtime: true, elapsedSeconds: 1200, display: '20:00', source: 'running_clock' });
   assert.equal(closed.display, '10:00');
   assert.equal(closed.source, 'closed_timer');
@@ -124,7 +117,7 @@ test('Current Summary and immutable archive use the same receiving report model'
   assert.equal(validateArchiveSnapshot(archive).valid, true);
   assert.equal(Object.isFrozen(archive), true);
   assert.equal(Object.isFrozen(archive.buses[0]), true);
-  assert.equal(Object.isFrozen(records[0]), false);
+  assert.equal(Object.isFrozen(legacyRecords[0]), false);
 });
 
 test('archive snapshots require explicit identity and time', () => {
@@ -133,17 +126,8 @@ test('archive snapshots require explicit identity and time', () => {
 });
 
 test('completed summary owners preserve the historical 911/857 operational fixture', () => {
-  const status = buildStatusBoardSummary({
-    records: historicalFixture.records,
-    weekGroup: historicalFixture.weekGroup,
-    now: '2026-01-08T06:00:00Z'
-  });
-  const current = buildCurrentSummaryModel({
-    records: historicalFixture.records,
-    weekGroup: historicalFixture.weekGroup,
-    windows: historicalFixture.receivingWindows,
-    generatedAt: '2026-01-08T06:00:00Z'
-  });
+  const status = buildStatusBoardSummary({ records: historicalRecords, weekGroup: historicalFixture.weekGroup, now: '2026-01-08T06:00:00Z' });
+  const current = buildCurrentSummaryModel({ records: historicalRecords, weekGroup: historicalFixture.weekGroup, windows: historicalFixture.receivingWindows, generatedAt: '2026-01-08T06:00:00Z' });
   assert.equal(status.dorms.capacity.total, 911);
   assert.equal(status.arrivals.confirmed.total, 857);
   assert.equal(current.report.nights[1].cumulativeTotalProcessed, 857);

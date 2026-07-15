@@ -230,8 +230,8 @@
 
 @media (pointer: coarse), (pointer: none) {
   :root {
-    --gate-control-height: max(44px, var(--gate-control-height));
-    --gate-row-height: max(44px, var(--gate-row-height));
+    --gate-control-height: 48px;
+    --gate-row-height: 48px;
   }
 
   .gate-shell-route,

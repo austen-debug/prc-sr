@@ -2,7 +2,7 @@
 
 ## Responsive Composition Contracts
 
-Status: IMPLEMENTED — CI VALIDATION PENDING  
+Status: COMPLETE — INACTIVE  
 Runtime status: inactive; Build 1 remains operational and unchanged
 
 ## Objective
@@ -114,6 +114,21 @@ The responsive workflow reruns:
 - unified shell tests;
 - Phase 2D posture, capability, container, CSS, workshop, and isolation tests.
 
+## CI result
+
+Final implementation-head validation:
+
+```text
+PASS — Build 2 Responsive Tests
+PASS — Build 2 Shell Tests
+PASS — Build 2 Component Tests
+PASS — Build 2 Domain Tests
+PASS — Build 2 Phase 1 Validation
+PASS — Build 1 middleware isolation
+```
+
+The validation pass also exposed and corrected one CSS contract defect before closure: the initial coarse-pointer rule used self-referential `max()` custom-property values. Those cyclic declarations were replaced with the governed 48px touch density and regression assertions now prohibit recurrence.
+
 ## Runtime and rollback boundary
 
 No Phase 2D source is loaded by active middleware. No Build 1 controller, stylesheet, route, page, API, authentication behavior, record, or visible workflow is changed.
@@ -121,8 +136,6 @@ No Phase 2D source is loaded by active middleware. No Build 1 controller, styles
 Rollback consists only of removing inactive responsive source, workshop, tests, workflow, and documentation.
 
 ## Closure gate
-
-Phase 2D closes after:
 
 ```text
 PASS — all six posture fixtures resolve exactly
@@ -134,7 +147,7 @@ PASS — Build 1 middleware isolation passes
 PASS — repository index identifies Phase 2E as next
 ```
 
-After closure:
+## Next workstream
 
 ```text
 Build 2 — Phase 2E

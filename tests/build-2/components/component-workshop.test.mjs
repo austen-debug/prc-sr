@@ -132,7 +132,7 @@ test('workshop is an isolated module surface containing all component renderer f
   assert.doesNotMatch(source, /navigator\.userAgent|iPhone|iPad|Android/i);
 });
 
-test('Build 1 middleware does not load component or workshop assets', async () => {
+test('Build 1 middleware does not load Build 2 component or workshop assets', async () => {
   const middleware = await repositoryFile('functions/_middleware.js');
-  assert.doesNotMatch(middleware, /\/app\/components|\/app\/workshop|gate-components\.css|workshop\.mjs/);
+  assert.doesNotMatch(middleware, /\/app\/components|\/app\/workshop|public\/app\/components|public\/app\/workshop/);
 });

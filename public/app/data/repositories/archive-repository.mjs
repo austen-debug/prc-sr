@@ -11,11 +11,17 @@ export const ARCHIVE_KINDS = Object.freeze(['closeout', 'amendment']);
 
 function safeManifest(value) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+  const recordVersions = {};
+  for (const [id, version] of Object.entries(value.recordVersions || {})) {
+    const normalizedId = normalizeText(id);
+    if (normalizedId) recordVersions[normalizedId] = toNonNegativeNumber(version);
+  }
   return {
     busIds: Array.isArray(value.busIds) ? value.busIds.map(normalizeText).filter(Boolean) : [],
     dormIds: Array.isArray(value.dormIds) ? value.dormIds.map(normalizeText).filter(Boolean) : [],
     soundEventIds: Array.isArray(value.soundEventIds) ? value.soundEventIds.map(normalizeText).filter(Boolean) : [],
-    configIds: Array.isArray(value.configIds) ? value.configIds.map(normalizeText).filter(Boolean) : []
+    configIds: Array.isArray(value.configIds) ? value.configIds.map(normalizeText).filter(Boolean) : [],
+    recordVersions
   };
 }
 

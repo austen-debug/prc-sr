@@ -10,30 +10,28 @@ import {
   repositoryOk
 } from './repository-result.mjs';
 
-export const BUILD_1_RECORDS_API_CAPABILITIES = Object.freeze({
-  recordVersioning: false,
-  conditionalWrites: false,
+export const GATE_RECORDS_API_CAPABILITIES = Object.freeze({
+  recordVersioning: true,
+  conditionalWrites: true,
   transactions: false,
-  batchWrites: false
+  batchWrites: false,
+  appendOnlyAudit: true,
+  serverRoleProvenance: true
 });
+
+// Compatibility alias retained for existing imports while Gate C transitions ownership.
+export const BUILD_1_RECORDS_API_CAPABILITIES = GATE_RECORDS_API_CAPABILITIES;
 
 function assertTransport(transport) {
   const required = ['list', 'create', 'update', 'delete'];
   const missing = required.filter(name => typeof transport?.[name] !== 'function');
-  if (missing.length) {
-    throw new TypeError(`Records transport is missing: ${missing.join(', ')}.`);
-  }
+  if (missing.length) throw new TypeError(`Records transport is missing: ${missing.join(', ')}.`);
 }
 
 function normalizeTransportResponse(response) {
   if (!response || typeof response !== 'object') {
-    return {
-      ok: false,
-      status: 0,
-      body: { isOk: false, error: 'Records transport returned no response.' }
-    };
+    return { ok: false, status: 0, body: { isOk: false, error: 'Records transport returned no response.' } };
   }
-
   const body = response.body && typeof response.body === 'object' ? response.body : {};
   const status = Number(response.status || 0);
   const ok = response.ok === true || (status >= 200 && status < 300 && body.isOk !== false);
@@ -55,7 +53,7 @@ async function execute(operation) {
 export function createRecordsClient({ transport, timeZone = 'America/Chicago' } = {}) {
   assertTransport(transport);
   const capabilities = Object.freeze({
-    ...BUILD_1_RECORDS_API_CAPABILITIES,
+    ...GATE_RECORDS_API_CAPABILITIES,
     ...(transport.capabilities || {})
   });
 
@@ -84,11 +82,10 @@ export function createRecordsClient({ transport, timeZone = 'America/Chicago' } 
   async function update(rawRecord, options = {}) {
     const expectedRecordVersion = Number(options.expectedRecordVersion);
     const requiresConflictDetection = Boolean(options.requireConflictDetection);
-
     if (requiresConflictDetection && !capabilities.recordVersioning) {
       return repositoryFailure(new GateRepositoryError(
         RepositoryErrorCode.CONFLICT_DETECTION_UNAVAILABLE,
-        'The active records API does not yet enforce record-version conflicts.',
+        'The active records API does not enforce record-version conflicts.',
         { details: { expectedRecordVersion: Number.isFinite(expectedRecordVersion) ? expectedRecordVersion : null } }
       ));
     }
@@ -108,16 +105,13 @@ export function createRecordsClient({ transport, timeZone = 'America/Chicago' } 
   }
 
   async function remove(recordOrId, options = {}) {
-    const rawRecord = typeof recordOrId === 'string'
-      ? { __backendId: recordOrId }
-      : recordOrId;
+    const rawRecord = typeof recordOrId === 'string' ? { __backendId: recordOrId } : recordOrId;
     const expectedRecordVersion = Number(options.expectedRecordVersion);
     const requiresConflictDetection = Boolean(options.requireConflictDetection);
-
     if (requiresConflictDetection && !capabilities.recordVersioning) {
       return repositoryFailure(new GateRepositoryError(
         RepositoryErrorCode.CONFLICT_DETECTION_UNAVAILABLE,
-        'The active records API does not yet enforce record-version conflicts.',
+        'The active records API does not enforce record-version conflicts.',
         { details: { expectedRecordVersion: Number.isFinite(expectedRecordVersion) ? expectedRecordVersion : null } }
       ));
     }
@@ -135,13 +129,7 @@ export function createRecordsClient({ transport, timeZone = 'America/Chicago' } 
     }
   }
 
-  return Object.freeze({
-    capabilities,
-    list,
-    create,
-    update,
-    delete: remove
-  });
+  return Object.freeze({ capabilities, list, create, update, delete: remove });
 }
 
 async function parseResponse(response) {
@@ -165,7 +153,6 @@ export function createFetchRecordsTransport({
     const headers = { Accept: 'application/json' };
     if (body !== undefined) headers['Content-Type'] = 'application/json';
     if (Number.isFinite(options.expectedRecordVersion)) headers['If-Match'] = String(options.expectedRecordVersion);
-
     const response = await fetchImpl(endpoint, {
       method,
       credentials,
@@ -176,7 +163,7 @@ export function createFetchRecordsTransport({
   }
 
   return Object.freeze({
-    capabilities: BUILD_1_RECORDS_API_CAPABILITIES,
+    capabilities: GATE_RECORDS_API_CAPABILITIES,
     list: () => request('GET'),
     create: record => request('POST', record),
     update: (record, options) => request('PUT', record, options),

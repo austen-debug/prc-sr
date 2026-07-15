@@ -1,6 +1,6 @@
 # GATE Build 2 Documentation Index
 
-Status: Foundation Alignment Gate A implemented; validation pending  
+Status: Foundation Alignment Gate A complete; Gate B next  
 Runtime status: Build 1 remains active; Build 2 foundation assets are staged and not loaded by the operational runtime.
 
 ## Governing documents
@@ -37,7 +37,7 @@ Runtime status: Build 1 remains active; Build 2 foundation assets are staged and
 30. [`ACCESSIBILITY_VALIDATION_MATRIX.md`](./ACCESSIBILITY_VALIDATION_MATRIX.md) — automated and route-migration accessibility evidence requirements.
 31. [`PHASE_2E_EXECUTION_REPORT.md`](./PHASE_2E_EXECUTION_REPORT.md) — Phase 2E implementation and validation closure.
 32. [`PHASE_2_EXIT_REPORT.md`](./PHASE_2_EXIT_REPORT.md) — Phase 2 foundation closure; superseded by the alignment gate for Phase 3 entry authorization.
-33. [`GATE_A_EXECUTION_REPORT.md`](./GATE_A_EXECUTION_REPORT.md) — Gate A implementation and validation status.
+33. [`GATE_A_EXECUTION_REPORT.md`](./GATE_A_EXECUTION_REPORT.md) — completed Gate A implementation and validation record.
 
 ## Build 2 source
 
@@ -88,15 +88,15 @@ tests/build-2/accessibility/accessibility-foundation.test.mjs
 
 ```text
 Phase 1A — Operational Truth Registry             COMPLETE
-Phase 1B — Canonical Domain Core                  CORE COMPLETE; GATE A ALIGNMENT IN VALIDATION
+Phase 1B — Canonical Domain Core                  COMPLETE / STAGED
 Phase 1C — Compatibility Boundary                 CORE COMPLETE; GATE B REQUIRED
 Phase 1D — Typed Repository Core                  CORE COMPLETE; GATE C REQUIRED
 Phase 1E — Parity Validation                      COMPLETE FOR IMPLEMENTED SCOPE
 
 Phase 2A–2E — Application Foundation              COMPLETE / STAGED
 
-Foundation Alignment Gate A                       IMPLEMENTED / VALIDATION PENDING
-Foundation Alignment Gate B                       NEXT AFTER GATE A
+Foundation Alignment Gate A                       COMPLETE / STAGED
+Foundation Alignment Gate B                       NEXT
 Foundation Alignment Gates C–F                    NOT STARTED
 
 Phase 3 — Feature Migration and Legacy Retirement BLOCKED UNTIL GATES A–F CLOSE

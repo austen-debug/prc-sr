@@ -28,7 +28,7 @@ const UI_HEAD_SCRIPTS = [
   '<script src="/js/prc-dash-space-force.js" defer></script>',
   '<script src="/js/prc-dash-dorm-reopen.js" defer></script>',
   '<script src="/js/prc-dash-final-audit.js?v=record-display-integrity-20260714" defer></script>',
-  '<script src="/js/gate-status-board-controller.js?v=record-display-integrity-20260714" defer></script>',
+  '<script src="/js/gate-status-board-controller.js?v=status-board-render-stability-20260715" defer></script>',
   '<script src="/js/gate-processing-controller.js?v=record-display-integrity-20260714" defer></script>',
   '<script src="/js/prc-dash-dorm-flag-validation.js?v=record-display-integrity-20260714b" defer></script>',
   '<script src="/js/prc-dash-auditorium-location.js" defer></script>',
@@ -44,7 +44,8 @@ const UI_HEAD_SCRIPTS = [
   '<script src="/js/gate-render-stability-fix.js?v=fullscreen-desktop-stability-20260714" defer></script>',
   '<script src="/js/prc-dash-processing-loaded-summary.js" defer></script>',
   '<script src="/js/gate-premium-metrics-controller.js?v=premium-metrics-20260709d" defer></script>',
-  '<script src="/js/prc-dash-overtime-audit.js" defer></script>'
+  '<script src="/js/prc-dash-overtime-audit.js" defer></script>',
+  '<script src="/js/gate-status-board-timer-visual-stability.js?v=status-board-timer-visual-stability-20260715" defer></script>'
 ];
 
 const STATUS_BOARD_METRICS_HTML = `<div class="board-header gate-premium-metrics-enabled" data-owner="gate-status-metrics-source" data-phase="1B">

@@ -1,6 +1,6 @@
 # GATE Build 2 Documentation Index
 
-Status: Build 2, Phase 2C implemented; validation pending  
+Status: Build 2, Phase 2C complete; Phase 2D next  
 Runtime status: Build 1 remains active; no Build 2 runtime asset is loaded.
 
 ## Governing documents
@@ -26,7 +26,7 @@ Runtime status: Build 1 remains active; no Build 2 runtime asset is loaded.
 19. [`APP_SHELL_CONTRACT.md`](./APP_SHELL_CONTRACT.md) — canonical shell state, events, navigation presentations, and host responsibilities.
 20. [`ROUTE_PERMISSION_REGISTRY.md`](./ROUTE_PERMISSION_REGISTRY.md) — route labels, role access, defaults, and permission rules.
 21. [`FRONTEND_ARCHITECTURE_ADR.md`](./FRONTEND_ARCHITECTURE_ADR.md) — standards-based ES module architecture decision.
-22. [`PHASE_2C_EXECUTION_REPORT.md`](./PHASE_2C_EXECUTION_REPORT.md) — Phase 2C implementation and validation boundary.
+22. [`PHASE_2C_EXECUTION_REPORT.md`](./PHASE_2C_EXECUTION_REPORT.md) — Phase 2C implementation and validation closure.
 
 ## Build 2 source
 
@@ -76,11 +76,11 @@ Build 2 Phase 1 — Operational Truth and Data Foundation COMPLETE
 
 Phase 2A — GDL Foundations                     COMPLETE / INACTIVE
 Phase 2B — Component Workshop                  COMPLETE / INACTIVE
-Phase 2C — Unified Application Shell           IMPLEMENTED / VALIDATION PENDING
-Phase 2D — Responsive Composition Contracts    NEXT AFTER 2C CLOSURE
+Phase 2C — Unified Application Shell           COMPLETE / INACTIVE
+Phase 2D — Responsive Composition Contracts    NEXT
 Phase 2E — Accessibility Foundation            NOT STARTED
 ```
 
 ## Integration rule
 
-No Build 2 source enters the active runtime until calculation parity, repository validation, server-side authorization, persistence capabilities, affected consumers, rollback, and legacy retirement are approved. Phase 2 design, component, and shell assets remain inactive until shell, responsive, accessibility, and feature-migration gates are satisfied.
+No Build 2 source enters the active runtime until calculation parity, repository validation, server-side authorization, persistence capabilities, affected consumers, rollback, and legacy retirement are approved. Phase 2 design, component, and shell assets remain inactive until responsive, accessibility, and feature-migration gates are satisfied.

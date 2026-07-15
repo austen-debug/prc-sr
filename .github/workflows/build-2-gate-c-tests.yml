@@ -89,7 +89,8 @@ jobs:
           grep -q 'requireConflictDetection: options.requireConflictDetection !== false' public/app/data/repositories/base-repository.mjs
           grep -q 'Foundation Alignment Gate D' docs/build-2/GATE_C_EXECUTION_REPORT.md
           grep -q 'Gate C — Backend versioning and append-only audit events        COMPLETE' docs/build-2/PROGRAM_INTENT_BASELINE.md
-          grep -q 'Foundation Alignment Gate D                       NEXT' docs/build-2/INDEX.md
+          grep -q 'Foundation Alignment Gate C                       COMPLETE' docs/build-2/INDEX.md
+          grep -q 'Phase 3 — Feature Migration and Legacy Retirement BLOCKED UNTIL GATES A–F CLOSE' docs/build-2/INDEX.md
           if grep -q 'SQUADRON_USERNAME' functions/api/login.js; then
             echo 'Gate C must not activate Squadron login.'
             exit 1

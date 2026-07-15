@@ -1,7 +1,7 @@
 # GATE Build 2 Documentation Index
 
-Status: Build 2, Phase 2D complete; Phase 2E next  
-Runtime status: Build 1 remains active; no Build 2 runtime asset is loaded.
+Status: Build 2, Phase 2E implemented; validation pending  
+Runtime status: Build 1 remains active; Build 2 foundation assets are staged and not loaded by the operational runtime.
 
 ## Governing documents
 
@@ -21,7 +21,7 @@ Runtime status: Build 1 remains active; no Build 2 runtime asset is loaded.
 14. [`GDL_TOKEN_REGISTRY.md`](./GDL_TOKEN_REGISTRY.md) — semantic token names, scales, density modes, and versioning.
 15. [`PHASE_2A_EXECUTION_REPORT.md`](./PHASE_2A_EXECUTION_REPORT.md) — Phase 2A implementation and validation boundary.
 16. [`COMPONENT_CONTRACTS.md`](./COMPONENT_CONTRACTS.md) — canonical component ownership, inputs, states, events, accessibility, and responsiveness.
-17. [`COMPONENT_WORKSHOP.md`](./COMPONENT_WORKSHOP.md) — inactive reference environment, fixtures, interactions, and tooling decision.
+17. [`COMPONENT_WORKSHOP.md`](./COMPONENT_WORKSHOP.md) — staged reference environment, fixtures, interactions, and tooling decision.
 18. [`PHASE_2B_EXECUTION_REPORT.md`](./PHASE_2B_EXECUTION_REPORT.md) — Phase 2B implementation and validation closure.
 19. [`APP_SHELL_CONTRACT.md`](./APP_SHELL_CONTRACT.md) — canonical shell state, events, navigation presentations, and host responsibilities.
 20. [`ROUTE_PERMISSION_REGISTRY.md`](./ROUTE_PERMISSION_REGISTRY.md) — route labels, role access, defaults, and permission rules.
@@ -30,6 +30,10 @@ Runtime status: Build 1 remains active; no Build 2 runtime asset is loaded.
 23. [`RESPONSIVE_COMPOSITION_CONTRACTS.md`](./RESPONSIVE_COMPOSITION_CONTRACTS.md) — six postures, capability inputs, safe-area rules, and ownership boundaries.
 24. [`RESPONSIVE_VALIDATION_MATRIX.md`](./RESPONSIVE_VALIDATION_MATRIX.md) — posture fixtures, thresholds, capability cases, and container boundaries.
 25. [`PHASE_2D_EXECUTION_REPORT.md`](./PHASE_2D_EXECUTION_REPORT.md) — Phase 2D implementation and validation closure.
+26. [`ACCESSIBILITY_FOUNDATION.md`](./ACCESSIBILITY_FOUNDATION.md) — WCAG 2.2 AA keyboard, focus, touch, overlay, announcement, contrast, motion, and reflow contracts.
+27. [`ACCESSIBILITY_VALIDATION_MATRIX.md`](./ACCESSIBILITY_VALIDATION_MATRIX.md) — automated and route-migration accessibility evidence requirements.
+28. [`PHASE_2E_EXECUTION_REPORT.md`](./PHASE_2E_EXECUTION_REPORT.md) — Phase 2E implementation and validation boundary.
+29. [`PHASE_2_EXIT_REPORT.md`](./PHASE_2_EXIT_REPORT.md) — consolidated Phase 2 exit review and Phase 3 entry conditions.
 
 ## Build 2 source
 
@@ -41,16 +45,18 @@ public/app/
 ├── components/
 ├── workshop/
 ├── shell/
-└── responsive/
-    ├── posture-registry.mjs
-    ├── composition-selector.mjs
-    ├── container-registry.mjs
-    ├── gate-responsive.css
+├── responsive/
+└── accessibility/
+    ├── contract-registry.mjs
+    ├── focus-contract.mjs
+    ├── overlay-controller.mjs
+    ├── announcer.mjs
+    ├── gate-accessibility.css
     ├── index.mjs
     └── workshop/
 ```
 
-All Build 2 modules remain inactive and absent from the active middleware manifest.
+All Build 2 modules remain staged and absent from the active middleware manifest.
 
 ## Automated validation
 
@@ -63,6 +69,7 @@ tests/build-2/design/gdl-foundations.test.mjs
 tests/build-2/components/component-workshop.test.mjs
 tests/build-2/shell/unified-shell.test.mjs
 tests/build-2/responsive/responsive-composition.test.mjs
+tests/build-2/accessibility/accessibility-foundation.test.mjs
 .github/workflows/build-2-domain-tests.yml
 .github/workflows/build-2-data-tests.yml
 .github/workflows/build-2-phase-1-validation.yml
@@ -70,6 +77,7 @@ tests/build-2/responsive/responsive-composition.test.mjs
 .github/workflows/build-2-component-tests.yml
 .github/workflows/build-2-shell-tests.yml
 .github/workflows/build-2-responsive-tests.yml
+.github/workflows/build-2-accessibility-tests.yml
 ```
 
 ## Current execution position
@@ -77,13 +85,14 @@ tests/build-2/responsive/responsive-composition.test.mjs
 ```text
 Build 2 Phase 1 — Operational Truth and Data Foundation COMPLETE
 
-Phase 2A — GDL Foundations                     COMPLETE / INACTIVE
-Phase 2B — Component Workshop                  COMPLETE / INACTIVE
-Phase 2C — Unified Application Shell           COMPLETE / INACTIVE
-Phase 2D — Responsive Composition Contracts    COMPLETE / INACTIVE
-Phase 2E — Accessibility Foundation            NEXT
+Phase 2A — GDL Foundations                     COMPLETE / STAGED
+Phase 2B — Component Workshop                  COMPLETE / STAGED
+Phase 2C — Unified Application Shell           COMPLETE / STAGED
+Phase 2D — Responsive Composition Contracts    COMPLETE / STAGED
+Phase 2E — Accessibility Foundation            IMPLEMENTED / VALIDATION PENDING
+Phase 3  — Feature Migration and Retirement    NEXT AFTER PHASE 2 CLOSURE
 ```
 
 ## Integration rule
 
-No Build 2 source enters the active runtime until calculation parity, repository validation, server-side authorization, persistence capabilities, affected consumers, rollback, and legacy retirement are approved. Phase 2 design, component, shell, and responsive assets remain inactive until accessibility and feature-migration gates are satisfied.
+No Build 2 source enters the active runtime until calculation parity, repository validation, server-side authorization, persistence capabilities, affected consumers, rollback, and legacy retirement are approved. Phase 2 assets remain staged until Phase 2E closes and a Phase 3 route-specific migration gate authorizes activation.

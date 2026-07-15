@@ -106,7 +106,7 @@ test('component container bands are contiguous and select deterministic variants
 
 test('responsive CSS assigns shell composition through viewport queries and components through container queries', async () => {
   const css = await repositoryFile('public/app/responsive/gate-responsive.css');
-  for (const postureId of POSTURE_IDS) assert.match(css, new RegExp(`data-gate-posture=['\"]${postureId}`));
+  for (const postureId of POSTURE_IDS) assert.match(css, new RegExp(`data-gate-posture=['"]${postureId}`));
   assert.match(css, /@media \(orientation: portrait\)/);
   assert.match(css, /@media \(orientation: landscape\)/);
   assert.match(css, /min-width: 73\.75rem/);
@@ -119,6 +119,8 @@ test('responsive CSS assigns shell composition through viewport queries and comp
   assert.doesNotMatch(css, /#[0-9a-f]{3,8}\b/i);
   assert.doesNotMatch(css, /\b(?:rgb|rgba|hsl|hsla)\s*\(/i);
   assert.doesNotMatch(css, /#page-|\.page-board|\.page-processing|\.page-airport/i);
+  assert.doesNotMatch(css, /--gate-control-height:\s*max\([^;]*var\(--gate-control-height\)/i);
+  assert.doesNotMatch(css, /--gate-row-height:\s*max\([^;]*var\(--gate-row-height\)/i);
 });
 
 test('responsive core is pure and contains no device detection, DOM mutation, or CSS injection', async () => {
@@ -131,7 +133,7 @@ test('responsive core is pure and contains no device detection, DOM mutation, or
   const source = (await Promise.all(paths.map(repositoryFile))).join('\n');
   assert.doesNotMatch(source, /navigator\.userAgent|iPhone|iPad|Android|Windows Phone/i);
   assert.doesNotMatch(source, /\b(?:document|window|matchMedia|ResizeObserver)\b/);
-  assert.doesNotMatch(source, /createElement\(['\"]style|insertRule|adoptedStyleSheets|\.style\s*=/i);
+  assert.doesNotMatch(source, /createElement\(['"]style|insertRule|adoptedStyleSheets|\.style\s*=/i);
   assert.doesNotMatch(source, /fetch\s*\(|\/api\/records|Gate\w+Repository/);
 });
 

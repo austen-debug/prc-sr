@@ -1,0 +1,153 @@
+/* GATE Build 2 Phase 2E — inactive WCAG 2.2 AA foundation. */
+
+.gate-visually-hidden {
+  position: absolute !important;
+  inline-size: 1px !important;
+  block-size: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0 0 0 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+:where(
+  a[href],
+  button,
+  input,
+  select,
+  textarea,
+  summary,
+  [tabindex]:not([tabindex='-1'])
+):focus-visible {
+  outline: max(2px, var(--gate-space-1)) solid var(--gate-border-strong);
+  outline-offset: max(2px, var(--gate-space-1));
+  scroll-margin-block: 6rem;
+}
+
+[data-gate-overlay][data-gate-overlay-state='open'] {
+  overscroll-behavior: contain;
+}
+
+[data-gate-overlay] :where(h1, h2, h3),
+.gate-notification,
+.gate-status-pill,
+.gate-dorm-card,
+.gate-bus-card {
+  overflow-wrap: anywhere;
+}
+
+.gate-status-pill {
+  border: 1px solid currentColor;
+}
+
+.gate-status-pill__marker {
+  inline-size: 0.75em;
+  block-size: 0.75em;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+}
+
+.gate-status-pill[data-state='arrived'] .gate-status-pill__marker,
+.gate-status-pill[data-state='saved'] .gate-status-pill__marker {
+  border-radius: 0;
+  transform: rotate(45deg);
+}
+
+.gate-status-pill[data-state='enroute'] .gate-status-pill__marker,
+.gate-status-pill[data-state='pending'] .gate-status-pill__marker,
+.gate-status-pill[data-state='processing'] .gate-status-pill__marker {
+  border-style: dashed;
+}
+
+.gate-status-pill[data-state='overtime'] .gate-status-pill__marker,
+.gate-status-pill[data-state='warning'] .gate-status-pill__marker,
+.gate-status-pill[data-state='conflict'] .gate-status-pill__marker,
+.gate-status-pill[data-state='failed'] .gate-status-pill__marker {
+  border-radius: 0;
+  border-width: 3px;
+}
+
+.gate-status-pill[data-state='stale'] .gate-status-pill__marker {
+  border-style: double;
+}
+
+.gate-dialog,
+.gate-sheet {
+  max-inline-size: min(42rem, calc(100vw - (var(--gate-space-4) * 2)));
+  max-block-size: calc(100dvh - (var(--gate-safe-top) + var(--gate-safe-bottom) + (var(--gate-space-4) * 2)));
+  overflow: auto;
+}
+
+.gate-dialog__surface,
+.gate-sheet__surface {
+  min-inline-size: 0;
+}
+
+.gate-data-table-wrap {
+  max-inline-size: 100%;
+  overscroll-behavior-inline: contain;
+}
+
+@media (pointer: coarse), (pointer: none) {
+  :where(
+    button,
+    input:not([type='checkbox']):not([type='radio']),
+    select,
+    textarea,
+    [role='button'],
+    [data-gate-action]
+  ) {
+    min-block-size: 44px;
+    min-inline-size: 44px;
+  }
+}
+
+@media (max-width: 20rem) {
+  .gate-page-header,
+  .gate-command-bar,
+  .gate-dialog__surface > header,
+  .gate-dialog__surface > footer,
+  .gate-sheet__surface > header,
+  .gate-sheet__surface > footer {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .gate-data-table-wrap {
+    overflow-x: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+@media (prefers-contrast: more) {
+  :where(.gate-button, .gate-status-pill, .gate-dorm-card, .gate-bus-card, .gate-dialog__surface, .gate-sheet__surface) {
+    border-width: max(2px, var(--gate-space-1));
+  }
+}
+
+@media (forced-colors: active) {
+  :where(.gate-button, .gate-status-pill, .gate-dorm-card, .gate-bus-card, .gate-dialog__surface, .gate-sheet__surface) {
+    forced-color-adjust: auto;
+    border-color: CanvasText;
+  }
+
+  :where(button, [role='button'], [data-gate-action]):focus-visible {
+    outline-color: Highlight;
+  }
+
+  .gate-status-pill__marker {
+    border-color: currentColor;
+  }
+}

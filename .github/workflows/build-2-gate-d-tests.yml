@@ -1,0 +1,104 @@
+name: Build 2 Gate D Tests
+
+on:
+  push:
+    paths:
+      - 'public/app/workflows/**'
+      - 'public/app/data/**'
+      - 'tests/build-2/workflows/**'
+      - 'tests/build-2/data/**'
+      - 'docs/build-2/CRITICAL_WORKFLOW_ORCHESTRATION.md'
+      - 'docs/build-2/GATE_D_EXECUTION_REPORT.md'
+      - 'docs/build-2/PROGRAM_TRACEABILITY_MATRIX.md'
+      - 'docs/build-2/PROGRAM_INTENT_BASELINE.md'
+      - 'docs/build-2/INDEX.md'
+      - '.github/workflows/build-2-gate-d-tests.yml'
+  pull_request:
+    paths:
+      - 'public/app/workflows/**'
+      - 'public/app/data/**'
+      - 'tests/build-2/workflows/**'
+      - 'tests/build-2/data/**'
+      - 'docs/build-2/CRITICAL_WORKFLOW_ORCHESTRATION.md'
+      - 'docs/build-2/GATE_D_EXECUTION_REPORT.md'
+      - 'docs/build-2/PROGRAM_TRACEABILITY_MATRIX.md'
+      - 'docs/build-2/PROGRAM_INTENT_BASELINE.md'
+      - 'docs/build-2/INDEX.md'
+      - '.github/workflows/build-2-gate-d-tests.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-2-gate-d-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gate-d:
+    name: Critical workflows, recovery, and full regression
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Validate workflow source syntax
+        run: |
+          for file in public/app/workflows/*.mjs; do
+            node --check "$file"
+          done
+
+      - name: Validate critical workflows and recovery
+        run: node --test tests/build-2/workflows/*.test.mjs
+
+      - name: Validate server and data foundation
+        run: |
+          node --experimental-default-type=module --test tests/build-2/server/*.test.mjs
+          node --test tests/build-2/data/*.test.mjs
+
+      - name: Validate domain and historical parity
+        run: |
+          node --test tests/build-2/domain/*.test.mjs
+          node --test tests/build-2/parity/*.test.mjs
+
+      - name: Validate Phase 2 application foundation
+        run: |
+          node --test tests/build-2/design/*.test.mjs
+          node --test tests/build-2/components/*.test.mjs
+          node --test tests/build-2/shell/*.test.mjs
+          node --test tests/build-2/responsive/*.test.mjs
+          node --test tests/build-2/accessibility/*.test.mjs
+
+      - name: Validate workflow ownership boundaries
+        run: |
+          grep -q 'initializeWeekGroupWorkflow' public/app/workflows/initialize-week-group.mjs
+          grep -q 'closeoutWeekGroupWorkflow' public/app/workflows/archive-workflows.mjs
+          grep -q 'amendArchiveWorkflow' public/app/workflows/archive-workflows.mjs
+          grep -q 'appendOnce' public/app/data/repositories/audit-repository.mjs
+          grep -q 'closeout_manifest' public/app/data/repositories/archive-repository.mjs
+          grep -q 'Foundation Alignment Gate E' docs/build-2/GATE_D_EXECUTION_REPORT.md
+          if grep -REn 'document\.|window\.|localStorage|sessionStorage|fetch\(' public/app/workflows; then
+            echo 'Critical workflows must remain independent of DOM, browser storage, and direct network calls.'
+            exit 1
+          fi
+          if grep -REn '/api/records|dataSdk' public/app/workflows; then
+            echo 'Critical workflows must use typed repositories, not generic persistence calls.'
+            exit 1
+          fi
+
+      - name: Validate Build 1 runtime isolation
+        run: |
+          if grep -Eq '/app/workflows/' functions/_middleware.js; then
+            echo 'Gate D workflows must not be loaded by active middleware.'
+            exit 1
+          fi
+          if grep -REn 'app/workflows|initializeWeekGroupWorkflow|closeoutWeekGroupWorkflow' public/js public/index.html functions/_middleware.js; then
+            echo 'Build 1 feature code must not call Gate D workflows before migration approval.'
+            exit 1
+          fi

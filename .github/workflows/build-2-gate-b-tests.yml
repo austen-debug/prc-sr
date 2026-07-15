@@ -1,0 +1,88 @@
+name: Build 2 Gate B Tests
+
+on:
+  push:
+    paths:
+      - 'public/app/data/**'
+      - 'public/app/domain/**'
+      - 'tests/build-2/data/**'
+      - 'tests/build-2/domain/**'
+      - 'tests/build-2/parity/**'
+      - 'docs/build-2/CANONICAL_ENTITY_CONTRACT.md'
+      - 'docs/build-2/RECORD_NORMALIZATION_CONTRACT.md'
+      - 'docs/build-2/GATE_B_EXECUTION_REPORT.md'
+      - 'docs/build-2/PROGRAM_TRACEABILITY_MATRIX.md'
+      - 'docs/build-2/INDEX.md'
+      - '.github/workflows/build-2-gate-b-tests.yml'
+  pull_request:
+    paths:
+      - 'public/app/data/**'
+      - 'public/app/domain/**'
+      - 'tests/build-2/data/**'
+      - 'tests/build-2/domain/**'
+      - 'tests/build-2/parity/**'
+      - 'docs/build-2/CANONICAL_ENTITY_CONTRACT.md'
+      - 'docs/build-2/RECORD_NORMALIZATION_CONTRACT.md'
+      - 'docs/build-2/GATE_B_EXECUTION_REPORT.md'
+      - 'docs/build-2/PROGRAM_TRACEABILITY_MATRIX.md'
+      - 'docs/build-2/INDEX.md'
+      - '.github/workflows/build-2-gate-b-tests.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-2-gate-b-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gate-b:
+    name: Canonical entities, provenance, parity, and full regression
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Validate canonical entities and provenance
+        run: node --test tests/build-2/data/*.test.mjs
+
+      - name: Validate domain and historical parity
+        run: |
+          node --test tests/build-2/domain/*.test.mjs
+          node --test tests/build-2/parity/*.test.mjs
+
+      - name: Validate Phase 2 foundation
+        run: |
+          node --test tests/build-2/design/*.test.mjs
+          node --test tests/build-2/components/*.test.mjs
+          node --test tests/build-2/shell/*.test.mjs
+          node --test tests/build-2/responsive/*.test.mjs
+          node --test tests/build-2/accessibility/*.test.mjs
+
+      - name: Validate canonical boundary source rules
+        run: |
+          grep -q 'createdByRole' public/app/data/canonical-entity.mjs
+          grep -q 'updatedByRole' public/app/data/canonical-entity.mjs
+          grep -q 'A recognized actorRole is required' public/app/data/provenance.mjs
+          if grep -Eq 'week_group|otw_count|dorm_name|assigned_airman' public/app/domain/normalization.mjs; then
+            echo 'Build 1 field aliases may not appear in domain normalization.'
+            exit 1
+          fi
+          if grep -q 'converts supported envelopes' docs/build-2/RECORD_NORMALIZATION_CONTRACT.md; then
+            echo 'Obsolete canonical-to-legacy domain adapter language remains.'
+            exit 1
+          fi
+
+      - name: Validate Build 1 runtime isolation
+        run: |
+          if grep -Eq '/app/(domain|data|design|components|shell|responsive|accessibility)/' functions/_middleware.js; then
+            echo 'Build 2 staged assets must not be loaded by active middleware.'
+            exit 1
+          fi

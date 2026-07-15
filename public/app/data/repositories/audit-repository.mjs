@@ -1,4 +1,5 @@
 import { normalizeText, normalizeTimestamp, normalizeWeekGroup, toNonNegativeNumber } from '../../domain/normalization.mjs';
+import { normalizeActorRole } from '../canonical-entity.mjs';
 import { BaseRepository } from './base-repository.mjs';
 import { validationFailure } from '../repository-result.mjs';
 
@@ -25,6 +26,7 @@ export class GateAuditRepository extends BaseRepository {
     const occurredAt = normalizeTimestamp(command.occurredAt) || new Date().toISOString();
     const priorVersion = toNonNegativeNumber(command.priorVersion);
     const resultingVersion = toNonNegativeNumber(command.resultingVersion);
+    const actorRole = normalizeActorRole(command.actorRole);
     const metadata = command.metadata && typeof command.metadata === 'object' && !Array.isArray(command.metadata)
       ? command.metadata
       : {};
@@ -40,6 +42,7 @@ export class GateAuditRepository extends BaseRepository {
       week_group: weekGroup,
       entity_type: entityType,
       entity_id: entityId,
+      actor_role: actorRole,
       occurred_at: occurredAt,
       prior_version: priorVersion,
       resulting_version: resultingVersion,

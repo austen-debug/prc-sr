@@ -1,6 +1,6 @@
 # GATE Build 2 Documentation Index
 
-Status: Foundation Alignment Gate D implemented; validation pending  
+Status: Foundation Alignment Gate D complete; Gate E next  
 Runtime status: Build 1 UI and feature workflows remain active; Gate C persistence protections are available; Build 2 workflow and application assets remain staged.
 
 ## Governing documents
@@ -43,7 +43,7 @@ Runtime status: Build 1 UI and feature workflows remain active; Gate C persisten
 36. [`GATE_A_EXECUTION_REPORT.md`](./GATE_A_EXECUTION_REPORT.md)
 37. [`GATE_B_EXECUTION_REPORT.md`](./GATE_B_EXECUTION_REPORT.md)
 38. [`GATE_C_EXECUTION_REPORT.md`](./GATE_C_EXECUTION_REPORT.md)
-39. [`GATE_D_EXECUTION_REPORT.md`](./GATE_D_EXECUTION_REPORT.md) — Gate D implementation and validation status.
+39. [`GATE_D_EXECUTION_REPORT.md`](./GATE_D_EXECUTION_REPORT.md) — completed Gate D implementation and validation record.
 
 ## Gate D workflow source
 
@@ -97,7 +97,7 @@ tests/build-2/accessibility/*.test.mjs
 Phase 1A — Operational Truth Registry             COMPLETE
 Phase 1B — Canonical Domain Core                  COMPLETE / STAGED
 Phase 1C — Compatibility and Canonical Entity     COMPLETE / STAGED
-Phase 1D — Repository, Versioning, and Audit       COMPLETE
+Phase 1D — Repository, Versioning, Audit, Workflows COMPLETE / STAGED
 Phase 1E — Parity Validation                      COMPLETE FOR IMPLEMENTED SCOPE
 
 Phase 2A–2E — Application Foundation              COMPLETE / STAGED
@@ -105,8 +105,9 @@ Phase 2A–2E — Application Foundation              COMPLETE / STAGED
 Foundation Alignment Gate A                       COMPLETE / STAGED
 Foundation Alignment Gate B                       COMPLETE / STAGED
 Foundation Alignment Gate C                       COMPLETE
-Foundation Alignment Gate D                       IMPLEMENTED / VALIDATION PENDING
-Foundation Alignment Gates E–F                    NOT STARTED
+Foundation Alignment Gate D                       COMPLETE / STAGED
+Foundation Alignment Gate E                       NEXT
+Foundation Alignment Gate F                       NOT STARTED
 
 Phase 3 — Feature Migration and Legacy Retirement BLOCKED UNTIL GATES A–F CLOSE
 Approved first route                              STATUS BOARD

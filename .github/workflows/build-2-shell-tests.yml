@@ -56,5 +56,14 @@ jobs:
       - name: Validate component workshop
         run: node --test tests/build-2/components/*.test.mjs
 
-      - name: Validate unified shell
+      - name: Validate shell registry and permissions
+        run: node --test --test-name-pattern="registry|parity fixture|unknown roles|route access" tests/build-2/shell/unified-shell.test.mjs
+
+      - name: Validate shell state and selectors
+        run: node --test --test-name-pattern="denied route|shell state transitions|navigation overlay|persistence states|shell store|navigation models" tests/build-2/shell/unified-shell.test.mjs
+
+      - name: Validate shell renderers and isolation
+        run: node --test --test-name-pattern="shell renderers|shell core|shell CSS|shell workshop|Build 1 middleware" tests/build-2/shell/unified-shell.test.mjs
+
+      - name: Validate complete unified shell suite
         run: node --test tests/build-2/shell/*.test.mjs

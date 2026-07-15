@@ -16,6 +16,7 @@ export class GateDormRepository extends BaseRepository {
     if (!weekGroup || !name) return validationFailure('Week Group and dorm name are required.');
     if (capacity < 1 || capacity > 60) return validationFailure('Dorm capacity must be between 1 and 60.');
     if (command.band && spaceForce) return validationFailure('A dorm cannot be both Band and Space Force.');
+    const createdAt = at(command.createdAt);
     return this.createRaw({
       week_group: weekGroup, dorm_name: name, sdq: normalizeText(command.sdq),
       section: normalizeText(command.section), inter_sec: normalizeText(command.interSection),
@@ -24,9 +25,9 @@ export class GateDormRepository extends BaseRepository {
       is_space_force: spaceForce ? 'true' : 'false', max_load: capacity, current_load: 0,
       state: 'empty', phase: '', opened_at: '', closed_at: '', closed_timer: '',
       assigned_airman: '', auditorium_location: '', notes: '',
-      overtime_sound_sent: 'false', overtime_sound_at: '', created_at: at(command.createdAt),
+      overtime_sound_sent: 'false', overtime_sound_at: '',
       ...(command.receivingWindows || {})
-    });
+    }, { actorRole: command.actorRole, timestamp: createdAt });
   }
 
   async updateLoad(id, command = {}) {
@@ -36,7 +37,12 @@ export class GateDormRepository extends BaseRepository {
     if (load > current.data.payload.capacity) {
       return validationFailure('Dorm load cannot exceed dorm capacity.', { load, capacity: current.data.payload.capacity });
     }
-    return this.updateEnvelope(current.data, { current_load: load, updated_at: at(command.updatedAt) }, command);
+    const updatedAt = at(command.updatedAt);
+    return this.updateEnvelope(current.data, { current_load: load }, {
+      ...command,
+      actorRole: command.actorRole,
+      timestamp: updatedAt
+    });
   }
 
   async open(id, command = {}) {
@@ -47,8 +53,8 @@ export class GateDormRepository extends BaseRepository {
     const openedAt = at(command.openedAt);
     return this.updateEnvelope(current.data, {
       state: 'open', phase: normalizeText(command.phase || 'OPEN'), opened_at: openedAt,
-      closed_at: '', closed_timer: '', updated_at: openedAt
-    }, command);
+      closed_at: '', closed_timer: ''
+    }, { ...command, actorRole: command.actorRole, timestamp: openedAt });
   }
 
   async close(id, command = {}) {
@@ -61,8 +67,8 @@ export class GateDormRepository extends BaseRepository {
     const closedAt = at(command.closedAt);
     return this.updateEnvelope(current.data, {
       state: 'closed', phase: 'Closed', closed_at: closedAt,
-      closed_timer: closedTimer, updated_at: closedAt
-    }, command);
+      closed_timer: closedTimer
+    }, { ...command, actorRole: command.actorRole, timestamp: closedAt });
   }
 
   async reopen(id, command = {}) {
@@ -72,8 +78,8 @@ export class GateDormRepository extends BaseRepository {
     const openedAt = at(command.openedAt);
     return this.updateEnvelope(current.data, {
       state: 'open', phase: normalizeText(command.phase || 'OPEN'), opened_at: openedAt,
-      closed_at: '', closed_timer: '', manual_reopen_override: true, updated_at: openedAt
-    }, command);
+      closed_at: '', closed_timer: '', manual_reopen_override: true
+    }, { ...command, actorRole: command.actorRole, timestamp: openedAt });
   }
 
   async correctFinalTime(id, command = {}) {
@@ -82,8 +88,9 @@ export class GateDormRepository extends BaseRepository {
     if (current.data.payload.state !== 'closed') return validationFailure('Final time may be corrected only for a closed dorm.');
     const closedTimer = normalizeText(command.closedTimer);
     if (!TIMER.test(closedTimer)) return validationFailure('Final processing time must use MM:SS format.');
+    const updatedAt = at(command.updatedAt);
     return this.updateEnvelope(current.data, {
-      closed_timer: closedTimer, manual_closed_timer_override: true, updated_at: at(command.updatedAt)
-    }, command);
+      closed_timer: closedTimer, manual_closed_timer_override: true
+    }, { ...command, actorRole: command.actorRole, timestamp: updatedAt });
   }
 }

@@ -1,0 +1,48 @@
+name: Build 2 Phase 1 Validation
+
+on:
+  push:
+    paths:
+      - 'public/app/domain/**'
+      - 'public/app/data/**'
+      - 'tests/build-2/**'
+      - 'docs/build-2/**'
+      - '.github/workflows/build-2-phase-1-validation.yml'
+  pull_request:
+    paths:
+      - 'public/app/domain/**'
+      - 'public/app/data/**'
+      - 'tests/build-2/**'
+      - 'docs/build-2/**'
+      - '.github/workflows/build-2-phase-1-validation.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-2-phase-1-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  phase-1-validation:
+    name: Operational truth, normalization, repositories, and parity
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Validate canonical domain calculations
+        run: node --test tests/build-2/domain/*.test.mjs
+
+      - name: Validate normalization and repositories
+        run: node --test tests/build-2/data/*.test.mjs
+
+      - name: Validate Phase 1 parity matrix
+        run: node --test tests/build-2/parity/*.test.mjs

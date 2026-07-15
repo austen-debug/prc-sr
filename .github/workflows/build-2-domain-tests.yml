@@ -1,27 +1,31 @@
-name: Build 2 Domain Tests
+name: Build 2 Domain and Contract Tests
 
 on:
   push:
     paths:
       - 'public/app/domain/**'
+      - 'public/app/contracts/**'
       - 'tests/build-2/**'
+      - 'docs/build-2/contracts/examples/**'
       - '.github/workflows/build-2-domain-tests.yml'
   pull_request:
     paths:
       - 'public/app/domain/**'
+      - 'public/app/contracts/**'
       - 'tests/build-2/**'
+      - 'docs/build-2/contracts/examples/**'
       - '.github/workflows/build-2-domain-tests.yml'
 
 permissions:
   contents: read
 
 concurrency:
-  group: build-2-domain-${{ github.workflow }}-${{ github.ref }}
+  group: build-2-validation-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  domain-tests:
-    name: Canonical domain parity
+  build-2-tests:
+    name: Canonical domain and data contracts
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
@@ -36,3 +40,6 @@ jobs:
 
       - name: Run Build 2 domain tests
         run: node --test tests/build-2/domain/*.test.mjs
+
+      - name: Run Build 2 contract tests
+        run: node --test tests/build-2/contracts/*.test.mjs

@@ -1,0 +1,29 @@
+{
+  "id": "dorm-321-a1",
+  "type": "dorm",
+  "schema_version": 3,
+  "schema_id": "gate-record-v3",
+  "record_version": 4,
+  "week_group": "26-28",
+  "created_at": "2026-07-14T18:00:00.000Z",
+  "updated_at": "2026-07-14T22:05:00.000Z",
+  "created_by_role": "instructor",
+  "updated_by_role": "airman",
+  "data": {
+    "dorm_name": "A-1",
+    "sdq": "321 TRS",
+    "state": "open",
+    "phase": "loading",
+    "max_load": 52,
+    "current_load": 41,
+    "female": false,
+    "band": false,
+    "space_force": true,
+    "auditorium_location": "A-12",
+    "opened_at": "2026-07-14T21:20:00.000Z",
+    "closed_at": null,
+    "final_processing_time": null,
+    "closed_timer": "",
+    "display_order": 1
+  }
+}

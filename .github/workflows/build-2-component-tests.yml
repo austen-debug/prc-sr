@@ -1,0 +1,55 @@
+name: Build 2 Component Tests
+
+on:
+  push:
+    paths:
+      - 'public/app/components/**'
+      - 'public/app/workshop/**'
+      - 'tests/build-2/components/**'
+      - 'docs/build-2/COMPONENT_CONTRACTS.md'
+      - 'docs/build-2/COMPONENT_WORKSHOP.md'
+      - 'docs/build-2/PHASE_2B_EXECUTION_REPORT.md'
+      - '.github/workflows/build-2-component-tests.yml'
+  pull_request:
+    paths:
+      - 'public/app/components/**'
+      - 'public/app/workshop/**'
+      - 'tests/build-2/components/**'
+      - 'docs/build-2/COMPONENT_CONTRACTS.md'
+      - 'docs/build-2/COMPONENT_WORKSHOP.md'
+      - 'docs/build-2/PHASE_2B_EXECUTION_REPORT.md'
+      - '.github/workflows/build-2-component-tests.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-2-components-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  component-workshop:
+    name: Component contracts, semantics, and isolation
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Validate Phase 1 foundation
+        run: |
+          node --test tests/build-2/domain/*.test.mjs
+          node --test tests/build-2/data/*.test.mjs
+          node --test tests/build-2/parity/*.test.mjs
+
+      - name: Validate GDL foundations
+        run: node --test tests/build-2/design/*.test.mjs
+
+      - name: Validate component workshop
+        run: node --test tests/build-2/components/*.test.mjs

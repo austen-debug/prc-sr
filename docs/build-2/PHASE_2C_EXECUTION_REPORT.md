@@ -2,7 +2,7 @@
 
 ## Unified Application Shell
 
-Status: IMPLEMENTED — CI VALIDATION PENDING  
+Status: COMPLETE — INACTIVE  
 Runtime status: inactive; Build 1 remains operational and unchanged
 
 ## Objective
@@ -150,7 +150,22 @@ The suite validates:
 14. workshop role, route, theme, density, persistence, connectivity, and focus behavior;
 15. Build 1 middleware isolation.
 
-The shell workflow reruns all Phase 1, GDL, and component tests before Phase 2C closure.
+## CI result
+
+Final implementation-head validation:
+
+```text
+PASS — Build 2 Shell Tests
+PASS — Build 2 Component Tests
+PASS — Build 2 Domain Tests
+PASS — Build 2 Phase 1 Validation
+PASS — GDL regression within shell workflow
+PASS — Build 1 middleware isolation
+```
+
+The shell workflow separates registry, state, markup, source isolation, CSS, workshop, and middleware checks so future failures identify the affected contract directly.
+
+Validation also identified and corrected an overly broad inline-handler assertion. Escaping validation now uses hostile script markup, while inline-handler validation inspects the renderer source boundary directly.
 
 ## Runtime and rollback boundary
 
@@ -169,7 +184,7 @@ PASS — middleware isolation
 PASS — index identifies Phase 2D as next
 ```
 
-After closure:
+## Next workstream
 
 ```text
 Build 2 — Phase 2D

@@ -1,0 +1,99 @@
+name: Build 2 Gate C Tests
+
+on:
+  push:
+    paths:
+      - 'functions/api/**'
+      - 'schema.sql'
+      - 'migrations/**'
+      - 'public/app/data/**'
+      - 'tests/build-2/server/**'
+      - 'tests/build-2/data/**'
+      - 'docs/build-2/BACKEND_VERSIONING_AUDIT_CONTRACT.md'
+      - 'docs/build-2/REPOSITORY_CONTRACTS.md'
+      - 'docs/build-2/GATE_C_EXECUTION_REPORT.md'
+      - 'docs/build-2/PROGRAM_TRACEABILITY_MATRIX.md'
+      - 'docs/build-2/INDEX.md'
+      - '.github/workflows/build-2-gate-c-tests.yml'
+  pull_request:
+    paths:
+      - 'functions/api/**'
+      - 'schema.sql'
+      - 'migrations/**'
+      - 'public/app/data/**'
+      - 'tests/build-2/server/**'
+      - 'tests/build-2/data/**'
+      - 'docs/build-2/BACKEND_VERSIONING_AUDIT_CONTRACT.md'
+      - 'docs/build-2/REPOSITORY_CONTRACTS.md'
+      - 'docs/build-2/GATE_C_EXECUTION_REPORT.md'
+      - 'docs/build-2/PROGRAM_TRACEABILITY_MATRIX.md'
+      - 'docs/build-2/INDEX.md'
+      - '.github/workflows/build-2-gate-c-tests.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-2-gate-c-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gate-c:
+    name: Versioning, audit, authorization, and full regression
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Validate records API syntax
+        run: |
+          node --experimental-default-type=module --check functions/api/records.js
+          node --experimental-default-type=module --check functions/api/_middleware.js
+
+      - name: Validate server versioning and append-only audit
+        run: node --experimental-default-type=module --test tests/build-2/server/*.test.mjs
+
+      - name: Validate repositories and canonical data
+        run: node --test tests/build-2/data/*.test.mjs
+
+      - name: Validate domain and historical parity
+        run: |
+          node --test tests/build-2/domain/*.test.mjs
+          node --test tests/build-2/parity/*.test.mjs
+
+      - name: Validate Phase 2 application foundation
+        run: |
+          node --test tests/build-2/design/*.test.mjs
+          node --test tests/build-2/components/*.test.mjs
+          node --test tests/build-2/shell/*.test.mjs
+          node --test tests/build-2/responsive/*.test.mjs
+          node --test tests/build-2/accessibility/*.test.mjs
+
+      - name: Validate Gate C source boundaries
+        run: |
+          grep -q 'recordVersioning: true' functions/api/records-contract.mjs
+          grep -q "headers.get('If-Match')" functions/api/records.js
+          grep -q 'record_version_conflict' functions/api/records-contract.mjs
+          grep -q 'Audit events are append-only' functions/api/records.js
+          grep -q 'prevent_audit_event_update' migrations/0002_gate_c_append_only_audit.sql
+          grep -q 'GateAuditRepository' public/app/data/index.mjs
+          grep -q 'requireConflictDetection: options.requireConflictDetection !== false' public/app/data/repositories/base-repository.mjs
+          grep -q 'Foundation Alignment Gate D' docs/build-2/GATE_C_EXECUTION_REPORT.md
+          if grep -q 'SQUADRON_USERNAME' functions/api/login.js; then
+            echo 'Gate C must not activate Squadron login.'
+            exit 1
+          fi
+
+      - name: Validate Build 2 feature isolation
+        run: |
+          if grep -Eq '/app/(domain|data|design|components|shell|responsive|accessibility)/' functions/_middleware.js; then
+            echo 'Build 2 application assets must not be loaded by active middleware.'
+            exit 1
+          fi

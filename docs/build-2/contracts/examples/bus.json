@@ -1,0 +1,25 @@
+{
+  "id": "bus-2026-28-01",
+  "type": "bus",
+  "schema_version": 3,
+  "schema_id": "gate-record-v3",
+  "record_version": 1,
+  "week_group": "26-28",
+  "created_at": "2026-07-14T20:00:00.000Z",
+  "updated_at": "2026-07-14T20:45:00.000Z",
+  "created_by_role": "instructor",
+  "updated_by_role": "instructor",
+  "data": {
+    "bus_id": "BUS 01",
+    "bus_type": "airport",
+    "status": "arrived",
+    "otw_count": 48,
+    "female_count": 10,
+    "nat_count": 3,
+    "space_force_count": 4,
+    "departed_at": "2026-07-14T20:00:00.000Z",
+    "arrived_at": "2026-07-14T20:45:00.000Z",
+    "driver": "",
+    "notes": ""
+  }
+}

@@ -107,10 +107,10 @@ Phase 1A — Operational Truth Registry
 COMPLETE
 
 Phase 1B — Canonical Domain Core
-CORE COMPLETE; ALIGNMENT GATE A COMPLETES MISSING SHARED OWNERS
+COMPLETE / STAGED AFTER GATE A
 
-Phase 1C — Compatibility Boundary
-CORE COMPLETE; GATE B WILL COMPLETE CANONICAL ENTITIES AND PROVENANCE
+Phase 1C — Compatibility and Canonical Entity Boundary
+COMPLETE / STAGED AFTER GATE B
 
 Phase 1D — Typed Repository Core
 CORE COMPLETE; GATE C WILL ADD VERSIONING AND AUDIT
@@ -125,15 +125,15 @@ Phase 3 — Feature Migration and Legacy Retirement
 BLOCKED UNTIL FOUNDATION ALIGNMENT GATES A–F CLOSE
 ```
 
-## Remaining foundation gates
+## Foundation gates
 
 ```text
-Gate A — Program baseline and canonical domain completion
-Gate B — Canonical entities and role provenance
-Gate C — Backend versioning and append-only audit events
-Gate D — Critical workflow orchestration
-Gate E — Synchronization and degraded operation
-Gate F — Consolidated revalidation and corrected Phase 1 exit
+Gate A — Program baseline and canonical domain completion       COMPLETE / STAGED
+Gate B — Canonical entities and role provenance                 COMPLETE / STAGED
+Gate C — Backend versioning and append-only audit events        NEXT
+Gate D — Critical workflow orchestration                        NOT STARTED
+Gate E — Synchronization and degraded operation                 NOT STARTED
+Gate F — Consolidated revalidation and corrected Phase 1 exit   NOT STARTED
 ```
 
 This document governs later phase summaries when a conflict exists. A change to mission, role access, migration order, critical-write policy, archive immutability, or the no-PII boundary requires an explicit program decision and corresponding fixture updates.

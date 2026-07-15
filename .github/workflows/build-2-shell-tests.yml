@@ -1,0 +1,60 @@
+name: Build 2 Shell Tests
+
+on:
+  push:
+    paths:
+      - 'public/app/shell/**'
+      - 'tests/build-2/shell/**'
+      - 'docs/build-2/APP_SHELL_CONTRACT.md'
+      - 'docs/build-2/ROUTE_PERMISSION_REGISTRY.md'
+      - 'docs/build-2/FRONTEND_ARCHITECTURE_ADR.md'
+      - 'docs/build-2/PHASE_2C_EXECUTION_REPORT.md'
+      - 'docs/build-2/INDEX.md'
+      - '.github/workflows/build-2-shell-tests.yml'
+  pull_request:
+    paths:
+      - 'public/app/shell/**'
+      - 'tests/build-2/shell/**'
+      - 'docs/build-2/APP_SHELL_CONTRACT.md'
+      - 'docs/build-2/ROUTE_PERMISSION_REGISTRY.md'
+      - 'docs/build-2/FRONTEND_ARCHITECTURE_ADR.md'
+      - 'docs/build-2/PHASE_2C_EXECUTION_REPORT.md'
+      - 'docs/build-2/INDEX.md'
+      - '.github/workflows/build-2-shell-tests.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-2-shell-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  unified-shell:
+    name: Route registry, shell state, renderers, and isolation
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Validate Phase 1 foundation
+        run: |
+          node --test tests/build-2/domain/*.test.mjs
+          node --test tests/build-2/data/*.test.mjs
+          node --test tests/build-2/parity/*.test.mjs
+
+      - name: Validate GDL foundations
+        run: node --test tests/build-2/design/*.test.mjs
+
+      - name: Validate component workshop
+        run: node --test tests/build-2/components/*.test.mjs
+
+      - name: Validate unified shell
+        run: node --test tests/build-2/shell/*.test.mjs

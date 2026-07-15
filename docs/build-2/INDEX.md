@@ -1,6 +1,6 @@
 # GATE Build 2 Documentation Index
 
-Status: Foundation Alignment Gate C implemented; validation pending  
+Status: Foundation Alignment Gate C complete; Gate D next  
 Runtime status: Build 1 UI remains active; the shared records API has the Gate C compatibility contract; Build 2 application assets remain staged.
 
 ## Governing documents
@@ -41,7 +41,7 @@ Runtime status: Build 1 UI remains active; the shared records API has the Gate C
 34. [`PHASE_2_EXIT_REPORT.md`](./PHASE_2_EXIT_REPORT.md)
 35. [`GATE_A_EXECUTION_REPORT.md`](./GATE_A_EXECUTION_REPORT.md) — completed Gate A record.
 36. [`GATE_B_EXECUTION_REPORT.md`](./GATE_B_EXECUTION_REPORT.md) — completed Gate B record.
-37. [`GATE_C_EXECUTION_REPORT.md`](./GATE_C_EXECUTION_REPORT.md) — Gate C implementation and validation status.
+37. [`GATE_C_EXECUTION_REPORT.md`](./GATE_C_EXECUTION_REPORT.md) — completed Gate C record.
 
 ## Gate C server and persistence source
 
@@ -87,15 +87,16 @@ tests/build-2/accessibility/*.test.mjs
 Phase 1A — Operational Truth Registry             COMPLETE
 Phase 1B — Canonical Domain Core                  COMPLETE / STAGED
 Phase 1C — Compatibility and Canonical Entity     COMPLETE / STAGED
-Phase 1D — Repository, Versioning, and Audit       GATE C IN VALIDATION
+Phase 1D — Repository, Versioning, and Audit       COMPLETE
 Phase 1E — Parity Validation                      COMPLETE FOR IMPLEMENTED SCOPE
 
 Phase 2A–2E — Application Foundation              COMPLETE / STAGED
 
 Foundation Alignment Gate A                       COMPLETE / STAGED
 Foundation Alignment Gate B                       COMPLETE / STAGED
-Foundation Alignment Gate C                       IMPLEMENTED / VALIDATION PENDING
-Foundation Alignment Gates D–F                    NOT STARTED
+Foundation Alignment Gate C                       COMPLETE
+Foundation Alignment Gate D                       NEXT
+Foundation Alignment Gates E–F                    NOT STARTED
 
 Phase 3 — Feature Migration and Legacy Retirement BLOCKED UNTIL GATES A–F CLOSE
 Approved first route                              STATUS BOARD

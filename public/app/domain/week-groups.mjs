@@ -1,15 +1,6 @@
 import { normalizeText, normalizeWeekGroup } from './normalization.mjs';
 
-export const ACTIVE_WEEK_GROUP_CONFIG_KEYS = Object.freeze([
-  'active_wg',
-  'active-week-group',
-  'weekgroup',
-  'week_group'
-]);
-
-function normalizeConfigKey(value) {
-  return normalizeText(value).toLowerCase().replace(/\s+/g, '_');
-}
+export const ACTIVE_WEEK_GROUP_CONFIG_KEY = 'week_group';
 
 export function validateWeekGroupId(value) {
   const weekGroup = normalizeWeekGroup(value);
@@ -22,10 +13,10 @@ export function validateWeekGroupId(value) {
 export function selectActiveWeekGroup(records = []) {
   const configs = (Array.isArray(records) ? records : [])
     .filter(record => normalizeText(record?.type).toLowerCase() === 'config')
-    .filter(record => ACTIVE_WEEK_GROUP_CONFIG_KEYS.includes(normalizeConfigKey(record?.key)));
+    .filter(record => normalizeText(record?.payload?.key).toLowerCase() === ACTIVE_WEEK_GROUP_CONFIG_KEY);
 
   for (let index = configs.length - 1; index >= 0; index -= 1) {
-    const weekGroup = normalizeWeekGroup(configs[index]?.value);
+    const weekGroup = normalizeWeekGroup(configs[index]?.payload?.value);
     if (weekGroup) return weekGroup;
   }
   return '';
@@ -35,7 +26,7 @@ export function filterRecordsByWeekGroup(records = [], weekGroup = '') {
   const requested = normalizeWeekGroup(weekGroup);
   if (!requested) return Object.freeze([]);
   return Object.freeze((Array.isArray(records) ? records : []).filter(record => (
-    normalizeWeekGroup(record?.week_group ?? record?.weekGroup) === requested
+    normalizeWeekGroup(record?.weekGroup) === requested
   )));
 }
 

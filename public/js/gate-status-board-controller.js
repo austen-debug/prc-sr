@@ -193,13 +193,14 @@
       if (!openedAt || typeof getElapsedTimer !== 'function') return;
 
       const elapsed = getElapsedTimer(openedAt);
-      if (elapsed?.text) timer.textContent = elapsed.text;
+      if (elapsed?.text && timer.textContent !== elapsed.text) timer.textContent = elapsed.text;
 
-      timer.classList.toggle('timer-yellow', elapsed?.minutes >= 45 && elapsed?.minutes < 60);
-      timer.classList.toggle('timer-red', elapsed?.minutes >= 60);
-      timer.classList.toggle('timer-flash', elapsed?.minutes >= 60);
+      const minutes = Number(elapsed?.minutes || 0);
+      timer.classList.toggle('timer-yellow', minutes >= 40 && minutes < 50);
+      timer.classList.toggle('timer-red', minutes >= 50);
+      timer.classList.remove('timer-flash');
 
-      if (elapsed?.minutes >= 60 && timer.dataset.dormId && typeof triggerOvertimeSoundIfNeeded === 'function') {
+      if (minutes >= 60 && timer.dataset.dormId && typeof triggerOvertimeSoundIfNeeded === 'function') {
         triggerOvertimeSoundIfNeeded(timer.dataset.dormId);
       }
     });
@@ -227,7 +228,7 @@
 
     const boardDormColumns = function gateStatusBoardDormColumns(dorms) {
       const orderedDorms = recordDisplay()?.sortDorms ? recordDisplay().sortDorms(dorms) : dorms;
-      renderColumns(Array.isArray(orderedDorms) ? orderedDorms : getDorms(), { force: true });
+      renderColumns(Array.isArray(orderedDorms) ? orderedDorms : getDorms());
     };
     boardDormColumns.__gateStatusBoardController = true;
 
@@ -263,11 +264,10 @@
     installed = true;
     patchLegacyBoardGlobals();
     exposeControllers();
-    window.registerGateHook?.('afterRenderAll', () => scheduleRender({ force: true }));
-    window.registerGateHook?.('afterDataChanged', () => scheduleRender({ force: true }));
+    window.registerGateHook?.('afterRenderAll', () => scheduleRender());
+    window.registerGateHook?.('afterDataChanged', () => scheduleRender());
     window.registerGateHook?.('afterPageChange', () => scheduleRender());
     window.addEventListener('resize', () => scheduleRender(), true);
-    window.setInterval(updateBoardTimers, 1000);
     scheduleRender({ force: true });
   }
 

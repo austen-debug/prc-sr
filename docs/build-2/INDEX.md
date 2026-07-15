@@ -1,6 +1,6 @@
 # GATE Build 2 Documentation Index
 
-Status: Build 2, Phase 2B implemented; validation pending  
+Status: Build 2, Phase 2B complete; Phase 2C next  
 Runtime status: Build 1 remains active; no Build 2 runtime asset is loaded.
 
 ## Governing documents
@@ -22,7 +22,7 @@ Runtime status: Build 1 remains active; no Build 2 runtime asset is loaded.
 15. [`PHASE_2A_EXECUTION_REPORT.md`](./PHASE_2A_EXECUTION_REPORT.md) — Phase 2A implementation and validation boundary.
 16. [`COMPONENT_CONTRACTS.md`](./COMPONENT_CONTRACTS.md) — canonical component ownership, inputs, states, events, accessibility, and responsiveness.
 17. [`COMPONENT_WORKSHOP.md`](./COMPONENT_WORKSHOP.md) — inactive reference environment, fixtures, interactions, and tooling decision.
-18. [`PHASE_2B_EXECUTION_REPORT.md`](./PHASE_2B_EXECUTION_REPORT.md) — Phase 2B implementation and validation boundary.
+18. [`PHASE_2B_EXECUTION_REPORT.md`](./PHASE_2B_EXECUTION_REPORT.md) — Phase 2B implementation and validation closure.
 
 ## Build 2 source
 
@@ -31,21 +31,8 @@ public/app/
 ├── domain/
 ├── data/
 ├── design/
-│   ├── index.mjs
-│   ├── tokens/
-│   └── themes/
 ├── components/
-│   ├── contracts.mjs
-│   ├── render-utils.mjs
-│   ├── renderers-core.mjs
-│   ├── renderers-operational.mjs
-│   ├── gate-components.css
-│   └── index.mjs
 └── workshop/
-    ├── index.html
-    ├── workshop.css
-    ├── workshop.mjs
-    └── fixtures.mjs
 ```
 
 All Build 2 modules remain inactive and absent from the active middleware manifest.
@@ -72,8 +59,8 @@ tests/build-2/components/component-workshop.test.mjs
 Build 2 Phase 1 — Operational Truth and Data Foundation COMPLETE
 
 Phase 2A — GDL Foundations                     COMPLETE / INACTIVE
-Phase 2B — Component Workshop                  IMPLEMENTED / VALIDATION PENDING
-Phase 2C — Unified Application Shell           NEXT AFTER 2B CLOSURE
+Phase 2B — Component Workshop                  COMPLETE / INACTIVE
+Phase 2C — Unified Application Shell           NEXT
 Phase 2D — Responsive Composition Contracts    NOT STARTED
 Phase 2E — Accessibility Foundation            NOT STARTED
 ```

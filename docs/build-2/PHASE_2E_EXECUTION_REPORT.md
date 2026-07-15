@@ -2,7 +2,7 @@
 
 ## Accessibility Foundation
 
-Status: IMPLEMENTED — CI VALIDATION PENDING  
+Status: COMPLETE / STAGED  
 Runtime status: staged; Build 1 remains operational and unchanged
 
 ## Objective
@@ -41,16 +41,7 @@ The accessibility stylesheet owns visible focus, focus scroll margin, 44-pixel c
 
 ## Reference workshop
 
-The inactive workshop exercises keyboard focus order, dialog and sheet containment, Escape dismissal, focus restoration, routine and blocking announcements, color-independent state presentation, theme and density changes, and table reflow.
-
-## Documentation
-
-```text
-docs/build-2/ACCESSIBILITY_FOUNDATION.md
-docs/build-2/ACCESSIBILITY_VALIDATION_MATRIX.md
-docs/build-2/PHASE_2E_EXECUTION_REPORT.md
-docs/build-2/PHASE_2_EXIT_REPORT.md
-```
+The staged workshop exercises keyboard focus order, dialog and sheet containment, Escape dismissal, focus restoration, routine and blocking announcements, color-independent state presentation, theme and density changes, and table reflow.
 
 ## Automated validation
 
@@ -59,7 +50,19 @@ tests/build-2/accessibility/accessibility-foundation.test.mjs
 .github/workflows/build-2-accessibility-tests.yml
 ```
 
-The workflow reruns Phase 1 domain, data, and parity tests and all Phase 2 GDL, component, shell, and responsive suites before accessibility closure.
+Final implementation-head results:
+
+```text
+PASS — Build 2 Accessibility Tests
+PASS — Build 2 Responsive Tests
+PASS — Build 2 Shell Tests
+PASS — Build 2 Component Tests
+PASS — Build 2 Domain Tests
+PASS — Build 2 Phase 1 Validation
+PASS — Build 1 middleware isolation
+```
+
+Automated validation proves the shared contracts and source boundaries. Route-specific keyboard, zoom, forced-color, and screen-reader evidence remains required during Phase 3 migration.
 
 ## Runtime and rollback boundary
 
@@ -70,16 +73,22 @@ Rollback consists only of removing staged accessibility source, workshop, tests,
 ## Closure gate
 
 ```text
-PENDING — accessibility suite
-PENDING — component, shell, and responsive regression
-PENDING — Phase 1 regression
-PENDING — Build 1 middleware isolation
-PENDING — Phase 2 exit report
+PASS — accessibility contract and state registry
+PASS — dialog and sheet modal contract
+PASS — focus cycle, Escape, inert background, and focus return
+PASS — polite and assertive announcements
+PASS — visible focus, touch, reflow, contrast, forced colors, and reduced motion
+PASS — component, shell, and responsive regression
+PASS — Phase 1 regression
+PASS — Build 1 middleware isolation
+PASS — Phase 2 exit report
 ```
 
-After closure:
+## Next workstream
 
 ```text
 GATE Build 2 — Phase 3
 Feature Migration and Legacy Retirement
+
+First package: migration-readiness audit and route selection
 ```

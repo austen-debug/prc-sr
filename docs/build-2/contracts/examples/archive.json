@@ -1,0 +1,30 @@
+{
+  "id": "archive-26-28",
+  "type": "archive",
+  "schema_version": 3,
+  "schema_id": "gate-record-v3",
+  "record_version": 1,
+  "week_group": "26-28",
+  "created_at": "2026-07-16T11:00:00.000Z",
+  "updated_at": "2026-07-16T11:00:00.000Z",
+  "created_by_role": "instructor",
+  "updated_by_role": "instructor",
+  "data": {
+    "archive_schema_version": "gate-archive-v3",
+    "projected_total": 911,
+    "arrived_total": 857,
+    "arrived_air_force_total": 817,
+    "arrived_space_force_total": 40,
+    "naturalization_total": 56,
+    "female_total": 178,
+    "receiving_windows": {
+      "night_one_start": "2026-07-14T20:00:00.000Z",
+      "night_one_end": "2026-07-15T11:00:00.000Z",
+      "night_two_start": "2026-07-15T20:00:00.000Z",
+      "night_two_end": "2026-07-16T11:00:00.000Z"
+    },
+    "bus_data": [],
+    "dorm_data": [],
+    "closed_at": "2026-07-16T11:00:00.000Z"
+  }
+}

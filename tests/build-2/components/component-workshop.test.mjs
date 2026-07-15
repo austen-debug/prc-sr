@@ -55,7 +55,7 @@ test('component renderers escape user-controlled labels and do not emit inline h
   assert.doesNotMatch(button, /<img/i);
   assert.match(button, /&lt;img/);
   assert.doesNotMatch(dorm, /<img/i);
-  assert.doesNotMatch(`${button}${dorm}`, /\son[a-z]+=/i);
+  assert.doesNotMatch(`${button}${dorm}`, /<[^>]+\son[a-z]+=/i);
 });
 
 test('form fields preserve label, help, error, and invalid-state relationships', () => {

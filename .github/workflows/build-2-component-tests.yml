@@ -9,6 +9,7 @@ on:
       - 'docs/build-2/COMPONENT_CONTRACTS.md'
       - 'docs/build-2/COMPONENT_WORKSHOP.md'
       - 'docs/build-2/PHASE_2B_EXECUTION_REPORT.md'
+      - 'docs/build-2/INDEX.md'
       - '.github/workflows/build-2-component-tests.yml'
   pull_request:
     paths:
@@ -18,6 +19,7 @@ on:
       - 'docs/build-2/COMPONENT_CONTRACTS.md'
       - 'docs/build-2/COMPONENT_WORKSHOP.md'
       - 'docs/build-2/PHASE_2B_EXECUTION_REPORT.md'
+      - 'docs/build-2/INDEX.md'
       - '.github/workflows/build-2-component-tests.yml'
 
 permissions:

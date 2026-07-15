@@ -2,7 +2,7 @@
 
 ## GDL Component Workshop
 
-Status: IMPLEMENTED — CI VALIDATION PENDING  
+Status: COMPLETE — INACTIVE  
 Runtime status: inactive; Build 1 remains operational and unchanged
 
 ## Objective
@@ -108,6 +108,25 @@ The suite verifies:
 
 The component workflow also reruns all Phase 1 and Phase 2A tests.
 
+## CI result
+
+Final-head validation:
+
+```text
+PASS — Build 2 Component Tests
+PASS — Build 2 Domain Tests
+PASS — Build 2 Phase 1 Validation
+PASS — GDL foundation regression within component workflow
+PASS — Build 1 middleware isolation
+```
+
+The validation gate identified and corrected two overly broad test assertions:
+
+- the initial middleware check collided with Build 1's legitimate legacy `/css/gate-components.css` asset;
+- the initial inline-handler check treated escaped hostile text as executable markup.
+
+Both checks now validate the actual Build 2 path and HTML-tag boundaries without weakening the architectural or security requirement.
+
 ## Runtime and rollback boundary
 
 No file in `public/app/components/` or `public/app/workshop/` is referenced by `functions/_middleware.js`. No Build 1 stylesheet, controller, route, workflow, record, API, authentication behavior, or visible interface is changed.
@@ -115,8 +134,6 @@ No file in `public/app/components/` or `public/app/workshop/` is referenced by `
 Rollback consists only of removing the inactive component, workshop, test, workflow, and documentation files.
 
 ## Closure gate
-
-Phase 2B closes after:
 
 ```text
 PASS — component workflow succeeds
@@ -126,7 +143,7 @@ PASS — Build 1 middleware isolation succeeds
 PASS — repository index identifies Phase 2C as next
 ```
 
-After closure, the next workstream is:
+## Next workstream
 
 ```text
 Build 2 — Phase 2C

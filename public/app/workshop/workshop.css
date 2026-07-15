@@ -1,0 +1,102 @@
+/* Inactive documentation surface for Build 2 Phase 2B. */
+
+html {
+  background: var(--gate-surface-canvas);
+  color: var(--gate-text-primary);
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+}
+
+body {
+  margin: 0;
+  min-block-size: 100dvb;
+  padding: calc(var(--gate-safe-top) + var(--gate-space-7)) calc(var(--gate-safe-right) + var(--gate-space-7)) calc(var(--gate-safe-bottom) + var(--gate-space-7)) calc(var(--gate-safe-left) + var(--gate-space-7));
+}
+
+.workshop-skip-link {
+  background: var(--gate-surface-raised);
+  color: var(--gate-text-primary);
+  inset-block-start: var(--gate-space-3);
+  inset-inline-start: var(--gate-space-3);
+  padding: var(--gate-space-3);
+  position: fixed;
+  transform: translateY(-200%);
+  z-index: var(--gate-layer-notification);
+}
+
+.workshop-skip-link:focus {
+  transform: none;
+}
+
+.workshop-controls {
+  align-items: center;
+  background: var(--gate-surface-panel);
+  border: 1px solid var(--gate-border-default);
+  border-radius: var(--gate-radius-md);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gate-space-3);
+  margin: 0 auto var(--gate-space-7);
+  max-inline-size: 90rem;
+  padding: var(--gate-space-4);
+}
+
+.workshop-controls label {
+  color: var(--gate-text-secondary);
+  font-weight: 700;
+}
+
+.workshop-controls select {
+  background: var(--gate-surface-raised);
+  border: 1px solid var(--gate-border-default);
+  border-radius: var(--gate-radius-sm);
+  color: var(--gate-text-primary);
+  min-block-size: var(--gate-target-touch-min);
+  padding-inline: var(--gate-space-4);
+}
+
+.workshop-shell {
+  display: grid;
+  gap: var(--gate-space-7);
+  margin-inline: auto;
+  max-inline-size: 90rem;
+}
+
+.workshop-section {
+  background: var(--gate-surface-panel);
+  border: 1px solid var(--gate-border-default);
+  border-radius: var(--gate-radius-lg);
+  display: grid;
+  gap: var(--gate-space-5);
+  padding: var(--gate-space-6);
+}
+
+.workshop-section > header h2,
+.workshop-section > header p {
+  margin: 0;
+}
+
+.workshop-section > header p {
+  color: var(--gate-text-muted);
+  margin-block-start: var(--gate-space-2);
+}
+
+.workshop-grid {
+  align-items: start;
+  display: grid;
+  gap: var(--gate-layout-gap);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+}
+
+.workshop-grid > .gate-data-table-wrap {
+  grid-column: 1 / -1;
+}
+
+html[data-gate-overlay-open='true'] {
+  overflow: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .workshop-skip-link {
+    transition: none;
+  }
+}

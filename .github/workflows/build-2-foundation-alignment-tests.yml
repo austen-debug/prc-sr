@@ -1,0 +1,82 @@
+name: Build 2 Foundation Alignment Tests
+
+on:
+  push:
+    paths:
+      - 'README.md'
+      - 'public/app/domain/**'
+      - 'tests/build-2/domain/**'
+      - 'docs/build-2/PROGRAM_INTENT_BASELINE.md'
+      - 'docs/build-2/FOUNDATION_ALIGNMENT_GATE.md'
+      - 'docs/build-2/PROGRAM_TRACEABILITY_MATRIX.md'
+      - 'docs/build-2/GATE_A_EXECUTION_REPORT.md'
+      - 'docs/build-2/INDEX.md'
+      - '.github/workflows/build-2-foundation-alignment-tests.yml'
+  pull_request:
+    paths:
+      - 'README.md'
+      - 'public/app/domain/**'
+      - 'tests/build-2/domain/**'
+      - 'docs/build-2/PROGRAM_INTENT_BASELINE.md'
+      - 'docs/build-2/FOUNDATION_ALIGNMENT_GATE.md'
+      - 'docs/build-2/PROGRAM_TRACEABILITY_MATRIX.md'
+      - 'docs/build-2/GATE_A_EXECUTION_REPORT.md'
+      - 'docs/build-2/INDEX.md'
+      - '.github/workflows/build-2-foundation-alignment-tests.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-2-foundation-alignment-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gate-a:
+    name: Program baseline, canonical domain, and full regression
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Validate canonical domain and Gate A
+        run: node --test tests/build-2/domain/*.test.mjs
+
+      - name: Validate Phase 1 data foundation
+        run: |
+          node --test tests/build-2/data/*.test.mjs
+          node --test tests/build-2/parity/*.test.mjs
+
+      - name: Validate Phase 2 foundation
+        run: |
+          node --test tests/build-2/design/*.test.mjs
+          node --test tests/build-2/components/*.test.mjs
+          node --test tests/build-2/shell/*.test.mjs
+          node --test tests/build-2/responsive/*.test.mjs
+          node --test tests/build-2/accessibility/*.test.mjs
+
+      - name: Validate governing status, roles, and migration order
+        run: |
+          grep -q '1. Status Board' docs/build-2/PROGRAM_INTENT_BASELINE.md
+          grep -q 'Phase 3 — Feature Migration and Legacy Retirement BLOCKED' docs/build-2/INDEX.md
+          grep -q 'Foundation Alignment Gate B' docs/build-2/GATE_A_EXECUTION_REPORT.md
+          grep -q 'Airman access does not include Squadron Board' README.md
+          grep -q 'Squadron access is read-only and limited to Squadron Board' README.md
+          if grep -q 'View Squadron Board when available' README.md; then
+            echo 'README contains obsolete Airman Squadron Board access.'
+            exit 1
+          fi
+
+      - name: Validate Build 1 runtime isolation
+        run: |
+          if grep -Eq '/app/(domain|data|design|components|shell|responsive|accessibility)/' functions/_middleware.js; then
+            echo 'Build 2 staged assets must not be loaded by active middleware.'
+            exit 1
+          fi

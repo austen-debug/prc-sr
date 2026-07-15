@@ -1,10 +1,12 @@
 import { normalizeWeekGroup, normalizeText } from '../../domain/normalization.mjs';
 import { restoreBuild1Record } from '../record-normalizer.mjs';
+import { createProvenanceFields, updateProvenanceFields } from '../provenance.mjs';
 import {
   GateRepositoryError,
   RepositoryErrorCode,
   repositoryFailure,
-  repositoryOk
+  repositoryOk,
+  validationFailure
 } from '../repository-result.mjs';
 
 export class BaseRepository {
@@ -52,8 +54,14 @@ export class BaseRepository {
     return repositoryOk(record, { capabilities: this.client.capabilities });
   }
 
-  async createRaw(rawRecord) {
-    return this.client.create({ ...rawRecord, type: this.type });
+  async createRaw(rawRecord, options = {}) {
+    const provenance = createProvenanceFields(options.actorRole, options.timestamp || rawRecord?.created_at);
+    if (!provenance.valid) return validationFailure(provenance.error);
+    return this.client.create({
+      ...rawRecord,
+      ...provenance.fields,
+      type: this.type
+    });
   }
 
   async updateEnvelope(envelope, rawPatch = {}, options = {}) {
@@ -64,9 +72,12 @@ export class BaseRepository {
       ));
     }
 
+    const provenance = updateProvenanceFields(options.actorRole, options.timestamp || rawPatch?.updated_at);
+    if (!provenance.valid) return validationFailure(provenance.error);
     const raw = {
       ...restoreBuild1Record(envelope),
       ...rawPatch,
+      ...provenance.fields,
       __backendId: envelope.id,
       type: this.type
     };
@@ -80,8 +91,15 @@ export class BaseRepository {
   async deleteById(id, options = {}) {
     const existing = await this.getById(id);
     if (!existing.ok) return existing;
+    const provenance = updateProvenanceFields(options.actorRole, options.timestamp);
+    if (!provenance.valid) return validationFailure(provenance.error);
     return this.client.delete(
-      { __backendId: existing.data.id, type: this.type },
+      {
+        __backendId: existing.data.id,
+        type: this.type,
+        updated_by_role: provenance.fields.updated_by_role,
+        updated_at: provenance.fields.updated_at
+      },
       {
         expectedRecordVersion: existing.data.recordVersion,
         requireConflictDetection: Boolean(options.requireConflictDetection)

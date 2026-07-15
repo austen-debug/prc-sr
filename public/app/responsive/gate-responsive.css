@@ -1,0 +1,261 @@
+/* GATE Build 2 Phase 2D — inactive responsive composition contracts. */
+
+:root {
+  --gate-responsive-columns-min: 1;
+  --gate-responsive-columns-max: 1;
+  --gate-responsive-header-mode: minimal;
+  --gate-responsive-command-layout: stacked;
+  --gate-responsive-detail-presentation: sheet;
+  --gate-responsive-main-inline-padding: calc(var(--gate-safe-left) + var(--gate-card-padding));
+  --gate-responsive-main-inline-end-padding: calc(var(--gate-safe-right) + var(--gate-card-padding));
+  --gate-responsive-main-block-padding: var(--gate-card-padding);
+}
+
+.gate-app-shell {
+  min-block-size: 100dvh;
+  padding-block-end: var(--gate-safe-bottom);
+}
+
+.gate-shell-header {
+  padding-block-start: calc(var(--gate-safe-top) + var(--gate-space-3));
+  padding-inline-start: calc(var(--gate-safe-left) + var(--gate-space-5));
+  padding-inline-end: calc(var(--gate-safe-right) + var(--gate-space-5));
+}
+
+.gate-shell-main {
+  padding-block: var(--gate-responsive-main-block-padding);
+  padding-inline-start: var(--gate-responsive-main-inline-padding);
+  padding-inline-end: var(--gate-responsive-main-inline-end-padding);
+}
+
+.gate-responsive-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--gate-responsive-columns-min), minmax(0, 1fr));
+  gap: var(--gate-layout-gap);
+  min-inline-size: 0;
+}
+
+.gate-responsive-region {
+  min-inline-size: 0;
+  container-type: inline-size;
+  container-name: gate-responsive-region;
+}
+
+.gate-responsive-command-region {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gate-layout-gap);
+}
+
+.gate-responsive-detail-region[data-gate-detail-presentation='sheet'] {
+  inline-size: 100%;
+}
+
+[data-gate-posture='phone-portrait'] {
+  --gate-responsive-columns-min: 1;
+  --gate-responsive-columns-max: 1;
+  --gate-responsive-header-mode: minimal;
+  --gate-responsive-command-layout: stacked;
+  --gate-responsive-detail-presentation: sheet;
+}
+
+[data-gate-posture='phone-landscape'] {
+  --gate-responsive-columns-min: 1;
+  --gate-responsive-columns-max: 2;
+  --gate-responsive-header-mode: minimal;
+  --gate-responsive-command-layout: stacked;
+  --gate-responsive-detail-presentation: sheet;
+}
+
+[data-gate-posture='tablet-portrait'] {
+  --gate-responsive-columns-min: 1;
+  --gate-responsive-columns-max: 2;
+  --gate-responsive-header-mode: minimal;
+  --gate-responsive-command-layout: stacked;
+  --gate-responsive-detail-presentation: sheet;
+}
+
+[data-gate-posture='tablet-landscape'] {
+  --gate-responsive-columns-min: 2;
+  --gate-responsive-columns-max: 3;
+  --gate-responsive-header-mode: condensed;
+  --gate-responsive-command-layout: wrapped;
+  --gate-responsive-detail-presentation: sheet-or-inline;
+}
+
+[data-gate-posture='desktop-vertical'] {
+  --gate-responsive-columns-min: 1;
+  --gate-responsive-columns-max: 2;
+  --gate-responsive-header-mode: condensed;
+  --gate-responsive-command-layout: wrapped;
+  --gate-responsive-detail-presentation: inline;
+}
+
+[data-gate-posture='desktop-landscape'] {
+  --gate-responsive-columns-min: 2;
+  --gate-responsive-columns-max: 4;
+  --gate-responsive-header-mode: full;
+  --gate-responsive-command-layout: inline;
+  --gate-responsive-detail-presentation: side-panel;
+}
+
+@media (orientation: portrait) {
+  :root {
+    --gate-responsive-columns-min: 1;
+    --gate-responsive-columns-max: 1;
+    --gate-responsive-header-mode: minimal;
+    --gate-responsive-command-layout: stacked;
+    --gate-responsive-detail-presentation: sheet;
+  }
+}
+
+@media (orientation: landscape) and (max-width: 47.999rem) {
+  :root {
+    --gate-responsive-columns-min: 1;
+    --gate-responsive-columns-max: 2;
+    --gate-responsive-header-mode: minimal;
+    --gate-responsive-command-layout: stacked;
+    --gate-responsive-detail-presentation: sheet;
+  }
+
+  .gate-shell-header {
+    padding-block: calc(var(--gate-safe-top) + var(--gate-space-2)) var(--gate-space-2);
+  }
+
+  .gate-shell-status {
+    padding-block: var(--gate-space-1);
+  }
+}
+
+@media (orientation: portrait) and (min-width: 37.5rem) {
+  :root {
+    --gate-responsive-columns-min: 1;
+    --gate-responsive-columns-max: 2;
+    --gate-responsive-header-mode: minimal;
+    --gate-responsive-command-layout: stacked;
+    --gate-responsive-detail-presentation: sheet;
+  }
+}
+
+@media (orientation: landscape) and (min-width: 48rem) {
+  :root {
+    --gate-responsive-columns-min: 2;
+    --gate-responsive-columns-max: 3;
+    --gate-responsive-header-mode: condensed;
+    --gate-responsive-command-layout: wrapped;
+    --gate-responsive-detail-presentation: sheet-or-inline;
+  }
+
+  .gate-responsive-command-region {
+    flex-flow: row wrap;
+    align-items: center;
+  }
+}
+
+@media (orientation: portrait) and (min-width: 56.25rem) and (min-height: 73.75rem) {
+  :root {
+    --gate-responsive-columns-min: 1;
+    --gate-responsive-columns-max: 2;
+    --gate-responsive-header-mode: condensed;
+    --gate-responsive-command-layout: wrapped;
+    --gate-responsive-detail-presentation: inline;
+  }
+
+  .gate-responsive-command-region {
+    flex-flow: row wrap;
+  }
+}
+
+@media (orientation: landscape) and (min-width: 73.75rem) and (min-height: 43.75rem) {
+  :root {
+    --gate-responsive-columns-min: 2;
+    --gate-responsive-columns-max: 4;
+    --gate-responsive-header-mode: full;
+    --gate-responsive-command-layout: inline;
+    --gate-responsive-detail-presentation: side-panel;
+  }
+
+  .gate-responsive-grid {
+    grid-template-columns: repeat(var(--gate-responsive-columns-max), minmax(0, 1fr));
+  }
+
+  .gate-responsive-command-region {
+    flex-flow: row nowrap;
+    align-items: center;
+  }
+}
+
+@container gate-responsive-region (max-width: 19.9375rem) {
+  .gate-metric-card,
+  .gate-page-header,
+  .gate-command-bar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .gate-dorm-card__details,
+  .gate-bus-card__details {
+    display: none;
+  }
+
+  .gate-data-table-wrap {
+    overflow-x: auto;
+  }
+}
+
+@container gate-responsive-region (min-width: 20rem) and (max-width: 39.9375rem) {
+  .gate-page-header,
+  .gate-command-bar {
+    display: flex;
+    flex-wrap: wrap;
+  }
+
+  .gate-data-table-wrap {
+    overflow-x: auto;
+  }
+}
+
+@container gate-responsive-region (min-width: 40rem) {
+  .gate-metric-card,
+  .gate-page-header,
+  .gate-command-bar {
+    display: flex;
+    align-items: center;
+  }
+
+  .gate-data-table-wrap {
+    overflow-x: visible;
+  }
+}
+
+@media (pointer: coarse), (pointer: none) {
+  :root {
+    --gate-control-height: max(44px, var(--gate-control-height));
+    --gate-row-height: max(44px, var(--gate-row-height));
+  }
+
+  .gate-shell-route,
+  .gate-shell-menu-trigger,
+  .gate-shell-system-control,
+  .gate-button {
+    min-block-size: 44px;
+    min-inline-size: 44px;
+  }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  [data-gate-hover-enhancement='true'] {
+    transition: border-color var(--gate-motion-fast), background-color var(--gate-motion-fast);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gate-app-shell,
+  .gate-responsive-grid,
+  .gate-responsive-command-region,
+  [data-gate-hover-enhancement='true'] {
+    scroll-behavior: auto;
+    transition: none;
+    animation: none;
+  }
+}

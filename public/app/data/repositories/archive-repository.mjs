@@ -57,7 +57,7 @@ export class GateArchiveRepository extends BaseRepository {
     return this.deleteById(id, {
       actorRole: command.actorRole,
       timestamp: command.updatedAt,
-      requireConflictDetection: Boolean(command.requireConflictDetection)
+      requireConflictDetection: command.requireConflictDetection
     });
   }
 }

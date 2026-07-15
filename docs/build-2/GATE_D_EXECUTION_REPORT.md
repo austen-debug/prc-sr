@@ -1,6 +1,6 @@
 # GATE Build 2 — Foundation Alignment Gate D Execution Report
 
-Status: IMPLEMENTED — CI VALIDATION PENDING  
+Status: COMPLETE / STAGED  
 Runtime status: staged; Build 1 feature routes and workflows remain active
 
 ## Objective
@@ -89,6 +89,23 @@ tests/build-2/workflows/critical-workflows.test.mjs
 
 The Gate D suite covers successful and failed arrivals, stale conflicts, audit recovery, dorm transitions, initialization validation, initialization resume and compensation, closeout success, closeout deletion failure and resume, immutable amendment lineage, repository regression, historical parity, Phase 2 regression, and Build 1 runtime isolation.
 
+Final implementation-head results:
+
+```text
+PASS — Build 2 Gate D Tests
+PASS — Build 2 Gate C Tests
+PASS — Build 2 Gate B Tests
+PASS — Build 2 Data Tests
+PASS — Build 2 Domain Tests
+PASS — Build 2 Phase 1 Validation
+PASS — Build 2 Foundation Alignment Tests
+PASS — Build 2 Component Tests
+PASS — Build 2 Shell Tests
+PASS — Build 2 Responsive Tests
+PASS — Build 2 Accessibility Tests
+PASS — Build 1 runtime isolation
+```
+
 ## Runtime boundary
 
 No Build 1 feature controller, stylesheet, route, report, page, or visible workflow is replaced. Gate D modules remain absent from active middleware and are not called by Build 1 feature code.
@@ -96,16 +113,23 @@ No Build 1 feature controller, stylesheet, route, report, page, or visible workf
 ## Closure gate
 
 ```text
-PENDING — Gate D workflow suite
-PENDING — data/repository regression
-PENDING — domain and historical parity regression
-PENDING — complete Phase 2 regression
-PENDING — workflow source-boundary validation
-PENDING — Build 1 runtime isolation
-PENDING — final program-status update
+PASS — explicit workflow result and recovery contract
+PASS — operation-scoped idempotency
+PASS — verified and audited Airport workflows
+PASS — verified and audited Processing workflows
+PASS — activation-last Week Group initialization
+PASS — partial initialization resume and compensation
+PASS — verified archive create-before-clear closeout
+PASS — closeout manifest and resumable clearing
+PASS — immutable archive amendment lineage
+PASS — stale-write conflict preservation
+PASS — recoverable audit failure behavior
+PASS — data, domain, parity, and Phase 2 regression
+PASS — workflow source boundaries
+PASS — Build 1 runtime isolation
 ```
 
-## Next after closure
+## Next
 
 ```text
 Foundation Alignment Gate E

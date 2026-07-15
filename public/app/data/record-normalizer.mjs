@@ -35,28 +35,30 @@ function timestampValue(value, context, warnings, label) {
 
 function normalizeReceivingWindows(record, context, warnings) {
   const windows = {};
-  for (const field of WINDOW_FIELDS) windows[field] = timestampValue(record?.[field], context, warnings, field);
+  for (const field of WINDOW_FIELDS) {
+    windows[field] = timestampValue(record?.[field] ?? record?.receivingWindows?.[field], context, warnings, field);
+  }
   return Object.freeze(windows);
 }
 
 function normalizeBusPayload(record, context, warnings) {
   const total = toNonNegativeNumber(record.otw_count ?? record.total_count ?? record.total);
-  const spaceForce = Math.min(toNonNegativeNumber(record.space_force_count), total);
+  const spaceForce = Math.min(toNonNegativeNumber(record.space_force_count ?? record.spaceForce), total);
   const status = normalizeStatus(record.status);
-  const arrivedAt = timestampValue(record.arrived_at, context, warnings, 'arrived_at');
+  const arrivedAt = timestampValue(record.arrived_at ?? record.arrivedAt, context, warnings, 'arrived_at');
   const payload = {
-    busId: normalizeText(record.bus_id),
-    busType: normalizeText(record.bus_type || 'airport').toLowerCase(),
+    busId: normalizeText(record.bus_id ?? record.busId),
+    busType: normalizeText(record.bus_type ?? record.busType ?? 'airport').toLowerCase(),
     destination: normalizeText(record.destination),
-    originatingDestination: normalizeText(record.originating_destination),
+    originatingDestination: normalizeText(record.originating_destination ?? record.originatingDestination),
     status,
     total,
-    female: Math.min(toNonNegativeNumber(record.female_count), total),
-    naturalization: Math.min(toNonNegativeNumber(record.nat_count), total),
+    female: Math.min(toNonNegativeNumber(record.female_count ?? record.female), total),
+    naturalization: Math.min(toNonNegativeNumber(record.nat_count ?? record.naturalization), total),
     spaceForce,
     airForce: Math.max(total - spaceForce, 0),
-    createdAt: timestampValue(record.created_at, context, warnings, 'created_at'),
-    departedAt: timestampValue(record.departed_at, context, warnings, 'departed_at'),
+    createdAt: timestampValue(record.created_at ?? record.createdAt, context, warnings, 'created_at'),
+    departedAt: timestampValue(record.departed_at ?? record.departedAt, context, warnings, 'departed_at'),
     arrivedAt,
     confirmedArrival: status === 'arrived' && Boolean(arrivedAt),
     active: status === 'active'
@@ -68,25 +70,25 @@ function normalizeBusPayload(record, context, warnings) {
 
 function normalizeDormPayload(record, context, warnings) {
   const capacity = toNonNegativeNumber(record.max_load ?? record.capacity);
-  const requestedLoad = toNonNegativeNumber(record.current_load ?? record.loaded);
+  const requestedLoad = toNonNegativeNumber(record.current_load ?? record.loaded ?? record.load);
   if (requestedLoad > capacity) warnings.push(`current_load ${requestedLoad} exceeded max_load ${capacity} and was constrained.`);
   return Object.freeze({
-    name: normalizeText(record.dorm_name || record.name),
+    name: normalizeText(record.dorm_name ?? record.name),
     sdq: normalizeText(record.sdq),
     section: normalizeText(record.section),
-    interSection: normalizeText(record.inter_sec),
+    interSection: normalizeText(record.inter_sec ?? record.interSection),
     sex: normalizeText(record.sex).toLowerCase(),
     band: normalizeBoolean(record.band),
-    spaceForce: normalizeBoolean(record.space_force) || normalizeBoolean(record.is_space_force),
+    spaceForce: normalizeBoolean(record.space_force) || normalizeBoolean(record.is_space_force) || normalizeBoolean(record.spaceForce),
     capacity,
     load: Math.min(requestedLoad, capacity),
     state: normalizeText(record.state || 'empty').toLowerCase(),
     phase: normalizeText(record.phase),
-    openedAt: timestampValue(record.opened_at, context, warnings, 'opened_at'),
-    closedAt: timestampValue(record.closed_at, context, warnings, 'closed_at'),
-    closedTimer: normalizeText(record.closed_timer),
-    assignedStaff: normalizeText(record.assigned_airman || record.assigned_staff),
-    auditoriumLocation: normalizeText(record.auditorium_location),
+    openedAt: timestampValue(record.opened_at ?? record.openedAt, context, warnings, 'opened_at'),
+    closedAt: timestampValue(record.closed_at ?? record.closedAt, context, warnings, 'closed_at'),
+    closedTimer: normalizeText(record.closed_timer ?? record.closedTimer),
+    assignedStaff: normalizeText(record.assigned_airman ?? record.assigned_staff ?? record.assignedStaff),
+    auditoriumLocation: normalizeText(record.auditorium_location ?? record.auditoriumLocation),
     notes: normalizeText(record.notes),
     receivingWindows: normalizeReceivingWindows(record, context, warnings)
   });
@@ -121,12 +123,20 @@ function normalizeArchivePayload(record, context, warnings) {
   if (broadLegacySpaceForce && broadLegacySpaceForce !== spaceForceTotal) {
     warnings.push(`Legacy space_force_total ${broadLegacySpaceForce} differs from confirmed-arrival Space Force total ${spaceForceTotal}.`);
   }
-  const firstDormWithWindows = dormDataResult.value.find(dorm => WINDOW_FIELDS.some(field => dorm?.[field])) || {};
-  const windowSource = Object.fromEntries(WINDOW_FIELDS.map(field => [field, record[field] ?? firstDormWithWindows[field] ?? '']));
+  const firstDormWithWindows = dormDataResult.value.find(dorm => WINDOW_FIELDS.some(field => dorm?.[field] ?? dorm?.receivingWindows?.[field])) || {};
+  const windowSource = Object.fromEntries(WINDOW_FIELDS.map(field => [
+    field,
+    record[field] ?? record.receivingWindows?.[field] ?? firstDormWithWindows[field] ?? firstDormWithWindows.receivingWindows?.[field] ?? ''
+  ]));
   return Object.freeze({
     archivedAt: timestampValue(record.archived_at || record.created_at, context, warnings, 'archived_at'),
     archiveSchemaVersion: normalizeText(record.archive_schema_version),
     closeoutSafetyVersion: normalizeText(record.closeout_safety_version),
+    archiveKind: normalizeText(record.archive_kind || 'closeout').toLowerCase(),
+    operationId: normalizeText(record.operation_id),
+    parentArchiveId: normalizeText(record.parent_archive_id),
+    amendmentReason: normalizeText(record.amendment_reason),
+    amendmentNumber: toNonNegativeNumber(record.amendment_number),
     totalExpected: toNonNegativeNumber(record.total_expected),
     totalArrived: toNonNegativeNumber(record.total_arrived),
     totalLoaded: toNonNegativeNumber(record.total_loaded),
@@ -135,7 +145,8 @@ function normalizeArchivePayload(record, context, warnings) {
     spaceForceTotal,
     receivingWindows: normalizeReceivingWindows(windowSource, context, warnings),
     buses: Object.freeze(buses),
-    dorms: Object.freeze(dorms)
+    dorms: Object.freeze(dorms),
+    notes: normalizeText(record.notes)
   });
 }
 

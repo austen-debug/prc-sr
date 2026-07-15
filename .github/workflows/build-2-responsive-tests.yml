@@ -1,0 +1,73 @@
+name: Build 2 Responsive Tests
+
+on:
+  push:
+    paths:
+      - 'public/app/responsive/**'
+      - 'tests/build-2/responsive/**'
+      - 'docs/build-2/RESPONSIVE_COMPOSITION_CONTRACTS.md'
+      - 'docs/build-2/RESPONSIVE_VALIDATION_MATRIX.md'
+      - 'docs/build-2/PHASE_2D_EXECUTION_REPORT.md'
+      - 'docs/build-2/INDEX.md'
+      - '.github/workflows/build-2-responsive-tests.yml'
+  pull_request:
+    paths:
+      - 'public/app/responsive/**'
+      - 'tests/build-2/responsive/**'
+      - 'docs/build-2/RESPONSIVE_COMPOSITION_CONTRACTS.md'
+      - 'docs/build-2/RESPONSIVE_VALIDATION_MATRIX.md'
+      - 'docs/build-2/PHASE_2D_EXECUTION_REPORT.md'
+      - 'docs/build-2/INDEX.md'
+      - '.github/workflows/build-2-responsive-tests.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-2-responsive-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  responsive-composition:
+    name: Postures, capabilities, containers, and isolation
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Validate Phase 1 foundation
+        run: |
+          node --test tests/build-2/domain/*.test.mjs
+          node --test tests/build-2/data/*.test.mjs
+          node --test tests/build-2/parity/*.test.mjs
+
+      - name: Validate GDL foundations
+        run: node --test tests/build-2/design/*.test.mjs
+
+      - name: Validate component workshop
+        run: node --test tests/build-2/components/*.test.mjs
+
+      - name: Validate unified shell
+        run: node --test tests/build-2/shell/*.test.mjs
+
+      - name: Validate posture registry and fixtures
+        run: node --test --test-name-pattern="six governed|six posture fixtures|posture thresholds|orientation" tests/build-2/responsive/responsive-composition.test.mjs
+
+      - name: Validate input and safe-area capabilities
+        run: node --test --test-name-pattern="coarse or absent|fine pointer|safe-area" tests/build-2/responsive/responsive-composition.test.mjs
+
+      - name: Validate container and CSS ownership
+        run: node --test --test-name-pattern="container bands|responsive CSS" tests/build-2/responsive/responsive-composition.test.mjs
+
+      - name: Validate responsive purity and Build 1 isolation
+        run: node --test --test-name-pattern="responsive core|responsive workshop|Build 1 middleware" tests/build-2/responsive/responsive-composition.test.mjs
+
+      - name: Validate complete responsive suite
+        run: node --test tests/build-2/responsive/*.test.mjs

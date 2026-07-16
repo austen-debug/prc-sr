@@ -1,0 +1,103 @@
+name: Build 2 Phase 3A Evidence Harness
+
+on:
+  push:
+    paths:
+      - 'public/app/status-board-shadow/review-harness/**'
+      - 'public/app/status-board-shadow/**'
+      - 'tests/build-2/status-board-shadow/**'
+      - 'docs/build-2/STATUS_BOARD_EVIDENCE_HARNESS.md'
+      - 'docs/build-2/PHASE_3A_EVIDENCE_HARNESS_REPORT.md'
+      - 'docs/build-2/INDEX.md'
+      - '.github/workflows/build-2-phase-3a-evidence-harness.yml'
+  pull_request:
+    paths:
+      - 'public/app/status-board-shadow/review-harness/**'
+      - 'public/app/status-board-shadow/**'
+      - 'tests/build-2/status-board-shadow/**'
+      - 'docs/build-2/STATUS_BOARD_EVIDENCE_HARNESS.md'
+      - 'docs/build-2/PHASE_3A_EVIDENCE_HARNESS_REPORT.md'
+      - 'docs/build-2/INDEX.md'
+      - '.github/workflows/build-2-phase-3a-evidence-harness.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-2-phase-3a-evidence-harness-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  evidence-harness:
+    name: Fixture-only Status Board review surface
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Validate evidence harness source syntax
+        run: |
+          node --check public/app/status-board-shadow/review-harness/fixtures.mjs
+          node --check public/app/status-board-shadow/review-harness/review-harness.mjs
+
+      - name: Validate evidence harness and Phase 3A contracts
+        run: node --test tests/build-2/status-board-shadow/*.test.mjs
+
+      - name: Validate foundation data and workflow regressions
+        run: |
+          node --test tests/build-2/foundation/*.test.mjs
+          node --experimental-default-type=module --test tests/build-2/server/*.test.mjs
+          node --test tests/build-2/data/*.test.mjs
+          node --test tests/build-2/domain/*.test.mjs
+          node --test tests/build-2/parity/*.test.mjs
+          node --test tests/build-2/workflows/*.test.mjs
+          node --test tests/build-2/synchronization/*.test.mjs
+
+      - name: Validate application foundation regressions
+        run: |
+          node --test tests/build-2/design/*.test.mjs
+          node --test tests/build-2/components/*.test.mjs
+          node --test tests/build-2/shell/*.test.mjs
+          node --test tests/build-2/responsive/*.test.mjs
+          node --test tests/build-2/accessibility/*.test.mjs
+
+      - name: Validate fixture-only boundary
+        run: |
+          test -f public/app/status-board-shadow/review-harness/index.html
+          test -f public/app/status-board-shadow/review-harness/review-harness.mjs
+          grep -q 'No operational records · No API · No route activation' public/app/status-board-shadow/review-harness/index.html
+          grep -q 'Phase 3B remains unauthorized' public/app/status-board-shadow/review-harness/review-harness.mjs
+          if grep -REn '\bfetch[[:space:]]*\(|/api/|localStorage|sessionStorage|indexedDB|serviceWorker|GateBusRepository|GateDormRepository|GateArchiveRepository|GateAuditRepository|\ballData\b|getActiveWG' public/app/status-board-shadow/review-harness; then
+            echo 'Evidence harness must remain fixture-only and disconnected from operational persistence.'
+            exit 1
+          fi
+
+      - name: Validate no route or middleware activation
+        run: |
+          if grep -q 'review-harness' functions/_middleware.js; then
+            echo 'Evidence harness may not be loaded by active middleware.'
+            exit 1
+          fi
+          if grep -q 'review-harness\|evidence-harness' public/app/shell/route-registry.mjs; then
+            echo 'Evidence harness may not become a shell route.'
+            exit 1
+          fi
+          node --input-type=module <<'NODE'
+          import { ROUTES } from './public/app/shell/route-registry.mjs';
+          if (ROUTES.length !== 6) throw new Error(`Expected six visible routes, found ${ROUTES.length}.`);
+          NODE
+
+      - name: Validate governance and continuing evidence block
+        run: |
+          grep -q 'Status: IMPLEMENTED / VALIDATION PENDING' docs/build-2/PHASE_3A_EVIDENCE_HARNESS_REPORT.md
+          grep -q 'Evidence state: COLLECTION OPEN' docs/build-2/PHASE_3A_EVIDENCE_HARNESS_REPORT.md
+          grep -q 'NOT AUTHORIZED — Phase 3B controlled test surface' docs/build-2/STATUS_BOARD_EVIDENCE_HARNESS.md
+          grep -Eq 'Phase 3A Evidence Review[[:space:]]+COLLECTION OPEN' docs/build-2/INDEX.md
+          grep -Eq 'Phase 3B — Status Board Controlled Test Surface[[:space:]]+NOT AUTHORIZED' docs/build-2/INDEX.md

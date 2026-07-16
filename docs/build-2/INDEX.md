@@ -1,15 +1,15 @@
 # GATE Build 2 Documentation Index
 
-Status: Foundation Alignment Gate F implemented; validation pending  
+Status: Foundation Alignment Gates A–F complete; Phase 3A Status Board shadow migration authorized  
 Runtime status: Build 1 UI and feature workflows remain active; Build 2 feature, workflow, synchronization, offline, and application assets remain staged.
 
 ## Governing documents
 
 1. [`PROGRAM_INTENT_BASELINE.md`](./PROGRAM_INTENT_BASELINE.md) — governing mission, data, architecture, role, critical-write, archive, synchronization, responsive, and migration-order baseline.
-2. [`FOUNDATION_ALIGNMENT_GATE.md`](./FOUNDATION_ALIGNMENT_GATE.md) — Gates A–F scope, production block, and closure criteria.
-3. [`PROGRAM_TRACEABILITY_MATRIX.md`](./PROGRAM_TRACEABILITY_MATRIX.md) — requirement-to-source, test, runtime, and remaining-gate mapping.
+2. [`FOUNDATION_ALIGNMENT_GATE.md`](./FOUNDATION_ALIGNMENT_GATE.md) — completed Gates A–F scope and activation boundaries.
+3. [`PROGRAM_TRACEABILITY_MATRIX.md`](./PROGRAM_TRACEABILITY_MATRIX.md) — requirement-to-source, test, runtime, and remaining route-evidence mapping.
 4. [`FOUNDATION_REVALIDATION_MATRIX.md`](./FOUNDATION_REVALIDATION_MATRIX.md) — consolidated Gate F validation controls and decision classes.
-5. [`CORRECTED_PHASE_1_EXIT_DECISION.md`](./CORRECTED_PHASE_1_EXIT_DECISION.md) — governing Phase 1 exit decision after Gates A–F.
+5. [`CORRECTED_PHASE_1_EXIT_DECISION.md`](./CORRECTED_PHASE_1_EXIT_DECISION.md) — governing approved Phase 1 foundation exit decision.
 6. [`DEPLOYMENT_PREREQUISITES.md`](./DEPLOYMENT_PREREQUISITES.md) — repository versus external-environment proof and production prerequisites.
 7. [`STATUS_BOARD_SHADOW_MIGRATION_AUTHORIZATION.md`](./STATUS_BOARD_SHADOW_MIGRATION_AUTHORIZATION.md) — bounded Phase 3A authorization.
 8. [`CANONICAL_ENTITY_CONTRACT.md`](./CANONICAL_ENTITY_CONTRACT.md) — canonical entity and provenance contract.
@@ -50,7 +50,7 @@ Runtime status: Build 1 UI and feature workflows remain active; Build 2 feature,
 43. [`GATE_C_EXECUTION_REPORT.md`](./GATE_C_EXECUTION_REPORT.md)
 44. [`GATE_D_EXECUTION_REPORT.md`](./GATE_D_EXECUTION_REPORT.md)
 45. [`GATE_E_EXECUTION_REPORT.md`](./GATE_E_EXECUTION_REPORT.md)
-46. [`GATE_F_EXECUTION_REPORT.md`](./GATE_F_EXECUTION_REPORT.md) — consolidated revalidation and exit-decision status.
+46. [`GATE_F_EXECUTION_REPORT.md`](./GATE_F_EXECUTION_REPORT.md) — completed consolidated revalidation and exit decision.
 
 ## Consolidated foundation source
 
@@ -100,7 +100,7 @@ Phase 1A — Operational Truth Registry              COMPLETE
 Phase 1B — Canonical Domain Core                   COMPLETE / STAGED
 Phase 1C — Compatibility and Canonical Entity      COMPLETE / STAGED
 Phase 1D — Repository, Versioning, Audit, Workflows COMPLETE / STAGED
-Phase 1E — Consolidated Foundation Validation      IMPLEMENTED / VALIDATION PENDING
+Phase 1E — Consolidated Foundation Validation      COMPLETE / STAGED
 
 Phase 2A–2E — Application Foundation               COMPLETE / STAGED
 
@@ -109,13 +109,14 @@ Foundation Alignment Gate B                        COMPLETE / STAGED
 Foundation Alignment Gate C                        COMPLETE
 Foundation Alignment Gate D                        COMPLETE / STAGED
 Foundation Alignment Gate E                        COMPLETE / STAGED
-Foundation Alignment Gate F                        IMPLEMENTED / VALIDATION PENDING
+Foundation Alignment Gate F                        COMPLETE
 
-Phase 3A — Status Board Shadow Migration            AUTHORIZED ONLY AFTER GATE F CI CLOSURE
+Phase 3A — Status Board Shadow Migration            AUTHORIZED / NEXT
 Production Build 2 route activation                NOT AUTHORIZED
+Build 2 production critical writes                 NOT AUTHORIZED
 Approved first route                               STATUS BOARD
 ```
 
 ## Integration rule
 
-Gate F may authorize only a hidden, read-only Status Board shadow package. A visible Build 2 route still requires route-specific parity, authorization, persistence, deployment, synchronization/degraded-operation, responsive/accessibility, activation, rollback, monitoring, and Build 1 retirement evidence.
+Only a hidden, read-only Status Board shadow package is authorized. A visible Build 2 route still requires route-specific parity, authorization, persistence, deployment, synchronization/degraded-operation, responsive/accessibility, activation, rollback, monitoring, and Build 1 retirement evidence.

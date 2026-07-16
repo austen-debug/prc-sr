@@ -65,7 +65,7 @@ jobs:
       - name: Validate governing status, roles, and migration order
         run: |
           grep -q '1. Status Board' docs/build-2/PROGRAM_INTENT_BASELINE.md
-          grep -q 'Phase 3 — Feature Migration and Legacy Retirement BLOCKED' docs/build-2/INDEX.md
+          grep -Eq 'Phase 3 — Feature Migration and Legacy Retirement[[:space:]]+BLOCKED UNTIL GATES A–F CLOSE' docs/build-2/INDEX.md
           grep -q 'Foundation Alignment Gate B' docs/build-2/GATE_A_EXECUTION_REPORT.md
           grep -q 'Airman access does not include Squadron Board' README.md
           grep -q 'Squadron access is read-only and limited to Squadron Board' README.md

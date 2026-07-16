@@ -5,7 +5,7 @@ Purpose: map governing intent to implementation, validation, runtime ownership, 
 
 | Requirement | Source owner | Validation | Runtime status | Remaining gate |
 |---|---|---|---|---|
-| No trainee PII expansion | Program baseline, repository/config/audit safeguards | normalization, repository, server, workflow, component fixtures | Build 1 active; Build 2 staged | Continuous |
+| No trainee PII expansion | Program baseline, repository/config/audit safeguards | normalization, repository, server, workflow, synchronization, component fixtures | Build 1 active; Build 2 staged | Continuous |
 | Confirmed-arrival eligibility | `domain/operational-metrics.mjs` | operational truth and parity suites | Staged | Phase 3 consumer migration |
 | Receiving Night One/Two from `arrived_at` | `domain/receiving.mjs` | historical 818/39 and boundary fixtures | Staged | Archives/Reports migration |
 | Air Force, Space Force, female, NAT share one arrival set | `domain/operational-metrics.mjs` | domain and parity suites | Staged | Phase 3 consumer migration |
@@ -29,21 +29,24 @@ Purpose: map governing intent to implementation, validation, runtime ownership, 
 | Append-only audit events | audit repository, records API, D1 triggers | Gate C and Gate D tests | Implemented | Apply D1 migration to existing environment |
 | Server-derived role provenance | API session bridge and records contract | Gate C tests | Implemented | Route-specific authorization |
 | Squadron read-only records boundary | records API projection | Gate C tests | Implemented; login inactive | Phase 3 Squadron migration |
-| Operation-scoped idempotency | `public/app/workflows/*`, archive/audit repositories | Gate D replay and resume tests | Implemented / staged | Gate E synchronization integration |
+| Operation-scoped idempotency | `public/app/workflows/*`, archive/audit repositories | Gate D replay and resume tests | Implemented / staged | Phase 3 integration |
 | Week Group initialization orchestration | `initialize-week-group.mjs` | Gate D success, validation, partial, resume, compensation tests | Implemented / staged | Phase 3 Input migration |
 | Arrival and dorm transition orchestration | arrival and dorm workflows | Gate D verify/audit/conflict tests | Implemented / staged | Phase 3 Airport/Processing migration |
 | Verified archive closeout | `archive-workflows.mjs` | Gate D create/verify/audit/clear/verify and resume tests | Implemented / staged | Phase 3 Archives migration |
 | Immutable archive amendment | `amendArchiveWorkflow` | Gate D parent-preservation and lineage test | Implemented / staged | Phase 3 Archives migration |
-| Explicit partial-failure recovery | workflow results and recovery workflows | Gate D audit retry, initialization resume/compensation, closeout resume tests | Implemented / staged | Gate E degraded-state presentation |
-| Cross-tab authoritative refetch | future synchronization service | future multi-tab suite | Not implemented | Gate E |
-| Explicit offline/stale/last-sync behavior | shell/accessibility contracts plus future service | future degraded-operation suite | Presentation contracts staged | Gate E |
+| Explicit partial-failure recovery | workflow results and recovery workflows | Gate D audit retry, initialization resume/compensation, closeout resume tests | Implemented / staged | Route-specific presentation |
+| Cross-tab authoritative refetch | `synchronization/invalidation-channel.mjs`, `sync-coordinator.mjs` | Gate E multi-tab and refetch suite | Implemented / staged | Gate F consolidated validation |
+| Last-confirmed read-only snapshot | `synchronization/authoritative-store.mjs` | Gate E offline continuity and source-boundary tests | Implemented / staged | Gate F consolidated validation |
+| Explicit offline/stale/last-sync behavior | synchronization state, shell bridge, shell selectors | Gate E state and shell-announcement suite | Implemented / staged | Gate F consolidated validation |
+| Critical writes fail closed when authority is unavailable | `synchronization/guarded-records-client.mjs` | Gate E blocked-write and no-queue tests | Implemented / staged | Gate F consolidated validation |
+| Static shell cache excludes operational data | offline cache policy and staged service worker | Gate E cache-policy and service-worker tests | Implemented / staged | Route-specific activation approval |
 | One GATE Design Language | `design/*` | GDL suite | Staged | Route migration use |
 | One component system | `components/*` | component suite | Staged | Route migration use |
 | One route and permission registry | shell registries | shell suite | Staged | Route-specific server authorization |
 | Capability-driven six-posture composition | `responsive/*` | responsive suite | Staged | Route-specific evidence |
 | WCAG 2.2 AA foundation | `accessibility/*` | accessibility suite | Staged | Route-specific manual evidence |
 | Squadron credentials remain server-side | environment bindings and repository safeguards | Gate C server boundary; future auth test | Not activated | Phase 3 Squadron migration |
-| Status Board-first migration order | `PROGRAM_INTENT_BASELINE.md` | documentation gate | Approved, not started | Gates A–F then Phase 3 |
+| Status Board-first migration order | `PROGRAM_INTENT_BASELINE.md` | documentation gate | Approved, not started | Gate F then Phase 3 |
 | Former owner retired after migration | Phase 3 route package | future ownership and middleware tests | Not started | Phase 3 |
 
 ## Approved route migration sequence

@@ -1,7 +1,7 @@
 # GATE Build 2 — Program Intent Baseline
 
 Status: GOVERNING BASELINE  
-Runtime status: Build 1 UI remains operational; Gate C persistence protections are available; Gate D workflow orchestration and Build 2 feature assets remain staged
+Runtime status: Build 1 UI remains operational; Gate C persistence protections are available; Gate D workflows and Gate E synchronization/degraded-operation assets remain staged
 
 ## Mission
 
@@ -71,7 +71,16 @@ The following workflows require confirmed server persistence and may not claim s
 - archive create, verify, amendment, deletion, and closeout;
 - active Week Group changes.
 
-Gate D binds these operations to versioned writes, authoritative verification, required append-only audit events, explicit partial states, durable operation IDs, and resumable recovery. Write-heavy route migration remains blocked until Gate E establishes synchronization and degraded-operation behavior and Gate F completes consolidated revalidation.
+Gate D binds these operations to versioned writes, authoritative verification, required append-only audit events, explicit partial states, durable operation IDs, and resumable recovery. Gate E disables critical writes whenever synchronization state is offline, stale, failed, unknown, or syncing; blocked writes are not queued. Route migration remains blocked until Gate F completes consolidated revalidation.
+
+## Synchronization and degraded-operation rule
+
+- Cross-tab messages are invalidation notices only and contain no operational payload.
+- A foreign notice triggers authoritative refetch before current status is restored.
+- The last-confirmed record set may remain in memory for read-only display.
+- Offline, stale, and failed states must be visible with last-synchronized context when available.
+- Operational records, audit events, archives, and workflow payloads are never placed in a client-side database or offline write queue.
+- Static-shell caching is allowlisted; `/api/*` remains network-only.
 
 ## Archive rule
 
@@ -132,8 +141,8 @@ Gate A — Program baseline and canonical domain completion       COMPLETE / STA
 Gate B — Canonical entities and role provenance                 COMPLETE / STAGED
 Gate C — Backend versioning and append-only audit events        COMPLETE
 Gate D — Critical workflow orchestration                        COMPLETE / STAGED
-Gate E — Synchronization and degraded operation                 NEXT
-Gate F — Consolidated revalidation and corrected Phase 1 exit   NOT STARTED
+Gate E — Synchronization and degraded operation                 COMPLETE / STAGED
+Gate F — Consolidated revalidation and corrected Phase 1 exit   NEXT
 ```
 
-This document governs later phase summaries when a conflict exists. A change to mission, role access, migration order, critical-write policy, archive immutability, or the no-PII boundary requires an explicit program decision and corresponding fixture updates.
+This document governs later phase summaries when a conflict exists. A change to mission, role access, migration order, critical-write policy, archive immutability, synchronization policy, or the no-PII boundary requires an explicit program decision and corresponding fixture updates.

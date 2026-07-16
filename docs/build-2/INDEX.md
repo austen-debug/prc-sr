@@ -1,84 +1,79 @@
 # GATE Build 2 Documentation Index
 
-Status: Foundation Alignment Gate D complete; Gate E next  
-Runtime status: Build 1 UI and feature workflows remain active; Gate C persistence protections are available; Build 2 workflow and application assets remain staged.
+Status: Foundation Alignment Gate E complete; Gate F next  
+Runtime status: Build 1 UI and feature workflows remain active; Build 2 workflows, synchronization, offline, and application assets remain staged.
 
 ## Governing documents
 
 1. [`PROGRAM_INTENT_BASELINE.md`](./PROGRAM_INTENT_BASELINE.md) — governing mission, data, architecture, role, critical-write, archive, responsive, and migration-order baseline.
 2. [`FOUNDATION_ALIGNMENT_GATE.md`](./FOUNDATION_ALIGNMENT_GATE.md) — Gates A–F scope, production block, and closure criteria.
 3. [`PROGRAM_TRACEABILITY_MATRIX.md`](./PROGRAM_TRACEABILITY_MATRIX.md) — requirement-to-source, test, runtime, and remaining-gate mapping.
-4. [`CANONICAL_ENTITY_CONTRACT.md`](./CANONICAL_ENTITY_CONTRACT.md) — direct canonical entity, provenance, alias, rollback, and unknown-record contract.
-5. [`BACKEND_VERSIONING_AUDIT_CONTRACT.md`](./BACKEND_VERSIONING_AUDIT_CONTRACT.md) — server versions, conditional writes, role provenance, Squadron projection, and append-only audit contract.
-6. [`CRITICAL_WORKFLOW_ORCHESTRATION.md`](./CRITICAL_WORKFLOW_ORCHESTRATION.md) — Gate D operation IDs, verified workflows, partial states, recovery, closeout, and amendment contracts.
-7. [`BUILD_2_CHARTER.md`](./BUILD_2_CHARTER.md) — mission, architecture, migration, and definition of done.
-8. [`PHASE_1_OPERATIONAL_TRUTH.md`](./PHASE_1_OPERATIONAL_TRUTH.md) — Phase 1 packages, gates, and exit criteria.
-9. [`METRIC_PROVENANCE_REGISTRY.md`](./METRIC_PROVENANCE_REGISTRY.md) — operational definitions and calculation ownership.
-10. [`DOMAIN_CALCULATION_CATALOG.md`](./DOMAIN_CALCULATION_CATALOG.md) — canonical selectors and report models.
-11. [`RECORD_NORMALIZATION_CONTRACT.md`](./RECORD_NORMALIZATION_CONTRACT.md) — Build 1 compatibility and direct canonical handoff boundary.
-12. [`REPOSITORY_CONTRACTS.md`](./REPOSITORY_CONTRACTS.md) — typed repositories, versioning, audit, and authorization boundaries.
-13. [`PHASE_1B_EXECUTION_REPORT.md`](./PHASE_1B_EXECUTION_REPORT.md)
-14. [`PHASE_1C_EXECUTION_REPORT.md`](./PHASE_1C_EXECUTION_REPORT.md)
-15. [`PHASE_1D_EXECUTION_REPORT.md`](./PHASE_1D_EXECUTION_REPORT.md)
-16. [`PHASE_1E_EXECUTION_REPORT.md`](./PHASE_1E_EXECUTION_REPORT.md)
-17. [`VALIDATION_FIXTURES.md`](./VALIDATION_FIXTURES.md)
-18. [`PHASE_2_CHARTER.md`](./PHASE_2_CHARTER.md)
-19. [`GDL_FOUNDATIONS.md`](./GDL_FOUNDATIONS.md)
-20. [`GDL_TOKEN_REGISTRY.md`](./GDL_TOKEN_REGISTRY.md)
-21. [`COMPONENT_CONTRACTS.md`](./COMPONENT_CONTRACTS.md)
-22. [`COMPONENT_WORKSHOP.md`](./COMPONENT_WORKSHOP.md)
-23. [`APP_SHELL_CONTRACT.md`](./APP_SHELL_CONTRACT.md)
-24. [`ROUTE_PERMISSION_REGISTRY.md`](./ROUTE_PERMISSION_REGISTRY.md)
-25. [`FRONTEND_ARCHITECTURE_ADR.md`](./FRONTEND_ARCHITECTURE_ADR.md)
-26. [`RESPONSIVE_COMPOSITION_CONTRACTS.md`](./RESPONSIVE_COMPOSITION_CONTRACTS.md)
-27. [`RESPONSIVE_VALIDATION_MATRIX.md`](./RESPONSIVE_VALIDATION_MATRIX.md)
-28. [`ACCESSIBILITY_FOUNDATION.md`](./ACCESSIBILITY_FOUNDATION.md)
-29. [`ACCESSIBILITY_VALIDATION_MATRIX.md`](./ACCESSIBILITY_VALIDATION_MATRIX.md)
-30. [`PHASE_2A_EXECUTION_REPORT.md`](./PHASE_2A_EXECUTION_REPORT.md)
-31. [`PHASE_2B_EXECUTION_REPORT.md`](./PHASE_2B_EXECUTION_REPORT.md)
-32. [`PHASE_2C_EXECUTION_REPORT.md`](./PHASE_2C_EXECUTION_REPORT.md)
-33. [`PHASE_2D_EXECUTION_REPORT.md`](./PHASE_2D_EXECUTION_REPORT.md)
-34. [`PHASE_2E_EXECUTION_REPORT.md`](./PHASE_2E_EXECUTION_REPORT.md)
-35. [`PHASE_2_EXIT_REPORT.md`](./PHASE_2_EXIT_REPORT.md)
-36. [`GATE_A_EXECUTION_REPORT.md`](./GATE_A_EXECUTION_REPORT.md)
-37. [`GATE_B_EXECUTION_REPORT.md`](./GATE_B_EXECUTION_REPORT.md)
-38. [`GATE_C_EXECUTION_REPORT.md`](./GATE_C_EXECUTION_REPORT.md)
-39. [`GATE_D_EXECUTION_REPORT.md`](./GATE_D_EXECUTION_REPORT.md) — completed Gate D implementation and validation record.
+4. [`CANONICAL_ENTITY_CONTRACT.md`](./CANONICAL_ENTITY_CONTRACT.md) — canonical entity and provenance contract.
+5. [`BACKEND_VERSIONING_AUDIT_CONTRACT.md`](./BACKEND_VERSIONING_AUDIT_CONTRACT.md) — server versioning and audit contract.
+6. [`CRITICAL_WORKFLOW_ORCHESTRATION.md`](./CRITICAL_WORKFLOW_ORCHESTRATION.md) — Gate D workflow and recovery contract.
+7. [`SYNCHRONIZATION_DEGRADED_OPERATION.md`](./SYNCHRONIZATION_DEGRADED_OPERATION.md) — Gate E invalidation, authoritative refetch, stale/offline, no-queue, and cache contract.
+8. [`BUILD_2_CHARTER.md`](./BUILD_2_CHARTER.md)
+9. [`PHASE_1_OPERATIONAL_TRUTH.md`](./PHASE_1_OPERATIONAL_TRUTH.md)
+10. [`METRIC_PROVENANCE_REGISTRY.md`](./METRIC_PROVENANCE_REGISTRY.md)
+11. [`DOMAIN_CALCULATION_CATALOG.md`](./DOMAIN_CALCULATION_CATALOG.md)
+12. [`RECORD_NORMALIZATION_CONTRACT.md`](./RECORD_NORMALIZATION_CONTRACT.md)
+13. [`REPOSITORY_CONTRACTS.md`](./REPOSITORY_CONTRACTS.md)
+14. [`VALIDATION_FIXTURES.md`](./VALIDATION_FIXTURES.md)
+15. [`PHASE_2_CHARTER.md`](./PHASE_2_CHARTER.md)
+16. [`GDL_FOUNDATIONS.md`](./GDL_FOUNDATIONS.md)
+17. [`GDL_TOKEN_REGISTRY.md`](./GDL_TOKEN_REGISTRY.md)
+18. [`COMPONENT_CONTRACTS.md`](./COMPONENT_CONTRACTS.md)
+19. [`COMPONENT_WORKSHOP.md`](./COMPONENT_WORKSHOP.md)
+20. [`APP_SHELL_CONTRACT.md`](./APP_SHELL_CONTRACT.md)
+21. [`ROUTE_PERMISSION_REGISTRY.md`](./ROUTE_PERMISSION_REGISTRY.md)
+22. [`FRONTEND_ARCHITECTURE_ADR.md`](./FRONTEND_ARCHITECTURE_ADR.md)
+23. [`RESPONSIVE_COMPOSITION_CONTRACTS.md`](./RESPONSIVE_COMPOSITION_CONTRACTS.md)
+24. [`RESPONSIVE_VALIDATION_MATRIX.md`](./RESPONSIVE_VALIDATION_MATRIX.md)
+25. [`ACCESSIBILITY_FOUNDATION.md`](./ACCESSIBILITY_FOUNDATION.md)
+26. [`ACCESSIBILITY_VALIDATION_MATRIX.md`](./ACCESSIBILITY_VALIDATION_MATRIX.md)
+27. [`PHASE_1B_EXECUTION_REPORT.md`](./PHASE_1B_EXECUTION_REPORT.md)
+28. [`PHASE_1C_EXECUTION_REPORT.md`](./PHASE_1C_EXECUTION_REPORT.md)
+29. [`PHASE_1D_EXECUTION_REPORT.md`](./PHASE_1D_EXECUTION_REPORT.md)
+30. [`PHASE_1E_EXECUTION_REPORT.md`](./PHASE_1E_EXECUTION_REPORT.md)
+31. [`PHASE_2A_EXECUTION_REPORT.md`](./PHASE_2A_EXECUTION_REPORT.md)
+32. [`PHASE_2B_EXECUTION_REPORT.md`](./PHASE_2B_EXECUTION_REPORT.md)
+33. [`PHASE_2C_EXECUTION_REPORT.md`](./PHASE_2C_EXECUTION_REPORT.md)
+34. [`PHASE_2D_EXECUTION_REPORT.md`](./PHASE_2D_EXECUTION_REPORT.md)
+35. [`PHASE_2E_EXECUTION_REPORT.md`](./PHASE_2E_EXECUTION_REPORT.md)
+36. [`PHASE_2_EXIT_REPORT.md`](./PHASE_2_EXIT_REPORT.md)
+37. [`GATE_A_EXECUTION_REPORT.md`](./GATE_A_EXECUTION_REPORT.md)
+38. [`GATE_B_EXECUTION_REPORT.md`](./GATE_B_EXECUTION_REPORT.md)
+39. [`GATE_C_EXECUTION_REPORT.md`](./GATE_C_EXECUTION_REPORT.md)
+40. [`GATE_D_EXECUTION_REPORT.md`](./GATE_D_EXECUTION_REPORT.md)
+41. [`GATE_E_EXECUTION_REPORT.md`](./GATE_E_EXECUTION_REPORT.md) — completed Gate E implementation and validation record.
 
-## Gate D workflow source
+## Gate E source
 
 ```text
-public/app/workflows/
-├── workflow-result.mjs
-├── workflow-helpers.mjs
-├── arrival-workflows.mjs
-├── dorm-workflows.mjs
-├── initialize-week-group.mjs
-├── archive-workflows.mjs
-├── recovery-workflows.mjs
-├── initialization-recovery.mjs
+public/app/synchronization/
+├── sync-state.mjs
+├── authoritative-store.mjs
+├── invalidation-channel.mjs
+├── guarded-records-client.mjs
+├── sync-coordinator.mjs
+├── shell-bridge.mjs
 └── index.mjs
+
+public/app/offline/
+├── cache-policy.mjs
+├── service-worker-registration.mjs
+└── index.mjs
+
+public/gate-build-2-sw.js
 ```
 
-Extended staged data source:
-
-```text
-public/app/data/
-├── record-normalizer.mjs
-└── repositories/
-    ├── archive-repository.mjs
-    ├── audit-repository.mjs
-    ├── config-repository.mjs
-    ├── dorm-repository.mjs
-    └── sound-event-repository.mjs
-```
-
-No workflow module is loaded by the active middleware manifest or called by a Build 1 feature controller.
+The synchronization snapshot is in memory only. The staged service worker caches an explicit static-shell allowlist and treats `/api/*` as network-only.
 
 ## Automated validation
 
 ```text
-tests/build-2/workflows/critical-workflows.test.mjs
+tests/build-2/synchronization/synchronization-degraded-operation.test.mjs
+tests/build-2/workflows/*.test.mjs
 tests/build-2/server/*.test.mjs
 tests/build-2/data/*.test.mjs
 tests/build-2/domain/*.test.mjs
@@ -88,29 +83,29 @@ tests/build-2/components/*.test.mjs
 tests/build-2/shell/*.test.mjs
 tests/build-2/responsive/*.test.mjs
 tests/build-2/accessibility/*.test.mjs
-.github/workflows/build-2-gate-d-tests.yml
+.github/workflows/build-2-gate-e-tests.yml
 ```
 
 ## Current execution position
 
 ```text
-Phase 1A — Operational Truth Registry             COMPLETE
-Phase 1B — Canonical Domain Core                  COMPLETE / STAGED
-Phase 1C — Compatibility and Canonical Entity     COMPLETE / STAGED
+Phase 1A — Operational Truth Registry              COMPLETE
+Phase 1B — Canonical Domain Core                   COMPLETE / STAGED
+Phase 1C — Compatibility and Canonical Entity      COMPLETE / STAGED
 Phase 1D — Repository, Versioning, Audit, Workflows COMPLETE / STAGED
-Phase 1E — Parity Validation                      COMPLETE FOR IMPLEMENTED SCOPE
+Phase 1E — Parity Validation                       COMPLETE FOR IMPLEMENTED SCOPE
 
-Phase 2A–2E — Application Foundation              COMPLETE / STAGED
+Phase 2A–2E — Application Foundation               COMPLETE / STAGED
 
-Foundation Alignment Gate A                       COMPLETE / STAGED
-Foundation Alignment Gate B                       COMPLETE / STAGED
-Foundation Alignment Gate C                       COMPLETE
-Foundation Alignment Gate D                       COMPLETE / STAGED
-Foundation Alignment Gate E                       NEXT
-Foundation Alignment Gate F                       NOT STARTED
+Foundation Alignment Gate A                        COMPLETE / STAGED
+Foundation Alignment Gate B                        COMPLETE / STAGED
+Foundation Alignment Gate C                        COMPLETE
+Foundation Alignment Gate D                        COMPLETE / STAGED
+Foundation Alignment Gate E                        COMPLETE / STAGED
+Foundation Alignment Gate F                        NEXT
 
-Phase 3 — Feature Migration and Legacy Retirement BLOCKED UNTIL GATES A–F CLOSE
-Approved first route                              STATUS BOARD
+Phase 3 — Feature Migration and Legacy Retirement  BLOCKED UNTIL GATES A–F CLOSE
+Approved first route                               STATUS BOARD
 ```
 
 ## Integration rule

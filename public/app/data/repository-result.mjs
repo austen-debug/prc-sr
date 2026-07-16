@@ -3,6 +3,7 @@ export const RepositoryErrorCode = Object.freeze({
   NOT_FOUND: 'not_found',
   CONFLICT: 'conflict',
   CONFLICT_DETECTION_UNAVAILABLE: 'conflict_detection_unavailable',
+  DEGRADED_READ_ONLY: 'degraded_read_only',
   UNAUTHORIZED: 'unauthorized',
   FORBIDDEN: 'forbidden',
   NETWORK: 'network_error',

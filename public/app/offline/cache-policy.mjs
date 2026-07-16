@@ -1,7 +1,7 @@
 export const GATE_SHELL_CACHE_NAME = 'gate-build-2-shell-v1';
 
 export const GATE_STATIC_SHELL_ASSETS = Object.freeze([
-  '/app/design/gate-design.css',
+  '/app/design/themes/gdl-foundations.css',
   '/app/components/gate-components.css',
   '/app/shell/gate-shell.css',
   '/app/responsive/gate-responsive.css',

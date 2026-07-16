@@ -11,11 +11,16 @@ import {
   buildStatusBoardRouteReadinessEvidence,
   compareStatusBoardSnapshots,
   createShadowEvidenceLedger,
+  createStatusBoardShadowSyncAdapter,
   runStatusBoardShadow,
   STATUS_BOARD_POSTURE_CONTRACTS,
   summarizeShadowEvidence,
   validateStatusBoardRouteContract
 } from '../../../public/app/status-board-shadow/index.mjs';
+import {
+  createAuthoritativeSnapshotStore,
+  createSynchronizationCoordinator
+} from '../../../public/app/synchronization/index.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, '../../..');
@@ -165,6 +170,71 @@ test('evidence ledger remains memory-only and requires sustained zero-blocking p
   const blocked = summarizeShadowEvidence(ledger);
   assert.equal(blocked.readyForActivationReview, false);
   assert.equal(blocked.blockingCounts.arrived, 1);
+});
+
+test('foreign invalidation triggers authoritative refetch and a fresh route-specific shadow comparison', async () => {
+  let records = historicalFixture.records;
+  let listCalls = 0;
+  let channelListener = null;
+  let clock = 0;
+  const channel = {
+    subscribe(listener) {
+      channelListener = listener;
+      return () => { channelListener = null; };
+    }
+  };
+  const store = createAuthoritativeSnapshotStore();
+  const coordinator = createSynchronizationCoordinator({
+    client: {
+      async list() {
+        listCalls += 1;
+        return { ok: true, data: { records } };
+      }
+    },
+    channel,
+    store,
+    eventTarget: { addEventListener() {}, removeEventListener() {} },
+    navigatorLike: { onLine: true },
+    now: () => `2026-07-15T00:00:${String(clock++).padStart(2, '0')}Z`
+  });
+  const adapter = createStatusBoardShadowSyncAdapter({
+    coordinator,
+    weekGroup: historicalFixture.weekGroup,
+    now: () => `2026-07-15T00:01:${String(clock++).padStart(2, '0')}Z`,
+    captureLegacySnapshot: async ({ snapshot, capturedAt }) => {
+      const canonical = buildCanonicalStatusBoardSnapshot({
+        records: snapshot.records,
+        weekGroup: historicalFixture.weekGroup,
+        capturedAt
+      });
+      return legacyFromCanonical(canonical);
+    }
+  });
+
+  await adapter.start();
+  await adapter.whenIdle();
+  assert.equal(listCalls, 1);
+  assert.equal(adapter.getLatest().status, 'exact');
+  const firstVersion = coordinator.readSnapshot().version;
+
+  records = [...historicalFixture.records, {
+    __backendId: 'bus-shadow-active',
+    type: 'bus',
+    week_group: historicalFixture.weekGroup,
+    bus_id: 'SHADOW',
+    status: 'active',
+    otw_count: 25,
+    departed_at: '2026-07-15T00:00:00Z'
+  }];
+  channelListener({ kind: 'records.invalidated', entityType: 'bus', entityId: 'bus-shadow-active' });
+  for (let index = 0; index < 5 && listCalls < 2; index += 1) await new Promise(resolve => setImmediate(resolve));
+  await adapter.whenIdle();
+
+  assert.equal(listCalls, 2);
+  assert.ok(coordinator.readSnapshot().version > firstVersion);
+  assert.equal(adapter.getLatest().status, 'exact');
+  assert.deepEqual(adapter.getLatest().canonicalSnapshot.activeBusIds, ['bus-shadow-active']);
+  adapter.stop();
 });
 
 test('route readiness contract covers all six postures plus accessibility and fullscreen boundaries', () => {

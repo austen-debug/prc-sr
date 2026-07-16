@@ -87,7 +87,7 @@ export function summarizeManualEvidence(entries = []) {
     categories[check.category][check.status] += 1;
   }
   const failed = checks.filter(check => check.status === 'fail').map(check => check.id);
-  const pending = checks.filter(check => check.required && check.status !== 'pass').map(check => check.id);
+  const pending = checks.filter(check => check.required && check.status === 'pending').map(check => check.id);
 
   return freezeShadow({
     checks,

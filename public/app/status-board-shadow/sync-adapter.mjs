@@ -60,6 +60,16 @@ export function createStatusBoardShadowSyncAdapter({
     }
   }
 
+  async function whenIdle() {
+    let observed;
+    do {
+      await new Promise(resolve => setTimeout(resolve, 0));
+      observed = pending;
+      await observed;
+    } while (observed !== pending);
+    return latest;
+  }
+
   return Object.freeze({
     contractVersion: STATUS_BOARD_SHADOW_VERSION,
     mode: 'shadow',
@@ -79,10 +89,7 @@ export function createStatusBoardShadowSyncAdapter({
     },
 
     evaluate,
-
-    whenIdle() {
-      return pending;
-    },
+    whenIdle,
 
     getLatest() {
       return latest;

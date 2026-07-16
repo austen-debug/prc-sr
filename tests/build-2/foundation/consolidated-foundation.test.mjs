@@ -80,7 +80,7 @@ test('Gates A through E are formally complete before Gate F closes', async () =>
 
 test('the historical receiving fixture remains exact through canonical normalization and shared summaries', async () => {
   const fixture = await repositoryJson('tests/build-2/fixtures/B2-P1-F001-receiving-parity.json');
-  const records = normalizePersistedRecords(fixture.records);
+  const records = normalizePersistedRecords(fixture.records, { timeZone: 'America/Chicago' }).records;
   const status = buildStatusBoardSummary({
     records,
     weekGroup: fixture.weekGroup,

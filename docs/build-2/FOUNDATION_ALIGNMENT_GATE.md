@@ -1,11 +1,11 @@
 # GATE Build 2 — Foundation Alignment Gate
 
-Status: GATE F ACTIVE / FINAL REVALIDATION  
+Status: COMPLETE — GATES A–F CLOSED  
 Runtime status: staged; Build 1 remains the operational baseline
 
 ## Purpose
 
-The alignment gate closes requirements that were documented in the original transformation program but were not fully implemented before Phase 1 was labeled complete. It preserves the validated Phase 2 foundation and prevents unresolved concurrency, audit, archive, synchronization, and domain-ownership gaps from entering route migration.
+The alignment gate closed requirements that were documented in the original transformation program but were not fully implemented before Phase 1 was labeled complete. It preserved the validated Phase 2 foundation and prevented unresolved concurrency, audit, archive, synchronization, and domain-ownership gaps from entering route migration.
 
 ## Gate sequence
 
@@ -50,7 +50,7 @@ The alignment gate closes requirements that were documented in the original tran
 - no queued critical writes;
 - fail-closed read-only behavior when authority is unavailable.
 
-### Gate F — Consolidated revalidation — ACTIVE
+### Gate F — Consolidated revalidation — COMPLETE
 
 - complete operational-truth and canonical-entity suites;
 - records API version/conflict and role tests;
@@ -66,7 +66,7 @@ The alignment gate closes requirements that were documented in the original tran
 
 ## Production activation block
 
-No Build 2 production route may activate through Gate F alone. Gate F can authorize only a hidden, read-only Status Board shadow package. Every visible route activation still requires route-specific deployment, parity, accessibility, responsive, activation, rollback, monitoring, and legacy-retirement evidence.
+No Build 2 production route is authorized by foundation closure alone. Gate F authorizes only a hidden, read-only Status Board shadow package. Every visible route activation still requires route-specific deployment, parity, accessibility, responsive, activation, rollback, monitoring, and legacy-retirement evidence.
 
 ## Gate F exit criteria
 

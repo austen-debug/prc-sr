@@ -1,0 +1,84 @@
+{
+  "contractVersion": "AR-1.0.0",
+  "capturedFrom": "functions/_middleware.js",
+  "runtimeOwner": "Build 1",
+  "maximums": {
+    "directStyles": 13,
+    "importedStyles": 3,
+    "directScripts": 28
+  },
+  "phase3BExitTargets": {
+    "directStylesMaximum": 12,
+    "importedStylesMaximum": 3,
+    "directScriptsMaximum": 24,
+    "correctiveAssetsAdded": 0,
+    "statusBoardLegacyOwnersRetired": true,
+    "middlewareStatusBoardSourceRewriteRemoved": true
+  },
+  "currentDirectStyles": [
+    "/css/gate-index-legacy-shell.css",
+    "/css/gate-base-tokens.css",
+    "/css/gate-layout-pages.css",
+    "/css/gate-components.css",
+    "/css/gate-utilities-access.css?v=status-board-light-clarity-20260714",
+    "/css/gate-premium-metrics.css?v=status-board-active-bus-strip-20260714",
+    "/css/gate-app-shell.css?v=phase-7g-viewport-watermark-20260709",
+    "/css/gate-mobile-corrective.css?v=phase-7h-ui-patch-retirement-20260709",
+    "/css/gate-ui-ownership-correction.css?v=phase-8d-mobile-metric-containment-20260709",
+    "/css/gate-light-mode-command-contrast.css?v=light-command-contrast-20260714",
+    "/css/gate-light-mode-grid-correction.css?v=light-grid-correction-20260714",
+    "/css/gate-tablet-shell.css?v=tablet-shell-20260714",
+    "/css/gate-fullscreen-board-contract.css?v=fullscreen-desktop-status-20260714c"
+  ],
+  "currentImportedStyles": [
+    "/css/gate-board-presentation.css?v=status-board-light-clarity-20260714",
+    "/css/gate-theme-unified-contract.css",
+    "/css/gate-clean-ui-pass.css"
+  ],
+  "currentDirectScripts": [
+    "/js/gate-record-display-contract.js?v=record-display-integrity-20260714b",
+    "/js/gate-component-contracts.js",
+    "/js/gate-ui-hooks.js?v=phase-6-hooks-20260709",
+    "/js/gate-branding-controller.js",
+    "/js/prc-dash-runtime-fixes.js?v=phase-8e-runtime-safeguards-20260709",
+    "/js/prc-dash-sat-arrivals.js",
+    "/js/prc-dash-space-force.js",
+    "/js/prc-dash-dorm-reopen.js",
+    "/js/prc-dash-final-audit.js?v=record-display-integrity-20260714",
+    "/js/gate-status-board-controller.js?v=status-board-render-stability-20260715",
+    "/js/gate-processing-controller.js?v=record-display-integrity-20260714",
+    "/js/prc-dash-dorm-flag-validation.js?v=record-display-integrity-20260714b",
+    "/js/prc-dash-auditorium-location.js",
+    "/js/gate-bus-workflow-controller.js?v=phase-3-bus-workflow-20260709",
+    "/js/gate-airport-bus-delete-controller.js?v=airport-bus-delete-20260714",
+    "/js/gate-input-page-controller.js?v=record-display-integrity-20260714",
+    "/js/gate-archive-controller.js?v=phase-8c-report-wording-20260709",
+    "/js/gate-permission-guard.js?v=phase-1a-permission-guard-20260709",
+    "/js/gate-tablet-shell-classifier.js?v=tablet-shell-20260714",
+    "/js/gate-app-shell-controller.js?v=phase-7g-viewport-watermark-20260709",
+    "/js/gate-fullscreen-board-layout-controller.js?v=fullscreen-board-containment-20260714b",
+    "/js/prc-dash-modal-mobile-validation.js?v=phase-7e-ui-ownership-20260709",
+    "/js/gate-render-stability-fix.js?v=fullscreen-desktop-stability-20260714",
+    "/js/prc-dash-processing-loaded-summary.js",
+    "/js/gate-premium-metrics-controller.js?v=premium-metrics-20260709d",
+    "/js/prc-dash-overtime-audit.js",
+    "/js/gate-status-board-timer-visual-stability.js?v=status-board-timer-visual-stability-20260715",
+    "/js/gate-status-board-shadow-controller.js?v=phase-3a-status-board-shadow-20260715"
+  ],
+  "grandfatheredCorrectiveAssets": [
+    "/css/gate-mobile-corrective.css",
+    "/css/gate-ui-ownership-correction.css",
+    "/css/gate-light-mode-grid-correction.css",
+    "/js/prc-dash-runtime-fixes.js",
+    "/js/prc-dash-modal-mobile-validation.js",
+    "/js/gate-render-stability-fix.js",
+    "/js/gate-status-board-timer-visual-stability.js"
+  ],
+  "rules": [
+    "The active middleware stack may not exceed the recorded maximums.",
+    "No new asset named as a fix, patch, corrective layer, restore layer, finalizer, cleanup, or stability layer may be activated.",
+    "Any active-asset change must update this inventory and the active runtime register in the same pull request.",
+    "A visible Phase 3B Status Board must be net-negative in active assets and meet the Phase 3B exit targets.",
+    "The hidden Phase 3A shadow observer remains the only Build 2 runtime asset until a separate authorization decision."
+  ]
+}

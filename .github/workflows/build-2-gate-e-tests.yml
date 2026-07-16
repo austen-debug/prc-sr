@@ -1,0 +1,119 @@
+name: Build 2 Gate E Tests
+
+on:
+  push:
+    paths:
+      - 'public/app/synchronization/**'
+      - 'public/app/offline/**'
+      - 'public/gate-build-2-sw.js'
+      - 'public/app/shell/**'
+      - 'public/app/data/**'
+      - 'tests/build-2/synchronization/**'
+      - 'docs/build-2/SYNCHRONIZATION_DEGRADED_OPERATION.md'
+      - 'docs/build-2/GATE_E_EXECUTION_REPORT.md'
+      - 'docs/build-2/PROGRAM_TRACEABILITY_MATRIX.md'
+      - 'docs/build-2/PROGRAM_INTENT_BASELINE.md'
+      - 'docs/build-2/INDEX.md'
+      - '.github/workflows/build-2-gate-e-tests.yml'
+  pull_request:
+    paths:
+      - 'public/app/synchronization/**'
+      - 'public/app/offline/**'
+      - 'public/gate-build-2-sw.js'
+      - 'public/app/shell/**'
+      - 'public/app/data/**'
+      - 'tests/build-2/synchronization/**'
+      - 'docs/build-2/SYNCHRONIZATION_DEGRADED_OPERATION.md'
+      - 'docs/build-2/GATE_E_EXECUTION_REPORT.md'
+      - 'docs/build-2/PROGRAM_TRACEABILITY_MATRIX.md'
+      - 'docs/build-2/PROGRAM_INTENT_BASELINE.md'
+      - 'docs/build-2/INDEX.md'
+      - '.github/workflows/build-2-gate-e-tests.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-2-gate-e-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gate-e:
+    name: Synchronization, degraded operation, and full regression
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Validate Gate E source syntax
+        run: |
+          for file in public/app/synchronization/*.mjs public/app/offline/*.mjs; do
+            node --check "$file"
+          done
+          node --experimental-default-type=module --check public/gate-build-2-sw.js
+
+      - name: Validate synchronization and degraded operation
+        run: node --test tests/build-2/synchronization/*.test.mjs
+
+      - name: Validate server, data, and critical workflows
+        run: |
+          node --experimental-default-type=module --test tests/build-2/server/*.test.mjs
+          node --test tests/build-2/data/*.test.mjs
+          node --test tests/build-2/workflows/*.test.mjs
+
+      - name: Validate domain and historical parity
+        run: |
+          node --test tests/build-2/domain/*.test.mjs
+          node --test tests/build-2/parity/*.test.mjs
+
+      - name: Validate Phase 2 application foundation
+        run: |
+          node --test tests/build-2/design/*.test.mjs
+          node --test tests/build-2/components/*.test.mjs
+          node --test tests/build-2/shell/*.test.mjs
+          node --test tests/build-2/responsive/*.test.mjs
+          node --test tests/build-2/accessibility/*.test.mjs
+
+      - name: Validate synchronization ownership boundaries
+        run: |
+          grep -q 'GATE_INVALIDATION_CHANNEL' public/app/synchronization/invalidation-channel.mjs
+          grep -q 'refreshRequired' public/app/synchronization/sync-state.mjs
+          grep -q 'offlineWriteQueue: false' public/app/synchronization/guarded-records-client.mjs
+          grep -q 'isAuthoritativeApiRequest' public/gate-build-2-sw.js
+          grep -q 'Foundation Alignment Gate F' docs/build-2/GATE_E_EXECUTION_REPORT.md
+          if grep -REn 'localStorage|sessionStorage|indexedDB|IDBDatabase' public/app/synchronization; then
+            echo 'Gate E may not create a persistent client operational database.'
+            exit 1
+          fi
+          if grep -REn 'backgroundSync|sync\.register|pendingWrites|queuedWrites|mutationQueue' public/app/synchronization public/app/offline public/gate-build-2-sw.js; then
+            echo 'Gate E may not queue operational writes.'
+            exit 1
+          fi
+
+      - name: Validate static-shell cache manifest
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFile } from 'node:fs/promises';
+          import { GATE_STATIC_SHELL_ASSETS, validateCachePolicy } from './public/app/offline/cache-policy.mjs';
+          const validation = validateCachePolicy();
+          if (!validation.valid) throw new Error(validation.errors.join('\n'));
+          for (const asset of GATE_STATIC_SHELL_ASSETS) await readFile(`public${asset}`);
+          NODE
+
+      - name: Validate Build 1 runtime isolation
+        run: |
+          if grep -Eq '/app/(synchronization|offline)/|gate-build-2-sw' functions/_middleware.js; then
+            echo 'Gate E assets must not be loaded by active middleware.'
+            exit 1
+          fi
+          if grep -REn 'gate-build-2-sw|registerGateShellServiceWorker|app/synchronization' public/index.html public/js functions/_middleware.js; then
+            echo 'Build 1 must not register or call Gate E assets.'
+            exit 1
+          fi

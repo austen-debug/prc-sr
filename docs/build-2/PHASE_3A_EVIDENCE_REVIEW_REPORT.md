@@ -2,7 +2,7 @@
 
 ## Status Board Evidence Review
 
-Status: IMPLEMENTED / VALIDATION PENDING  
+Status: PACKAGE COMPLETE / CI GREEN  
 Evidence state: COLLECTION OPEN  
 Visible runtime owner: Build 1
 
@@ -96,12 +96,46 @@ tests/build-2/status-board-shadow/status-board-evidence-review.test.mjs
 
 The workflow also reruns the complete Phase 3A, foundation, data, workflow, synchronization, design, component, shell, responsive, and accessibility suites.
 
-## Current decision
+## Final automated validation
 
 ```text
-PENDING — final CI validation
+PASS — Build 2 Phase 3A Evidence Review
+PASS — Build 2 Phase 3A Status Board Shadow
+PASS — Build 2 Gate F Tests
+PASS — Build 2 Gate E Tests
+PASS — Build 2 Gate D Tests
+PASS — Build 2 Gate C Tests
+PASS — Build 2 Gate B Tests
+PASS — Build 2 Foundation Alignment Tests
+PASS — Build 2 Phase 1 Validation
+PASS — Build 2 Domain Tests
+PASS — Build 2 Component Tests
+PASS — Build 2 Shell Tests
+PASS — Build 2 Responsive Tests
+PASS — Build 2 Accessibility Tests
+```
+
+## Defect correction during validation
+
+The initial deployment-prerequisite update removed exact Gate F governance phrases that existing regression tests deliberately protect. The wording was restored so the program continues to distinguish repository proof from external deployment proof and continues to state that unverified external prerequisites do not block hidden, read-only shadow execution.
+
+No evidence threshold, authorization block, runtime boundary, or deployment prerequisite was weakened.
+
+## Package closure decision
+
+```text
+PASS — pure evidence-review evaluator
+PASS — sustained sample duration guard
+PASS — zero-blocking live parity gate
+PASS — manual evidence identity-field rejection
+PASS — deployment evidence secret-field rejection
+PASS — mismatch disposition cannot override parity
+PASS — Build 1-only rollback contract
+PASS — review packet cannot authorize Phase 3B
+PASS — no route, persistence, service worker, or operational write introduced
+
 PENDING — sustained live shadow evidence
-PENDING — mismatch disposition based on live results
+PENDING — mismatch disposition and corrected later samples when live blockers occur
 PENDING — manual six-posture evidence
 PENDING — manual accessibility and fullscreen evidence
 PENDING — controlled-environment and rollback evidence
@@ -116,6 +150,6 @@ NOT AUTHORIZED — Build 1 Status Board retirement
 
 The review package adds no route, markup, API call, browser storage, service worker, operational write, or feature owner. Build 1 remains the sole visible Status Board.
 
-## Next after validation
+## Next
 
-Open and retain the live/manual evidence set. The review may advance to `ready-for-authorization-review` only when every evidence class passes. A separate governance decision is then required before Phase 3B can begin.
+Collect and retain the live/manual evidence set. The review may advance to `ready-for-authorization-review` only when every evidence class passes. A separate explicit governance decision is then required before Phase 3B can begin.

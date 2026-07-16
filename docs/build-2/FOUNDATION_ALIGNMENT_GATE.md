@@ -1,99 +1,92 @@
 # GATE Build 2 — Foundation Alignment Gate
 
-Status: ACTIVE PROGRAM CORRECTION  
+Status: GATE F ACTIVE / FINAL REVALIDATION  
 Runtime status: staged; Build 1 remains the operational baseline
 
 ## Purpose
 
-The alignment gate closes requirements that were documented in the original transformation program but were not fully implemented before Phase 1 was labeled complete. It preserves the validated Phase 2 foundation and prevents unresolved concurrency, audit, archive, synchronization, and domain-ownership gaps from entering Phase 3.
+The alignment gate closes requirements that were documented in the original transformation program but were not fully implemented before Phase 1 was labeled complete. It preserves the validated Phase 2 foundation and prevents unresolved concurrency, audit, archive, synchronization, and domain-ownership gaps from entering route migration.
 
 ## Gate sequence
 
-### Gate A — Program baseline and canonical domain completion
+### Gate A — Program baseline and canonical domain completion — COMPLETE
 
-- establish one governing program-intent baseline;
-- create requirement-to-source/test/runtime traceability;
-- correct phase status language;
-- complete active Week Group, arrival, bus, dorm, processing, timer, shared summary, report, and archive-snapshot domain owners;
-- preserve the approved Status Board-first migration order;
-- keep all work staged outside Build 1.
+- one governing program-intent baseline;
+- requirement-to-source/test/runtime traceability;
+- corrected phase status language;
+- active Week Group, arrival, bus, dorm, processing, timer, shared summary, report, and archive-snapshot domain owners;
+- approved Status Board-first migration order;
+- staged isolation from Build 1.
 
-### Gate B — Canonical entities and role provenance
+### Gate B — Canonical entities and role provenance — COMPLETE
 
-- remove the canonical-to-legacy-to-domain round trip;
-- make domain selectors consume canonical entities directly;
-- add `createdByRole` and `updatedByRole` to new Build 2 writes;
-- isolate legacy aliases to normalization and transport adapters;
-- retain non-destructive unknown-record and rollback behavior.
+- direct canonical entity consumption;
+- creator/updater role provenance;
+- legacy aliases restricted to compatibility and transport adapters;
+- non-destructive unknown-record and rollback behavior.
 
-### Gate C — Backend versioning and append-only audit
+### Gate C — Backend versioning and append-only audit — COMPLETE
 
-- add server-enforced record versions and expected-version writes;
-- return stable conflict responses;
-- add `GateAuditRepository` and append-only audit-event records;
-- require audit success for designated critical workflows;
-- preserve server-side role authorization.
+- server-enforced record versions and expected-version writes;
+- stable conflict responses;
+- `GateAuditRepository` and append-only audit-event records;
+- server-derived role provenance and Squadron read-only projection;
+- API, repository, schema, and migration protection.
 
-### Gate D — Critical workflow orchestration
+### Gate D — Critical workflow orchestration — COMPLETE
 
 - Week Group initialization with verification and recovery;
-- bus confirmation and correction orchestration;
-- dorm open/close/reopen/final-time orchestration;
+- arrival and dorm-transition orchestration;
 - archive create/verify/audit/clear/verify closeout;
 - immutable archive amendment behavior;
-- explicit partial-failure states and rollback.
+- explicit partial-failure states, compensation, and resume.
 
-### Gate E — Synchronization and degraded operation
+### Gate E — Synchronization and degraded operation — COMPLETE
 
-- `BroadcastChannel` invalidation notices followed by authoritative refetch;
-- no second client-side database;
-- visible offline, stale, and last-synchronized states;
-- cached shell/static assets only;
-- no queued critical writes until reconciliation is mature.
+- identifier-only `BroadcastChannel` invalidation followed by authoritative refetch;
+- no second client-side operational database;
+- visible offline, stale, failed, and last-synchronized states;
+- static-shell caching only;
+- no queued critical writes;
+- fail-closed read-only behavior when authority is unavailable.
 
-### Gate F — Consolidated revalidation
+### Gate F — Consolidated revalidation — ACTIVE
 
-- full operational-truth and canonical-entity suites;
-- deployed API version/conflict tests;
-- audit and orchestration failure/recovery tests;
-- archive transaction tests;
+- complete operational-truth and canonical-entity suites;
+- records API version/conflict and role tests;
+- audit and workflow failure/recovery tests;
+- archive closeout/amendment tests;
 - synchronization and degraded-operation tests;
 - complete Phase 2 regression;
+- schema/migration equivalence;
+- governance consistency;
 - Build 1 isolation;
-- corrected Phase 1 exit decision.
+- corrected Phase 1 exit decision;
+- bounded Status Board shadow-migration authorization.
 
-## Phase 3 block
+## Production activation block
 
-No Build 2 production route may activate until Gates A–F close. Controlled workshops, hidden parity calculations, and non-runtime test fixtures remain permitted.
+No Build 2 production route may activate through Gate F alone. Gate F can authorize only a hidden, read-only Status Board shadow package. Every visible route activation still requires route-specific deployment, parity, accessibility, responsive, activation, rollback, monitoring, and legacy-retirement evidence.
 
-## Gate A exit criteria
+## Gate F exit criteria
 
 ```text
-PASS — governing baseline exists
-PASS — traceability matrix exists
-PASS — phase status reflects actual implementation
-PASS — approved route order is explicit
-PASS — active Week Group owner exists
-PASS — last confirmed arrival and local-arrival owners exist
-PASS — bus manifested/active/arrived meanings remain distinct
-PASS — dorm state and processing summaries exist
-PASS — timer/overtime state has one deterministic owner
-PASS — Current Summary and Archive Report share one model
-PASS — immutable archive snapshot builder exists
-PASS — historical 911/818/39/857 fixture remains exact
-PASS — all prior Build 2 suites pass
-PASS — Build 1 middleware remains unchanged
+PASS — Gates A–E reports are complete
+PASS — governing baseline and traceability are current
+PASS — complete operational-truth and historical parity suite
+PASS — canonical entity and compatibility suite
+PASS — server versioning, authorization, and audit suite
+PASS — workflow success, conflict, partial, compensation, and resume suite
+PASS — archive closeout and amendment suite
+PASS — synchronization, degraded operation, and cache suite
+PASS — complete design, component, shell, responsive, and accessibility regression
+PASS — schema and migration define matching audit triggers
+PASS — external deployment state is documented without being inferred
+PASS — corrected Phase 1 exit decision is explicit
+PASS — Status Board shadow authorization is read-only and bounded
+PASS — Build 1 runtime remains active and isolated
 ```
 
-## Non-goals for Gate A
+## External deployment qualification
 
-Gate A does not:
-
-- activate Build 2;
-- modify the records API;
-- implement server versioning;
-- create audit records;
-- change login/session behavior;
-- change active Build 1 calculations or reports;
-- alter the approved role model;
-- introduce new UI or CSS into the operational runtime.
+Gate F validates repository source and executable CI. Existing Cloudflare and D1 environment state remains governed by `DEPLOYMENT_PREREQUISITES.md` and must be verified before production activation.

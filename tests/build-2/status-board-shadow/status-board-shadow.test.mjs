@@ -216,6 +216,7 @@ test('foreign invalidation triggers authoritative refetch and a fresh route-spec
   assert.equal(listCalls, 1);
   assert.equal(adapter.getLatest().status, 'exact');
   const firstVersion = coordinator.readSnapshot().version;
+  const initialActiveBusIds = [...adapter.getLatest().canonicalSnapshot.activeBusIds];
 
   records = [...historicalFixture.records, {
     __backendId: 'bus-shadow-active',
@@ -233,7 +234,9 @@ test('foreign invalidation triggers authoritative refetch and a fresh route-spec
   assert.equal(listCalls, 2);
   assert.ok(coordinator.readSnapshot().version > firstVersion);
   assert.equal(adapter.getLatest().status, 'exact');
-  assert.deepEqual(adapter.getLatest().canonicalSnapshot.activeBusIds, ['bus-shadow-active']);
+  const refreshedActiveBusIds = adapter.getLatest().canonicalSnapshot.activeBusIds;
+  assert.ok(refreshedActiveBusIds.includes('bus-shadow-active'));
+  assert.deepEqual(refreshedActiveBusIds.filter(id => id !== 'bus-shadow-active'), initialActiveBusIds);
   adapter.stop();
 });
 

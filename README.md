@@ -1,243 +1,159 @@
 # GATE — Gateway Arrival Tracking Environment
 
-Gateway Arrival Tracking Environment is an unclassified operational throughput tool for Pfingston Reception Center receiving operations. It tracks reception status counts, airport and local arrivals, dormitory processing status, assigned Airmen, dorm timers, Squadron Board display data, and archive closeout records.
+GATE is the unclassified operational throughput environment for Pfingston Reception Center receiving. It provides one operational picture from airport and local arrival through PRC processing, dormitory movement, command-display awareness, closeout, and historical review.
 
-The system is intended to support the receiving workflow from airport arrivals through PRC processing, dormitory load management, command-center display, and archived week-group review.
+## Data boundary
 
-## Data Rules
+GATE stores operational counts, timestamps, workflow state, dorm configuration, approved staff assignment, and historical receiving summaries.
 
-- No PII
-- No trainee names
-- No orders data
-- No trainee records
-- Status counts only
-- Shared access accounts only for beta testing
+It does not store trainee names, trainee-level records, orders data, or expanded trainee PII. Cloudflare credentials and session secrets remain server-side and may not enter records, browser storage, client bundles, archives, logs, or documentation values.
 
-## Access Roles
+## Operational workflow
 
-### Instructor Access
+```text
+Airport / local arrival
+        ↓
+confirmed PRC arrival
+        ↓
+Processing and dorm assignment
+        ↓
+dorm open / phase / load / close
+        ↓
+Status Board and command awareness
+        ↓
+verified immutable archive closeout
+```
 
-Instructor access controls the structure and authority of the operation.
+### Airport
 
-Instructor functions include:
+- Maintain final airport-arrival planning context.
+- Dispatch and track airport buses.
+- Confirm arrivals and record approved population counts.
+- Add local buses and local arrivals.
+- Correct bus records through authorized workflows.
 
-- Initialize week group from Input
-- Configure explicit Receiving Day One and Day Two date/time windows
-- Monitor SAT arrivals on Airport
-- Update last airport arrival time
-- Dispatch airport buses
-- Edit airport and local bus counts
-- Track Female, Naturalization, and Space Force arrival counts
-- Acknowledge bus arrivals
-- Add local buses and local arrivals
-- Open and close dorms
-- Reopen closed dorms when correction is required
-- Update dorm load, phase, and assigned Airman
-- Maintain Band, Space Force, and Female dorm indicators
-- Right-click edit dorm records
-- Add dorm notes
-- Delete dormitories
-- Close out week group
-- Access Archives
-- Search, edit, print/PDF, and delete archive records with the override password
+### Input
 
-### Airman Access
+- Configure the Week Group, dorm identities, capacities, indicators, and receiving windows.
+- Reject incomplete windows and duplicate dorm identities.
+- Initialize expected strength and the operational dorm set.
 
-Airman access supports live processing execution without exposing instructor-only controls.
+### Processing
 
-Airman functions include:
+- Update dorm load, phase, assignment, and approved location context.
+- Open, close, reopen, and correct dorm processing state.
+- Preserve Female, Band, and Space Force indicators.
 
-- View Status Board
-- Acknowledge bus arrivals
-- Open Processing
-- Add local buses and local arrivals
-- Add or subtract dorm load numbers
-- Update processing phases
-- Add or update assigned Airman
-- Enable sound
-- Use fullscreen Status Board
+### Status Board
+
+- Display Arrived and Expected strength.
+- Display arrival-time and local-time context.
+- Display active buses and Empty, Open, and Closed dorm regions.
+- Display load, phase, timer, overtime, and operational indicators.
+- Support fullscreen command-display use.
+
+### Archives and reports
+
+- Review immutable closed Week Groups and operational rollups.
+- Print/PDF archived reports and the current receiving summary.
+- Record corrections as amendments rather than silent archive overwrites.
+
+### Squadron Board
+
+- Provide a limited, read-only operational display.
+- Hide staff assignment, location detail, internal notes, archives, and audit data.
+
+## Access roles
+
+### Instructor access
+
+Instructor access controls the structure and authority of the operation and includes all six approved routes.
+
+### Airman access
+
+Airman access supports live Status Board and Processing execution without exposing Instructor-only controls.
 
 Airman access does not include Squadron Board and does not initialize week groups, dispatch airport buses, open or close dorms, right-click edit dorm records, close out week groups, or access Archives.
 
-### Squadron Access
+### Squadron access
 
 Squadron access is read-only and limited to Squadron Board. Squadron credentials are supplied through server-side Cloudflare environment bindings and may not be persisted in application records or exposed in client assets.
 
-## Operational Workflow
+Navigation visibility is not authorization. The server remains authoritative.
 
-### 1. Airport
+## Current runtime
 
-Airport supports inbound arrival tracking.
+Build 1 remains the only visible operational application.
 
-Primary workflow:
+Cloudflare middleware currently serves:
 
-- Set or update the last airport arrival time
-- Generate airport buses
-- Track buses en route
-- Record OTW, Female, Naturalization, and Space Force counts
-- Edit airport/local bus records when corrections are required
-- Feed arrival totals into the Status Board, Archives, and print/PDF reports
+- 13 directly injected stylesheets;
+- 3 imported stylesheets;
+- 28 directly injected scripts;
+- one hidden, read-only Phase 3A Status Board shadow observer.
 
-### 2. Input
+The current order and ownership are documented in [`docs/ACTIVE_RUNTIME_STACK.md`](./docs/ACTIVE_RUNTIME_STACK.md). The machine-readable ceiling is [`docs/build-2/ACTIVE_RUNTIME_BUDGET.json`](./docs/build-2/ACTIVE_RUNTIME_BUDGET.json).
 
-Input initializes the operational structure for a week group.
+No new corrective, patch, fix, restoration, finalizer, cleanup, or stability asset may be activated. A visible Build 2 route must reduce the active asset count and retire the competing Build 1 owner.
 
-Primary workflow:
+## Build 2 status
 
-- Enter the week group ID
-- Build dorm rows with SDQ, section, inter-section, dorm, sex, Band, Space Force, and load values
-- Configure optional Receiving Day One and Receiving Day Two start/end windows
-- Validate that any configured receiving window has both start and end values
-- Preserve Band and Space Force as mutually exclusive dorm indicators
-- Save receiving window values into dorm and archive records for report continuity
-- Initialize the week group
-- Establish expected counts used by the Status Board, Squadron Board, Archives, and reports
+Completed or staged:
 
-### 3. Processing
+- canonical operational truth and entity boundaries;
+- typed repositories, server versions, conflicts, and role provenance;
+- append-only audit ownership;
+- critical workflow orchestration and recovery;
+- synchronization and degraded-operation contracts;
+- GATE Design Language, components, shell, responsive, and accessibility foundations.
 
-Processing is the active dormitory management workspace.
+Active:
 
-Primary workflow:
+- hidden, read-only Status Board shadow comparison;
+- memory-only aggregate parity evidence.
 
-- Open dorm processing controls
-- Update dorm phase/status
-- Add or subtract dorm load values
-- Save assigned Airman and auditorium/location information
-- Manage Female, Band, and Space Force indicators
-- Use instructor right-click/context actions for record correction
-- Add local arrivals
-- Close out the week group when operations are complete
+Not authorized:
 
-### 4. Status Board
+- Phase 3B controlled test surface;
+- visible Build 2 production route;
+- Build 2 production critical writes;
+- Build 1 Status Board retirement;
+- operational Build 2 service-worker registration;
+- Squadron login activation.
 
-Status Board is the live command-center display.
+The current program position is maintained in [`docs/build-2/INDEX.md`](./docs/build-2/INDEX.md). The governing mission and constraints are maintained in [`docs/build-2/PROGRAM_INTENT_BASELINE.md`](./docs/build-2/PROGRAM_INTENT_BASELINE.md).
 
-Primary workflow:
+## Migration order
 
-- Display arrived, expected, last-arrival, local, and active-bus information
-- Display Empty, Open, and Closed dorm columns
-- Show dorm name, SDQ/section/inter-section, status, timer, load, progress, and operational indicators
-- Preserve visible Female, Band, and Space Force indicators
-- Support fullscreen display on lobby/operations monitors
+```text
+1. Status Board
+2. Processing
+3. Airport
+4. Input
+5. Archives and Reports
+6. Squadron Board
+```
 
-### 5. Squadron Board
+Each route migration must preserve operational behavior, prove responsive and accessibility behavior, define activation and rollback, and retire the former owner after acceptance.
 
-Squadron Board is the limited-view command/auditorium display.
+## Status Board cleanup gate
 
-Primary workflow:
+Before Phase 3B may be considered:
 
-- Display Status Board-style dorm status with a reduced information set
-- Preserve Empty, Open, and Closed operational awareness
-- Preserve Female, Band, and Space Force indicators
-- Hide Airman and auditorium/location details by design
-- Support display environments where a limited operational view is required
+- live and manual evidence must be complete;
+- Latest Confirmed Arrival and Final Airport Arrival must be separate concepts;
+- phone portrait metrics must preserve the approved two-by-two composition;
+- every right-click action must have visible keyboard and touch parity;
+- the active Status Board stack must meet [`docs/build-2/STATUS_BOARD_RETIREMENT_MANIFEST.md`](./docs/build-2/STATUS_BOARD_RETIREMENT_MANIFEST.md);
+- external API, database, session-binding, accessibility, responsive, and rollback prerequisites must be verified.
 
-### 6. Archives
+## Development rules
 
-Archives is the records-management and review module.
-
-Primary workflow:
-
-- Review closed week groups
-- Search/filter by week group
-- Expand/collapse records by year and month
-- Review rollups for dorms, buses, arrived, Female, Naturalization, and Space Force totals
-- Open archive records through the archive edit modal
-- Print/PDF archived receiving reports
-- Print/PDF the current live receiving summary before closeout
-
-## Pages
-
-- Status Board
-- Airport
-- Input
-- Processing
-- Archives
-- Squadron Board
-
-## Current UI Architecture
-
-The application uses a controlled active UI stack injected through Cloudflare Functions middleware.
-
-Active stylesheet entrypoints:
-
-1. `/css/gate-index-legacy-shell.css`
-2. `/css/gate-base-tokens.css`
-3. `/css/gate-layout-pages.css`
-4. `/css/gate-components.css`
-5. `/css/gate-utilities-access.css`
-
-Final active UI chain loaded through `gate-utilities-access.css`:
-
-1. `/css/gate-board-presentation.css`
-2. `/css/gate-theme-unified-contract.css`
-3. `/css/gate-clean-ui-pass.css`
-
-Current UI ownership rules:
-
-- Security banner and locked header/nav shell are owned by `gate-clean-ui-pass.css`
-- Status Board and Squadron Board dorm-card geometry is owned by `gate-clean-ui-pass.css`
-- Presentation breakpoints/readability are owned by `gate-board-presentation.css`
-- Light/dark theme tokens are owned by `gate-theme-unified-contract.css`
-- Processing chip support is owned by `prc-dash-dorm-cards.css`
-- Modal and mobile-safe modal layout is owned by `prc-dash-modal-systems.css`
-- Archive management styling is owned by `gate-archive-management.css`
-
-Do not add additional board-card patch styles outside the active ownership files. Band and Space Force board banners must use the Dorm Card contract and must not be implemented as absolute overlay patches.
-
-## Runtime Controllers
-
-The current stabilization effort moves the app away from repeated patch-after-render behavior and toward stable component contracts and explicit controllers.
-
-Current controller areas:
-
-- `GateHooks` — lifecycle hook layer
-- `GateBrandingController` — user-visible GATE terminology and document identity
-- `GateActiveBusController` — active bus cards on Status Board
-- `GateBusWorkflowController` — airport dispatch, local arrivals, combined bus log, and shared bus edit modal
-- `GateInputPageController` — Input page receiving windows, batch Space Force support, archive window fields, and initialization preflight validation
-- `GateArchiveSchemaController` — archive schema and closeout safety
-- `GateArchivePrintController` — archive print/PDF and current-summary print/PDF button ownership
-- `GateDormBoardController` — Status Board and Squadron Board dorm rendering
-- `GateTimerSoundController` — timer display, sound event processing, and overtime eligibility
-- `GateRuntimeStabilityController` — sound unlock, capped dorm load controls, Escape-to-close, and batch tab flow
-
-## Component Contracts
-
-Current contract areas:
-
-- Dorm Card component
-- Active Bus Card component
-- Status Metric component
-- Archive Record component
-- Header/Nav shell
-- Processing Dorm Modal tagging
-
-Dorm Card operational indicator rules:
-
-- Female alert rings the whole dorm card, not the load number
-- Band and Space Force indicators render as full-width card header banners on Status Board and Squadron Board
-- Band and Space Force indicators render as compact chips on Processing cards
-- Space Force and Band are mutually exclusive
-- Squadron Board uses the same card structure as Status Board, with limited-view data hiding
-
-## Validation Artifacts
-
-Current validation and continuity documents:
-
-- `docs/ui-stack-audit.md`
-- `docs/ui-page-validation-pass.md`
-
-`ui-stack-audit.md` freezes the active UI stack and ownership boundaries.
-
-`ui-page-validation-pass.md` records the current page-by-page static validation pass for:
-
-- Status Board
-- Squadron Board
-- Processing
-- Airport
-- Input
-- Archives
-- Relevant modals
-- Print/PDF flow
-- Light/dark structural consistency
+- Preserve Build 1 until the replacement owner is accepted.
+- Do not add parallel route, component, calculation, or responsive systems.
+- Do not add page-specific corrective CSS.
+- Do not add broad mutation observers or polling when lifecycle/store events can own the update.
+- Do not queue offline operational writes.
+- Do not infer external deployment state from repository source.
+- Use semantic GDL tokens and shared components.
+- Keep evidence and workshop utilities outside active middleware and routing.

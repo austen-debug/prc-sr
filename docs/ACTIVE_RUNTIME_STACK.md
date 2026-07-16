@@ -1,11 +1,23 @@
 # GATE Active Runtime Stack
 
-Status: Phase 3A Status Board shadow active  
+Status: Phase 3A Status Board shadow active; Audit Remediation Gate 1 complete; Gate 2 next  
 Scope: authoritative served-runtime order from `functions/_middleware.js`
 
 ## Purpose
 
-The active GATE application is not defined only by `public/index.html`. Cloudflare Functions middleware injects and source-refactors the CSS and JavaScript layers used by authenticated pages. This register identifies the active order, operational ownership, and the narrow Phase 3A shadow boundary.
+The active GATE application is not defined only by `public/index.html`. Cloudflare Functions middleware injects and source-refactors the CSS and JavaScript layers used by authenticated pages. This register identifies the active order, operational ownership, the narrow Phase 3A shadow boundary, and the enforced runtime-growth ceiling.
+
+## Active asset totals
+
+```text
+Direct stylesheets: 13
+Imported stylesheets: 3
+Direct scripts: 28
+Visible Build 2 routes: 0
+Hidden Build 2 runtime observers: 1
+```
+
+The machine-readable inventory and ceilings are governed by `docs/build-2/ACTIVE_RUNTIME_BUDGET.json` and validated by `tests/runtime/active-runtime-budget.test.mjs`.
 
 ## Active CSS load path
 
@@ -27,7 +39,7 @@ Injected directly by middleware in current order:
 
 Imported through the active utility chain:
 
-- `/css/gate-board-presentation.css`
+- `/css/gate-board-presentation.css?v=status-board-light-clarity-20260714`
 - `/css/gate-theme-unified-contract.css`
 - `/css/gate-clean-ui-pass.css`
 
@@ -110,9 +122,35 @@ Only the narrow Phase 3A bridge is injected. The following remain staged and are
 - Build 2 write workflows;
 - Build 2 synchronization service as an operational data owner;
 - Build 2 service worker;
-- Processing, Airport, Input, Archives, and Squadron Build 2 routes.
+- Processing, Airport, Input, Archives, and Squadron Build 2 routes;
+- fixture evidence harness and evidence-retention utilities.
 
 The shadow bridge dynamically imports only the pure Status Board shadow package after authenticated page load.
+
+## Runtime-bloat controls
+
+The current counts are ceilings, not targets.
+
+- A normal pull request may not increase direct or imported active assets.
+- No new active asset may be named or scoped as a fix, patch, corrective layer, restore layer, finalizer, cleanup layer, or stability layer.
+- Any active-asset change must update this register and `ACTIVE_RUNTIME_BUDGET.json` in the same pull request.
+- A visible Phase 3B route must be net-negative and meet the retirement targets in `STATUS_BOARD_RETIREMENT_MANIFEST.md`.
+- Build 2 evidence, fixtures, and review tooling remain outside active middleware and routing.
+
+## Status Board retirement boundary
+
+Phase 3B must not add a second visible owner on top of the existing Status Board stack. The activation package must remove the legacy Status Board controllers, corrective presentation layers, middleware source rewrites, compatibility globals, and the Phase 3A shadow observer identified in `docs/build-2/STATUS_BOARD_RETIREMENT_MANIFEST.md`.
+
+Target after accepted Status Board activation:
+
+```text
+Direct stylesheets: 12 or fewer
+Imported stylesheets: 3 or fewer
+Direct scripts: 24 or fewer
+New corrective assets: 0
+Visible Status Board owners: 1
+Middleware Status Board source rewrites: 0
+```
 
 ## Historical continuity
 
@@ -122,14 +160,18 @@ Earlier ownership consolidation, removed patch files, and page-specific migratio
 
 ```text
 PASS — active middleware order documented
+PASS — machine-readable active asset inventory established
 PASS — Build 1 visible owners retained
 PASS — one hidden Phase 3A bridge loaded after Status Board timer owners
 PASS — runtime record-integrity workflow
 PASS — no visible Build 2 route
 PASS — no Build 2 production write path
+PASS — active asset growth blocked at the audited ceiling
 
 PENDING — sustained live shadow evidence
 PENDING — manual route accessibility, responsive, and fullscreen evidence
+PENDING — external deployment and rollback verification
+PENDING — Status Board legacy owner retirement
 NOT AUTHORIZED — Phase 3B controlled test surface
 NOT AUTHORIZED — Build 1 Status Board retirement
 ```

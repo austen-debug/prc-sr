@@ -1,0 +1,120 @@
+name: Build 2 Audit Remediation Gate 1
+
+on:
+  push:
+    paths:
+      - 'README.md'
+      - 'functions/_middleware.js'
+      - 'public/css/gate-utilities-access.css'
+      - 'public/app/status-board-shadow/**'
+      - 'tests/runtime/**'
+      - 'tests/build-2/**'
+      - 'docs/ACTIVE_RUNTIME_STACK.md'
+      - 'docs/build-2/PROGRAM_INTENT_BASELINE.md'
+      - 'docs/build-2/PROGRAM_TRACEABILITY_MATRIX.md'
+      - 'docs/build-2/ACTIVE_RUNTIME_BUDGET.json'
+      - 'docs/build-2/STATUS_BOARD_RETIREMENT_MANIFEST.md'
+      - 'docs/build-2/STATUS_BOARD_UX_DECISIONS.md'
+      - 'docs/build-2/AUDIT_REMEDIATION_PLAN.md'
+      - 'docs/build-2/AUDIT_REMEDIATION_GATE_1_REPORT.md'
+      - 'docs/build-2/INDEX.md'
+      - '.github/workflows/build-2-audit-remediation-gate-1.yml'
+  pull_request:
+    paths:
+      - 'README.md'
+      - 'functions/_middleware.js'
+      - 'public/css/gate-utilities-access.css'
+      - 'public/app/status-board-shadow/**'
+      - 'tests/runtime/**'
+      - 'tests/build-2/**'
+      - 'docs/ACTIVE_RUNTIME_STACK.md'
+      - 'docs/build-2/PROGRAM_INTENT_BASELINE.md'
+      - 'docs/build-2/PROGRAM_TRACEABILITY_MATRIX.md'
+      - 'docs/build-2/ACTIVE_RUNTIME_BUDGET.json'
+      - 'docs/build-2/STATUS_BOARD_RETIREMENT_MANIFEST.md'
+      - 'docs/build-2/STATUS_BOARD_UX_DECISIONS.md'
+      - 'docs/build-2/AUDIT_REMEDIATION_PLAN.md'
+      - 'docs/build-2/AUDIT_REMEDIATION_GATE_1_REPORT.md'
+      - 'docs/build-2/INDEX.md'
+      - '.github/workflows/build-2-audit-remediation-gate-1.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-2-audit-remediation-gate-1-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  remediation-gate-1:
+    name: Governance, UX, and runtime-bloat controls
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Validate active runtime budget and record integrity
+        run: |
+          node --test tests/runtime/active-runtime-budget.test.mjs
+          node --test tests/runtime/record-display-integrity.test.mjs
+
+      - name: Validate Status Board UX and Phase 3A contracts
+        run: |
+          node --test tests/build-2/status-board-shadow/*.test.mjs
+          node --input-type=module <<'NODE'
+          import { STATUS_BOARD_POSTURE_CONTRACTS, validateStatusBoardRouteContract } from './public/app/status-board-shadow/index.mjs';
+          const validation = validateStatusBoardRouteContract();
+          if (!validation.valid) throw new Error(validation.errors.join(' '));
+          if (STATUS_BOARD_POSTURE_CONTRACTS['phone-portrait'].metricColumns !== 2) {
+            throw new Error('Phone portrait must preserve the approved two-by-two metric composition.');
+          }
+          NODE
+
+      - name: Validate foundation data and workflows
+        run: |
+          node --test tests/build-2/foundation/*.test.mjs
+          node --experimental-default-type=module --test tests/build-2/server/*.test.mjs
+          node --test tests/build-2/data/*.test.mjs
+          node --test tests/build-2/domain/*.test.mjs
+          node --test tests/build-2/parity/*.test.mjs
+          node --test tests/build-2/workflows/*.test.mjs
+          node --test tests/build-2/synchronization/*.test.mjs
+
+      - name: Validate application foundation
+        run: |
+          node --test tests/build-2/design/*.test.mjs
+          node --test tests/build-2/components/*.test.mjs
+          node --test tests/build-2/shell/*.test.mjs
+          node --test tests/build-2/responsive/*.test.mjs
+          node --test tests/build-2/accessibility/*.test.mjs
+
+      - name: Validate current-state governance
+        run: |
+          grep -q 'Sustainment and bloat-control rule' docs/build-2/PROGRAM_INTENT_BASELINE.md
+          grep -q 'Latest Confirmed Arrival' docs/build-2/STATUS_BOARD_UX_DECISIONS.md
+          grep -q 'Phone portrait metrics remain two by two' docs/build-2/STATUS_BOARD_UX_DECISIONS.md
+          grep -q 'Right-click is never the only action path' docs/build-2/STATUS_BOARD_UX_DECISIONS.md
+          grep -q 'Direct active scripts: 24 or fewer' docs/build-2/STATUS_BOARD_RETIREMENT_MANIFEST.md
+          grep -q 'Audit Remediation Gate 1' docs/build-2/INDEX.md
+          grep -q 'Airman access does not include Squadron Board' README.md
+          grep -q 'Squadron access is read-only and limited to Squadron Board' README.md
+
+      - name: Validate activation remains blocked
+        run: |
+          grep -Eq 'Phase 3B — Status Board Controlled Test Surface[[:space:]]+NOT AUTHORIZED' docs/build-2/INDEX.md
+          grep -Eq 'Production Build 2 route activation[[:space:]]+NOT AUTHORIZED' docs/build-2/INDEX.md
+          if grep -Eq '/app/(design|components|shell|responsive|accessibility)/' functions/_middleware.js; then
+            echo 'Visible Build 2 application assets remain unauthorized in active middleware.'
+            exit 1
+          fi
+          if grep -Eq 'review-harness|evidence-retention|evidence-harness' functions/_middleware.js; then
+            echo 'Evidence tooling may not be activated by middleware.'
+            exit 1
+          fi

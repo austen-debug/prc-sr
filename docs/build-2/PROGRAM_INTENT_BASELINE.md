@@ -1,7 +1,7 @@
 # GATE Build 2 — Program Intent Baseline
 
 Status: GOVERNING BASELINE  
-Runtime status: Build 1 UI remains operational; Build 2 feature, workflow, synchronization, degraded-operation, and service-worker assets remain staged
+Runtime status: Build 1 UI remains operational; one hidden, read-only Phase 3A Status Board shadow observer is active; all visible Build 2 feature routes, write workflows, synchronization ownership, and service-worker assets remain staged
 
 ## Mission
 
@@ -96,6 +96,18 @@ An archive is an immutable historical snapshot. A correction creates a documente
 - No page-specific corrective CSS.
 - No parallel desktop, tablet, or phone application.
 
+## Sustainment and bloat-control rule
+
+- Every visible workflow has one runtime owner.
+- No new active asset may be introduced as a fix, patch, corrective layer, restore layer, finalizer, cleanup layer, or stability layer.
+- Active middleware CSS and JavaScript counts may not grow above the audited Build 1 baseline.
+- A visible Build 2 route must be net-negative in active runtime assets and retire the competing Build 1 owner in the same accepted migration package.
+- Middleware may authenticate and serve stable assets, but the Build 2 end state may not depend on regular-expression rewriting of route markup or application functions.
+- Evidence, workshop, fixture, and review utilities remain outside active middleware and routing.
+- Documentation must identify the current source owner, runtime status, validation, and retirement requirement without requiring reconstruction from historical phase reports.
+
+The machine-readable baseline is `ACTIVE_RUNTIME_BUDGET.json`. Status Board retirement requirements are governed by `STATUS_BOARD_RETIREMENT_MANIFEST.md`.
+
 ## Approved migration order
 
 ```text
@@ -131,7 +143,19 @@ Phase 2A–2E — GDL, Components, Shell, Responsive, Accessibility
 COMPLETE / STAGED
 
 Phase 3A — Status Board Shadow Migration
-AUTHORIZED / NEXT; HIDDEN AND READ-ONLY
+COMPLETE / HIDDEN SHADOW ACTIVE
+
+Phase 3A Evidence Review and Harness
+PACKAGE COMPLETE / EVIDENCE COLLECTION OPEN
+
+Audit Remediation Gate 1 — Governance Reconciliation and Runtime-Bloat Controls
+COMPLETE
+
+Audit Remediation Gate 2 — Runtime-Owner Reduction
+NEXT
+
+Phase 3B — Status Board Controlled Test Surface
+NOT AUTHORIZED
 
 Production Build 2 route activation
 NOT AUTHORIZED
@@ -148,4 +172,4 @@ Gate E — Synchronization and degraded operation                 COMPLETE / STA
 Gate F — Consolidated revalidation and corrected Phase 1 exit   COMPLETE
 ```
 
-This document governs later phase summaries when a conflict exists. A change to mission, role access, migration order, critical-write policy, archive immutability, synchronization policy, or the no-PII boundary requires an explicit program decision and corresponding fixture updates.
+This document governs later phase summaries when a conflict exists. A change to mission, role access, migration order, critical-write policy, archive immutability, synchronization policy, no-PII boundary, or active-runtime bloat controls requires an explicit program decision and corresponding fixture updates.

@@ -8,7 +8,7 @@
     { "id": "tablet-landscape", "metricColumns": 4, "dormPresentation": "three-columns-scroll-safe", "activeBusPresentation": "horizontal-lane", "fullscreen": "touch-display" },
     { "id": "tablet-portrait", "metricColumns": 2, "dormPresentation": "stacked-state-regions", "activeBusPresentation": "horizontal-scroll", "fullscreen": "touch-display" },
     { "id": "phone-landscape", "metricColumns": 2, "dormPresentation": "stacked-state-regions", "activeBusPresentation": "horizontal-scroll", "fullscreen": "compact-display" },
-    { "id": "phone-portrait", "metricColumns": 1, "dormPresentation": "stacked-state-regions", "activeBusPresentation": "horizontal-scroll", "fullscreen": "compact-display" }
+    { "id": "phone-portrait", "metricColumns": 2, "dormPresentation": "stacked-state-regions", "activeBusPresentation": "horizontal-scroll", "fullscreen": "compact-display" }
   ],
   "accessibility": {
     "standard": "WCAG 2.2 AA",

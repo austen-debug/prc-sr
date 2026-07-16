@@ -5,3 +5,4 @@ export * from './parity.mjs';
 export * from './evidence-ledger.mjs';
 export * from './route-contract.mjs';
 export * from './runner.mjs';
+export * from './sync-adapter.mjs';

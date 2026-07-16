@@ -50,11 +50,11 @@ export function createShellState(input = {}) {
   const role = normalizeShellRole(input.role);
   const navigationMode = normalizeChoice(input.navigationMode, NAVIGATION_MODES, 'persistent');
   const activeRoute = allowedRouteId(role, input.activeRoute);
-  const online = input.online !== false;
+  const isOnline = input.online !== false;
   const connectivityStatus = normalizeChoice(
     input.connectivityStatus,
     CONNECTIVITY_STATES,
-    online ? (input.lastSyncedAt ? 'current' : 'unknown') : 'offline'
+    isOnline ? (input.lastSyncedAt ? 'current' : 'unknown') : 'offline'
   );
 
   return freezeState({
@@ -74,7 +74,7 @@ export function createShellState(input = {}) {
       updatedAt: text(input.persistenceUpdatedAt) || null
     },
     connectivity: {
-      online,
+      online: isOnline,
       status: connectivityStatus,
       authoritative: input.authoritative === true || connectivityStatus === 'current',
       stale: Boolean(input.stale) || ['offline', 'stale', 'failed'].includes(connectivityStatus),
@@ -137,18 +137,18 @@ export function reduceShellState(state, event = {}) {
   }
 
   if (type === 'connectivity.changed') {
-    const online = Boolean(event.online);
+    const isOnline = Boolean(event.online);
     return freezeState({
       ...current,
       connectivity: {
         ...current.connectivity,
-        online,
-        status: online ? 'stale' : 'offline',
+        online: isOnline,
+        status: isOnline ? 'stale' : 'offline',
         authoritative: false,
         stale: true,
         readOnly: true,
         lastSyncedAt: text(event.lastSyncedAt) || current.connectivity.lastSyncedAt,
-        message: text(event.message) || (online ? 'Connection restored. Refresh required.' : 'Offline. Showing last confirmed data.')
+        message: text(event.message) || (isOnline ? 'Connection restored. Refresh required.' : 'Offline. Showing last confirmed data.')
       }
     });
   }

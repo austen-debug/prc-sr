@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="../../components/gate-components.css">
   <link rel="stylesheet" href="../../responsive/gate-responsive.css">
   <link rel="stylesheet" href="../../accessibility/gate-accessibility.css">
+  <link rel="stylesheet" href="./review-harness-tokens.css">
   <link rel="stylesheet" href="./review-harness.css">
 </head>
 <body>
@@ -38,7 +39,7 @@
 
   <div id="review-announcement" class="review-announcement" role="status" aria-live="polite"></div>
 
-  <main class="review-layout">
+  <div class="review-layout">
     <section class="review-stage" aria-labelledby="review-stage-title">
       <header>
         <h2 id="review-stage-title">Fixture route surface</h2>
@@ -89,7 +90,7 @@
       <label for="review-output">Sanitized review packet</label>
       <textarea id="review-output" rows="18" readonly spellcheck="false"></textarea>
     </aside>
-  </main>
+  </div>
 
   <noscript>This fixture-only review harness requires JavaScript.</noscript>
   <script type="module" src="./review-harness.mjs"></script>

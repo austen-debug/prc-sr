@@ -121,7 +121,13 @@ tests/build-2/status-board-shadow/status-board-evidence-harness.test.mjs
 ```text
 Phase 1A–1E — Validated Foundation                 COMPLETE / STAGED
 Phase 2A–2E — Application Foundation               COMPLETE / STAGED
-Foundation Alignment Gates A–F                     COMPLETE
+
+Foundation Alignment Gate A                       COMPLETE / STAGED
+Foundation Alignment Gate B                       COMPLETE / STAGED
+Foundation Alignment Gate C                       COMPLETE
+Foundation Alignment Gate D                       COMPLETE / STAGED
+Foundation Alignment Gate E                       COMPLETE / STAGED
+Foundation Alignment Gate F                       COMPLETE
 
 Phase 3A — Status Board Shadow Migration           COMPLETE / SHADOW ACTIVE
 Phase 3A Evidence Review                           PACKAGE COMPLETE / EVIDENCE COLLECTION OPEN

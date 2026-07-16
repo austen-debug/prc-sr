@@ -13,7 +13,7 @@
 
   function moduleApi() {
     if (!shadowModulePromise) {
-      shadowModulePromise = import('/app/status-board-shadow/index.mjs?v=phase-3a-status-board-shadow-20260715');
+      shadowModulePromise = import('/app/status-board-shadow/index.mjs?v=phase-3a-evidence-review-20260715');
     }
     return shadowModulePromise;
   }
@@ -119,12 +119,25 @@
     requestAnimationFrame(() => requestAnimationFrame(runShadow));
   }
 
+  async function buildEvidenceReview(input = {}) {
+    const module = await moduleApi();
+    return module.buildStatusBoardEvidenceReview({
+      ledger: evidence || module.createShadowEvidenceLedger(),
+      manualEvidence: Array.isArray(input.manualEvidence) ? input.manualEvidence : [],
+      mismatchDispositions: Array.isArray(input.mismatchDispositions) ? input.mismatchDispositions : [],
+      deploymentEvidence: Array.isArray(input.deploymentEvidence) ? input.deploymentEvidence : [],
+      evaluatedAt: new Date().toISOString()
+    });
+  }
+
   function expose() {
     window.GateStatusBoardShadow = Object.freeze({
       contractVersion: '3A.1.0',
+      evidenceReviewVersion: '3A-R.1.0',
       mode: 'shadow',
       readOnly: true,
       productionRouteActivated: false,
+      phase3BAuthorized: false,
       runNow: runShadow,
       schedule,
       getLatest: () => latest,
@@ -133,6 +146,16 @@
       getEvidenceSummary: async () => {
         const module = await moduleApi();
         return module.summarizeShadowEvidence(evidence || module.createShadowEvidenceLedger());
+      },
+      getEvidenceReview: buildEvidenceReview,
+      getReviewRequirements: async () => {
+        const module = await moduleApi();
+        return Object.freeze({
+          policy: module.STATUS_BOARD_REVIEW_POLICY,
+          manualChecks: module.STATUS_BOARD_MANUAL_CHECKS,
+          deploymentPrerequisites: module.STATUS_BOARD_DEPLOYMENT_PREREQUISITES,
+          rollback: module.STATUS_BOARD_SHADOW_ROLLBACK_CONTRACT
+        });
       }
     });
   }

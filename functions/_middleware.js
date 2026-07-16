@@ -45,7 +45,8 @@ const UI_HEAD_SCRIPTS = [
   '<script src="/js/prc-dash-processing-loaded-summary.js" defer></script>',
   '<script src="/js/gate-premium-metrics-controller.js?v=premium-metrics-20260709d" defer></script>',
   '<script src="/js/prc-dash-overtime-audit.js" defer></script>',
-  '<script src="/js/gate-status-board-timer-visual-stability.js?v=status-board-timer-visual-stability-20260715" defer></script>'
+  '<script src="/js/gate-status-board-timer-visual-stability.js?v=status-board-timer-visual-stability-20260715" defer></script>',
+  '<script src="/js/gate-status-board-shadow-controller.js?v=phase-3a-status-board-shadow-20260715" defer></script>'
 ];
 
 const STATUS_BOARD_METRICS_HTML = `<div class="board-header gate-premium-metrics-enabled" data-owner="gate-status-metrics-source" data-phase="1B">

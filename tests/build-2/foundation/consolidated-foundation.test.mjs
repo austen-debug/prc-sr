@@ -155,9 +155,9 @@ test('governing documents distinguish foundation exit, shadow authorization, and
   const baseline = await repositoryFile('docs/build-2/PROGRAM_INTENT_BASELINE.md');
 
   assert.match(corrected, /FOUNDATION EXIT APPROVED/i);
-  assert.match(corrected, /does not activate a Build 2 route/i);
+  assert.match(corrected, /does\s+\*{0,2}not\*{0,2}\s+activate a Build 2 route/i);
   assert.match(prerequisites, /Not independently verified in Gate F/i);
-  assert.match(prerequisites, /do not block a hidden, read-only Status Board shadow calculation/i);
+  assert.match(prerequisites, /do\s+\*{0,2}not\*{0,2}\s+block a hidden, read-only Status Board shadow calculation/i);
   assert.match(shadow, /hidden, read-only/i);
   assert.match(shadow, /may not[\s\S]*replace or alter the visible Build 1 Status Board/i);
   assert.match(baseline, /1\. Status Board[\s\S]*2\. Processing[\s\S]*3\. Airport[\s\S]*4\. Input[\s\S]*5\. Archives and Reports[\s\S]*6\. Squadron Board/);

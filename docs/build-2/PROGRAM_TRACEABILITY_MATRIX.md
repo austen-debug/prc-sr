@@ -1,59 +1,62 @@
 # GATE Build 2 — Program Traceability Matrix
 
 Status: FOUNDATION ALIGNMENT CONTROL  
-Purpose: map governing intent to implementation, validation, runtime ownership, and remaining gates.
+Purpose: map governing intent to implementation, validation, runtime ownership, and remaining route evidence.
 
-| Requirement | Source owner | Validation | Runtime status | Remaining gate |
+| Requirement | Source owner | Validation | Runtime status | Remaining evidence |
 |---|---|---|---|---|
 | No trainee PII expansion | Program baseline, repository/config/audit safeguards | normalization, repository, server, workflow, synchronization, component fixtures | Build 1 active; Build 2 staged | Continuous |
-| Confirmed-arrival eligibility | `domain/operational-metrics.mjs` | operational truth and parity suites | Staged | Phase 3 consumer migration |
+| Confirmed-arrival eligibility | `domain/operational-metrics.mjs` | operational truth, parity, and Gate F suites | Staged | Status Board shadow parity |
 | Receiving Night One/Two from `arrived_at` | `domain/receiving.mjs` | historical 818/39 and boundary fixtures | Staged | Archives/Reports migration |
-| Air Force, Space Force, female, NAT share one arrival set | `domain/operational-metrics.mjs` | domain and parity suites | Staged | Phase 3 consumer migration |
-| Active Week Group has one owner | `domain/week-groups.mjs` and initialization workflow | Gate A, Gate B, and Gate D suites | Staged | Phase 3 integration |
-| Last arrival is derived | `domain/arrivals.mjs` | Gate A domain suite | Staged | Status Board migration |
-| Manifested bus log differs from arrived total | `domain/buses.mjs` | Gate A and parity suites | Staged | Airport migration |
-| Dorm state grouping has one owner | `domain/dorms.mjs` | Gate A domain suite | Staged | Status/Squadron migration |
-| Processing assignment and phase summaries have one owner | `domain/processing.mjs` | Gate A and Gate D suites | Staged | Processing migration |
-| Timer/overtime calculation is deterministic | `domain/timers.mjs` | Gate A domain suite | Staged | Status/Processing integration |
-| Status and Squadron summaries share truth | `domain/summaries.mjs` | Gate A domain suite | Staged | Status then Squadron migration |
-| Current Summary and Archive Report share a model | `domain/reports.mjs` | Gate A domain suite | Staged | Archives/Reports migration |
-| Archive snapshot is immutable and canonical | `domain/archives.mjs`, archive workflow | Gate A and Gate D suites | Staged | Phase 3 Archives migration |
-| Build 1 records normalize without silent loss | `data/record-normalizer.mjs` | normalization, entity, parity suites | Staged compatibility boundary | Continuous migration validation |
-| Domain consumes canonical entities directly | `data/canonical-entity.mjs`, `domain/normalization.mjs` | Gate B canonical entity suite | Staged | Phase 3 consumers |
-| Legacy aliases stop at compatibility boundary | `data/legacy-compatibility.mjs`, `record-normalizer.mjs` | Gate B entity and config tests | Staged | Continuous enforcement |
-| Creator/updater role provenance | data provenance plus records API | Gate B and Gate C tests | Server-enforced | Route-specific authorization |
-| Unknown records remain recoverable | `record-normalizer.mjs` | normalization and Gate B entity suites | Staged | Continuous |
-| Typed operational repositories | `data/repositories/*` | repository suite | Staged | Phase 3 workflow consumers |
-| Critical writes require confirmed server success | Gate D workflow result and verification contracts | Gate D workflow suite | Implemented / staged | Route activation evidence |
-| Server-enforced stale-write protection | records API and client | Gate C and Gate D conflict tests | Implemented | Continuous |
-| Append-only audit events | audit repository, records API, D1 triggers | Gate C and Gate D tests | Implemented | Apply D1 migration to existing environment |
-| Server-derived role provenance | API session bridge and records contract | Gate C tests | Implemented | Route-specific authorization |
-| Squadron read-only records boundary | records API projection | Gate C tests | Implemented; login inactive | Phase 3 Squadron migration |
-| Operation-scoped idempotency | `public/app/workflows/*`, archive/audit repositories | Gate D replay and resume tests | Implemented / staged | Phase 3 integration |
-| Week Group initialization orchestration | `initialize-week-group.mjs` | Gate D success, validation, partial, resume, compensation tests | Implemented / staged | Phase 3 Input migration |
-| Arrival and dorm transition orchestration | arrival and dorm workflows | Gate D verify/audit/conflict tests | Implemented / staged | Phase 3 Airport/Processing migration |
-| Verified archive closeout | `archive-workflows.mjs` | Gate D create/verify/audit/clear/verify and resume tests | Implemented / staged | Phase 3 Archives migration |
-| Immutable archive amendment | `amendArchiveWorkflow` | Gate D parent-preservation and lineage test | Implemented / staged | Phase 3 Archives migration |
-| Explicit partial-failure recovery | workflow results and recovery workflows | Gate D audit retry, initialization resume/compensation, closeout resume tests | Implemented / staged | Route-specific presentation |
-| Cross-tab authoritative refetch | `synchronization/invalidation-channel.mjs`, `sync-coordinator.mjs` | Gate E multi-tab and refetch suite | Implemented / staged | Gate F consolidated validation |
-| Last-confirmed read-only snapshot | `synchronization/authoritative-store.mjs` | Gate E offline continuity and source-boundary tests | Implemented / staged | Gate F consolidated validation |
-| Explicit offline/stale/last-sync behavior | synchronization state, shell bridge, shell selectors | Gate E state and shell-announcement suite | Implemented / staged | Gate F consolidated validation |
-| Critical writes fail closed when authority is unavailable | `synchronization/guarded-records-client.mjs` | Gate E blocked-write and no-queue tests | Implemented / staged | Gate F consolidated validation |
-| Static shell cache excludes operational data | offline cache policy and staged service worker | Gate E cache-policy and service-worker tests | Implemented / staged | Route-specific activation approval |
-| One GATE Design Language | `design/*` | GDL suite | Staged | Route migration use |
-| One component system | `components/*` | component suite | Staged | Route migration use |
-| One route and permission registry | shell registries | shell suite | Staged | Route-specific server authorization |
-| Capability-driven six-posture composition | `responsive/*` | responsive suite | Staged | Route-specific evidence |
-| WCAG 2.2 AA foundation | `accessibility/*` | accessibility suite | Staged | Route-specific manual evidence |
-| Squadron credentials remain server-side | environment bindings and repository safeguards | Gate C server boundary; future auth test | Not activated | Phase 3 Squadron migration |
-| Status Board-first migration order | `PROGRAM_INTENT_BASELINE.md` | documentation gate | Approved, not started | Gate F then Phase 3 |
-| Former owner retired after migration | Phase 3 route package | future ownership and middleware tests | Not started | Phase 3 |
+| Air Force, Space Force, female, NAT share one arrival set | `domain/operational-metrics.mjs` | domain, parity, and Gate F suites | Staged | Status Board shadow parity |
+| Active Week Group has one owner | `domain/week-groups.mjs` and initialization workflow | Gate A, B, D, and F suites | Staged | Status Board shadow parity |
+| Last arrival is derived | `domain/arrivals.mjs` | Gate A and F suites | Staged | Status Board shadow parity |
+| Manifested bus log differs from arrived total | `domain/buses.mjs` | Gate A, parity, and F suites | Staged | Airport migration |
+| Dorm state grouping has one owner | `domain/dorms.mjs` | Gate A and F suites | Staged | Status Board shadow parity |
+| Processing assignment and phase summaries have one owner | `domain/processing.mjs` | Gate A, D, and F suites | Staged | Processing migration |
+| Timer/overtime calculation is deterministic | `domain/timers.mjs` | Gate A and F suites | Staged | Status Board timer evidence |
+| Status and Squadron summaries share truth | `domain/summaries.mjs` | Gate A and F suites | Staged | Status then Squadron migration |
+| Current Summary and Archive Report share a model | `domain/reports.mjs` | Gate A and F suites | Staged | Archives/Reports migration |
+| Archive snapshot is immutable and canonical | `domain/archives.mjs`, archive workflow | Gate A, D, and F suites | Staged | Archives route evidence |
+| Build 1 records normalize without silent loss | `data/record-normalizer.mjs` | normalization, entity, parity, and F suites | Staged compatibility boundary | Continuous migration validation |
+| Domain consumes canonical entities directly | canonical entity and domain boundary | Gate B and F suites | Staged | Route consumers |
+| Legacy aliases stop at compatibility boundary | compatibility adapters | Gate B, data, and F suites | Staged | Continuous enforcement |
+| Creator/updater role provenance | data provenance plus records API | Gate B, C, and F suites | Server-enforced | Route-specific authorization |
+| Unknown records remain recoverable | record normalizer | Gate B, data, and F suites | Staged | Continuous |
+| Typed operational repositories | `data/repositories/*` | data and F suites | Staged | Route workflow consumers |
+| Critical writes require confirmed server success | workflow result and verification contracts | Gate D and F suites | Implemented / staged | Route activation evidence |
+| Server-enforced stale-write protection | records API and client | Gate C, D, and F suites | Implemented | Deployed API verification before production writes |
+| Append-only audit events | audit repository, records API, D1 triggers | Gate C, D, and F suites | Implemented in source | Existing D1 trigger verification before production writes |
+| Server-derived role provenance | API session bridge and records contract | Gate C and F suites | Implemented | Deployed binding verification |
+| Squadron read-only records boundary | records API projection | Gate C and F suites | Implemented; login inactive | Squadron migration |
+| Operation-scoped idempotency | workflows and archive/audit repositories | Gate D and F suites | Implemented / staged | Route integration |
+| Week Group initialization orchestration | initialization workflow | Gate D and F suites | Implemented / staged | Input migration |
+| Arrival and dorm transition orchestration | arrival and dorm workflows | Gate D and F suites | Implemented / staged | Airport/Processing migration |
+| Verified archive closeout | archive workflow | Gate D and F suites | Implemented / staged | Archives migration |
+| Immutable archive amendment | archive workflow | Gate D and F suites | Implemented / staged | Archives migration |
+| Explicit partial-failure recovery | workflow results and recovery workflows | Gate D and F suites | Implemented / staged | Route-specific presentation |
+| Cross-tab authoritative refetch | invalidation channel and coordinator | Gate E and F suites | Implemented / staged | Status Board shadow evidence |
+| Last-confirmed read-only snapshot | authoritative store | Gate E and F suites | Implemented / staged | Route presentation evidence |
+| Explicit offline/stale/last-sync behavior | sync state, shell bridge, selectors | Gate E and F suites | Implemented / staged | Route manual evidence |
+| Critical writes fail closed when authority is unavailable | guarded records client | Gate E and F suites | Implemented / staged | Route integration |
+| Static shell cache excludes operational data | cache policy and staged service worker | Gate E and F suites | Implemented / staged | Service-worker activation review |
+| One GATE Design Language | `design/*` | design and F suites | Staged | Route use |
+| One component system | `components/*` | component and F suites | Staged | Route use |
+| One route and permission registry | shell registries | shell and F suites | Staged | Route-specific server authorization |
+| Capability-driven six-posture composition | `responsive/*` | responsive and F suites | Staged | Route-specific evidence |
+| WCAG 2.2 AA foundation | `accessibility/*` | accessibility and F suites | Staged | Route-specific manual evidence |
+| Squadron credentials remain server-side | environment bindings and safeguards | Gate C and F source controls | Not activated | Squadron migration |
+| Foundation exit decision is corrected | `CORRECTED_PHASE_1_EXIT_DECISION.md` | Gate F governance suite | Implemented / validation pending | Final-head Gate F CI |
+| External deployment state is not inferred | `DEPLOYMENT_PREREQUISITES.md` | Gate F governance suite | Documented prerequisite | Environment verification |
+| Status Board-first migration order | program baseline | Gate F governance suite | Approved | Phase 3A shadow package |
+| Status Board shadow authorization is bounded | shadow authorization document | Gate F governance suite | Authorized after Gate F closure | Shadow parity evidence |
+| Former owner retired only after activation | Phase 3 route package | future ownership and middleware tests | Not started | Production acceptance |
 
 ## Approved route migration sequence
 
 | Order | Route | Primary readiness burden |
 |---:|---|---|
-| 1 | Status Board | live parity, timer ownership, fullscreen/command display, rollback |
+| 1 | Status Board | hidden parity, timer ownership, fullscreen/command display, stale/offline, rollback |
 | 2 | Processing | write authorization, load conflicts, phase/timer behavior |
 | 3 | Airport | dispatch, local arrival, arrival confirmation, count correction |
 | 4 | Input | multi-record initialization, duplicate identity, recovery |
@@ -62,4 +65,4 @@ Purpose: map governing intent to implementation, validation, runtime ownership, 
 
 ## Evidence rule
 
-A requirement is not complete merely because it appears in documentation. Completion requires an identified source owner, executable validation where technically possible, explicit runtime status, and retirement of any competing owner after activation.
+A requirement is not complete merely because it appears in documentation. Completion requires an identified source owner, executable validation where technically possible, explicit runtime status, and retirement of any competing owner after accepted production activation.

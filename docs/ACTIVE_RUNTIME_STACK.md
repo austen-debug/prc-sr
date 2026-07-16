@@ -1,6 +1,6 @@
 # GATE Active Runtime Stack
 
-Status: Phase 3A Status Board shadow active; Audit Remediation Gate 1 in execution  
+Status: Phase 3A Status Board shadow active; Audit Remediation Gate 1 complete; Gate 2 next  
 Scope: authoritative served-runtime order from `functions/_middleware.js`
 
 ## Purpose

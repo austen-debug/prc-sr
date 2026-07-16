@@ -96,9 +96,9 @@ jobs:
 
       - name: Validate governance and continuing evidence block
         run: |
-          grep -q 'Status: IMPLEMENTED / VALIDATION PENDING' docs/build-2/PHASE_3A_EVIDENCE_HARNESS_REPORT.md
+          grep -q 'Status: COMPLETE / NON-PRODUCTION' docs/build-2/PHASE_3A_EVIDENCE_HARNESS_REPORT.md
           grep -q 'Evidence state: COLLECTION OPEN' docs/build-2/PHASE_3A_EVIDENCE_HARNESS_REPORT.md
           grep -q 'NOT AUTHORIZED — Phase 3B controlled test surface' docs/build-2/STATUS_BOARD_EVIDENCE_HARNESS.md
           grep -Eq 'Phase 3A Evidence Review[[:space:]]+PACKAGE COMPLETE / EVIDENCE COLLECTION OPEN' docs/build-2/INDEX.md
-          grep -Eq 'Phase 3A Evidence Harness[[:space:]]+IMPLEMENTED / VALIDATION PENDING' docs/build-2/INDEX.md
+          grep -Eq 'Phase 3A Evidence Harness[[:space:]]+COMPLETE / NON-PRODUCTION' docs/build-2/INDEX.md
           grep -Eq 'Phase 3B — Status Board Controlled Test Surface[[:space:]]+NOT AUTHORIZED' docs/build-2/INDEX.md

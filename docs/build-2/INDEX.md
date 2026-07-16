@@ -88,14 +88,20 @@ The Phase 3A workflow also reruns every Gate A–F, Phase 1, and Phase 2 suite.
 ```text
 Phase 1A–1E — Validated Foundation                 COMPLETE / STAGED
 Phase 2A–2E — Application Foundation               COMPLETE / STAGED
-Foundation Alignment Gates A–F                     COMPLETE
 
-Phase 3A — Status Board Shadow Migration            IMPLEMENTED / VALIDATION PENDING
-Phase 3B — Status Board Controlled Test Surface     NOT AUTHORIZED
-Production Build 2 route activation                NOT AUTHORIZED
-Build 2 production critical writes                 NOT AUTHORIZED
-Build 1 Status Board retirement                    NOT AUTHORIZED
-Approved first route                               STATUS BOARD
+Foundation Alignment Gate A                       COMPLETE / STAGED
+Foundation Alignment Gate B                       COMPLETE / STAGED
+Foundation Alignment Gate C                       COMPLETE
+Foundation Alignment Gate D                       COMPLETE / STAGED
+Foundation Alignment Gate E                       COMPLETE / STAGED
+Foundation Alignment Gate F                       COMPLETE
+
+Phase 3A — Status Board Shadow Migration           IMPLEMENTED / VALIDATION PENDING
+Phase 3B — Status Board Controlled Test Surface    NOT AUTHORIZED
+Production Build 2 route activation               NOT AUTHORIZED
+Build 2 production critical writes                NOT AUTHORIZED
+Build 1 Status Board retirement                   NOT AUTHORIZED
+Approved first route                              STATUS BOARD
 ```
 
 ## Integration rule

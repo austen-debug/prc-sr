@@ -9,7 +9,7 @@ export const STATUS_BOARD_POSTURE_CONTRACTS = Object.freeze({
   'tablet-landscape': composition({ metricColumns: 4, dormPresentation: 'three-columns-scroll-safe', activeBusPresentation: 'horizontal-lane', density: 'standard', fullscreen: 'touch-display' }),
   'tablet-portrait': composition({ metricColumns: 2, dormPresentation: 'stacked-state-regions', activeBusPresentation: 'horizontal-scroll', density: 'touch', fullscreen: 'touch-display' }),
   'phone-landscape': composition({ metricColumns: 2, dormPresentation: 'stacked-state-regions', activeBusPresentation: 'horizontal-scroll', density: 'touch', fullscreen: 'compact-display' }),
-  'phone-portrait': composition({ metricColumns: 1, dormPresentation: 'stacked-state-regions', activeBusPresentation: 'horizontal-scroll', density: 'touch', fullscreen: 'compact-display' })
+  'phone-portrait': composition({ metricColumns: 2, dormPresentation: 'stacked-state-regions', activeBusPresentation: 'horizontal-scroll', density: 'touch', fullscreen: 'compact-display' })
 });
 
 export const STATUS_BOARD_ACCESSIBILITY_CONTRACT = freezeShadow({
@@ -80,6 +80,7 @@ export function validateStatusBoardRouteContract() {
     if (!contract?.activeBusPresentation) errors.push(`${posture} requires an active-bus presentation.`);
     if (!contract?.fullscreen) errors.push(`${posture} requires a fullscreen presentation.`);
   }
+  if (STATUS_BOARD_POSTURE_CONTRACTS['phone-portrait']?.metricColumns !== 2) errors.push('Phone portrait Status Board metrics must preserve the approved two-by-two composition.');
   if (keys.length !== POSTURE_IDS.length) errors.push('Status Board route contract must define exactly six posture compositions.');
   if (STATUS_BOARD_FULLSCREEN_CONTRACT.supportedPostures.length !== POSTURE_IDS.length) errors.push('Fullscreen contract must cover all six postures.');
   if (!STATUS_BOARD_ACCESSIBILITY_CONTRACT.degradedStateAnnouncement.includesLastSynchronizedTime) errors.push('Degraded state must include last-synchronized context.');

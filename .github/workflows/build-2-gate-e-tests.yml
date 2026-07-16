@@ -90,7 +90,7 @@ jobs:
           grep -q 'Foundation Alignment Gate F' docs/build-2/GATE_E_EXECUTION_REPORT.md
           grep -Eq 'Gate E — Synchronization and degraded operation[[:space:]]+COMPLETE / STAGED' docs/build-2/PROGRAM_INTENT_BASELINE.md
           grep -Eq 'Foundation Alignment Gate E[[:space:]]+COMPLETE / STAGED' docs/build-2/INDEX.md
-          grep -Eq 'Foundation Alignment Gate F[[:space:]]+NEXT' docs/build-2/INDEX.md
+          grep -Eq 'Foundation Alignment Gate F[[:space:]]+(NEXT|IMPLEMENTED / VALIDATION PENDING|COMPLETE)' docs/build-2/INDEX.md
           if grep -REn 'localStorage|sessionStorage|indexedDB|IDBDatabase' public/app/synchronization; then
             echo 'Gate E may not create a persistent client operational database.'
             exit 1

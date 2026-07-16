@@ -1,6 +1,6 @@
 # GATE Build 2 — Audit Remediation Gate 1 Execution Report
 
-Status: IMPLEMENTED / VALIDATION PENDING  
+Status: COMPLETE  
 Gate: Governance Reconciliation and Runtime-Bloat Controls  
 Visible runtime owner: Build 1
 
@@ -15,7 +15,8 @@ Correct current-state documentation drift, preserve the approved operational UX,
 - updated the governing program baseline to the actual Phase 3A and evidence-collection position;
 - rewrote the README around the current mission, workflow, roles, runtime, and migration status;
 - updated the active runtime register with exact asset totals and cleanup targets;
-- added a governed four-gate remediation plan.
+- added a governed four-gate remediation plan;
+- preserved individual Foundation Gate rows so prior governance tests remain durable.
 
 ### Runtime-bloat controls
 
@@ -58,24 +59,42 @@ The staged route contract and route-readiness fixture now use two phone-portrait
 
 ## Runtime effect
 
-No Build 1 route, visible page, workflow, record, API, authentication behavior, service worker, or production write path is changed.
+No Build 1 route, visible page, workflow, record, API, authentication behavior, service worker, or production write path was changed.
 
-No active middleware asset is added or removed by Gate 1. The new budget and retirement controls govern later cleanup and activation work.
+No active middleware asset was added or removed by Gate 1. The new budget and retirement controls govern later cleanup and activation work.
 
-## Validation
+## Final validation
 
 ```text
-PENDING — active runtime inventory and ceiling test
-PENDING — corrective-asset growth prohibition
-PENDING — evidence tooling isolation
-PENDING — phone portrait route-contract regression
-PENDING — Phase 3A shadow and evidence regressions
-PENDING — complete foundation and application regressions
-PENDING — Build 1 runtime record integrity
+PASS — Build 2 Audit Remediation Gate 1
+PASS — Runtime Record Integrity
+PASS — Build 2 Phase 3A Status Board Shadow
+PASS — Build 2 Phase 3A Evidence Review
+PASS — Build 2 Phase 3A Evidence Harness
+PASS — Build 2 Gate F Tests
+PASS — Build 2 Gate E Tests
+PASS — Build 2 Gate D Tests
+PASS — Build 2 Gate C Tests
+PASS — Build 2 Gate B Tests
+PASS — Build 2 Foundation Alignment Tests
+PASS — Build 2 Phase 1 Validation
+PASS — Build 2 Domain Tests
+PASS — Build 2 Component Tests
+PASS — Build 2 Shell Tests
+PASS — Build 2 Responsive Tests
+PASS — Build 2 Accessibility Tests
 ```
+
+## Validation correction
+
+The first implementation head exposed brittle historical workflow checks because the reconciled index summarized Foundation Gates A–F on one line. The index was corrected to retain individual Gate A–F status rows while preserving the simplified governing structure. No operational or UX requirement was weakened.
 
 ## Gate decision
 
-Gate 1 may close after the complete validation head is green.
+```text
+Audit Remediation Gate 1 — COMPLETE
+Audit Remediation Gate 2 — NEXT
+Phase 3B — NOT AUTHORIZED
+```
 
-Gate 1 closure does not authorize Phase 3B. The next package is Audit Remediation Gate 2 — Runtime-Owner Reduction.
+Gate 2 will inventory and reduce active observers, intervals, compatibility wrappers, Status Board-specific corrective selectors, and provably redundant runtime owners one bounded removal at a time.

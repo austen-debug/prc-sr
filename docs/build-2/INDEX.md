@@ -1,6 +1,6 @@
 # GATE Build 2 Documentation Index
 
-Status: Phase 3A Status Board shadow migration implemented; validation pending  
+Status: Phase 3A Status Board shadow implementation complete; live evidence review next  
 Runtime status: Build 1 remains the visible operational application. One hidden, read-only Status Board shadow bridge is active; all other Build 2 feature routes and write workflows remain staged.
 
 ## Governing documents
@@ -11,7 +11,7 @@ Runtime status: Build 1 remains the visible operational application. One hidden,
 4. [`FOUNDATION_REVALIDATION_MATRIX.md`](./FOUNDATION_REVALIDATION_MATRIX.md) — consolidated Gate F validation controls and decision classes.
 5. [`CORRECTED_PHASE_1_EXIT_DECISION.md`](./CORRECTED_PHASE_1_EXIT_DECISION.md) — governing approved Phase 1 foundation exit decision.
 6. [`DEPLOYMENT_PREREQUISITES.md`](./DEPLOYMENT_PREREQUISITES.md) — repository versus external-environment proof and production prerequisites.
-7. [`STATUS_BOARD_SHADOW_MIGRATION_AUTHORIZATION.md`](./STATUS_BOARD_SHADOW_MIGRATION_AUTHORIZATION.md) — bounded Phase 3A authorization.
+7. [`STATUS_BOARD_SHADOW_MIGRATION_AUTHORIZATION.md`](./STATUS_BOARD_SHADOW_MIGRATION_AUTHORIZATION.md) — consumed Phase 3A authorization and remaining evidence gate.
 8. [`STATUS_BOARD_SHADOW_CONTRACT.md`](./STATUS_BOARD_SHADOW_CONTRACT.md) — active bridge, canonical snapshot, comparison, evidence, and activation boundaries.
 9. [`STATUS_BOARD_PARITY_MATRIX.md`](./STATUS_BOARD_PARITY_MATRIX.md) — route values, sources, comparison rules, and blockers.
 10. [`CANONICAL_ENTITY_CONTRACT.md`](./CANONICAL_ENTITY_CONTRACT.md) — canonical entity and provenance contract.
@@ -53,7 +53,7 @@ Runtime status: Build 1 remains the visible operational application. One hidden,
 46. [`GATE_D_EXECUTION_REPORT.md`](./GATE_D_EXECUTION_REPORT.md)
 47. [`GATE_E_EXECUTION_REPORT.md`](./GATE_E_EXECUTION_REPORT.md)
 48. [`GATE_F_EXECUTION_REPORT.md`](./GATE_F_EXECUTION_REPORT.md) — completed consolidated revalidation and exit decision.
-49. [`PHASE_3A_EXECUTION_REPORT.md`](./PHASE_3A_EXECUTION_REPORT.md) — Status Board shadow implementation and validation status.
+49. [`PHASE_3A_EXECUTION_REPORT.md`](./PHASE_3A_EXECUTION_REPORT.md) — completed automated shadow implementation and evidence status.
 
 ## Phase 3A source
 
@@ -66,6 +66,7 @@ public/app/status-board-shadow/
 ├── evidence-ledger.mjs
 ├── route-contract.mjs
 ├── runner.mjs
+├── sync-adapter.mjs
 └── index.mjs
 
 public/js/gate-status-board-shadow-controller.js
@@ -81,7 +82,7 @@ tests/build-2/status-board-shadow/fixtures/B2-P3A-F001-route-readiness.json
 .github/workflows/build-2-phase-3a-status-board-shadow.yml
 ```
 
-The Phase 3A workflow also reruns every Gate A–F, Phase 1, and Phase 2 suite.
+The Phase 3A workflow also reruns every Gate A–F, Phase 1, and Phase 2 suite and includes route-specific foreign-tab invalidation and authoritative-refetch evidence.
 
 ## Current execution position
 
@@ -96,7 +97,8 @@ Foundation Alignment Gate D                       COMPLETE / STAGED
 Foundation Alignment Gate E                       COMPLETE / STAGED
 Foundation Alignment Gate F                       COMPLETE
 
-Phase 3A — Status Board Shadow Migration           IMPLEMENTED / VALIDATION PENDING
+Phase 3A — Status Board Shadow Migration           COMPLETE / SHADOW ACTIVE
+Phase 3A Evidence Review                          NEXT
 Phase 3B — Status Board Controlled Test Surface    NOT AUTHORIZED
 Production Build 2 route activation               NOT AUTHORIZED
 Build 2 production critical writes                NOT AUTHORIZED
@@ -106,4 +108,4 @@ Approved first route                              STATUS BOARD
 
 ## Integration rule
 
-Phase 3A activates only the hidden, read-only shadow observer. A visible Build 2 Status Board still requires sustained parity evidence, route-specific manual accessibility and six-posture validation, deployment prerequisites, controlled activation and rollback, monitoring, and an explicit Build 1 retirement decision.
+Phase 3A activates only the hidden, read-only shadow observer. A visible Build 2 Status Board still requires sustained live parity evidence, disposition of every blocking mismatch, route-specific manual accessibility and six-posture validation, deployment prerequisites, controlled activation and rollback, monitoring, and an explicit Build 1 retirement decision.

@@ -1,0 +1,112 @@
+name: Build 2 Phase 3A Evidence Review
+
+on:
+  push:
+    paths:
+      - 'public/app/status-board-shadow/**'
+      - 'public/js/gate-status-board-shadow-controller.js'
+      - 'tests/build-2/status-board-shadow/**'
+      - 'docs/build-2/STATUS_BOARD_EVIDENCE_REVIEW_CONTRACT.md'
+      - 'docs/build-2/STATUS_BOARD_MANUAL_EVIDENCE_MATRIX.md'
+      - 'docs/build-2/STATUS_BOARD_ROLLBACK_PLAN.md'
+      - 'docs/build-2/PHASE_3A_EVIDENCE_REVIEW_REPORT.md'
+      - 'docs/build-2/STATUS_BOARD_SHADOW_CONTRACT.md'
+      - 'docs/build-2/DEPLOYMENT_PREREQUISITES.md'
+      - 'docs/build-2/PROGRAM_TRACEABILITY_MATRIX.md'
+      - 'docs/build-2/INDEX.md'
+      - '.github/workflows/build-2-phase-3a-evidence-review.yml'
+  pull_request:
+    paths:
+      - 'public/app/status-board-shadow/**'
+      - 'public/js/gate-status-board-shadow-controller.js'
+      - 'tests/build-2/status-board-shadow/**'
+      - 'docs/build-2/STATUS_BOARD_EVIDENCE_REVIEW_CONTRACT.md'
+      - 'docs/build-2/STATUS_BOARD_MANUAL_EVIDENCE_MATRIX.md'
+      - 'docs/build-2/STATUS_BOARD_ROLLBACK_PLAN.md'
+      - 'docs/build-2/PHASE_3A_EVIDENCE_REVIEW_REPORT.md'
+      - 'docs/build-2/STATUS_BOARD_SHADOW_CONTRACT.md'
+      - 'docs/build-2/DEPLOYMENT_PREREQUISITES.md'
+      - 'docs/build-2/PROGRAM_TRACEABILITY_MATRIX.md'
+      - 'docs/build-2/INDEX.md'
+      - '.github/workflows/build-2-phase-3a-evidence-review.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-2-phase-3a-review-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  evidence-review:
+    name: Status Board evidence review decision controls
+    runs-on: ubuntu-latest
+    timeout-minutes: 24
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Validate review source syntax
+        run: |
+          for file in public/app/status-board-shadow/*.mjs; do node --check "$file"; done
+          node --check public/js/gate-status-board-shadow-controller.js
+
+      - name: Validate Phase 3A shadow and evidence review
+        run: node --test tests/build-2/status-board-shadow/*.test.mjs
+
+      - name: Validate foundation data and workflow regressions
+        run: |
+          node --test tests/build-2/foundation/*.test.mjs
+          node --experimental-default-type=module --test tests/build-2/server/*.test.mjs
+          node --test tests/build-2/data/*.test.mjs
+          node --test tests/build-2/domain/*.test.mjs
+          node --test tests/build-2/parity/*.test.mjs
+          node --test tests/build-2/workflows/*.test.mjs
+          node --test tests/build-2/synchronization/*.test.mjs
+
+      - name: Validate application foundation regressions
+        run: |
+          node --test tests/build-2/design/*.test.mjs
+          node --test tests/build-2/components/*.test.mjs
+          node --test tests/build-2/shell/*.test.mjs
+          node --test tests/build-2/responsive/*.test.mjs
+          node --test tests/build-2/accessibility/*.test.mjs
+
+      - name: Validate decision boundary
+        run: |
+          grep -q "evidenceReviewVersion: '3A-R.1.0'" public/js/gate-status-board-shadow-controller.js
+          grep -q 'phase3BAuthorized: false' public/js/gate-status-board-shadow-controller.js
+          grep -q 'productionRouteActivated: false' public/js/gate-status-board-shadow-controller.js
+          if grep -REn 'phase3BAuthorized[[:space:]]*:[[:space:]]*true|productionRouteActivated[[:space:]]*:[[:space:]]*true|build1RetirementAuthorized[[:space:]]*:[[:space:]]*true' public/app/status-board-shadow public/js/gate-status-board-shadow-controller.js; then
+            echo 'Evidence review may not authorize Phase 3B, production activation, or Build 1 retirement.'
+            exit 1
+          fi
+          if grep -En '\bfetch[[:space:]]*\(|localStorage|sessionStorage|indexedDB|serviceWorker|innerHTML[[:space:]]*=|textContent[[:space:]]*=|insertAdjacentHTML|appendChild|replaceChildren' public/js/gate-status-board-shadow-controller.js; then
+            echo 'Evidence review bridge must remain read-only and non-persistent.'
+            exit 1
+          fi
+
+      - name: Validate no route or service-worker activation
+        run: |
+          node --input-type=module <<'NODE'
+          import { ROUTES } from './public/app/shell/route-registry.mjs';
+          if (ROUTES.length !== 6) throw new Error(`Expected six canonical routes, found ${ROUTES.length}.`);
+          if (ROUTES.some(route => /shadow|review/i.test(route.id) || /shadow|review/i.test(route.label))) throw new Error('Evidence review must not become a visible route.');
+          NODE
+          if grep -RFn 'navigator.serviceWorker.register' public/index.html functions/_middleware.js public/js; then
+            echo 'Evidence review may not register the staged Build 2 service worker.'
+            exit 1
+          fi
+
+      - name: Validate governance status
+        run: |
+          grep -Eq 'Phase 3A Evidence Review[[:space:]]+(PACKAGE COMPLETE / EVIDENCE COLLECTION OPEN|IMPLEMENTED / VALIDATION PENDING)' docs/build-2/INDEX.md
+          grep -Eq 'Phase 3B — Status Board Controlled Test Surface[[:space:]]+NOT AUTHORIZED' docs/build-2/INDEX.md
+          grep -q 'NOT AUTHORIZED — Phase 3B controlled test surface' docs/build-2/PHASE_3A_EVIDENCE_REVIEW_REPORT.md
+          grep -q 'explicit governance decision' docs/build-2/STATUS_BOARD_EVIDENCE_REVIEW_CONTRACT.md

@@ -1,6 +1,6 @@
 # GATE Build 2 Documentation Index
 
-Status: Phase 3A Status Board shadow implementation complete; live evidence review next  
+Status: Phase 3A evidence review package implemented; live and manual evidence collection open  
 Runtime status: Build 1 remains the visible operational application. One hidden, read-only Status Board shadow bridge is active; all other Build 2 feature routes and write workflows remain staged.
 
 ## Governing documents
@@ -14,46 +14,50 @@ Runtime status: Build 1 remains the visible operational application. One hidden,
 7. [`STATUS_BOARD_SHADOW_MIGRATION_AUTHORIZATION.md`](./STATUS_BOARD_SHADOW_MIGRATION_AUTHORIZATION.md) — consumed Phase 3A authorization and remaining evidence gate.
 8. [`STATUS_BOARD_SHADOW_CONTRACT.md`](./STATUS_BOARD_SHADOW_CONTRACT.md) — active bridge, canonical snapshot, comparison, evidence, and activation boundaries.
 9. [`STATUS_BOARD_PARITY_MATRIX.md`](./STATUS_BOARD_PARITY_MATRIX.md) — route values, sources, comparison rules, and blockers.
-10. [`CANONICAL_ENTITY_CONTRACT.md`](./CANONICAL_ENTITY_CONTRACT.md) — canonical entity and provenance contract.
-11. [`BACKEND_VERSIONING_AUDIT_CONTRACT.md`](./BACKEND_VERSIONING_AUDIT_CONTRACT.md) — server versioning and audit contract.
-12. [`CRITICAL_WORKFLOW_ORCHESTRATION.md`](./CRITICAL_WORKFLOW_ORCHESTRATION.md) — Gate D workflow and recovery contract.
-13. [`SYNCHRONIZATION_DEGRADED_OPERATION.md`](./SYNCHRONIZATION_DEGRADED_OPERATION.md) — Gate E invalidation, authoritative refetch, stale/offline, no-queue, and cache contract.
-14. [`BUILD_2_CHARTER.md`](./BUILD_2_CHARTER.md)
-15. [`PHASE_1_OPERATIONAL_TRUTH.md`](./PHASE_1_OPERATIONAL_TRUTH.md)
-16. [`METRIC_PROVENANCE_REGISTRY.md`](./METRIC_PROVENANCE_REGISTRY.md)
-17. [`DOMAIN_CALCULATION_CATALOG.md`](./DOMAIN_CALCULATION_CATALOG.md)
-18. [`RECORD_NORMALIZATION_CONTRACT.md`](./RECORD_NORMALIZATION_CONTRACT.md)
-19. [`REPOSITORY_CONTRACTS.md`](./REPOSITORY_CONTRACTS.md)
-20. [`VALIDATION_FIXTURES.md`](./VALIDATION_FIXTURES.md)
-21. [`PHASE_2_CHARTER.md`](./PHASE_2_CHARTER.md)
-22. [`GDL_FOUNDATIONS.md`](./GDL_FOUNDATIONS.md)
-23. [`GDL_TOKEN_REGISTRY.md`](./GDL_TOKEN_REGISTRY.md)
-24. [`COMPONENT_CONTRACTS.md`](./COMPONENT_CONTRACTS.md)
-25. [`COMPONENT_WORKSHOP.md`](./COMPONENT_WORKSHOP.md)
-26. [`APP_SHELL_CONTRACT.md`](./APP_SHELL_CONTRACT.md)
-27. [`ROUTE_PERMISSION_REGISTRY.md`](./ROUTE_PERMISSION_REGISTRY.md)
-28. [`FRONTEND_ARCHITECTURE_ADR.md`](./FRONTEND_ARCHITECTURE_ADR.md)
-29. [`RESPONSIVE_COMPOSITION_CONTRACTS.md`](./RESPONSIVE_COMPOSITION_CONTRACTS.md)
-30. [`RESPONSIVE_VALIDATION_MATRIX.md`](./RESPONSIVE_VALIDATION_MATRIX.md)
-31. [`ACCESSIBILITY_FOUNDATION.md`](./ACCESSIBILITY_FOUNDATION.md)
-32. [`ACCESSIBILITY_VALIDATION_MATRIX.md`](./ACCESSIBILITY_VALIDATION_MATRIX.md)
-33. [`PHASE_1B_EXECUTION_REPORT.md`](./PHASE_1B_EXECUTION_REPORT.md)
-34. [`PHASE_1C_EXECUTION_REPORT.md`](./PHASE_1C_EXECUTION_REPORT.md)
-35. [`PHASE_1D_EXECUTION_REPORT.md`](./PHASE_1D_EXECUTION_REPORT.md)
-36. [`PHASE_1E_EXECUTION_REPORT.md`](./PHASE_1E_EXECUTION_REPORT.md) — original-scope validation; exit language superseded.
-37. [`PHASE_2A_EXECUTION_REPORT.md`](./PHASE_2A_EXECUTION_REPORT.md)
-38. [`PHASE_2B_EXECUTION_REPORT.md`](./PHASE_2B_EXECUTION_REPORT.md)
-39. [`PHASE_2C_EXECUTION_REPORT.md`](./PHASE_2C_EXECUTION_REPORT.md)
-40. [`PHASE_2D_EXECUTION_REPORT.md`](./PHASE_2D_EXECUTION_REPORT.md)
-41. [`PHASE_2E_EXECUTION_REPORT.md`](./PHASE_2E_EXECUTION_REPORT.md)
-42. [`PHASE_2_EXIT_REPORT.md`](./PHASE_2_EXIT_REPORT.md)
-43. [`GATE_A_EXECUTION_REPORT.md`](./GATE_A_EXECUTION_REPORT.md)
-44. [`GATE_B_EXECUTION_REPORT.md`](./GATE_B_EXECUTION_REPORT.md)
-45. [`GATE_C_EXECUTION_REPORT.md`](./GATE_C_EXECUTION_REPORT.md)
-46. [`GATE_D_EXECUTION_REPORT.md`](./GATE_D_EXECUTION_REPORT.md)
-47. [`GATE_E_EXECUTION_REPORT.md`](./GATE_E_EXECUTION_REPORT.md)
-48. [`GATE_F_EXECUTION_REPORT.md`](./GATE_F_EXECUTION_REPORT.md) — completed consolidated revalidation and exit decision.
-49. [`PHASE_3A_EXECUTION_REPORT.md`](./PHASE_3A_EXECUTION_REPORT.md) — completed automated shadow implementation and evidence status.
+10. [`STATUS_BOARD_EVIDENCE_REVIEW_CONTRACT.md`](./STATUS_BOARD_EVIDENCE_REVIEW_CONTRACT.md) — sustained parity, manual evidence, mismatch disposition, deployment evidence, and decision boundary.
+11. [`STATUS_BOARD_MANUAL_EVIDENCE_MATRIX.md`](./STATUS_BOARD_MANUAL_EVIDENCE_MATRIX.md) — six-posture, accessibility, fullscreen, degraded-operation, and rollback checklist.
+12. [`STATUS_BOARD_ROLLBACK_PLAN.md`](./STATUS_BOARD_ROLLBACK_PLAN.md) — immediate Build 1-only recovery procedure.
+13. [`CANONICAL_ENTITY_CONTRACT.md`](./CANONICAL_ENTITY_CONTRACT.md) — canonical entity and provenance contract.
+14. [`BACKEND_VERSIONING_AUDIT_CONTRACT.md`](./BACKEND_VERSIONING_AUDIT_CONTRACT.md) — server versioning and audit contract.
+15. [`CRITICAL_WORKFLOW_ORCHESTRATION.md`](./CRITICAL_WORKFLOW_ORCHESTRATION.md) — Gate D workflow and recovery contract.
+16. [`SYNCHRONIZATION_DEGRADED_OPERATION.md`](./SYNCHRONIZATION_DEGRADED_OPERATION.md) — Gate E invalidation, authoritative refetch, stale/offline, no-queue, and cache contract.
+17. [`BUILD_2_CHARTER.md`](./BUILD_2_CHARTER.md)
+18. [`PHASE_1_OPERATIONAL_TRUTH.md`](./PHASE_1_OPERATIONAL_TRUTH.md)
+19. [`METRIC_PROVENANCE_REGISTRY.md`](./METRIC_PROVENANCE_REGISTRY.md)
+20. [`DOMAIN_CALCULATION_CATALOG.md`](./DOMAIN_CALCULATION_CATALOG.md)
+21. [`RECORD_NORMALIZATION_CONTRACT.md`](./RECORD_NORMALIZATION_CONTRACT.md)
+22. [`REPOSITORY_CONTRACTS.md`](./REPOSITORY_CONTRACTS.md)
+23. [`VALIDATION_FIXTURES.md`](./VALIDATION_FIXTURES.md)
+24. [`PHASE_2_CHARTER.md`](./PHASE_2_CHARTER.md)
+25. [`GDL_FOUNDATIONS.md`](./GDL_FOUNDATIONS.md)
+26. [`GDL_TOKEN_REGISTRY.md`](./GDL_TOKEN_REGISTRY.md)
+27. [`COMPONENT_CONTRACTS.md`](./COMPONENT_CONTRACTS.md)
+28. [`COMPONENT_WORKSHOP.md`](./COMPONENT_WORKSHOP.md)
+29. [`APP_SHELL_CONTRACT.md`](./APP_SHELL_CONTRACT.md)
+30. [`ROUTE_PERMISSION_REGISTRY.md`](./ROUTE_PERMISSION_REGISTRY.md)
+31. [`FRONTEND_ARCHITECTURE_ADR.md`](./FRONTEND_ARCHITECTURE_ADR.md)
+32. [`RESPONSIVE_COMPOSITION_CONTRACTS.md`](./RESPONSIVE_COMPOSITION_CONTRACTS.md)
+33. [`RESPONSIVE_VALIDATION_MATRIX.md`](./RESPONSIVE_VALIDATION_MATRIX.md)
+34. [`ACCESSIBILITY_FOUNDATION.md`](./ACCESSIBILITY_FOUNDATION.md)
+35. [`ACCESSIBILITY_VALIDATION_MATRIX.md`](./ACCESSIBILITY_VALIDATION_MATRIX.md)
+36. [`PHASE_1B_EXECUTION_REPORT.md`](./PHASE_1B_EXECUTION_REPORT.md)
+37. [`PHASE_1C_EXECUTION_REPORT.md`](./PHASE_1C_EXECUTION_REPORT.md)
+38. [`PHASE_1D_EXECUTION_REPORT.md`](./PHASE_1D_EXECUTION_REPORT.md)
+39. [`PHASE_1E_EXECUTION_REPORT.md`](./PHASE_1E_EXECUTION_REPORT.md) — original-scope validation; exit language superseded.
+40. [`PHASE_2A_EXECUTION_REPORT.md`](./PHASE_2A_EXECUTION_REPORT.md)
+41. [`PHASE_2B_EXECUTION_REPORT.md`](./PHASE_2B_EXECUTION_REPORT.md)
+42. [`PHASE_2C_EXECUTION_REPORT.md`](./PHASE_2C_EXECUTION_REPORT.md)
+43. [`PHASE_2D_EXECUTION_REPORT.md`](./PHASE_2D_EXECUTION_REPORT.md)
+44. [`PHASE_2E_EXECUTION_REPORT.md`](./PHASE_2E_EXECUTION_REPORT.md)
+45. [`PHASE_2_EXIT_REPORT.md`](./PHASE_2_EXIT_REPORT.md)
+46. [`GATE_A_EXECUTION_REPORT.md`](./GATE_A_EXECUTION_REPORT.md)
+47. [`GATE_B_EXECUTION_REPORT.md`](./GATE_B_EXECUTION_REPORT.md)
+48. [`GATE_C_EXECUTION_REPORT.md`](./GATE_C_EXECUTION_REPORT.md)
+49. [`GATE_D_EXECUTION_REPORT.md`](./GATE_D_EXECUTION_REPORT.md)
+50. [`GATE_E_EXECUTION_REPORT.md`](./GATE_E_EXECUTION_REPORT.md)
+51. [`GATE_F_EXECUTION_REPORT.md`](./GATE_F_EXECUTION_REPORT.md) — completed consolidated revalidation and exit decision.
+52. [`PHASE_3A_EXECUTION_REPORT.md`](./PHASE_3A_EXECUTION_REPORT.md) — completed automated shadow implementation and evidence status.
+53. [`PHASE_3A_EVIDENCE_REVIEW_REPORT.md`](./PHASE_3A_EVIDENCE_REVIEW_REPORT.md) — review package implementation and open evidence classes.
 
 ## Phase 3A source
 
@@ -67,22 +71,30 @@ public/app/status-board-shadow/
 ├── route-contract.mjs
 ├── runner.mjs
 ├── sync-adapter.mjs
+├── review-contract.mjs
+├── manual-evidence.mjs
+├── mismatch-disposition.mjs
+├── deployment-evidence.mjs
+├── rollback-contract.mjs
+├── review-evaluator.mjs
 └── index.mjs
 
 public/js/gate-status-board-shadow-controller.js
 ```
 
-The bridge is loaded by middleware after the active Status Board and timer controllers. It observes Build 1 output and retains aggregate parity evidence in memory. It does not create a route, render markup, call an API, write a record, or persist evidence.
+The bridge is loaded by middleware after the active Status Board and timer controllers. It observes Build 1 output and retains aggregate parity evidence in memory. Review inputs are evaluated only for the current call and are not retained or persisted.
 
 ## Automated validation
 
 ```text
 tests/build-2/status-board-shadow/status-board-shadow.test.mjs
+tests/build-2/status-board-shadow/status-board-evidence-review.test.mjs
 tests/build-2/status-board-shadow/fixtures/B2-P3A-F001-route-readiness.json
 .github/workflows/build-2-phase-3a-status-board-shadow.yml
+.github/workflows/build-2-phase-3a-evidence-review.yml
 ```
 
-The Phase 3A workflow also reruns every Gate A–F, Phase 1, and Phase 2 suite and includes route-specific foreign-tab invalidation and authoritative-refetch evidence.
+Both Phase 3A workflows rerun the complete foundation and application regression suites.
 
 ## Current execution position
 
@@ -98,7 +110,7 @@ Foundation Alignment Gate E                       COMPLETE / STAGED
 Foundation Alignment Gate F                       COMPLETE
 
 Phase 3A — Status Board Shadow Migration           COMPLETE / SHADOW ACTIVE
-Phase 3A Evidence Review                          NEXT
+Phase 3A Evidence Review                           PACKAGE COMPLETE / EVIDENCE COLLECTION OPEN
 Phase 3B — Status Board Controlled Test Surface    NOT AUTHORIZED
 Production Build 2 route activation               NOT AUTHORIZED
 Build 2 production critical writes                NOT AUTHORIZED
@@ -108,4 +120,4 @@ Approved first route                              STATUS BOARD
 
 ## Integration rule
 
-Phase 3A activates only the hidden, read-only shadow observer. A visible Build 2 Status Board still requires sustained live parity evidence, disposition of every blocking mismatch, route-specific manual accessibility and six-posture validation, deployment prerequisites, controlled activation and rollback, monitoring, and an explicit Build 1 retirement decision.
+Phase 3A activates only the hidden, read-only shadow observer and evidence evaluator. A visible Build 2 Status Board still requires sustained live parity evidence, disposition and correction of every blocking mismatch, route-specific manual accessibility and six-posture validation, controlled-environment prerequisites, exercised rollback, monitoring, and an explicit governance decision.

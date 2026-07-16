@@ -53,7 +53,34 @@ jobs:
           node --experimental-default-type=module --check functions/api/records.js
           node --experimental-default-type=module --check functions/api/_middleware.js
 
-      - name: Validate Gate F consolidated controls
+      - name: Validate required foundation owners
+        run: node --test --test-name-pattern="source owners" tests/build-2/foundation/consolidated-foundation.test.mjs
+
+      - name: Validate prior gate closure
+        run: node --test --test-name-pattern="Gates A through E" tests/build-2/foundation/consolidated-foundation.test.mjs
+
+      - name: Validate historical operational truth
+        run: node --test --test-name-pattern="historical receiving" tests/build-2/foundation/consolidated-foundation.test.mjs
+
+      - name: Validate registries and fail-closed state
+        run: node --test --test-name-pattern="route, permission" tests/build-2/foundation/consolidated-foundation.test.mjs
+
+      - name: Validate static cache boundary
+        run: node --test --test-name-pattern="static-shell" tests/build-2/foundation/consolidated-foundation.test.mjs
+
+      - name: Validate schema and migration parity
+        run: node --test --test-name-pattern="schema and migration" tests/build-2/foundation/consolidated-foundation.test.mjs
+
+      - name: Validate exit and deployment governance
+        run: node --test --test-name-pattern="governing documents" tests/build-2/foundation/consolidated-foundation.test.mjs
+
+      - name: Validate Build 1 isolation evidence
+        run: node --test --test-name-pattern="Build 1 remains" tests/build-2/foundation/consolidated-foundation.test.mjs
+
+      - name: Validate shadow-only authorization
+        run: node --test --test-name-pattern="Gate F authorizes" tests/build-2/foundation/consolidated-foundation.test.mjs
+
+      - name: Validate complete Gate F suite
         run: node --test tests/build-2/foundation/*.test.mjs
 
       - name: Validate server, canonical data, and operational truth

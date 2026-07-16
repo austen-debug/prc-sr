@@ -1,6 +1,6 @@
 # GATE Build 2 Documentation Index
 
-Status: Foundation Alignment Gate E implemented; validation pending  
+Status: Foundation Alignment Gate E complete; Gate F next  
 Runtime status: Build 1 UI and feature workflows remain active; Build 2 workflows, synchronization, offline, and application assets remain staged.
 
 ## Governing documents
@@ -45,7 +45,7 @@ Runtime status: Build 1 UI and feature workflows remain active; Build 2 workflow
 38. [`GATE_B_EXECUTION_REPORT.md`](./GATE_B_EXECUTION_REPORT.md)
 39. [`GATE_C_EXECUTION_REPORT.md`](./GATE_C_EXECUTION_REPORT.md)
 40. [`GATE_D_EXECUTION_REPORT.md`](./GATE_D_EXECUTION_REPORT.md)
-41. [`GATE_E_EXECUTION_REPORT.md`](./GATE_E_EXECUTION_REPORT.md) — Gate E implementation and validation status.
+41. [`GATE_E_EXECUTION_REPORT.md`](./GATE_E_EXECUTION_REPORT.md) — completed Gate E implementation and validation record.
 
 ## Gate E source
 
@@ -101,8 +101,8 @@ Foundation Alignment Gate A                        COMPLETE / STAGED
 Foundation Alignment Gate B                        COMPLETE / STAGED
 Foundation Alignment Gate C                        COMPLETE
 Foundation Alignment Gate D                        COMPLETE / STAGED
-Foundation Alignment Gate E                        IMPLEMENTED / VALIDATION PENDING
-Foundation Alignment Gate F                        NOT STARTED
+Foundation Alignment Gate E                        COMPLETE / STAGED
+Foundation Alignment Gate F                        NEXT
 
 Phase 3 — Feature Migration and Legacy Retirement  BLOCKED UNTIL GATES A–F CLOSE
 Approved first route                               STATUS BOARD

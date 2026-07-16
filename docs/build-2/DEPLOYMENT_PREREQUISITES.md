@@ -11,9 +11,9 @@ Foundation completion and production activation are different decisions. Reposit
 
 | Prerequisite | Repository evidence | Environment evidence | Effect |
 |---|---|---|---|
-| Gate C records API deployed | versioning, conditional-write, role-provenance, and append-only handler tests | Not independently verified | Required before any Build 2 route performs a production write |
-| D1 migration `0002_gate_c_append_only_audit.sql` applied | migration exists; `schema.sql` contains matching triggers | Not independently verified | Required before production write-heavy route activation; database defense in depth |
-| Session secret and role bindings configured | server-side session bridge exists and tests pass | Not independently verified | Required before any Build 2 authenticated route activation or controlled authenticated test surface |
+| Gate C records API deployed | versioning, conditional-write, role-provenance, and append-only handler tests | Not independently verified in Gate F | Required before any Build 2 route performs a production write |
+| D1 migration `0002_gate_c_append_only_audit.sql` applied | migration exists; `schema.sql` contains matching triggers | Not independently verified in Gate F | Required before production write-heavy route activation; database defense in depth |
+| Session secret and role bindings configured | server-side session bridge exists and tests pass | Not independently verified in Gate F | Required before any Build 2 authenticated route activation or controlled authenticated test surface |
 | Squadron credentials configured | contract requires server-side bindings only | Squadron login remains inactive | Required only before Squadron Board migration |
 | Build 2 service worker scope reviewed | cache allowlist and network-only API tests pass | Not registered by Build 1 | Required before any service-worker activation |
 | Rollback deployment path exercised | route packages define rollback | Status Board shadow rollback is documented but not yet exercised in a controlled environment | Required separately before a controlled or production route surface |
@@ -48,7 +48,7 @@ Before a write-capable Build 2 route activates in an existing environment:
 
 ## Authorization impact
 
-The unverified external prerequisites do **not** block a hidden, read-only Status Board shadow calculation or pure evidence evaluation that consumes no secrets and changes no routing or operational state.
+The unverified external prerequisites do **not** block a hidden, read-only Status Board shadow calculation that consumes the same authorized records without changing routing or operational state. They also do not block pure, non-persistent evidence evaluation.
 
 They do block:
 

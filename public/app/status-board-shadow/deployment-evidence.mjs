@@ -66,7 +66,7 @@ export function summarizeDeploymentEvidence(entries = []) {
   });
 
   const failed = checks.filter(check => check.status === 'fail').map(check => check.id);
-  const pending = checks.filter(check => check.status !== 'pass').map(check => check.id);
+  const pending = checks.filter(check => check.status === 'pending').map(check => check.id);
   return freezeShadow({
     checks,
     passed: checks.filter(check => check.status === 'pass').length,

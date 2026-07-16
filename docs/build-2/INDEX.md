@@ -1,6 +1,6 @@
 # GATE Build 2 Documentation Index
 
-Status: Phase 3A shadow active; evidence collection open; Audit Remediation Gate 1 implemented and awaiting validation  
+Status: Phase 3A shadow active; evidence collection open; Audit Remediation Gate 1 complete; Gate 2 next  
 Runtime status: Build 1 remains the visible operational application. One hidden, read-only Status Board shadow bridge is active. The fixture harness and all other Build 2 feature, evidence-retention, write, synchronization-owner, and service-worker assets remain outside active middleware and routing.
 
 ## Current governing set
@@ -132,8 +132,8 @@ Foundation Alignment Gate F                       COMPLETE
 Phase 3A — Status Board Shadow Migration           COMPLETE / SHADOW ACTIVE
 Phase 3A Evidence Review                           PACKAGE COMPLETE / EVIDENCE COLLECTION OPEN
 Phase 3A Evidence Harness                          COMPLETE / NON-PRODUCTION
-Audit Remediation Gate 1                           IMPLEMENTED / VALIDATION PENDING
-Audit Remediation Gate 2                           NOT STARTED
+Audit Remediation Gate 1                           COMPLETE
+Audit Remediation Gate 2                           NEXT
 Phase 3B — Status Board Controlled Test Surface    NOT AUTHORIZED
 Production Build 2 route activation               NOT AUTHORIZED
 Build 2 production critical writes                NOT AUTHORIZED

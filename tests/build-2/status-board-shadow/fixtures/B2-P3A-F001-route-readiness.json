@@ -1,0 +1,24 @@
+{
+  "fixtureId": "B2-P3A-F001",
+  "route": "board",
+  "mode": "shadow",
+  "postures": [
+    { "id": "desktop-landscape", "metricColumns": 4, "dormPresentation": "three-columns", "activeBusPresentation": "horizontal-lane", "fullscreen": "command-display" },
+    { "id": "desktop-vertical", "metricColumns": 2, "dormPresentation": "stacked-state-regions", "activeBusPresentation": "wrapped-lane", "fullscreen": "portrait-display" },
+    { "id": "tablet-landscape", "metricColumns": 4, "dormPresentation": "three-columns-scroll-safe", "activeBusPresentation": "horizontal-lane", "fullscreen": "touch-display" },
+    { "id": "tablet-portrait", "metricColumns": 2, "dormPresentation": "stacked-state-regions", "activeBusPresentation": "horizontal-scroll", "fullscreen": "touch-display" },
+    { "id": "phone-landscape", "metricColumns": 2, "dormPresentation": "stacked-state-regions", "activeBusPresentation": "horizontal-scroll", "fullscreen": "compact-display" },
+    { "id": "phone-portrait", "metricColumns": 1, "dormPresentation": "stacked-state-regions", "activeBusPresentation": "horizontal-scroll", "fullscreen": "compact-display" }
+  ],
+  "accessibility": {
+    "standard": "WCAG 2.2 AA",
+    "timerAutomaticAnnouncement": false,
+    "degradedStateIncludesLastSync": true,
+    "fullscreenFocusRestoration": true
+  },
+  "activation": {
+    "visibleRoute": false,
+    "criticalWrites": false,
+    "legacyRetirement": false
+  }
+}

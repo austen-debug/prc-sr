@@ -1,0 +1,10 @@
+/* Harness-only aliases. These do not change the GATE Design Language registry. */
+:root {
+  --gate-font-size-sm: 0.875rem;
+  --gate-status-info-surface: var(--gate-surface-raised);
+  --gate-status-info-border: var(--gate-border-strong);
+  --gate-status-info-text: var(--gate-text-primary);
+  --gate-status-warning-surface: var(--gate-surface-raised);
+  --gate-status-warning-border: var(--gate-state-warning);
+  --gate-status-warning-text: var(--gate-text-primary);
+}

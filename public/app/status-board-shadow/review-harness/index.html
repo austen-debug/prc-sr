@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en" data-gate-theme="dark" data-gate-density="standard">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>GATE Status Board Evidence Harness</title>
+  <meta name="description" content="Non-production, fixture-only review harness for GATE Build 2 Status Board evidence collection.">
+  <link rel="stylesheet" href="../../design/themes/gdl-foundations.css">
+  <link rel="stylesheet" href="../../components/gate-components.css">
+  <link rel="stylesheet" href="../../responsive/gate-responsive.css">
+  <link rel="stylesheet" href="../../accessibility/gate-accessibility.css">
+  <link rel="stylesheet" href="./review-harness-tokens.css">
+  <link rel="stylesheet" href="./review-harness.css">
+</head>
+<body>
+  <a class="review-skip-link" href="#review-board">Skip to Status Board review surface</a>
+  <header class="review-banner">
+    <div>
+      <p class="review-eyebrow">Build 2 · Phase 3A</p>
+      <h1>Status Board Evidence Harness</h1>
+      <p>Fixture-only, non-production surface for responsive, accessibility, fullscreen, degraded-state, and rollback evidence.</p>
+    </div>
+    <strong class="review-boundary">No operational records · No API · No route activation</strong>
+  </header>
+
+  <nav class="review-controls" aria-label="Evidence harness controls">
+    <label for="review-posture">Posture</label>
+    <select id="review-posture"></select>
+    <label for="review-theme">Theme</label>
+    <select id="review-theme">
+      <option value="dark">Dark</option>
+      <option value="light">Light</option>
+    </select>
+    <label for="review-connection">Connection state</label>
+    <select id="review-connection"></select>
+    <button id="review-fullscreen" class="gate-button gate-button--secondary" type="button">Enter fullscreen</button>
+    <button id="review-refresh" class="gate-button gate-button--quiet" type="button">Simulate authoritative refresh</button>
+  </nav>
+
+  <div id="review-announcement" class="review-announcement" role="status" aria-live="polite"></div>
+
+  <div class="review-layout">
+    <section class="review-stage" aria-labelledby="review-stage-title">
+      <header>
+        <h2 id="review-stage-title">Fixture route surface</h2>
+        <p id="review-posture-description"></p>
+      </header>
+      <div id="review-viewport" class="review-viewport" tabindex="-1">
+        <div id="review-board" class="review-board" data-review-state="current"></div>
+      </div>
+    </section>
+
+    <aside class="review-evidence" aria-labelledby="review-evidence-title">
+      <header>
+        <h2 id="review-evidence-title">Evidence packet builder</h2>
+        <p>Entries remain in memory until the page is closed. Generate sanitized JSON and retain it through the approved artifact process.</p>
+      </header>
+
+      <fieldset>
+        <legend>Shared review metadata</legend>
+        <label for="review-environment">Environment</label>
+        <input id="review-environment" type="text" value="controlled review harness" maxlength="120">
+        <label for="review-method">Method</label>
+        <input id="review-method" type="text" value="manual fixture review" maxlength="240">
+        <label for="review-role">Reviewer role</label>
+        <input id="review-role" type="text" value="reviewer" maxlength="80">
+      </fieldset>
+
+      <section aria-labelledby="manual-checks-title">
+        <h3 id="manual-checks-title">Manual checks</h3>
+        <div id="manual-checks"></div>
+      </section>
+
+      <section aria-labelledby="deployment-checks-title">
+        <h3 id="deployment-checks-title">Controlled-environment prerequisites</h3>
+        <div id="deployment-checks"></div>
+      </section>
+
+      <label for="review-ledger">Aggregate live shadow ledger JSON</label>
+      <textarea id="review-ledger" rows="8" spellcheck="false" placeholder="Paste only the aggregate result from window.GateStatusBoardShadow.getEvidence(). Do not paste operational records."></textarea>
+
+      <label for="review-dispositions">Mismatch dispositions JSON</label>
+      <textarea id="review-dispositions" rows="5" spellcheck="false" placeholder="Optional array of sanitized mismatch disposition records."></textarea>
+
+      <div class="review-evidence__actions">
+        <button id="review-evaluate" class="gate-button gate-button--primary" type="button">Evaluate packet</button>
+        <button id="review-reset" class="gate-button gate-button--secondary" type="button">Reset evidence form</button>
+      </div>
+
+      <label for="review-output">Sanitized review packet</label>
+      <textarea id="review-output" rows="18" readonly spellcheck="false"></textarea>
+    </aside>
+  </div>
+
+  <noscript>This fixture-only review harness requires JavaScript.</noscript>
+  <script type="module" src="./review-harness.mjs"></script>
+</body>
+</html>

@@ -12,11 +12,24 @@ const ALLOWED_KEYS = Object.freeze([
   'originId'
 ]);
 
+const CONSTRUCTION_KEYS = Object.freeze([
+  'entityType',
+  'entityId',
+  'weekGroup',
+  'operationId',
+  'occurredAt',
+  'originId'
+]);
+
 function text(value) {
   return String(value ?? '').trim();
 }
 
 export function createInvalidationNotice(input = {}) {
+  const extraKeys = Object.keys(input).filter(key => !CONSTRUCTION_KEYS.includes(key));
+  if (extraKeys.length) {
+    throw new TypeError(`Invalidation notice contains prohibited fields: ${extraKeys.join(', ')}.`);
+  }
   const notice = Object.freeze({
     kind: INVALIDATION_KIND,
     contractVersion: 'E.1.0',

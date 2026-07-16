@@ -1,6 +1,6 @@
 # GATE Build 2 — Program Traceability Matrix
 
-Status: FOUNDATION ALIGNMENT CONTROL  
+Status: FOUNDATION ALIGNMENT COMPLETE  
 Purpose: map governing intent to implementation, validation, runtime ownership, and remaining route evidence.
 
 | Requirement | Source owner | Validation | Runtime status | Remaining evidence |
@@ -46,10 +46,10 @@ Purpose: map governing intent to implementation, validation, runtime ownership, 
 | Capability-driven six-posture composition | `responsive/*` | responsive and F suites | Staged | Route-specific evidence |
 | WCAG 2.2 AA foundation | `accessibility/*` | accessibility and F suites | Staged | Route-specific manual evidence |
 | Squadron credentials remain server-side | environment bindings and safeguards | Gate C and F source controls | Not activated | Squadron migration |
-| Foundation exit decision is corrected | `CORRECTED_PHASE_1_EXIT_DECISION.md` | Gate F governance suite | Implemented / validation pending | Final-head Gate F CI |
+| Foundation exit decision is corrected | `CORRECTED_PHASE_1_EXIT_DECISION.md` | Gate F governance suite | Complete / staged | Route-specific migration evidence |
 | External deployment state is not inferred | `DEPLOYMENT_PREREQUISITES.md` | Gate F governance suite | Documented prerequisite | Environment verification |
 | Status Board-first migration order | program baseline | Gate F governance suite | Approved | Phase 3A shadow package |
-| Status Board shadow authorization is bounded | shadow authorization document | Gate F governance suite | Authorized after Gate F closure | Shadow parity evidence |
+| Status Board shadow authorization is bounded | shadow authorization document | Gate F governance suite | Authorized / next | Shadow parity evidence |
 | Former owner retired only after activation | Phase 3 route package | future ownership and middleware tests | Not started | Production acceptance |
 
 ## Approved route migration sequence

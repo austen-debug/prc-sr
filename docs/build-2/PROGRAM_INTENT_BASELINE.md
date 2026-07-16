@@ -1,7 +1,7 @@
 # GATE Build 2 — Program Intent Baseline
 
 Status: GOVERNING BASELINE  
-Runtime status: Build 1 UI remains operational; Gate C persistence protections are available; Gate D workflows and Gate E synchronization/degraded-operation assets remain staged
+Runtime status: Build 1 UI remains operational; Build 2 feature, workflow, synchronization, degraded-operation, and service-worker assets remain staged
 
 ## Mission
 
@@ -71,7 +71,7 @@ The following workflows require confirmed server persistence and may not claim s
 - archive create, verify, amendment, deletion, and closeout;
 - active Week Group changes.
 
-Gate D binds these operations to versioned writes, authoritative verification, required append-only audit events, explicit partial states, durable operation IDs, and resumable recovery. Gate E disables critical writes whenever synchronization state is offline, stale, failed, unknown, or syncing; blocked writes are not queued. Route migration remains blocked until Gate F completes consolidated revalidation.
+Gate D binds these operations to versioned writes, authoritative verification, required append-only audit events, explicit partial states, durable operation IDs, and resumable recovery. Gate E disables critical writes whenever synchronization state is offline, stale, failed, unknown, or syncing; blocked writes are not queued. Gate F completed consolidated validation and issued the corrected Phase 1 exit decision.
 
 ## Synchronization and degraded-operation rule
 
@@ -124,14 +124,17 @@ COMPLETE / STAGED AFTER GATE B
 Phase 1D — Repository, Record Versioning, Append-Only Audit, and Critical Workflows
 COMPLETE / STAGED AFTER GATES C AND D
 
-Phase 1E — Parity Validation
-COMPLETE FOR THE IMPLEMENTED FOUNDATION
+Phase 1E — Consolidated Foundation Validation
+COMPLETE / STAGED AFTER GATE F
 
 Phase 2A–2E — GDL, Components, Shell, Responsive, Accessibility
 COMPLETE / STAGED
 
-Phase 3 — Feature Migration and Legacy Retirement
-BLOCKED UNTIL FOUNDATION ALIGNMENT GATES A–F CLOSE
+Phase 3A — Status Board Shadow Migration
+AUTHORIZED / NEXT; HIDDEN AND READ-ONLY
+
+Production Build 2 route activation
+NOT AUTHORIZED
 ```
 
 ## Foundation gates
@@ -142,7 +145,7 @@ Gate B — Canonical entities and role provenance                 COMPLETE / STA
 Gate C — Backend versioning and append-only audit events        COMPLETE
 Gate D — Critical workflow orchestration                        COMPLETE / STAGED
 Gate E — Synchronization and degraded operation                 COMPLETE / STAGED
-Gate F — Consolidated revalidation and corrected Phase 1 exit   NEXT
+Gate F — Consolidated revalidation and corrected Phase 1 exit   COMPLETE
 ```
 
 This document governs later phase summaries when a conflict exists. A change to mission, role access, migration order, critical-write policy, archive immutability, synchronization policy, or the no-PII boundary requires an explicit program decision and corresponding fixture updates.

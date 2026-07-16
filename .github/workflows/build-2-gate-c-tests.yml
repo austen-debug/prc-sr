@@ -90,7 +90,7 @@ jobs:
           grep -q 'Foundation Alignment Gate D' docs/build-2/GATE_C_EXECUTION_REPORT.md
           grep -Eq 'Gate C — Backend versioning and append-only audit events[[:space:]]+COMPLETE' docs/build-2/PROGRAM_INTENT_BASELINE.md
           grep -Eq 'Foundation Alignment Gate C[[:space:]]+COMPLETE' docs/build-2/INDEX.md
-          grep -Eq 'Phase 3 — Feature Migration and Legacy Retirement[[:space:]]+BLOCKED UNTIL GATES A–F CLOSE' docs/build-2/INDEX.md
+          grep -Eq 'Production Build 2 route activation[[:space:]]+NOT AUTHORIZED|Phase 3A — Status Board Shadow Migration' docs/build-2/INDEX.md
           if grep -q 'SQUADRON_USERNAME' functions/api/login.js; then
             echo 'Gate C must not activate Squadron login.'
             exit 1

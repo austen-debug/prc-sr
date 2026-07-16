@@ -1,0 +1,133 @@
+name: Build 2 Gate F Tests
+
+on:
+  push:
+    paths:
+      - 'public/app/**'
+      - 'public/gate-build-2-sw.js'
+      - 'functions/api/**'
+      - 'schema.sql'
+      - 'migrations/**'
+      - 'tests/build-2/**'
+      - 'docs/build-2/**'
+      - '.github/workflows/build-2-*.yml'
+  pull_request:
+    paths:
+      - 'public/app/**'
+      - 'public/gate-build-2-sw.js'
+      - 'functions/api/**'
+      - 'schema.sql'
+      - 'migrations/**'
+      - 'tests/build-2/**'
+      - 'docs/build-2/**'
+      - '.github/workflows/build-2-*.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-2-gate-f-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gate-f:
+    name: Consolidated foundation revalidation and exit decision
+    runs-on: ubuntu-latest
+    timeout-minutes: 22
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Validate staged source syntax
+        run: |
+          for file in public/app/domain/*.mjs public/app/data/*.mjs public/app/data/repositories/*.mjs public/app/workflows/*.mjs public/app/synchronization/*.mjs public/app/offline/*.mjs public/app/shell/*.mjs public/app/responsive/*.mjs public/app/accessibility/*.mjs; do
+            node --check "$file"
+          done
+          node --experimental-default-type=module --check public/gate-build-2-sw.js
+          node --experimental-default-type=module --check functions/api/records.js
+          node --experimental-default-type=module --check functions/api/_middleware.js
+
+      - name: Validate required foundation owners
+        run: node --test --test-name-pattern="source owners" tests/build-2/foundation/consolidated-foundation.test.mjs
+
+      - name: Validate prior gate closure
+        run: node --test --test-name-pattern="Gates A through E" tests/build-2/foundation/consolidated-foundation.test.mjs
+
+      - name: Validate historical operational truth
+        run: node --test --test-name-pattern="historical receiving" tests/build-2/foundation/consolidated-foundation.test.mjs
+
+      - name: Validate registries and fail-closed state
+        run: node --test --test-name-pattern="route, permission" tests/build-2/foundation/consolidated-foundation.test.mjs
+
+      - name: Validate static cache boundary
+        run: node --test --test-name-pattern="static-shell" tests/build-2/foundation/consolidated-foundation.test.mjs
+
+      - name: Validate schema and migration parity
+        run: node --test --test-name-pattern="schema and migration" tests/build-2/foundation/consolidated-foundation.test.mjs
+
+      - name: Validate exit and deployment governance
+        run: node --test --test-name-pattern="governing documents" tests/build-2/foundation/consolidated-foundation.test.mjs
+
+      - name: Validate Build 1 isolation evidence
+        run: node --test --test-name-pattern="Build 1 remains" tests/build-2/foundation/consolidated-foundation.test.mjs
+
+      - name: Validate shadow-only authorization
+        run: node --test --test-name-pattern="Gate F authorizes" tests/build-2/foundation/consolidated-foundation.test.mjs
+
+      - name: Validate complete Gate F suite
+        run: node --test tests/build-2/foundation/*.test.mjs
+
+      - name: Validate server, canonical data, and operational truth
+        run: |
+          node --experimental-default-type=module --test tests/build-2/server/*.test.mjs
+          node --test tests/build-2/data/*.test.mjs
+          node --test tests/build-2/domain/*.test.mjs
+          node --test tests/build-2/parity/*.test.mjs
+
+      - name: Validate workflows, recovery, synchronization, and degraded operation
+        run: |
+          node --test tests/build-2/workflows/*.test.mjs
+          node --test tests/build-2/synchronization/*.test.mjs
+
+      - name: Validate complete Phase 2 application foundation
+        run: |
+          node --test tests/build-2/design/*.test.mjs
+          node --test tests/build-2/components/*.test.mjs
+          node --test tests/build-2/shell/*.test.mjs
+          node --test tests/build-2/responsive/*.test.mjs
+          node --test tests/build-2/accessibility/*.test.mjs
+
+      - name: Validate corrected exit and authorization boundaries
+        run: |
+          grep -Eq 'Status:[[:space:]]+FOUNDATION EXIT APPROVED' docs/build-2/CORRECTED_PHASE_1_EXIT_DECISION.md
+          grep -q 'AUTHORIZED — hidden, read-only Status Board shadow migration' docs/build-2/GATE_F_EXECUTION_REPORT.md
+          grep -q 'NOT AUTHORIZED — visible Build 2 production route activation' docs/build-2/GATE_F_EXECUTION_REPORT.md
+          grep -q 'Not independently verified in Gate F' docs/build-2/DEPLOYMENT_PREREQUISITES.md
+          grep -q 'Phase 3A — Status Board Shadow Migration' docs/build-2/GATE_F_EXECUTION_REPORT.md
+          grep -Eq 'Foundation Alignment Gate F[[:space:]]+(IMPLEMENTED / VALIDATION PENDING|COMPLETE)' docs/build-2/INDEX.md
+
+      - name: Validate schema and migration equivalence
+        run: |
+          for trigger in prevent_audit_event_update prevent_audit_event_delete; do
+            grep -q "$trigger" schema.sql
+            grep -q "$trigger" migrations/0002_gate_c_append_only_audit.sql
+          done
+          grep -q 'audit events are append-only' schema.sql
+          grep -q 'audit events are append-only' migrations/0002_gate_c_append_only_audit.sql
+
+      - name: Validate Build 1 runtime isolation
+        run: |
+          if grep -Eq '/app/(domain|data|design|components|shell|responsive|accessibility|workflows|synchronization|offline)/|gate-build-2-sw' functions/_middleware.js; then
+            echo 'Build 2 staged assets must not be loaded by active middleware.'
+            exit 1
+          fi
+          if grep -REn 'gate-build-2-sw|registerGateShellServiceWorker|app/(workflows|synchronization|offline)' public/js public/index.html functions/_middleware.js; then
+            echo 'Build 1 source must not activate Gate D/E/F assets.'
+            exit 1
+          fi

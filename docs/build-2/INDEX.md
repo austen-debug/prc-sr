@@ -1,6 +1,6 @@
 # GATE Build 2 Documentation Index
 
-Status: Phase 3A evidence review package complete; fixture harness implemented; live and manual evidence collection open  
+Status: Phase 3A evidence review and fixture harness packages complete; live and manual evidence collection open  
 Runtime status: Build 1 remains the visible operational application. One hidden, read-only Status Board shadow bridge is active; the fixture evidence harness is not loaded by middleware; all Build 2 feature routes and write workflows remain staged.
 
 ## Governing documents
@@ -121,7 +121,7 @@ Foundation Alignment Gate F                       COMPLETE
 
 Phase 3A — Status Board Shadow Migration           COMPLETE / SHADOW ACTIVE
 Phase 3A Evidence Review                           PACKAGE COMPLETE / EVIDENCE COLLECTION OPEN
-Phase 3A Evidence Harness                          IMPLEMENTED / VALIDATION PENDING
+Phase 3A Evidence Harness                          COMPLETE / NON-PRODUCTION
 Phase 3B — Status Board Controlled Test Surface    NOT AUTHORIZED
 Production Build 2 route activation               NOT AUTHORIZED
 Build 2 production critical writes                NOT AUTHORIZED

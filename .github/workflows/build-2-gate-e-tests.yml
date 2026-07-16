@@ -81,13 +81,16 @@ jobs:
           node --test tests/build-2/responsive/*.test.mjs
           node --test tests/build-2/accessibility/*.test.mjs
 
-      - name: Validate synchronization ownership boundaries
+      - name: Validate synchronization ownership and closure boundaries
         run: |
           grep -q 'GATE_INVALIDATION_CHANNEL' public/app/synchronization/invalidation-channel.mjs
           grep -q 'refreshRequired' public/app/synchronization/sync-state.mjs
           grep -q 'offlineWriteQueue: false' public/app/synchronization/guarded-records-client.mjs
           grep -q 'isAuthoritativeApiRequest' public/gate-build-2-sw.js
           grep -q 'Foundation Alignment Gate F' docs/build-2/GATE_E_EXECUTION_REPORT.md
+          grep -Eq 'Gate E — Synchronization and degraded operation[[:space:]]+COMPLETE / STAGED' docs/build-2/PROGRAM_INTENT_BASELINE.md
+          grep -Eq 'Foundation Alignment Gate E[[:space:]]+COMPLETE / STAGED' docs/build-2/INDEX.md
+          grep -Eq 'Foundation Alignment Gate F[[:space:]]+NEXT' docs/build-2/INDEX.md
           if grep -REn 'localStorage|sessionStorage|indexedDB|IDBDatabase' public/app/synchronization; then
             echo 'Gate E may not create a persistent client operational database.'
             exit 1

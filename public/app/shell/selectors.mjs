@@ -36,11 +36,34 @@ export function selectPersistenceAnnouncement(state) {
 }
 
 export function selectConnectivityAnnouncement(state) {
-  if (state?.connectivity?.online === false) {
-    const last = state?.connectivity?.lastSyncedAt;
-    return last ? `Offline. Last synchronized ${last}.` : 'Offline. Showing the last confirmed data.';
+  const connectivity = state?.connectivity || {};
+  const explicitMessage = String(connectivity.message || '').trim();
+  if (explicitMessage) return explicitMessage;
+  const last = connectivity.lastSyncedAt;
+  if (connectivity.status === 'syncing') return 'Synchronizing authoritative records.';
+  if (connectivity.status === 'offline' || connectivity.online === false) {
+    return last ? `Offline. Last synchronized ${last}. Critical writes are disabled.` : 'Offline. No confirmed snapshot is available. Critical writes are disabled.';
+  }
+  if (connectivity.status === 'stale') {
+    return last ? `Data is stale. Last synchronized ${last}. Critical writes are disabled until refresh.` : 'Data is stale. Critical writes are disabled until refresh.';
+  }
+  if (connectivity.status === 'failed') {
+    return last ? `Synchronization failed. Showing data confirmed ${last}. Critical writes are disabled.` : 'Synchronization failed. Critical writes are disabled.';
   }
   return '';
+}
+
+export function selectDegradedOperationModel(state) {
+  const connectivity = state?.connectivity || {};
+  return Object.freeze({
+    status: connectivity.status || 'unknown',
+    online: connectivity.online !== false,
+    authoritative: connectivity.authoritative === true,
+    stale: connectivity.stale === true,
+    readOnly: connectivity.readOnly !== false,
+    lastSyncedAt: connectivity.lastSyncedAt || null,
+    announcement: selectConnectivityAnnouncement(state)
+  });
 }
 
 export function selectShellContext(state) {
@@ -56,6 +79,7 @@ export function selectShellContext(state) {
     navigationOpen: Boolean(state?.navigation?.open),
     persistenceStatus: state?.persistence?.status || 'idle',
     persistenceAnnouncement: selectPersistenceAnnouncement(state),
+    connectivity: selectDegradedOperationModel(state),
     connectivityAnnouncement: selectConnectivityAnnouncement(state)
   });
 }

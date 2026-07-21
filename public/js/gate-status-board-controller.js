@@ -7,6 +7,8 @@
   let renderQueued = false;
   let lastDormSignature = '';
   let lastBusSignature = '';
+  let activeBusObserver = null;
+  let activeBusRenderInProgress = false;
 
   function components() {
     return window.GateComponents || null;
@@ -149,15 +151,64 @@
     });
   }
 
+  function formatBusDepartedTime(value) {
+    const date = new Date(value || '');
+    if (Number.isNaN(date.getTime())) return '—';
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+  }
+
   function fallbackActiveBusCard(bus) {
-    const label = bus.bus_type === 'local'
-      ? `LOCAL – ${esc(bus.destination || bus.originating_destination || '')} – ${n(bus.otw_count)} OTW`
-      : `BUS #${esc(bus.bus_id || '')} – ${n(bus.otw_count)} OTW`;
+    const title = bus.bus_type === 'local'
+      ? `LOCAL – ${esc(bus.destination || bus.originating_destination || 'LOCAL')}`
+      : `BUS #${esc(bus.bus_id || '')}`;
+    const otw = n(bus.otw_count);
+    const females = n(bus.female_count);
+    const nat = n(bus.nat_count);
+    const sf = n(bus.space_force_count);
+    const departed = formatBusDepartedTime(bus.departed_at || bus.created_at);
+    const plainLabel = `${title} – ${otw} OTW | ${females} FEMALE | ${nat} NAT | ${sf} SPACE FORCE | DEPT ${departed}`;
+
     return `
-      <button type="button" class="bus-badge prc-bus-card gate-component-active-bus-card" data-component="active-bus-card" data-owner="gate-status-board-controller" data-bus-id="${esc(bus.__backendId || '')}" onclick="confirmBusArrival(this.dataset.busId)">
-        ${label}
+      <button
+        type="button"
+        class="bus-badge prc-bus-card gate-component-active-bus-card"
+        data-component="active-bus-card"
+        data-owner="gate-status-board-controller"
+        data-bus-id="${esc(bus.__backendId || '')}"
+        title="Confirm arrival: ${esc(plainLabel)}"
+        aria-label="Confirm arrival: ${esc(plainLabel)}"
+        onclick="confirmBusArrival(this.dataset.busId)"
+      >
+        <span class="prc-bus-card-title">${title}</span>
+        <span class="prc-bus-card-line">${otw} OTW</span>
+        <span class="prc-bus-card-line">${females} FEMALE</span>
+        <span class="prc-bus-card-line">${nat} NAT</span>
+        <span class="prc-bus-card-line">${sf} SPACE FORCE</span>
+        <span class="prc-bus-card-dept">DEPT: ${esc(departed)}</span>
       </button>
     `;
+  }
+
+  function hasCompleteActiveBusMarkup(container, buses) {
+    if (!container) return false;
+    if (!buses.length) return Boolean(container.querySelector('[data-empty-state="true"]'));
+
+    const cards = Array.from(container.querySelectorAll('[data-component="active-bus-card"]'));
+    if (cards.length !== buses.length) return false;
+
+    return cards.every(card => {
+      const detailLines = Array.from(card.querySelectorAll('.prc-bus-card-line'));
+      const text = detailLines.map(line => line.textContent || '').join(' | ').toUpperCase();
+      return Boolean(
+        card.querySelector('.prc-bus-card-title') &&
+        card.querySelector('.prc-bus-card-dept') &&
+        detailLines.length >= 4 &&
+        text.includes('OTW') &&
+        text.includes('FEMALE') &&
+        text.includes('NAT') &&
+        text.includes('SPACE FORCE')
+      );
+    });
   }
 
   function renderActiveBuses(options = {}) {
@@ -167,21 +218,54 @@
     const buses = getActiveBuses();
     const signature = busSignature(buses);
     const force = Boolean(options.force);
-    if (!force && signature === lastBusSignature && container.dataset.owner === 'gate-status-board-controller') return;
+    const complete = hasCompleteActiveBusMarkup(container, buses);
+    if (!force && signature === lastBusSignature && container.dataset.owner === 'gate-status-board-controller' && complete) return;
     lastBusSignature = signature;
 
     container.dataset.component = 'active-bus-panel';
     container.dataset.owner = 'gate-status-board-controller';
     container.dataset.gateActiveBusSignature = signature;
+    container.dataset.detailContract = 'otw-female-nat-space-force-departure';
 
-    if (!buses.length) {
-      container.innerHTML = '<span class="text-muted text-sm" data-owner="gate-status-board-controller" data-empty-state="true">None</span>';
-      return;
+    activeBusRenderInProgress = true;
+    try {
+      if (!buses.length) {
+        container.innerHTML = '<span class="text-muted text-sm" data-owner="gate-status-board-controller" data-empty-state="true">None</span>';
+        return;
+      }
+
+      container.innerHTML = buses
+        .map(bus => components()?.activeBusCard
+          ? components().activeBusCard(bus).replace('data-owner="gate-active-bus-controller"', 'data-owner="gate-status-board-controller"')
+          : fallbackActiveBusCard(bus))
+        .join('');
+    } finally {
+      activeBusRenderInProgress = false;
     }
+  }
 
-    container.innerHTML = buses
-      .map(bus => components()?.activeBusCard ? components().activeBusCard(bus).replace('data-owner="gate-active-bus-controller"', 'data-owner="gate-status-board-controller"') : fallbackActiveBusCard(bus))
-      .join('');
+  function observeActiveBusPanel() {
+    if (activeBusObserver) return;
+
+    activeBusObserver = new MutationObserver(() => {
+      if (activeBusRenderInProgress) return;
+      const container = document.getElementById('active-buses');
+      const buses = getActiveBuses();
+      if (!hasCompleteActiveBusMarkup(container, buses)) {
+        scheduleRender({ force: true });
+      }
+    });
+
+    const attach = () => {
+      const container = document.getElementById('active-buses');
+      if (!container || container.dataset.gateDetailObserverAttached === 'true') return;
+      container.dataset.gateDetailObserverAttached = 'true';
+      activeBusObserver.observe(container, { childList: true, subtree: true, characterData: true });
+    };
+
+    attach();
+    const bodyObserver = new MutationObserver(attach);
+    bodyObserver.observe(document.body, { childList: true, subtree: true });
   }
 
   function updateBoardTimers() {
@@ -264,10 +348,12 @@
     installed = true;
     patchLegacyBoardGlobals();
     exposeControllers();
+    observeActiveBusPanel();
     window.registerGateHook?.('afterRenderAll', () => scheduleRender());
     window.registerGateHook?.('afterDataChanged', () => scheduleRender());
     window.registerGateHook?.('afterPageChange', () => scheduleRender());
-    window.addEventListener('resize', () => scheduleRender(), true);
+    window.addEventListener('resize', () => scheduleRender({ force: true }), true);
+    window.addEventListener('orientationchange', () => scheduleRender({ force: true }), true);
     scheduleRender({ force: true });
   }
 

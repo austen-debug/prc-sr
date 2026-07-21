@@ -3,9 +3,9 @@
 :root {
   --z-base-app: 0;
   --z-page-content: 100;
-  --z-fixed-nav: 200;
-  --z-modal-backdrop: 500;
-  --z-modal-window: 600;
+  --z-fixed-nav: 10000;
+  --z-modal-backdrop: 11000;
+  --z-modal-window: 11010;
 }
 
 body::before,
@@ -36,10 +36,16 @@ body::after {
   position: fixed !important;
   inset: 0 !important;
   z-index: var(--z-modal-backdrop) !important;
+  isolation: isolate !important;
+  box-sizing: border-box !important;
   display: flex;
   align-items: center !important;
   justify-content: center !important;
-  padding: clamp(1rem, 2vw, 2rem) !important;
+  padding:
+    max(clamp(1rem, 2vw, 2rem), env(safe-area-inset-top))
+    max(clamp(1rem, 2vw, 2rem), env(safe-area-inset-right))
+    max(clamp(1rem, 2vw, 2rem), env(safe-area-inset-bottom))
+    max(clamp(1rem, 2vw, 2rem), env(safe-area-inset-left)) !important;
   background:
     radial-gradient(circle at 50% 24%, rgba(56, 189, 248, 0.16), transparent 38%),
     rgba(3, 7, 18, 0.72) !important;
@@ -105,7 +111,11 @@ body::after {
 
 @media (max-width: 768px) {
   .confirm-overlay {
-    padding: 0.75rem !important;
+    padding:
+      max(0.75rem, env(safe-area-inset-top))
+      max(0.75rem, env(safe-area-inset-right))
+      max(0.75rem, env(safe-area-inset-bottom))
+      max(0.75rem, env(safe-area-inset-left)) !important;
   }
 
   .confirm-overlay > .modal-content,

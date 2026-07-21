@@ -1,0 +1,201 @@
+{
+  "contractVersion": "GATE-3-INDEX-1.0.0",
+  "title": "GATE 3.0 Existing Codebase and Plan Alignment Matrix",
+  "repository": "austen-debug/prc-sr",
+  "capturedRef": "3be5d27593dfdfd01e9de59b4e21f6b518fddbe0",
+  "capturedBranch": "main",
+  "visibleRuntimeOwner": "Build 1",
+  "programPosition": {
+    "build1Visible": true,
+    "build2VisibleRoutes": 0,
+    "phase3AStatusBoardShadowActive": true,
+    "auditRemediationGate1": "complete",
+    "auditRemediationGate2": "next",
+    "phase3BStatusBoardSurface": "not_authorized",
+    "productionBuild2Writes": "not_authorized",
+    "squadronLogin": "inactive"
+  },
+  "runtimeBudget": {
+    "directStyles": 13,
+    "importedStyles": 3,
+    "directScripts": 28,
+    "hiddenBuild2Observers": 1,
+    "phase3BTargets": {
+      "directStylesMaximum": 12,
+      "importedStylesMaximum": 3,
+      "directScriptsMaximum": 24,
+      "newCorrectiveAssets": 0,
+      "visibleStatusBoardOwners": 1,
+      "middlewareStatusBoardSourceRewrites": 0,
+      "hiddenShadowObserversAfterAcceptance": 0
+    }
+  },
+  "architecture": {
+    "active": {
+      "entrySource": "public/index.html",
+      "runtimeManifest": "functions/_middleware.js",
+      "pattern": "monolithic Build 1 source plus middleware HTML transformation and injected compatibility controllers",
+      "stateModel": "legacy globals and DOM-oriented render lifecycle",
+      "routeCount": 6
+    },
+    "staged": {
+      "frontendDecision": "standards-based ES modules, semantic HTML, CSS custom properties, and browser-native APIs",
+      "frameworkRuntime": "none",
+      "domainRoot": "public/app/domain/",
+      "dataRoot": "public/app/data/",
+      "workflowRoot": "public/app/workflows/",
+      "synchronizationRoot": "public/app/synchronization/",
+      "designRoot": "public/app/design/",
+      "componentRoot": "public/app/components/",
+      "shellRoot": "public/app/shell/",
+      "responsiveRoot": "public/app/responsive/",
+      "accessibilityRoot": "public/app/accessibility/",
+      "statusBoardShadowRoot": "public/app/status-board-shadow/"
+    }
+  },
+  "activeStyles": [
+    {"path":"public/css/gate-index-legacy-shell.css","role":"legacy shell/page/modal baseline","classification":"compatibility","disposition":"retire progressively with route migration"},
+    {"path":"public/css/gate-base-tokens.css","role":"Build 1 token bridge","classification":"shared","disposition":"reconcile with GDL 3.0 and retire duplicates"},
+    {"path":"public/css/gate-layout-pages.css","role":"cross-page layout","classification":"legacy_shared","disposition":"remove migrated route selectors"},
+    {"path":"public/css/gate-components.css","role":"Build 1 component presentation","classification":"legacy_shared","disposition":"replace progressively with GDL components"},
+    {"path":"public/css/gate-utilities-access.css","role":"utility/access import chain","classification":"aggregation","disposition":"reduce to remaining compatibility needs"},
+    {"path":"public/css/gate-premium-metrics.css","role":"Status Board metrics and active buses","classification":"status_board_owner","disposition":"retire at Status Board activation"},
+    {"path":"public/css/gate-app-shell.css","role":"visible shell/navigation","classification":"shell_owner","disposition":"replace with unified shell"},
+    {"path":"public/css/gate-mobile-corrective.css","role":"mobile repair layer","classification":"grandfathered_corrective","disposition":"retire"},
+    {"path":"public/css/gate-ui-ownership-correction.css","role":"high-specificity ownership repair","classification":"grandfathered_corrective","disposition":"retire"},
+    {"path":"public/css/gate-light-mode-command-contrast.css","role":"light command contrast","classification":"theme_compatibility","disposition":"absorb into Day Command tokens"},
+    {"path":"public/css/gate-light-mode-grid-correction.css","role":"light canvas/grid repair","classification":"grandfathered_corrective","disposition":"retire"},
+    {"path":"public/css/gate-tablet-shell.css","role":"tablet shell repair","classification":"responsive_compatibility","disposition":"replace with capability-driven shell"},
+    {"path":"public/css/gate-fullscreen-board-contract.css","role":"fullscreen Status Board containment","classification":"status_board_patch_owner","disposition":"retire at Status Board activation"}
+  ],
+  "activeScripts": [
+    {"path":"public/js/gate-record-display-contract.js","role":"display order and record identity","classification":"compatibility","disposition":"retain until all dependent routes use canonical entities"},
+    {"path":"public/js/gate-component-contracts.js","role":"Build 1 render helpers","classification":"compatibility","disposition":"remove migrated route branches"},
+    {"path":"public/js/gate-ui-hooks.js","role":"legacy lifecycle wrappers","classification":"compatibility","disposition":"retain during strangler migration only"},
+    {"path":"public/js/gate-branding-controller.js","role":"visible terminology normalization","classification":"shared","disposition":"absorb into source markup and shell"},
+    {"path":"public/js/prc-dash-runtime-fixes.js","role":"runtime safeguards","classification":"grandfathered_corrective","disposition":"retire after component/accessibility integration"},
+    {"path":"public/js/prc-dash-sat-arrivals.js","role":"SAT arrivals support","classification":"airport_support","disposition":"migrate to named integration service"},
+    {"path":"public/js/prc-dash-space-force.js","role":"Space Force compatibility","classification":"compatibility","disposition":"retire after canonical attributes activate"},
+    {"path":"public/js/prc-dash-dorm-reopen.js","role":"legacy dorm reopen","classification":"processing_compatibility","disposition":"replace with reopenDormWorkflow"},
+    {"path":"public/js/prc-dash-final-audit.js","role":"Dorm Board and dynamic Squadron support","classification":"board_compatibility","disposition":"remove route ownership during Status and Squadron migrations"},
+    {"path":"public/js/gate-status-board-controller.js","role":"visible Status Board rendering","classification":"status_board_owner","disposition":"retire after Status Board acceptance"},
+    {"path":"public/js/gate-processing-controller.js","role":"Processing page and modal","classification":"processing_owner","disposition":"retire after Processing acceptance"},
+    {"path":"public/js/prc-dash-dorm-flag-validation.js","role":"Female Band Space Force validation","classification":"shared_compatibility","disposition":"move rules to canonical entity/component contracts"},
+    {"path":"public/js/prc-dash-auditorium-location.js","role":"auditorium/location support","classification":"processing_board_compatibility","disposition":"move to canonical workflow and authorized projections"},
+    {"path":"public/js/gate-bus-workflow-controller.js","role":"dispatch local arrival bus log and edit","classification":"airport_processing_owner","disposition":"replace with typed repositories and workflows"},
+    {"path":"public/js/gate-airport-bus-delete-controller.js","role":"Instructor bus deletion","classification":"airport_extension","disposition":"move to named authorized accessible workflow"},
+    {"path":"public/js/gate-input-page-controller.js","role":"receiving windows attributes and preflight","classification":"input_compatibility_owner","disposition":"migrate into source-owned Input route"},
+    {"path":"public/js/gate-archive-controller.js","role":"archives reports print closeout presentation","classification":"archive_owner","disposition":"replace with canonical archive/report route"},
+    {"path":"public/js/gate-permission-guard.js","role":"client action protection","classification":"access_compatibility","disposition":"replace with registries plus server authorization"},
+    {"path":"public/js/gate-tablet-shell-classifier.js","role":"tablet classification","classification":"responsive_compatibility","disposition":"retire with capability-driven composition"},
+    {"path":"public/js/gate-app-shell-controller.js","role":"visible route navigation and Week Group shell","classification":"shell_owner","disposition":"replace with staged shell"},
+    {"path":"public/js/gate-fullscreen-board-layout-controller.js","role":"fullscreen measurement and containment","classification":"status_board_shell_compatibility","disposition":"retire or reduce to shared primitive"},
+    {"path":"public/js/prc-dash-modal-mobile-validation.js","role":"mobile modal repairs","classification":"grandfathered_corrective","disposition":"replace with GateDialog and GateSheet"},
+    {"path":"public/js/gate-render-stability-fix.js","role":"post-render stability repairs","classification":"grandfathered_corrective","disposition":"retire"},
+    {"path":"public/js/prc-dash-processing-loaded-summary.js","role":"arrived loaded reconciliation","classification":"processing_support","disposition":"replace with canonical assignment summary"},
+    {"path":"public/js/gate-premium-metrics-controller.js","role":"Status Board metrics","classification":"status_board_owner","disposition":"retire at Status Board activation"},
+    {"path":"public/js/prc-dash-overtime-audit.js","role":"timer sound and overtime compatibility","classification":"timer_compatibility","disposition":"split into canonical timer presentation and audited workflow"},
+    {"path":"public/js/gate-status-board-timer-visual-stability.js","role":"timer class repair","classification":"grandfathered_corrective","disposition":"retire"},
+    {"path":"public/js/gate-status-board-shadow-controller.js","role":"hidden parity observer","classification":"active_shadow","disposition":"retire after accepted Status Board activation"}
+  ],
+  "routes": [
+    {
+      "id": "board",
+      "label": "Status Board",
+      "migrationOrder": 1,
+      "currentOwners": ["public/index.html","gate-status-board-controller.js","gate-premium-metrics-controller.js","prc-dash-overtime-audit.js","gate-fullscreen-board-layout-controller.js"],
+      "stagedOwners": ["public/app/domain/","public/app/components/","public/app/status-board-shadow/"],
+      "readiness": "foundation_strong_evidence_incomplete",
+      "blockers": ["Audit Remediation Gate 2","sustained live parity","manual posture and accessibility evidence","arrival-time semantic parity","net-negative activation manifest","legacy retirement","rollback verification"]
+    },
+    {
+      "id": "processing",
+      "label": "Processing",
+      "migrationOrder": 2,
+      "currentOwners": ["public/index.html","gate-processing-controller.js","prc-dash-processing-loaded-summary.js","prc-dash-dorm-reopen.js","prc-dash-modal-mobile-validation.js"],
+      "stagedOwners": ["public/app/domain/processing.mjs","public/app/data/repositories/dorm-repository.mjs","public/app/workflows/dorm-workflows.mjs","public/app/components/"],
+      "readiness": "domain_and_workflows_staged_route_not_started",
+      "blockers": ["Status Board acceptance","complete action inventory","one modal/sheet controller","right-click parity","version conflict presentation","role authorization evidence"]
+    },
+    {
+      "id": "airport",
+      "label": "Airport",
+      "migrationOrder": 3,
+      "currentOwners": ["public/index.html","gate-bus-workflow-controller.js","gate-airport-bus-delete-controller.js","prc-dash-sat-arrivals.js"],
+      "stagedOwners": ["public/app/data/repositories/bus-repository.mjs","public/app/workflows/arrival-workflows.mjs","public/app/domain/buses.mjs"],
+      "readiness": "repository_and_workflows_staged_route_not_started",
+      "blockers": ["Processing acceptance","single dispatch path","SAT integration contract","accessible correction/delete paths","manifested versus arrived presentation","deployed API validation"]
+    },
+    {
+      "id": "input",
+      "label": "Input",
+      "migrationOrder": 4,
+      "currentOwners": ["public/index.html","gate-input-page-controller.js"],
+      "stagedOwners": ["public/app/workflows/initialize-week-group.mjs","public/app/domain/receiving.mjs","public/app/data/"],
+      "readiness": "initialization_workflow_staged_route_not_started",
+      "blockers": ["Airport acceptance","source-owned adaptive batch model","partial initialization UI","resume and compensation UI","active Week Group verification"]
+    },
+    {
+      "id": "archives",
+      "label": "Archives and Reports",
+      "migrationOrder": 5,
+      "currentOwners": ["public/index.html","gate-archive-controller.js","gate-ui-hooks.js"],
+      "stagedOwners": ["public/app/domain/reports.mjs","public/app/domain/archives.mjs","public/app/data/repositories/archive-repository.mjs","public/app/workflows/archive-workflows.mjs"],
+      "readiness": "canonical_models_and_workflows_staged_route_not_started",
+      "blockers": ["Input acceptance","immutable amendment policy integration","single report renderer","partial closeout recovery UI","archive deletion policy","reference output tests"]
+    },
+    {
+      "id": "squadron",
+      "label": "Squadron Board",
+      "migrationOrder": 6,
+      "currentOwners": ["prc-dash-final-audit.js","gate-permission-guard.js","board presentation CSS"],
+      "stagedOwners": ["public/app/shell/route-registry.mjs","server reduced Squadron projection","public/app/domain/summaries.mjs","public/app/components/"],
+      "readiness": "server_projection_staged_login_inactive",
+      "blockers": ["Archives acceptance","server environment bindings","payload minimization evidence","read-only route implementation","TV and fullscreen validation"]
+    }
+  ],
+  "planPhases": [
+    {"phase":0,"name":"Program control and baseline lock","status":"substantially_present","next":"approve GDL 3.0 specification, assign owners, merge current-state index"},
+    {"phase":1,"name":"Runtime-owner reduction","status":"next","next":"execute Audit Remediation Gate 2 without activating a visible Build 2 route"},
+    {"phase":2,"name":"GDL 3.0 foundation","status":"foundation_2A_1_0_staged","next":"issue GDL 3.0 token and typography decision, update workshop and tests"},
+    {"phase":3,"name":"Unified shell","status":"implemented_staged","next":"apply GDL 3.0 and integrate only through an authorized route migration"},
+    {"phase":4,"name":"Shared components","status":"baseline_implemented_staged","next":"expand canonical inventory and state coverage"},
+    {"phase":5,"name":"Status Board migration","status":"shadow_active_visible_route_not_authorized","next":"complete Gate 2 and evidence closure, then prepare net-negative controlled activation"},
+    {"phase":6,"name":"Processing migration","status":"domain_workflows_staged","next":"start after Status Board acceptance"},
+    {"phase":7,"name":"Airport migration","status":"repositories_workflows_staged","next":"start after Processing acceptance"},
+    {"phase":8,"name":"Input migration","status":"initialization_workflow_staged","next":"start after Airport acceptance"},
+    {"phase":9,"name":"Archives and Reports migration","status":"canonical_models_workflows_staged","next":"start after Input acceptance"},
+    {"phase":10,"name":"Squadron Board migration","status":"reduced_projection_staged_login_inactive","next":"activate last after server authorization and data-minimization evidence"},
+    {"phase":11,"name":"System integration and acceptance","status":"foundation_tests_mature_route_evidence_incomplete","next":"retain complete multi-role multi-posture operational evidence"},
+    {"phase":12,"name":"Deployment training and sustainment","status":"partial_governance_only","next":"create deployment, training, monitoring, and sustainment packages before production activation"}
+  ],
+  "responsivePostures": [
+    {"id":"desktop-landscape","reference":"1440x900","navigation":"persistent","density":"command"},
+    {"id":"desktop-vertical","reference":"1080x1920","navigation":"compact","density":"standard"},
+    {"id":"tablet-landscape","reference":"1024x768","navigation":"compact","density":"touch"},
+    {"id":"tablet-portrait","reference":"820x1180","navigation":"sheet","density":"touch"},
+    {"id":"phone-landscape","reference":"740x360","navigation":"sheet","density":"touch"},
+    {"id":"phone-portrait","reference":"390x844","navigation":"sheet","density":"touch"},
+    {"id":"ultrawide-command","reference":"additional_GDL3_validation_required","navigation":"persistent","density":"command"},
+    {"id":"fullscreen-tv","reference":"additional_GDL3_validation_required","navigation":"display_reduced","density":"command"}
+  ],
+  "criticalRules": [
+    "No big-bang rewrite.",
+    "No new PII or trainee-level records.",
+    "One visible owner per route, workflow, and surface.",
+    "No new corrective runtime asset.",
+    "No migrated component calls the generic records API directly.",
+    "No critical write succeeds before authoritative verification and required audit.",
+    "No offline operational write queue.",
+    "No action depends only on hover, right-click, color, or animation.",
+    "No route activates without rollback and accepted evidence.",
+    "Every visible route migration is net-negative in active runtime assets."
+  ],
+  "immediateWorkPackages": [
+    {"id":"A","name":"Govern current-state index","outputs":["merge human-readable index","merge machine-readable matrix","assign owner and review cadence"]},
+    {"id":"B","name":"Audit Remediation Gate 2","outputs":["observer interval wrapper global inventory","bounded owner reductions","updated runtime budget","runtime integrity evidence"]},
+    {"id":"C","name":"GDL 3.0 source decision","outputs":["Night Command tokens","Day Command tokens","typography decision","GDL 3.0.0 registry","workshop and validation updates"]},
+    {"id":"D","name":"Component expansion","outputs":["complete component inventory","Dorm Card variants","timer progress sync conflict states","accessible menu parity"]},
+    {"id":"E","name":"Status Board evidence and activation planning","outputs":["sustained shadow evidence","all-posture captures","accessibility evidence","default-off activation design","net-negative retirement manifest"]}
+  ]
+}

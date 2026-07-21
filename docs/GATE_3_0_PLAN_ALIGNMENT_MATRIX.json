@@ -131,7 +131,7 @@
       "label": "Input",
       "migrationOrder": 4,
       "currentOwners": ["public/index.html","gate-input-page-controller.js"],
-      "stagedOwners": ["public/app/workflows/initialize-week-group-workflow.mjs","public/app/domain/receiving.mjs","public/app/data/"],
+      "stagedOwners": ["public/app/workflows/initialize-week-group.mjs","public/app/domain/receiving.mjs","public/app/data/"],
       "readiness": "initialization_workflow_staged_route_not_started",
       "blockers": ["Airport acceptance","source-owned adaptive batch model","partial initialization UI","resume and compensation UI","active Week Group verification"]
     },

@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import vm from 'node:vm';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, '../..');
@@ -11,9 +12,27 @@ async function source(path) {
   return readFile(resolve(root, path), 'utf8');
 }
 
+function loadMiddlewareTransform(contents) {
+  const executable = `${contents.replace('export async function onRequest', 'async function onRequest')}\nglobalThis.__gateTransform = applyStatusBoardMetricSourceRefactor;`;
+  const sandbox = {
+    console,
+    TextEncoder,
+    URL,
+    Headers,
+    Response,
+    Request,
+    crypto: globalThis.crypto,
+    atob: globalThis.atob,
+    btoa: globalThis.btoa
+  };
+  vm.runInNewContext(executable, sandbox, { filename: 'functions/_middleware.js' });
+  return sandbox.__gateTransform;
+}
+
 test('Status Board observer is limited to direct canonical render surfaces', async () => {
   const controller = await source('public/js/gate-status-board-controller.js');
 
+  assert.match(controller, /SURFACE_IDS\s*=\s*Object\.freeze\(\['col-empty', 'open'|/);
   assert.match(controller, /SURFACE_IDS\s*=\s*Object\.freeze\(\['col-empty', 'col-open', 'col-closed', 'active-buses'\]\)/);
   assert.match(controller, /surfaceObserver\.observe\(surface, \{ childList: true \}\)/);
   assert.doesNotMatch(controller, /observe\(board,\s*\{\s*childList:\s*true,\s*subtree:\s*true/);
@@ -64,6 +83,9 @@ test('Metric synchronization is change-only and minute-aligned', async () => {
 
 test('Served source delegates Status Board rendering and removes one-second metric churn', async () => {
   const middleware = await source('functions/_middleware.js');
+  const index = await source('public/index.html');
+  const transform = loadMiddlewareTransform(middleware);
+  const transformed = transform(index);
 
   assert.match(middleware, /GateStatusBoardController\?\.renderActiveBuses/);
   assert.match(middleware, /GateStatusBoardController\?\.renderDormColumns/);
@@ -72,6 +94,13 @@ test('Served source delegates Status Board rendering and removes one-second metr
   assert.match(middleware, /el\.classList\.remove\('timer-flash'\)/);
   assert.match(middleware, /status-board-incremental-render-20260721/);
   assert.match(middleware, /metric-minute-cadence-20260721/);
+
+  assert.match(transformed, /window\.GateStatusBoardController\?\.renderActiveBuses/);
+  assert.match(transformed, /window\.GateStatusBoardController\?\.renderDormColumns/);
+  assert.match(transformed, /setInterval\(updateAirportMetric, 60000\)/);
+  assert.match(transformed, /lastEl && lastEl\.textContent !== String\(lastAirport\)/);
+  assert.match(transformed, /el\.classList\.remove\('timer-flash'\)/);
+  assert.doesNotMatch(transformed, /setInterval\(updateAirportMetric,\s*1000\)/);
 });
 
 test('Runtime compositing guard no longer owns Status Board layers', async () => {

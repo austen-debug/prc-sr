@@ -38,21 +38,27 @@ test('fullscreen desktop metrics are distance-readable', async () => {
   assert.match(desktop, /font-variant-numeric:\s*tabular-nums/);
 });
 
-test('fullscreen desktop Active Buses uses a wrapping grid without an internal scrollbar', async () => {
+test('fullscreen desktop Active Buses wraps compact tiles without an internal scrollbar', async () => {
   const css = await source('public/css/gate-fullscreen-board-contract.css');
   const desktop = desktopFullscreenContract(css);
 
-  assert.match(desktop, /#active-buses[\s\S]*display:\s*grid\s*!important/);
-  assert.match(desktop, /grid-template-columns:\s*repeat\(auto-fit,\s*minmax\(/);
+  assert.match(css, /--gate-fullscreen-bus-card-width:\s*clamp\(280px,\s*17vw,\s*330px\)/);
+  assert.match(desktop, /#active-buses[\s\S]*display:\s*flex\s*!important/);
+  assert.match(desktop, /flex-flow:\s*row wrap\s*!important/);
+  assert.match(desktop, /justify-content:\s*flex-start\s*!important/);
   assert.match(desktop, /#active-buses[\s\S]*overflow:\s*visible\s*!important/);
-  assert.doesNotMatch(desktop, /flex-wrap:\s*nowrap/);
   assert.doesNotMatch(desktop, /overflow-x:\s*auto/);
+  assert.doesNotMatch(desktop, /grid-template-columns:\s*repeat\(auto-fit/);
 });
 
-test('fullscreen desktop bus cards expose all values at command-display scale', async () => {
+test('fullscreen desktop bus cards remain bounded compact tiles', async () => {
   const css = await source('public/css/gate-fullscreen-board-contract.css');
   const desktop = desktopFullscreenContract(css);
 
+  assert.match(desktop, /gate-component-active-bus-card[\s\S]*flex:\s*0 0 min\(100%,\s*var\(--gate-fullscreen-bus-card-width\)\)/);
+  assert.match(desktop, /gate-component-active-bus-card[\s\S]*width:\s*min\(100%,\s*var\(--gate-fullscreen-bus-card-width\)\)/);
+  assert.match(desktop, /gate-component-active-bus-card[\s\S]*max-width:\s*var\(--gate-fullscreen-bus-card-width\)/);
+  assert.doesNotMatch(desktop, /gate-component-active-bus-card[\s\S]*max-width:\s*none/);
   assert.match(desktop, /gate-component-active-bus-card[\s\S]*grid-template-columns:\s*repeat\(4,\s*minmax\(0,\s*1fr\)\)/);
   assert.match(desktop, /gate-component-active-bus-card[\s\S]*min-height:\s*78px/);
   assert.match(desktop, /prc-bus-card-title[\s\S]*font-size:\s*clamp\(1rem,\s*1\.05vw,\s*1\.35rem\)/);
@@ -60,12 +66,12 @@ test('fullscreen desktop bus cards expose all values at command-display scale', 
   assert.match(desktop, /prc-bus-card-line:nth-child\(5\)[\s\S]*grid-column:\s*4/);
 });
 
-test('wide TV posture receives an additional command-display scale floor', async () => {
+test('wide TV posture preserves compact bus-card width', async () => {
   const css = await source('public/css/gate-fullscreen-board-contract.css');
 
   assert.match(css, /@media \(min-width:\s*1600px\) and \(min-height:\s*800px\)/);
-  assert.match(css, /--gate-fullscreen-bus-card-min:\s*350px/);
-  assert.match(css, /min-height:\s*86px\s*!important/);
+  assert.match(css, /--gate-fullscreen-bus-card-width:\s*320px/);
+  assert.match(css, /min-height:\s*82px\s*!important/);
 });
 
 test('phone fullscreen retains its separate two-by-two metric posture', async () => {

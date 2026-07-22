@@ -27,8 +27,8 @@ Injected directly by middleware in current order:
 2. `/css/gate-base-tokens.css`
 3. `/css/gate-layout-pages.css`
 4. `/css/gate-components.css`
-5. `/css/gate-utilities-access.css?v=status-board-light-clarity-20260714`
-6. `/css/gate-premium-metrics.css?v=status-board-active-bus-strip-20260714`
+5. `/css/gate-utilities-access.css?v=status-board-stable-surfaces-20260721`
+6. `/css/gate-premium-metrics.css?v=status-board-fluid-metrics-20260721`
 7. `/css/gate-app-shell.css?v=phase-7g-viewport-watermark-20260709`
 8. `/css/gate-mobile-corrective.css?v=phase-7h-ui-patch-retirement-20260709`
 9. `/css/gate-ui-ownership-correction.css?v=phase-8d-mobile-metric-containment-20260709`
@@ -56,7 +56,7 @@ Injected by middleware in current order:
 7. `/js/prc-dash-space-force.js`
 8. `/js/prc-dash-dorm-reopen.js`
 9. `/js/prc-dash-final-audit.js?v=record-display-integrity-20260714`
-10. `/js/gate-status-board-controller.js?v=status-board-single-owner-20260721`
+10. `/js/gate-status-board-controller.js?v=status-board-incremental-render-20260721`
 11. `/js/gate-processing-controller.js?v=record-display-integrity-20260714`
 12. `/js/prc-dash-dorm-flag-validation.js?v=record-display-integrity-20260714b`
 13. `/js/prc-dash-auditorium-location.js`
@@ -69,9 +69,9 @@ Injected by middleware in current order:
 20. `/js/gate-app-shell-controller.js?v=phase-7g-viewport-watermark-20260709`
 21. `/js/gate-fullscreen-board-layout-controller.js?v=fullscreen-board-containment-20260714b`
 22. `/js/prc-dash-modal-mobile-validation.js?v=phase-7e-ui-ownership-20260709`
-23. `/js/gate-render-stability-fix.js?v=fullscreen-desktop-stability-20260714`
+23. `/js/gate-render-stability-fix.js?v=status-board-compositing-retired-20260721`
 24. `/js/prc-dash-processing-loaded-summary.js`
-25. `/js/gate-premium-metrics-controller.js?v=premium-metrics-20260709d`
+25. `/js/gate-premium-metrics-controller.js?v=metric-minute-cadence-20260721`
 26. `/js/prc-dash-overtime-audit.js`
 27. `/js/gate-status-board-shadow-controller.js?v=phase-3a-status-board-shadow-20260715`
 
@@ -80,13 +80,16 @@ Injected by middleware in current order:
 - `GateHooks` owns lifecycle hook registration and the `renderAll()` / `showPage()` wrappers.
 - `GateAppShell` owns visible route state, role-aware navigation, drawer/sheet behavior, and Week Group shell context.
 - `GatePermissionGuard` owns client-side action protection; server authorization remains authoritative.
-- `GateStatusBoardController` owns the visible Status Board dorm columns, dorm cards, active-bus panel, timer text, warning/critical timer state, and immediate surface-integrity repair.
+- `GateStatusBoardController` owns the visible Status Board dorm columns, dorm cards, active-bus panel, timer text, warning/critical timer state, direct-surface integrity repair, and per-column incremental rendering.
+- `GatePremiumMetricsController` owns change-only synchronization of Arrived, Expected, Last, and Local values. Local time is minute-aligned; it does not rescan or rewrite the header every second.
 - `GateProcessingController` owns Processing page and dorm-modal behavior.
 - `GateBusWorkflowController` owns airport and local-arrival bus workflows.
 - `GateInputPageController` owns Input and Week Group initialization presentation.
 - `GateArchiveController` owns Archives, reporting, print/PDF, and closeout presentation.
 
-The former `GateStatusBoardTimerVisualStability` corrective layer is no longer active. Its behavior is consolidated into `GateStatusBoardController`, preventing timer-class ownership conflicts and reducing the active script count.
+The former `GateStatusBoardTimerVisualStability` corrective layer remains retired. Timer state is consolidated into `GateStatusBoardController`. The Status Board is also excluded from the runtime-injected forced-compositing rules in `gate-render-stability-fix.js`; stable board surfaces and timer geometry are now static CSS contracts.
+
+The served legacy `renderAll()` path delegates Active Buses and dorm columns to `GateStatusBoardController` whenever the canonical owner is available. The legacy fallback clock is reduced to minute cadence, and its timer fallback uses steady warning/critical states without `timer-flash`.
 
 ## Phase 3A hidden observer
 
@@ -162,7 +165,10 @@ Earlier ownership consolidation, removed patch files, and page-specific migratio
 PASS — active middleware order documented
 PASS — machine-readable active asset inventory established
 PASS — Build 1 visible owners retained
-PASS — one canonical Status Board timer and surface-integrity owner
+PASS — one canonical Status Board timer and direct-surface integrity owner
+PASS — Status Board column writes are incremental by state
+PASS — live metrics use change-only, minute-aligned synchronization
+PASS — Status Board forced GPU compositing retired
 PASS — one hidden Phase 3A bridge loaded after the visible Status Board owner
 PASS — runtime record-integrity workflow
 PASS — no visible Build 2 route

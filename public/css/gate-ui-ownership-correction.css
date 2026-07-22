@@ -265,3 +265,195 @@ body.gate-app-shell-ready .page.active {
     pointer-events: none !important;
   }
 }
+
+/* ======================================================================
+   Phase 9 operational UI audit remediation.
+   One final owner for shell/modal hierarchy, large-tablet modal reachability,
+   narrow desktop navigation, and bounded fullscreen Active Bus tiles.
+   ====================================================================== */
+:root {
+  --z-modal-backdrop: 13000;
+  --z-modal-window: 13010;
+  --gate-command-bus-tile-width: clamp(280px, 17vw, 320px);
+}
+
+body.gate-app-shell-ready .confirm-overlay,
+body.gate-app-shell-ready #confirm-dialog {
+  z-index: var(--z-modal-backdrop) !important;
+}
+
+body.gate-app-shell-ready .confirm-overlay > .modal-content,
+body.gate-app-shell-ready #confirm-dialog > .surface,
+body.gate-app-shell-ready #confirm-dialog > div {
+  position: relative !important;
+  z-index: var(--z-modal-window) !important;
+}
+
+/* The tablet shell remains active through 1366 px; the Processing modal must
+   retain its sticky identity/actions and safe viewport fit across that range. */
+@media (any-pointer: coarse) and (min-width: 768px) and (max-width: 1366px) and (min-height: 561px) {
+  body.gate-app-shell-ready #dorm-modal.confirm-overlay:not(.hidden) {
+    align-items: flex-start !important;
+    justify-content: center !important;
+    padding:
+      max(12px, env(safe-area-inset-top))
+      max(18px, env(safe-area-inset-right))
+      max(18px, env(safe-area-inset-bottom))
+      max(18px, env(safe-area-inset-left)) !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  body.gate-app-shell-ready #dorm-modal.confirm-overlay:not(.hidden) > .modal-content,
+  body.gate-app-shell-ready #dorm-modal.confirm-overlay:not(.hidden) .modal-content {
+    width: min(720px, calc(100vw - 36px)) !important;
+    max-width: calc(100vw - 36px) !important;
+    min-height: 0 !important;
+    max-height: calc(100dvh - max(34px, env(safe-area-inset-top) + env(safe-area-inset-bottom) + 24px)) !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain !important;
+    -webkit-overflow-scrolling: touch !important;
+    padding: 1rem 1rem calc(1rem + env(safe-area-inset-bottom)) !important;
+    scroll-padding-top: 4.6rem !important;
+    scroll-padding-bottom: 7rem !important;
+  }
+
+  body.gate-app-shell-ready #dorm-modal.confirm-overlay:not(.hidden) .modal-content > .flex.justify-between.items-center.mb-4 {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 30 !important;
+  }
+
+  body.gate-app-shell-ready #dorm-modal.confirm-overlay:not(.hidden) .modal-content > .flex.justify-between.items-center.mb-4 > button {
+    width: 44px !important;
+    min-width: 44px !important;
+    height: 44px !important;
+    min-height: 44px !important;
+  }
+
+  body.gate-app-shell-ready #dorm-modal.confirm-overlay:not(.hidden) #modal-action-section {
+    position: sticky !important;
+    bottom: calc(-1rem - env(safe-area-inset-bottom)) !important;
+    z-index: 31 !important;
+  }
+}
+
+/* Fine-pointer narrow desktops keep a fixed single-row command header.
+   Routes scroll inside their lane instead of wrapping and deforming the shell. */
+@media (hover: hover) and (pointer: fine) and (min-width: 768px) and (max-width: 1279px) {
+  body.gate-app-shell-ready.gate-app-shell-desktop .app-nav.command-header-bar,
+  body.gate-app-shell-ready.gate-app-shell-desktop .command-header-bar {
+    display: grid !important;
+    grid-template-columns: clamp(104px, 12vw, 136px) minmax(0, 1fr) max-content !important;
+    grid-template-rows: 54px !important;
+    grid-template-areas: 'brand nav tools' !important;
+    align-items: center !important;
+    gap: 6px !important;
+    height: 54px !important;
+    min-height: 54px !important;
+    max-height: 54px !important;
+    padding: 0.42rem 0.5rem !important;
+    overflow: hidden !important;
+  }
+
+  body.gate-app-shell-ready.gate-app-shell-desktop .app-nav.command-header-bar::before,
+  body.gate-app-shell-ready.gate-app-shell-desktop .command-header-bar::before {
+    width: clamp(104px, 12vw, 136px) !important;
+    min-width: 0 !important;
+    height: 34px !important;
+    min-height: 34px !important;
+  }
+
+  body.gate-app-shell-ready.gate-app-shell-desktop .app-nav.command-header-bar #main-nav-menu.nav-group-left,
+  body.gate-app-shell-ready.gate-app-shell-desktop .command-header-bar #main-nav-menu.nav-group-left,
+  body.gate-app-shell-ready.gate-app-shell-desktop .app-nav.command-header-bar #nav-links.nav-group-left {
+    display: flex !important;
+    flex-flow: row nowrap !important;
+    align-items: center !important;
+    min-width: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    overscroll-behavior-inline: contain !important;
+    scrollbar-width: thin !important;
+  }
+
+  body.gate-app-shell-ready.gate-app-shell-desktop .app-nav.command-header-bar #main-nav-menu.nav-group-left > .nav-btn,
+  body.gate-app-shell-ready.gate-app-shell-desktop .command-header-bar #main-nav-menu.nav-group-left > .nav-btn,
+  body.gate-app-shell-ready.gate-app-shell-desktop .app-nav.command-header-bar #nav-links.nav-group-left > .nav-btn {
+    flex: 0 0 auto !important;
+    height: 36px !important;
+    min-height: 36px !important;
+    padding-inline: 0.5rem !important;
+    font-size: 0.66rem !important;
+    white-space: nowrap !important;
+  }
+
+  body.gate-app-shell-ready.gate-app-shell-desktop .app-nav.command-header-bar .nav-group-right,
+  body.gate-app-shell-ready.gate-app-shell-desktop .command-header-bar .nav-group-right {
+    display: flex !important;
+    flex-flow: row nowrap !important;
+    align-items: center !important;
+    gap: 4px !important;
+    min-width: 0 !important;
+    width: auto !important;
+    max-width: 58vw !important;
+    overflow: hidden !important;
+  }
+
+  body.gate-app-shell-ready.gate-app-shell-desktop #week-group-display {
+    max-width: 112px !important;
+  }
+
+  body.gate-app-shell-ready.gate-app-shell-desktop #role-toggle {
+    max-width: 142px !important;
+    padding-inline: 0.55rem !important;
+  }
+
+  body.gate-app-shell-ready.gate-app-shell-desktop #fullscreen-btn,
+  body.gate-app-shell-ready.gate-app-shell-desktop #sound-toggle-btn {
+    max-width: 100px !important;
+    padding-inline: 0.48rem !important;
+  }
+}
+
+/* Exact rendered-DOM guard for command displays. This selector intentionally
+   outranks older fullscreen card rules and prevents every active-bus card from
+   growing beyond the compact tile width, even when only one bus is present. */
+@media (min-width: 768px) {
+  body.gate-app-shell-ready.fullscreen-board #page-board #active-buses[data-owner='gate-status-board-controller'],
+  body.gate-app-shell-ready.gate-fullscreen-board-active #page-board #active-buses[data-owner='gate-status-board-controller'] {
+    display: flex !important;
+    flex-flow: row wrap !important;
+    align-items: stretch !important;
+    align-content: flex-start !important;
+    justify-content: flex-start !important;
+    gap: 10px !important;
+    overflow: visible !important;
+  }
+
+  body.gate-app-shell-ready.fullscreen-board #page-board #active-buses[data-owner='gate-status-board-controller'] > button[data-component='active-bus-card'].gate-component-active-bus-card,
+  body.gate-app-shell-ready.gate-fullscreen-board-active #page-board #active-buses[data-owner='gate-status-board-controller'] > button[data-component='active-bus-card'].gate-component-active-bus-card {
+    flex-grow: 0 !important;
+    flex-shrink: 0 !important;
+    flex-basis: var(--gate-command-bus-tile-width) !important;
+    inline-size: var(--gate-command-bus-tile-width) !important;
+    width: var(--gate-command-bus-tile-width) !important;
+    min-inline-size: var(--gate-command-bus-tile-width) !important;
+    max-inline-size: var(--gate-command-bus-tile-width) !important;
+    min-width: var(--gate-command-bus-tile-width) !important;
+    max-width: var(--gate-command-bus-tile-width) !important;
+    justify-self: start !important;
+    align-self: stretch !important;
+  }
+}
+
+@media (min-width: 1600px) and (min-height: 800px) {
+  :root {
+    --gate-command-bus-tile-width: 320px;
+  }
+}

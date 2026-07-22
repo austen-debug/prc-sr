@@ -12,7 +12,7 @@ The active GATE application is not defined only by `public/index.html`. Cloudfla
 ```text
 Direct stylesheets: 13
 Imported stylesheets: 3
-Direct scripts: 28
+Direct scripts: 27
 Visible Build 2 routes: 0
 Hidden Build 2 runtime observers: 1
 ```
@@ -56,7 +56,7 @@ Injected by middleware in current order:
 7. `/js/prc-dash-space-force.js`
 8. `/js/prc-dash-dorm-reopen.js`
 9. `/js/prc-dash-final-audit.js?v=record-display-integrity-20260714`
-10. `/js/gate-status-board-controller.js?v=status-board-render-stability-20260715`
+10. `/js/gate-status-board-controller.js?v=status-board-single-owner-20260721`
 11. `/js/gate-processing-controller.js?v=record-display-integrity-20260714`
 12. `/js/prc-dash-dorm-flag-validation.js?v=record-display-integrity-20260714b`
 13. `/js/prc-dash-auditorium-location.js`
@@ -73,20 +73,20 @@ Injected by middleware in current order:
 24. `/js/prc-dash-processing-loaded-summary.js`
 25. `/js/gate-premium-metrics-controller.js?v=premium-metrics-20260709d`
 26. `/js/prc-dash-overtime-audit.js`
-27. `/js/gate-status-board-timer-visual-stability.js?v=status-board-timer-visual-stability-20260715`
-28. `/js/gate-status-board-shadow-controller.js?v=phase-3a-status-board-shadow-20260715`
+27. `/js/gate-status-board-shadow-controller.js?v=phase-3a-status-board-shadow-20260715`
 
 ## Operational owners
 
 - `GateHooks` owns lifecycle hook registration and the `renderAll()` / `showPage()` wrappers.
 - `GateAppShell` owns visible route state, role-aware navigation, drawer/sheet behavior, and Week Group shell context.
 - `GatePermissionGuard` owns client-side action protection; server authorization remains authoritative.
-- `GateStatusBoardController` owns the visible Status Board dorm columns, dorm cards, active-bus panel, and timer text refresh.
+- `GateStatusBoardController` owns the visible Status Board dorm columns, dorm cards, active-bus panel, timer text, warning/critical timer state, and immediate surface-integrity repair.
 - `GateProcessingController` owns Processing page and dorm-modal behavior.
 - `GateBusWorkflowController` owns airport and local-arrival bus workflows.
 - `GateInputPageController` owns Input and Week Group initialization presentation.
 - `GateArchiveController` owns Archives, reporting, print/PDF, and closeout presentation.
-- `GateStatusBoardTimerVisualStability` owns the visible Status Board warning/critical timer-class refresh.
+
+The former `GateStatusBoardTimerVisualStability` corrective layer is no longer active. Its behavior is consolidated into `GateStatusBoardController`, preventing timer-class ownership conflicts and reducing the active script count.
 
 ## Phase 3A hidden observer
 
@@ -162,11 +162,12 @@ Earlier ownership consolidation, removed patch files, and page-specific migratio
 PASS — active middleware order documented
 PASS — machine-readable active asset inventory established
 PASS — Build 1 visible owners retained
-PASS — one hidden Phase 3A bridge loaded after Status Board timer owners
+PASS — one canonical Status Board timer and surface-integrity owner
+PASS — one hidden Phase 3A bridge loaded after the visible Status Board owner
 PASS — runtime record-integrity workflow
 PASS — no visible Build 2 route
 PASS — no Build 2 production write path
-PASS — active asset growth blocked at the audited ceiling
+PASS — active asset growth blocked below the audited ceiling
 
 PENDING — sustained live shadow evidence
 PENDING — manual route accessibility, responsive, and fullscreen evidence

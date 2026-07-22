@@ -59,7 +59,7 @@ Injected by middleware in current order:
 10. `/js/gate-status-board-controller.js?v=status-board-incremental-render-20260721`
 11. `/js/gate-processing-controller.js?v=record-display-integrity-20260714`
 12. `/js/prc-dash-dorm-flag-validation.js?v=record-display-integrity-20260714b`
-13. `/js/prc-dash-auditorium-location.js`
+13. `/js/prc-dash-auditorium-location.js?v=processing-modal-record-binding-20260721`
 14. `/js/gate-bus-workflow-controller.js?v=phase-3-bus-workflow-20260709`
 15. `/js/gate-airport-bus-delete-controller.js?v=airport-bus-delete-20260714`
 16. `/js/gate-input-page-controller.js?v=record-display-integrity-20260714`
@@ -82,7 +82,8 @@ Injected by middleware in current order:
 - `GatePermissionGuard` owns client-side action protection; server authorization remains authoritative.
 - `GateStatusBoardController` owns the visible Status Board dorm columns, dorm cards, active-bus panel, timer text, warning/critical timer state, direct-surface integrity repair, and per-column incremental rendering.
 - `GatePremiumMetricsController` owns change-only synchronization of Arrived, Expected, Last, and Local values. Local time is minute-aligned; it does not rescan or rewrite the header every second.
-- `GateProcessingController` owns Processing page and dorm-modal behavior.
+- `GateProcessingController` owns Processing page rendering, dorm-modal lifecycle, and all dorm-record mutations.
+- `GateAuditoriumLocationController` owns field hydration and card augmentation for Auditorium Location. It binds the modal field to the active dorm ID and delegates persistence through `GateProcessingController.updateDorm`; it does not call the Data SDK directly.
 - `GateBusWorkflowController` owns airport and local-arrival bus workflows.
 - `GateInputPageController` owns Input and Week Group initialization presentation.
 - `GateArchiveController` owns Archives, reporting, print/PDF, and closeout presentation.
@@ -169,6 +170,8 @@ PASS — one canonical Status Board timer and direct-surface integrity owner
 PASS — Status Board column writes are incremental by state
 PASS — live metrics use change-only, minute-aligned synchronization
 PASS — Status Board forced GPU compositing retired
+PASS — Processing assignment/location saves are bound to the active dorm record
+PASS — Processing Auditorium Location persistence delegates to the canonical dorm mutation owner
 PASS — one hidden Phase 3A bridge loaded after the visible Status Board owner
 PASS — runtime record-integrity workflow
 PASS — no visible Build 2 route

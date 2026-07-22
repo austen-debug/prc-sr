@@ -7,6 +7,7 @@ on:
       - 'functions/_middleware.js'
       - 'public/css/gate-utilities-access.css'
       - 'public/css/gate-fullscreen-board-contract.css'
+      - 'public/js/gate-status-board-controller.js'
       - 'public/js/gate-processing-controller.js'
       - 'public/js/prc-dash-auditorium-location.js'
       - 'public/app/status-board-shadow/**'
@@ -28,6 +29,7 @@ on:
       - 'functions/_middleware.js'
       - 'public/css/gate-utilities-access.css'
       - 'public/css/gate-fullscreen-board-contract.css'
+      - 'public/js/gate-status-board-controller.js'
       - 'public/js/gate-processing-controller.js'
       - 'public/js/prc-dash-auditorium-location.js'
       - 'public/app/status-board-shadow/**'
@@ -70,6 +72,7 @@ jobs:
         run: |
           node --test tests/runtime/active-runtime-budget.test.mjs
           node --test tests/runtime/record-display-integrity.test.mjs
+          node --test tests/runtime/dorm-timer-record-lifecycle.test.mjs
           node --test tests/runtime/processing-modal-record-persistence.test.mjs
           node --test tests/runtime/fullscreen-command-board-readability.test.mjs
           node --test tests/runtime/status-board-visual-stability.test.mjs

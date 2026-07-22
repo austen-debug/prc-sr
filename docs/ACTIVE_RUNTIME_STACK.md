@@ -31,11 +31,11 @@ Injected directly by middleware in current order:
 6. `/css/gate-premium-metrics.css?v=status-board-fluid-metrics-20260721`
 7. `/css/gate-app-shell.css?v=phase-7g-viewport-watermark-20260709`
 8. `/css/gate-mobile-corrective.css?v=phase-7h-ui-patch-retirement-20260709`
-9. `/css/gate-ui-ownership-correction.css?v=phase-8d-mobile-metric-containment-20260709`
+9. `/css/gate-ui-ownership-correction.css?v=operational-ui-audit-20260721`
 10. `/css/gate-light-mode-command-contrast.css?v=light-command-contrast-20260714`
 11. `/css/gate-light-mode-grid-correction.css?v=light-grid-correction-20260714`
 12. `/css/gate-tablet-shell.css?v=tablet-shell-20260714`
-13. `/css/gate-fullscreen-board-contract.css?v=fullscreen-desktop-status-20260714c`
+13. `/css/gate-fullscreen-board-contract.css?v=fullscreen-compact-bus-tiles-20260721`
 
 Imported through the active utility chain:
 
@@ -172,6 +172,10 @@ PASS — live metrics use change-only, minute-aligned synchronization
 PASS — Status Board forced GPU compositing retired
 PASS — Processing assignment/location saves are bound to the active dorm record
 PASS — Processing Auditorium Location persistence delegates to the canonical dorm mutation owner
+PASS — modal layers remain above phone and tablet shell layers
+PASS — Processing modal reachability covers coarse-pointer tablets through 1366 px
+PASS — narrow fine-pointer desktops retain a fixed single-row navigation shell
+PASS — fullscreen Active Bus cards are bounded compact tiles with versioned delivery
 PASS — one hidden Phase 3A bridge loaded after the visible Status Board owner
 PASS — runtime record-integrity workflow
 PASS — no visible Build 2 route

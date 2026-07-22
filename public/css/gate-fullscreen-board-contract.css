@@ -1,12 +1,12 @@
 /* GATE fullscreen Status Board command-display contract
    Final responsive owner for the fullscreen board viewport, distance-readable
-   telemetry, and Active Buses presentation. Normal Status Board layouts are unchanged. */
+   telemetry, and compact Active Buses presentation. Normal Status Board layouts are unchanged. */
 
 :root {
   --gate-fullscreen-banner-px: 28px;
   --gate-fullscreen-gap: 10px;
   --gate-fullscreen-metric-height: clamp(88px, 11vh, 126px);
-  --gate-fullscreen-bus-card-min: 320px;
+  --gate-fullscreen-bus-card-width: clamp(280px, 17vw, 330px);
 }
 
 body.fullscreen-board,
@@ -208,12 +208,14 @@ body.theme-light.gate-fullscreen-board-active #page-board .metric-card {
     white-space: nowrap !important;
   }
 
+  /* Compact command-board queue: tiles wrap but never stretch to consume a row. */
   body.fullscreen-board #page-board #active-buses,
   body.gate-fullscreen-board-active #page-board #active-buses {
-    display: grid !important;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--gate-fullscreen-bus-card-min)), 1fr)) !important;
-    grid-auto-flow: row !important;
+    display: flex !important;
+    flex-flow: row wrap !important;
     align-items: stretch !important;
+    align-content: flex-start !important;
+    justify-content: flex-start !important;
     gap: 10px !important;
     width: 100% !important;
     min-width: 0 !important;
@@ -230,14 +232,10 @@ body.theme-light.gate-fullscreen-board-active #page-board .metric-card {
     display: none !important;
   }
 
-  body.fullscreen-board #page-board #active-buses > *,
-  body.gate-fullscreen-board-active #page-board #active-buses > * {
-    min-width: 0 !important;
-  }
-
   body.fullscreen-board #page-board #active-buses > [data-empty-state='true'],
   body.gate-fullscreen-board-active #page-board #active-buses > [data-empty-state='true'] {
     display: flex !important;
+    flex: 1 1 100% !important;
     align-items: center !important;
     min-height: 58px !important;
     font-size: clamp(1rem, 1.15vw, 1.35rem) !important;
@@ -251,13 +249,14 @@ body.theme-light.gate-fullscreen-board-active #page-board .metric-card {
     grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
     grid-template-rows: auto auto !important;
     align-items: center !important;
-    gap: 9px 8px !important;
-    width: 100% !important;
+    flex: 0 0 min(100%, var(--gate-fullscreen-bus-card-width)) !important;
+    width: min(100%, var(--gate-fullscreen-bus-card-width)) !important;
     min-width: 0 !important;
-    max-width: none !important;
+    max-width: var(--gate-fullscreen-bus-card-width) !important;
     height: auto !important;
     min-height: 78px !important;
     max-height: none !important;
+    gap: 9px 8px !important;
     margin: 0 !important;
     padding: 11px 14px !important;
     overflow: hidden !important;
@@ -330,7 +329,7 @@ body.gate-fullscreen-board-active #page-board .dorm-dashboard {
 
 @media (min-width: 1600px) and (min-height: 800px) {
   :root {
-    --gate-fullscreen-bus-card-min: 350px;
+    --gate-fullscreen-bus-card-width: 320px;
   }
 
   body.fullscreen-board #page-board .board-header.gate-premium-metrics-enabled,
@@ -347,8 +346,8 @@ body.gate-fullscreen-board-active #page-board .dorm-dashboard {
   body.fullscreen-board #page-board #active-buses .gate-component-active-bus-card,
   body.gate-fullscreen-board-active #page-board #active-buses .prc-bus-card,
   body.gate-fullscreen-board-active #page-board #active-buses .gate-component-active-bus-card {
-    min-height: 86px !important;
-    padding: 13px 16px !important;
+    min-height: 82px !important;
+    padding: 12px 15px !important;
   }
 }
 

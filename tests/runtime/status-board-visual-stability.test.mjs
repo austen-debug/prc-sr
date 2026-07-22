@@ -109,11 +109,15 @@ test('Served HTML uses change-only minute metric updates', async () => {
   assert.doesNotMatch(transformed, /setInterval\(updateAirportMetric,\s*1000\)/);
 });
 
-test('Served HTML timer fallback cannot activate timer-flash', async () => {
-  const { transformed } = await transformedIndex();
+test('Active timer ownership disables the legacy flashing interval', async () => {
+  const controller = await source('public/js/gate-status-board-controller.js');
+  const middleware = await source('functions/_middleware.js');
 
-  assert.match(transformed, /el\.classList\.remove\('timer-flash'\)/);
-  assert.doesNotMatch(transformed, /el\.classList\.add\('timer-flash'\)/);
+  assert.match(controller, /window\.updateTimers = canonicalTimerTick/);
+  assert.match(controller, /window\.clearInterval\(legacyInterval\)/);
+  assert.match(controller, /timer\.classList\.remove\('timer-flash'\)/);
+  assert.match(controller, /timer\.classList\.toggle\('timer-red', critical\)/);
+  assert.doesNotMatch(middleware, /gate-status-board-timer-visual-stability\.js/);
 });
 
 test('Runtime compositing guard no longer owns Status Board layers', async () => {

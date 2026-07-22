@@ -64,6 +64,7 @@ jobs:
         run: |
           node --test tests/runtime/active-runtime-budget.test.mjs
           node --test tests/runtime/record-display-integrity.test.mjs
+          node --test tests/runtime/status-board-visual-stability.test.mjs
 
       - name: Validate Status Board UX and Phase 3A contracts
         run: |

@@ -96,3 +96,19 @@ test('middleware loads the record display contract before all dorm consumers', a
   assert.match(middleware, /gate-record-display-contract\.js\?v=record-display-integrity-20260714b/);
   assert.match(middleware, /prc-dash-dorm-flag-validation\.js\?v=record-display-integrity-20260714b/);
 });
+
+test('Status Board uses one canonical timer and surface-integrity owner', async () => {
+  const status = await source('public/js/gate-status-board-controller.js');
+  const middleware = await source('functions/_middleware.js');
+
+  assert.match(status, /function ensureTimerOwner\(\)/);
+  assert.match(status, /window\.updateTimers = canonicalTimerTick/);
+  assert.match(status, /try \{ updateTimers = canonicalTimerTick; \}/);
+  assert.match(status, /function hasCompleteDormMarkup\(dorms\)/);
+  assert.match(status, /function repairStatusBoardSurfaces\(\)/);
+  assert.match(status, /boardObserver\.observe\(board, \{ childList: true, subtree: true \}\)/);
+  assert.match(status, /renderStatusBoard\(\{ force: true \}\)/);
+  assert.doesNotMatch(status, /activeBusObserver|bodyObserver/);
+  assert.doesNotMatch(middleware, /gate-status-board-timer-visual-stability\.js/);
+  assert.match(middleware, /gate-status-board-controller\.js\?v=status-board-single-owner-20260721/);
+});

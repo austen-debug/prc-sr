@@ -76,6 +76,9 @@ jobs:
       - name: Record display integrity
         run: node --test tests/runtime/record-display-integrity.test.mjs
 
+      - name: Dorm timer record lifecycle
+        run: node --test tests/runtime/dorm-timer-record-lifecycle.test.mjs
+
       - name: Processing modal record persistence
         run: node --test tests/runtime/processing-modal-record-persistence.test.mjs
 

@@ -76,4 +76,4 @@ test('phone fullscreen retains its separate two-by-two metric posture', async ()
 
   assert.match(mobile, /grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\)/);
   assert.match(mobile, /'arrived expected'[\s\S]*'last local'[\s\S]*'active active'/);
-}
+});

@@ -5,7 +5,7 @@
   "maximums": {
     "directStyles": 13,
     "importedStyles": 3,
-    "directScripts": 28
+    "directScripts": 27
   },
   "phase3BExitTargets": {
     "directStylesMaximum": 12,
@@ -45,7 +45,7 @@
     "/js/prc-dash-space-force.js",
     "/js/prc-dash-dorm-reopen.js",
     "/js/prc-dash-final-audit.js?v=record-display-integrity-20260714",
-    "/js/gate-status-board-controller.js?v=status-board-render-stability-20260715",
+    "/js/gate-status-board-controller.js?v=status-board-single-owner-20260721",
     "/js/gate-processing-controller.js?v=record-display-integrity-20260714",
     "/js/prc-dash-dorm-flag-validation.js?v=record-display-integrity-20260714b",
     "/js/prc-dash-auditorium-location.js",
@@ -62,7 +62,6 @@
     "/js/prc-dash-processing-loaded-summary.js",
     "/js/gate-premium-metrics-controller.js?v=premium-metrics-20260709d",
     "/js/prc-dash-overtime-audit.js",
-    "/js/gate-status-board-timer-visual-stability.js?v=status-board-timer-visual-stability-20260715",
     "/js/gate-status-board-shadow-controller.js?v=phase-3a-status-board-shadow-20260715"
   ],
   "grandfatheredCorrectiveAssets": [
@@ -71,8 +70,7 @@
     "/css/gate-light-mode-grid-correction.css",
     "/js/prc-dash-runtime-fixes.js",
     "/js/prc-dash-modal-mobile-validation.js",
-    "/js/gate-render-stability-fix.js",
-    "/js/gate-status-board-timer-visual-stability.js"
+    "/js/gate-render-stability-fix.js"
   ],
   "rules": [
     "The active middleware stack may not exceed the recorded maximums.",

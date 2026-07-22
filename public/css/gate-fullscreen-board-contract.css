@@ -1,12 +1,12 @@
-/* GATE fullscreen Status Board containment contract
-   Final responsive owner for the board viewport, compact telemetry row,
-   and Active Buses presentation. Normal Status Board layouts are unchanged. */
+/* GATE fullscreen Status Board command-display contract
+   Final responsive owner for the fullscreen board viewport, distance-readable
+   telemetry, and Active Buses presentation. Normal Status Board layouts are unchanged. */
 
 :root {
   --gate-fullscreen-banner-px: 28px;
   --gate-fullscreen-gap: 10px;
-  --gate-fullscreen-metric-height: 54px;
-  --gate-fullscreen-bus-height: 54px;
+  --gate-fullscreen-metric-height: clamp(88px, 11vh, 126px);
+  --gate-fullscreen-bus-card-min: 320px;
 }
 
 body.fullscreen-board,
@@ -63,7 +63,7 @@ body.gate-fullscreen-board-active #page-board .board-header.gate-premium-metrics
   height: auto !important;
   min-height: 0 !important;
   max-height: none !important;
-  margin: 0 0 8px !important;
+  margin: 0 0 10px !important;
   padding: 0 !important;
   overflow: visible !important;
   transform: none !important;
@@ -121,24 +121,26 @@ body.theme-light.gate-fullscreen-board-active #page-board .metric-card {
 @media (min-width: 768px) {
   body.fullscreen-board #page-board .board-header.gate-premium-metrics-enabled,
   body.gate-fullscreen-board-active #page-board .board-header.gate-premium-metrics-enabled {
-    grid-template-columns: repeat(4, minmax(88px, 112px)) minmax(420px, 1fr) !important;
-    grid-template-areas: 'arrived expected last local active' !important;
-    grid-auto-rows: var(--gate-fullscreen-metric-height) !important;
-    align-items: start !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    grid-template-areas:
+      'arrived expected last local'
+      'active active active active' !important;
+    grid-template-rows: var(--gate-fullscreen-metric-height) auto !important;
+    align-items: stretch !important;
     align-content: start !important;
     justify-content: stretch !important;
-    gap: 8px !important;
+    gap: 12px !important;
   }
 
   body.fullscreen-board #page-board .gate-metrics-container .metric-card,
   body.gate-fullscreen-board-active #page-board .gate-metrics-container .metric-card {
-    align-self: start !important;
+    align-self: stretch !important;
     width: 100% !important;
     height: var(--gate-fullscreen-metric-height) !important;
     min-height: var(--gate-fullscreen-metric-height) !important;
     max-height: var(--gate-fullscreen-metric-height) !important;
     margin: 0 !important;
-    padding: 7px 10px !important;
+    padding: clamp(12px, 1.2vw, 20px) clamp(14px, 1.4vw, 24px) !important;
     overflow: hidden !important;
     box-sizing: border-box !important;
     justify-content: center !important;
@@ -146,41 +148,43 @@ body.theme-light.gate-fullscreen-board-active #page-board .metric-card {
 
   body.fullscreen-board #page-board .gate-metrics-container .metric-header,
   body.gate-fullscreen-board-active #page-board .gate-metrics-container .metric-header {
-    gap: 4px !important;
+    gap: 7px !important;
     line-height: 1 !important;
   }
 
   body.fullscreen-board #page-board .gate-metrics-container .metric-label,
   body.gate-fullscreen-board-active #page-board .gate-metrics-container .metric-label {
-    font-size: 8px !important;
+    font-size: clamp(0.72rem, 0.82vw, 1.05rem) !important;
     line-height: 1 !important;
-    letter-spacing: 0.065em !important;
+    letter-spacing: 0.075em !important;
   }
 
   body.fullscreen-board #page-board .gate-metrics-container .metric-value,
   body.gate-fullscreen-board-active #page-board .gate-metrics-container .metric-value {
-    margin-top: 3px !important;
-    font-size: clamp(1.05rem, 1.55vw, 1.38rem) !important;
-    line-height: 1 !important;
-    letter-spacing: -0.02em !important;
+    margin-top: clamp(6px, 0.7vh, 10px) !important;
+    font-size: clamp(2.2rem, 3.15vw, 4.3rem) !important;
+    line-height: 0.92 !important;
+    letter-spacing: -0.035em !important;
+    font-variant-numeric: tabular-nums !important;
+    font-feature-settings: 'tnum' 1 !important;
   }
 
   body.fullscreen-board #page-board .gate-active-buses-block,
   body.gate-fullscreen-board-active #page-board .gate-active-buses-block {
-    align-self: start !important;
+    align-self: stretch !important;
     display: grid !important;
-    grid-template-columns: max-content minmax(0, 1fr) !important;
-    grid-template-rows: minmax(0, 1fr) !important;
-    align-items: center !important;
-    align-content: center !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-rows: auto auto !important;
+    align-items: stretch !important;
+    align-content: start !important;
     gap: 10px !important;
     width: 100% !important;
-    height: var(--gate-fullscreen-bus-height) !important;
-    min-height: var(--gate-fullscreen-bus-height) !important;
-    max-height: var(--gate-fullscreen-bus-height) !important;
+    height: auto !important;
+    min-height: 102px !important;
+    max-height: none !important;
     margin: 0 !important;
-    padding: 7px 10px !important;
-    overflow: hidden !important;
+    padding: clamp(11px, 1vw, 16px) !important;
+    overflow: visible !important;
     box-sizing: border-box !important;
     -webkit-backdrop-filter: none !important;
     backdrop-filter: none !important;
@@ -198,83 +202,123 @@ body.theme-light.gate-fullscreen-board-active #page-board .metric-card {
     align-self: center !important;
     margin: 0 !important;
     color: #ffffff !important;
-    font-size: 9px !important;
+    font-size: clamp(0.78rem, 0.88vw, 1.08rem) !important;
     line-height: 1 !important;
-    letter-spacing: 0.075em !important;
+    letter-spacing: 0.09em !important;
     white-space: nowrap !important;
   }
 
   body.fullscreen-board #page-board #active-buses,
   body.gate-fullscreen-board-active #page-board #active-buses {
-    display: flex !important;
-    flex-wrap: nowrap !important;
-    align-items: center !important;
-    gap: 8px !important;
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--gate-fullscreen-bus-card-min)), 1fr)) !important;
+    grid-auto-flow: row !important;
+    align-items: stretch !important;
+    gap: 10px !important;
     width: 100% !important;
     min-width: 0 !important;
-    height: 38px !important;
-    min-height: 38px !important;
-    max-height: 38px !important;
-    overflow-x: auto !important;
-    overflow-y: hidden !important;
-    padding: 0 0 2px !important;
-    scrollbar-width: thin !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    scrollbar-width: none !important;
+  }
+
+  body.fullscreen-board #page-board #active-buses::-webkit-scrollbar,
+  body.gate-fullscreen-board-active #page-board #active-buses::-webkit-scrollbar {
+    display: none !important;
   }
 
   body.fullscreen-board #page-board #active-buses > *,
   body.gate-fullscreen-board-active #page-board #active-buses > * {
-    flex: 0 0 auto !important;
+    min-width: 0 !important;
+  }
+
+  body.fullscreen-board #page-board #active-buses > [data-empty-state='true'],
+  body.gate-fullscreen-board-active #page-board #active-buses > [data-empty-state='true'] {
+    display: flex !important;
+    align-items: center !important;
+    min-height: 58px !important;
+    font-size: clamp(1rem, 1.15vw, 1.35rem) !important;
   }
 
   body.fullscreen-board #page-board #active-buses .prc-bus-card,
   body.fullscreen-board #page-board #active-buses .gate-component-active-bus-card,
   body.gate-fullscreen-board-active #page-board #active-buses .prc-bus-card,
   body.gate-fullscreen-board-active #page-board #active-buses .gate-component-active-bus-card {
-    display: inline-flex !important;
-    flex-direction: row !important;
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    grid-template-rows: auto auto !important;
     align-items: center !important;
-    justify-content: flex-start !important;
-    gap: 7px !important;
-    width: max-content !important;
-    min-width: max-content !important;
+    gap: 9px 8px !important;
+    width: 100% !important;
+    min-width: 0 !important;
     max-width: none !important;
-    height: 34px !important;
-    min-height: 34px !important;
-    max-height: 34px !important;
+    height: auto !important;
+    min-height: 78px !important;
+    max-height: none !important;
     margin: 0 !important;
-    padding: 0 10px !important;
+    padding: 11px 14px !important;
     overflow: hidden !important;
-    border-radius: 7px !important;
+    border-radius: 9px !important;
     line-height: 1 !important;
-    white-space: nowrap !important;
+    white-space: normal !important;
     transform: none !important;
+    box-sizing: border-box !important;
   }
 
   body.fullscreen-board #page-board #active-buses .prc-bus-card > span,
-  body.gate-fullscreen-board-active #page-board #active-buses .prc-bus-card > span {
-    display: inline-flex !important;
-    align-items: center !important;
+  body.fullscreen-board #page-board #active-buses .gate-component-active-bus-card > span,
+  body.gate-fullscreen-board-active #page-board #active-buses .prc-bus-card > span,
+  body.gate-fullscreen-board-active #page-board #active-buses .gate-component-active-bus-card > span {
+    display: block !important;
+    min-width: 0 !important;
     margin: 0 !important;
     padding: 0 !important;
-    font-size: 10px !important;
-    line-height: 1 !important;
+    font-size: clamp(0.8rem, 0.82vw, 1rem) !important;
+    line-height: 1.05 !important;
+    text-align: center !important;
     white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
   }
 
   body.fullscreen-board #page-board #active-buses .prc-bus-card .prc-bus-card-title,
   body.gate-fullscreen-board-active #page-board #active-buses .prc-bus-card .prc-bus-card-title {
-    font-size: 11px !important;
+    grid-column: 1 / 3 !important;
+    grid-row: 1 !important;
+    font-size: clamp(1rem, 1.05vw, 1.35rem) !important;
     font-weight: 900 !important;
+    text-align: left !important;
+  }
+
+  body.fullscreen-board #page-board #active-buses .prc-bus-card .prc-bus-card-dept,
+  body.gate-fullscreen-board-active #page-board #active-buses .prc-bus-card .prc-bus-card-dept {
+    grid-column: 3 / 5 !important;
+    grid-row: 1 !important;
+    justify-self: end !important;
+    font-size: clamp(0.78rem, 0.78vw, 0.98rem) !important;
+    font-weight: 900 !important;
+    text-align: right !important;
   }
 
   body.fullscreen-board #page-board #active-buses .prc-bus-card .prc-bus-card-line,
-  body.fullscreen-board #page-board #active-buses .prc-bus-card .prc-bus-card-dept,
-  body.gate-fullscreen-board-active #page-board #active-buses .prc-bus-card .prc-bus-card-line,
-  body.gate-fullscreen-board-active #page-board #active-buses .prc-bus-card .prc-bus-card-dept {
-    padding-left: 7px !important;
-    border-left: 1px solid rgba(255, 255, 255, 0.34) !important;
+  body.gate-fullscreen-board-active #page-board #active-buses .prc-bus-card .prc-bus-card-line {
+    grid-row: 2 !important;
+    padding-top: 8px !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.28) !important;
     font-weight: 800 !important;
   }
+
+  body.fullscreen-board #page-board #active-buses .prc-bus-card .prc-bus-card-line:nth-child(2),
+  body.gate-fullscreen-board-active #page-board #active-buses .prc-bus-card .prc-bus-card-line:nth-child(2) { grid-column: 1 !important; }
+  body.fullscreen-board #page-board #active-buses .prc-bus-card .prc-bus-card-line:nth-child(3),
+  body.gate-fullscreen-board-active #page-board #active-buses .prc-bus-card .prc-bus-card-line:nth-child(3) { grid-column: 2 !important; }
+  body.fullscreen-board #page-board #active-buses .prc-bus-card .prc-bus-card-line:nth-child(4),
+  body.gate-fullscreen-board-active #page-board #active-buses .prc-bus-card .prc-bus-card-line:nth-child(4) { grid-column: 3 !important; }
+  body.fullscreen-board #page-board #active-buses .prc-bus-card .prc-bus-card-line:nth-child(5),
+  body.gate-fullscreen-board-active #page-board #active-buses .prc-bus-card .prc-bus-card-line:nth-child(5) { grid-column: 4 !important; }
 }
 
 body.fullscreen-board #page-board .dorm-dashboard,
@@ -282,6 +326,30 @@ body.gate-fullscreen-board-active #page-board .dorm-dashboard {
   flex: 1 1 auto !important;
   min-height: 0 !important;
   overflow-y: auto !important;
+}
+
+@media (min-width: 1600px) and (min-height: 800px) {
+  :root {
+    --gate-fullscreen-bus-card-min: 350px;
+  }
+
+  body.fullscreen-board #page-board .board-header.gate-premium-metrics-enabled,
+  body.gate-fullscreen-board-active #page-board .board-header.gate-premium-metrics-enabled {
+    gap: 14px !important;
+  }
+
+  body.fullscreen-board #page-board #active-buses,
+  body.gate-fullscreen-board-active #page-board #active-buses {
+    gap: 12px !important;
+  }
+
+  body.fullscreen-board #page-board #active-buses .prc-bus-card,
+  body.fullscreen-board #page-board #active-buses .gate-component-active-bus-card,
+  body.gate-fullscreen-board-active #page-board #active-buses .prc-bus-card,
+  body.gate-fullscreen-board-active #page-board #active-buses .gate-component-active-bus-card {
+    min-height: 86px !important;
+    padding: 13px 16px !important;
+  }
 }
 
 @media (max-width: 767px) {

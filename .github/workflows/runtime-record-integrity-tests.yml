@@ -6,6 +6,7 @@ on:
       - 'functions/_middleware.js'
       - 'public/css/gate-utilities-access.css'
       - 'public/css/gate-premium-metrics.css'
+      - 'public/css/gate-fullscreen-board-contract.css'
       - 'public/js/gate-record-display-contract.js'
       - 'public/js/gate-status-board-controller.js'
       - 'public/js/gate-premium-metrics-controller.js'
@@ -22,6 +23,7 @@ on:
       - 'functions/_middleware.js'
       - 'public/css/gate-utilities-access.css'
       - 'public/css/gate-premium-metrics.css'
+      - 'public/css/gate-fullscreen-board-contract.css'
       - 'public/js/gate-record-display-contract.js'
       - 'public/js/gate-status-board-controller.js'
       - 'public/js/gate-premium-metrics-controller.js'
@@ -74,6 +76,9 @@ jobs:
 
       - name: Processing modal record persistence
         run: node --test tests/runtime/processing-modal-record-persistence.test.mjs
+
+      - name: Fullscreen command-board readability
+        run: node --test tests/runtime/fullscreen-command-board-readability.test.mjs
 
       - name: Direct surface observer contract
         run: node --test --test-name-pattern='observer is limited' tests/runtime/status-board-visual-stability.test.mjs

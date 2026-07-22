@@ -106,8 +106,8 @@ body.theme-light #page-board .gate-active-buses-block,
   position: relative;
   overflow: hidden;
   min-width: 0;
-  min-height: 85px;
-  padding: 14px 18px;
+  min-height: clamp(96px, 7.2vw, 148px);
+  padding: clamp(14px, 1.15vw, 24px) clamp(18px, 1.4vw, 28px);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -125,6 +125,8 @@ body.theme-light #page-board .gate-active-buses-block,
     0 4px 20px rgba(0, 0, 0, 0.25),
     inset 0 1px 1px rgba(255, 255, 255, 0.08);
   isolation: isolate;
+  container-type: inline-size;
+  container-name: gate-status-metric;
 }
 
 body.theme-light #page-board .gate-metrics-container .metric-card,
@@ -156,7 +158,7 @@ body.theme-light #page-board .gate-metrics-container .metric-card,
 
 #page-board .gate-metrics-container .metric-label {
   font-family: "Public Sans", "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  font-size: 10px;
+  font-size: clamp(0.62rem, 0.85vw, 0.95rem);
   font-weight: 700;
   line-height: 1;
   letter-spacing: 0.08em;
@@ -169,16 +171,28 @@ body.theme-light #page-board .gate-metrics-container .metric-card,
 
 #page-board .gate-metrics-container .metric-value {
   font-family: "SF Mono", "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
-  font-size: clamp(1.65rem, 2.5vw, 2rem);
-  font-weight: 600;
+  font-size: clamp(2rem, 4.2vw, 5rem);
+  font-weight: 700;
   color: var(--metric-value-text);
-  line-height: 1.1;
-  margin-top: 6px;
-  letter-spacing: -0.02em;
+  line-height: 0.95;
+  margin-top: clamp(6px, 0.7vw, 12px);
+  letter-spacing: -0.035em;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+  contain: layout paint;
+}
+
+@supports (font-size: 1cqi) {
+  #page-board .gate-metrics-container .metric-label {
+    font-size: clamp(0.62rem, 2.35cqi, 0.95rem);
+  }
+
+  #page-board .gate-metrics-container .metric-value {
+    font-size: clamp(2rem, 13cqi, 5rem);
+  }
 }
 
 #page-board .gate-metrics-container .status-dot.led-green {
@@ -239,17 +253,27 @@ body.theme-light #page-board .gate-metrics-container .arrived-card .metric-value
   }
 
   #page-board .gate-metrics-container .metric-card {
-    min-height: 74px;
+    min-height: clamp(78px, 23vw, 108px);
     padding: 12px 13px;
     border-radius: 12px;
   }
 
   #page-board .gate-metrics-container .metric-label {
-    font-size: 9px;
+    font-size: clamp(0.56rem, 2.8vw, 0.72rem);
     letter-spacing: 0.075em;
   }
 
   #page-board .gate-metrics-container .metric-value {
-    font-size: clamp(1.32rem, 7vw, 1.72rem);
+    font-size: clamp(1.55rem, 7vw, 2.7rem);
+  }
+
+  @supports (font-size: 1cqi) {
+    #page-board .gate-metrics-container .metric-label {
+      font-size: clamp(0.56rem, 3.6cqi, 0.72rem);
+    }
+
+    #page-board .gate-metrics-container .metric-value {
+      font-size: clamp(1.55rem, 14cqi, 2.7rem);
+    }
   }
 }

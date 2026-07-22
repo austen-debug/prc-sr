@@ -4,8 +4,12 @@ on:
   push:
     paths:
       - 'functions/_middleware.js'
+      - 'public/css/gate-utilities-access.css'
+      - 'public/css/gate-premium-metrics.css'
       - 'public/js/gate-record-display-contract.js'
       - 'public/js/gate-status-board-controller.js'
+      - 'public/js/gate-premium-metrics-controller.js'
+      - 'public/js/gate-render-stability-fix.js'
       - 'public/js/gate-processing-controller.js'
       - 'public/js/gate-input-page-controller.js'
       - 'public/js/prc-dash-final-audit.js'
@@ -15,8 +19,12 @@ on:
   pull_request:
     paths:
       - 'functions/_middleware.js'
+      - 'public/css/gate-utilities-access.css'
+      - 'public/css/gate-premium-metrics.css'
       - 'public/js/gate-record-display-contract.js'
       - 'public/js/gate-status-board-controller.js'
+      - 'public/js/gate-premium-metrics-controller.js'
+      - 'public/js/gate-render-stability-fix.js'
       - 'public/js/gate-processing-controller.js'
       - 'public/js/gate-input-page-controller.js'
       - 'public/js/prc-dash-final-audit.js'
@@ -33,9 +41,9 @@ concurrency:
 
 jobs:
   record-integrity:
-    name: Dorm record identity and display integrity
+    name: Runtime record and visual integrity
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
 
     steps:
       - name: Check out repository
@@ -51,10 +59,42 @@ jobs:
           node --input-type=module --check < functions/_middleware.js
           node --check public/js/gate-record-display-contract.js
           node --check public/js/gate-status-board-controller.js
+          node --check public/js/gate-premium-metrics-controller.js
+          node --check public/js/gate-render-stability-fix.js
           node --check public/js/gate-processing-controller.js
           node --check public/js/gate-input-page-controller.js
           node --check public/js/prc-dash-final-audit.js
           node --check public/js/prc-dash-dorm-flag-validation.js
 
-      - name: Run record display integrity tests
+      - name: Record display integrity
         run: node --test tests/runtime/record-display-integrity.test.mjs
+
+      - name: Direct surface observer contract
+        run: node --test --test-name-pattern='observer is limited' tests/runtime/status-board-visual-stability.test.mjs
+
+      - name: Incremental column rendering contract
+        run: node --test --test-name-pattern='renders dorm states incrementally' tests/runtime/status-board-visual-stability.test.mjs
+
+      - name: Fixed timer geometry contract
+        run: node --test --test-name-pattern='timer geometry' tests/runtime/status-board-visual-stability.test.mjs
+
+      - name: Fluid metric typography contract
+        run: node --test --test-name-pattern='metrics scale' tests/runtime/status-board-visual-stability.test.mjs
+
+      - name: Change-only metric cadence contract
+        run: node --test --test-name-pattern='Metric synchronization' tests/runtime/status-board-visual-stability.test.mjs
+
+      - name: Middleware rewrite declaration contract
+        run: node --test --test-name-pattern='contains canonical Status Board rewrite' tests/runtime/status-board-visual-stability.test.mjs
+
+      - name: Served renderer delegation contract
+        run: node --test --test-name-pattern='delegates Active Buses and dorm columns' tests/runtime/status-board-visual-stability.test.mjs
+
+      - name: Served metric cadence contract
+        run: node --test --test-name-pattern='uses change-only minute metric updates' tests/runtime/status-board-visual-stability.test.mjs
+
+      - name: Active timer ownership contract
+        run: node --test --test-name-pattern='Active timer ownership disables' tests/runtime/status-board-visual-stability.test.mjs
+
+      - name: Status Board compositing retirement contract
+        run: node --test --test-name-pattern='compositing guard' tests/runtime/status-board-visual-stability.test.mjs

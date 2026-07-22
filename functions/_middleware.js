@@ -5,8 +5,8 @@ const UI_STYLESHEETS = [
   '<link rel="stylesheet" href="/css/gate-base-tokens.css">',
   '<link rel="stylesheet" href="/css/gate-layout-pages.css">',
   '<link rel="stylesheet" href="/css/gate-components.css">',
-  '<link rel="stylesheet" href="/css/gate-utilities-access.css?v=status-board-light-clarity-20260714">',
-  '<link rel="stylesheet" href="/css/gate-premium-metrics.css?v=status-board-active-bus-strip-20260714">',
+  '<link rel="stylesheet" href="/css/gate-utilities-access.css?v=status-board-stable-surfaces-20260721">',
+  '<link rel="stylesheet" href="/css/gate-premium-metrics.css?v=status-board-fluid-metrics-20260721">',
   '<link rel="stylesheet" href="/css/gate-app-shell.css?v=phase-7g-viewport-watermark-20260709">',
   '<link rel="stylesheet" href="/css/gate-mobile-corrective.css?v=phase-7h-ui-patch-retirement-20260709">',
   '<link rel="stylesheet" href="/css/gate-ui-ownership-correction.css?v=phase-8d-mobile-metric-containment-20260709">',
@@ -28,7 +28,7 @@ const UI_HEAD_SCRIPTS = [
   '<script src="/js/prc-dash-space-force.js" defer></script>',
   '<script src="/js/prc-dash-dorm-reopen.js" defer></script>',
   '<script src="/js/prc-dash-final-audit.js?v=record-display-integrity-20260714" defer></script>',
-  '<script src="/js/gate-status-board-controller.js?v=status-board-single-owner-20260721" defer></script>',
+  '<script src="/js/gate-status-board-controller.js?v=status-board-incremental-render-20260721" defer></script>',
   '<script src="/js/gate-processing-controller.js?v=record-display-integrity-20260714" defer></script>',
   '<script src="/js/prc-dash-dorm-flag-validation.js?v=record-display-integrity-20260714b" defer></script>',
   '<script src="/js/prc-dash-auditorium-location.js" defer></script>',
@@ -41,9 +41,9 @@ const UI_HEAD_SCRIPTS = [
   '<script src="/js/gate-app-shell-controller.js?v=phase-7g-viewport-watermark-20260709" defer></script>',
   '<script src="/js/gate-fullscreen-board-layout-controller.js?v=fullscreen-board-containment-20260714b" defer></script>',
   '<script src="/js/prc-dash-modal-mobile-validation.js?v=phase-7e-ui-ownership-20260709" defer></script>',
-  '<script src="/js/gate-render-stability-fix.js?v=fullscreen-desktop-stability-20260714" defer></script>',
+  '<script src="/js/gate-render-stability-fix.js?v=status-board-compositing-retired-20260721" defer></script>',
   '<script src="/js/prc-dash-processing-loaded-summary.js" defer></script>',
-  '<script src="/js/gate-premium-metrics-controller.js?v=premium-metrics-20260709d" defer></script>',
+  '<script src="/js/gate-premium-metrics-controller.js?v=metric-minute-cadence-20260721" defer></script>',
   '<script src="/js/prc-dash-overtime-audit.js" defer></script>',
   '<script src="/js/gate-status-board-shadow-controller.js?v=phase-3a-status-board-shadow-20260715" defer></script>'
 ];
@@ -55,25 +55,25 @@ const STATUS_BOARD_METRICS_HTML = `<div class="board-header gate-premium-metrics
          <span class="status-dot led-green" aria-hidden="true"></span>
          <span class="metric-label">ARRIVED</span>
         </div>
-        <div class="metric-value" id="stat-arrived">0</div>
+        <div class="metric-value" id="stat-arrived" data-gate-live-value="true" aria-live="off">0</div>
        </div>
        <div class="metric-card expected-card">
         <div class="metric-header">
          <span class="metric-label">EXPECTED</span>
         </div>
-        <div class="metric-value" id="stat-expected">0</div>
+        <div class="metric-value" id="stat-expected" data-gate-live-value="true" aria-live="off">0</div>
        </div>
        <div class="metric-card last-card">
         <div class="metric-header">
          <span class="metric-label">LAST</span>
         </div>
-        <div class="metric-value" id="stat-last">00:00</div>
+        <div class="metric-value" id="stat-last" data-gate-live-value="true" aria-live="off">00:00</div>
        </div>
        <div class="metric-card local-card">
         <div class="metric-header">
          <span class="metric-label">LOCAL</span>
         </div>
-        <div class="metric-value" id="stat-local">00:00</div>
+        <div class="metric-value" id="stat-local" data-gate-live-value="true" aria-live="off">00:00</div>
        </div>
       </div>
       <section class="gate-active-buses-block" aria-label="Active buses en route">
@@ -201,11 +201,12 @@ function applyStatusBoardMetricSourceRefactor(html) {
     /function updateAirportMetric\(\) \{[\s\S]*?\n\}\n\n function updateSoundButton/,
     `function updateAirportMetric() {
   const lastAirport = getConfig('last_airport') || '—';
+  const localTime = getLocalTime24();
   const lastEl = document.getElementById('stat-last');
   const localEl = document.getElementById('stat-local');
 
-  if (lastEl) lastEl.textContent = lastAirport;
-  if (localEl) localEl.textContent = getLocalTime24();
+  if (lastEl && lastEl.textContent !== String(lastAirport)) lastEl.textContent = String(lastAirport);
+  if (localEl && localEl.textContent !== String(localTime)) localEl.textContent = String(localTime);
 }
 
  function updateSoundButton`
@@ -215,8 +216,54 @@ function applyStatusBoardMetricSourceRefactor(html) {
     /document\.getElementById\('metric-arrived'\)\.textContent = `ARRIVED: \$\{totalArrived\} \| EXPECTED: \$\{totalExpected\}`;/,
     `const arrivedMetricEl = document.getElementById('stat-arrived');
       const expectedMetricEl = document.getElementById('stat-expected');
-      if (arrivedMetricEl) arrivedMetricEl.textContent = String(totalArrived);
-      if (expectedMetricEl) expectedMetricEl.textContent = String(totalExpected);`
+      if (arrivedMetricEl && arrivedMetricEl.textContent !== String(totalArrived)) arrivedMetricEl.textContent = String(totalArrived);
+      if (expectedMetricEl && expectedMetricEl.textContent !== String(totalExpected)) expectedMetricEl.textContent = String(totalExpected);`
+  );
+
+  output = output.replace(
+    /setInterval\(updateAirportMetric,\s*1000\);/,
+    'setInterval(updateAirportMetric, 60000);'
+  );
+
+  output = output.replace(
+    /(      const abEl = document\.getElementById\('active-buses'\);[\s\S]*?\n  \}\)\.join\(''\);)\n\n      renderDormColumns\(dorms\);/,
+    (match, legacyBusBlock) => `      if (window.GateStatusBoardController?.renderActiveBuses) {
+        window.GateStatusBoardController.renderActiveBuses();
+      } else {
+${legacyBusBlock}
+      }
+
+      if (window.GateStatusBoardController?.renderDormColumns) {
+        window.GateStatusBoardController.renderDormColumns(dorms);
+      } else {
+        renderDormColumns(dorms);
+      }`
+  );
+
+  output = output.replace(
+    /function updateTimers\(\) \{[\s\S]*?\n\}\n\n     \/\/ BUS ARRIVAL CONFIRM/,
+    `function updateTimers() {
+  document.querySelectorAll('#page-board .timer-display[data-opened]').forEach(el => {
+    const timer = getElapsedTimer(el.dataset.opened);
+    if (el.textContent !== timer.text) el.textContent = timer.text;
+
+    const warning = timer.minutes >= 40 && timer.minutes < 50;
+    const critical = timer.minutes >= 50;
+    el.classList.toggle('timer-yellow', warning);
+    el.classList.toggle('timer-red', critical);
+    el.classList.remove('timer-flash');
+
+    if (timer.minutes >= 60) triggerOvertimeSoundIfNeeded(el.dataset.dormId);
+  });
+}
+
+     // BUS ARRIVAL CONFIRM`
+  );
+
+  output = output.replace(
+    /el\.classList\.add\(['"]timer-flash['"]\);/g,
+    `el.classList.remove('timer-flash');
+      el.classList.add('timer-red');`
   );
 
   return output;

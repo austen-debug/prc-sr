@@ -1,6 +1,6 @@
 // GATE Phase 7F render stability style guard
-// Desktop-only visual stabilization. Fullscreen Status Board geometry is owned by
-// gate-fullscreen-board-contract.css and is intentionally excluded here.
+// Processing and Squadron presentation only. The Status Board now owns stable,
+// non-composited surfaces through its canonical CSS contract.
 (function () {
   'use strict';
 
@@ -14,7 +14,6 @@
     style.dataset.owner = 'gate-render-stability-style-guard';
     style.textContent = `
       @media (min-width: 768px) {
-        body:not(.fullscreen-board):not(.gate-fullscreen-board-active):has(#page-board.active)::before,
         body:has(#page-processing.active)::before,
         body:has(#page-squadron.active)::before {
           display: none !important;
@@ -25,7 +24,6 @@
           filter: none !important;
         }
 
-        body:not(.fullscreen-board):not(.gate-fullscreen-board-active):has(#page-board.active) #page-board.active,
         body:has(#page-processing.active) #page-processing.active,
         body:has(#page-squadron.active) #page-squadron.active {
           position: relative !important;
@@ -35,11 +33,6 @@
           will-change: auto !important;
         }
 
-        body:not(.fullscreen-board):not(.gate-fullscreen-board-active):has(#page-board.active) #page-board.active::after,
-        body:not(.fullscreen-board):not(.gate-fullscreen-board-active):has(#page-board.active) #page-board.active .board-header::before,
-        body:not(.fullscreen-board):not(.gate-fullscreen-board-active):has(#page-board.active) #page-board.active .board-header::after,
-        body:not(.fullscreen-board):not(.gate-fullscreen-board-active):has(#page-board.active) #page-board.active .dorm-dashboard::before,
-        body:not(.fullscreen-board):not(.gate-fullscreen-board-active):has(#page-board.active) #page-board.active .dorm-dashboard::after,
         body:has(#page-processing.active) #page-processing.active::after,
         body:has(#page-squadron.active) #page-squadron.active::after,
         body:has(#page-squadron.active) #page-squadron.active .board-header::before,
@@ -54,12 +47,6 @@
           transition: none !important;
         }
 
-        body:not(.fullscreen-board):not(.gate-fullscreen-board-active):has(#page-board.active) #page-board.active .board-header,
-        body:not(.fullscreen-board):not(.gate-fullscreen-board-active):has(#page-board.active) #page-board.active .dorm-dashboard,
-        body:not(.fullscreen-board):not(.gate-fullscreen-board-active):has(#page-board.active) #page-board.active .dorm-column,
-        body:not(.fullscreen-board):not(.gate-fullscreen-board-active):has(#page-board.active) #page-board.active .dorm-col-content,
-        body:not(.fullscreen-board):not(.gate-fullscreen-board-active):has(#page-board.active) #page-board.active .gate-dorm-card,
-        body:not(.fullscreen-board):not(.gate-fullscreen-board-active):has(#page-board.active) #page-board.active .dorm-card,
         body:has(#page-squadron.active) #page-squadron.active .board-header,
         body:has(#page-squadron.active) #page-squadron.active .dorm-dashboard,
         body:has(#page-squadron.active) #page-squadron.active .dorm-column,
@@ -102,7 +89,7 @@
       isStyleOnly: true,
       ownsPageState: false,
       ownsWatermark: false,
-      excludesFullscreenBoard: true,
+      statusBoardExcluded: true,
       refresh: installStyles
     });
   }

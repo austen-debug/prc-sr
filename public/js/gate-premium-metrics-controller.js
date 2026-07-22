@@ -1,15 +1,20 @@
 // GATE premium metrics sync guard
 // Phase 1B: Status Board metric source is served directly by middleware/source refactor.
-// This file no longer creates cards or compatibility sinks; it only cleans stale duplicate surfaces and syncs stat-* IDs.
+// This file does not create cards. It removes stale duplicate surfaces and performs change-only metric synchronization.
 (function () {
   'use strict';
 
   let installed = false;
   let scheduled = false;
+  let clockTimeout = null;
 
   function setText(id, value) {
     const element = document.getElementById(id);
-    if (element) element.textContent = String(value ?? '—');
+    if (!element) return false;
+    const next = String(value ?? '—');
+    if (element.textContent === next) return false;
+    element.textContent = next;
+    return true;
   }
 
   function getRecordsSafe() {
@@ -21,7 +26,11 @@
   }
 
   function getLocalTimeSafe() {
-    try { return typeof getLocalTime24 === 'function' ? getLocalTime24() : new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }); } catch (_) {
+    try {
+      return typeof getLocalTime24 === 'function'
+        ? getLocalTime24()
+        : new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+    } catch (_) {
       return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
     }
   }
@@ -52,14 +61,14 @@
     if (!hasCanonicalMetrics) return;
 
     boardHeader.classList.add('gate-premium-metrics-enabled');
-    boardHeader.dataset.owner = boardHeader.dataset.owner || 'gate-status-metrics-source';
+    if (!boardHeader.dataset.owner) boardHeader.dataset.owner = 'gate-status-metrics-source';
 
     document.getElementById('gate-metric-compat-sinks')?.remove();
     boardHeader.querySelectorAll('#gate-premium-metrics, .gate-premium-metrics, .prc-metric-grid-v3, .prc-metric-card-v3, .prc-header-legacy-v3').forEach(element => element.remove());
 
     boardHeader.querySelectorAll('.metric-block').forEach(block => {
       if (block.querySelector('#metric-arrived, #metric-airport')) block.remove();
-      if (block.textContent && /Arrived\s*\/\s*Expected|Last Airport Arrival/i.test(block.textContent)) block.remove();
+      else if (block.textContent && /Arrived\s*\/\s*Expected|Last Airport Arrival/i.test(block.textContent)) block.remove();
     });
 
     document.getElementById('active-buses')?.closest('.metric-block')?.classList.add('gate-active-buses-block');
@@ -74,6 +83,11 @@
     setText('stat-local', metrics.local);
   }
 
+  function syncLocalClock() {
+    if (!document.querySelector('#page-board .gate-metrics-container')) return;
+    setText('stat-local', getLocalTimeSafe());
+  }
+
   function run() {
     scheduled = false;
     removeStaleDuplicateSurfaces();
@@ -86,14 +100,36 @@
     requestAnimationFrame(run);
   }
 
+  function scheduleMinuteClock() {
+    if (clockTimeout) window.clearTimeout(clockTimeout);
+    const delay = Math.max(250, 60000 - (Date.now() % 60000) + 75);
+    clockTimeout = window.setTimeout(() => {
+      syncLocalClock();
+      scheduleMinuteClock();
+    }, delay);
+  }
+
   function start() {
     if (installed) return;
     installed = true;
     window.registerGateHook?.('afterRenderAll', schedule);
     window.registerGateHook?.('afterDataChanged', schedule);
     window.registerGateHook?.('afterPageChange', schedule);
-    window.setInterval(schedule, 1000);
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) {
+        schedule();
+        scheduleMinuteClock();
+      }
+    });
+    scheduleMinuteClock();
     schedule();
+
+    window.GatePremiumMetricsController = Object.freeze({
+      isCanonicalMetricSyncOwner: true,
+      sync: schedule,
+      syncLocalClock,
+      clockPrecision: 'minute'
+    });
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, { once: true });

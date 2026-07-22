@@ -1,14 +1,16 @@
 // GATE Phase 1C Status Board Controller
-// Canonical owner for Status Board dorm columns, dorm cards, active bus panel, and board timer text refresh.
+// Canonical owner for Status Board dorm columns, dorm cards, active bus panel, and board timer refresh.
 (function () {
   'use strict';
 
   let installed = false;
   let renderQueued = false;
+  let pendingForceRender = false;
   let lastDormSignature = '';
   let lastBusSignature = '';
-  let activeBusObserver = null;
-  let activeBusRenderInProgress = false;
+  let boardObserver = null;
+  let statusBoardRenderInProgress = false;
+  let canonicalTimerInterval = null;
 
   function components() {
     return window.GateComponents || null;
@@ -123,10 +125,38 @@
     return html.replace('data-component="dorm-card"', 'data-component="dorm-card" data-owner="gate-status-board-controller"');
   }
 
+  function directDormCards(column) {
+    return Array.from(column?.children || []).filter(child => child?.dataset?.component === 'dorm-card');
+  }
+
+  function hasCompleteDormMarkup(dorms) {
+    return ['empty', 'open', 'closed'].every(state => {
+      const column = document.getElementById(`col-${state}`);
+      if (!column || column.dataset.owner !== 'gate-status-board-controller') return false;
+
+      const expected = dorms.filter(dorm => String(dorm.state || 'empty').toLowerCase() === state);
+      if (column.dataset.state !== state || Number(column.dataset.count || -1) !== expected.length) return false;
+
+      if (!expected.length) {
+        return Boolean(column.querySelector('[data-owner="gate-status-board-controller"][data-empty-state="true"]'));
+      }
+
+      const cards = directDormCards(column);
+      if (cards.length !== expected.length) return false;
+
+      const expectedIds = expected.map(dorm => String(dorm.__backendId || '')).filter(Boolean);
+      const actualIds = cards.map(card => String(card.dataset.dormId || '')).filter(Boolean);
+      return cards.every(card => card.dataset.owner === 'gate-status-board-controller') &&
+        expectedIds.length === actualIds.length &&
+        expectedIds.every((id, index) => actualIds[index] === id);
+    });
+  }
+
   function renderColumns(dorms, options = {}) {
     const force = Boolean(options.force);
     const signature = dormSignature(dorms);
-    if (!force && signature === lastDormSignature) return;
+    const complete = hasCompleteDormMarkup(dorms);
+    if (!force && signature === lastDormSignature && complete) return;
     lastDormSignature = signature;
 
     const board = document.getElementById('page-board');
@@ -190,7 +220,7 @@
   }
 
   function hasCompleteActiveBusMarkup(container, buses) {
-    if (!container) return false;
+    if (!container || container.dataset.owner !== 'gate-status-board-controller') return false;
     if (!buses.length) return Boolean(container.querySelector('[data-empty-state="true"]'));
 
     const cards = Array.from(container.querySelectorAll('[data-component="active-bus-card"]'));
@@ -200,6 +230,7 @@
       const detailLines = Array.from(card.querySelectorAll('.prc-bus-card-line'));
       const text = detailLines.map(line => line.textContent || '').join(' | ').toUpperCase();
       return Boolean(
+        card.dataset.owner === 'gate-status-board-controller' &&
         card.querySelector('.prc-bus-card-title') &&
         card.querySelector('.prc-bus-card-dept') &&
         detailLines.length >= 4 &&
@@ -219,7 +250,7 @@
     const signature = busSignature(buses);
     const force = Boolean(options.force);
     const complete = hasCompleteActiveBusMarkup(container, buses);
-    if (!force && signature === lastBusSignature && container.dataset.owner === 'gate-status-board-controller' && complete) return;
+    if (!force && signature === lastBusSignature && complete) return;
     lastBusSignature = signature;
 
     container.dataset.component = 'active-bus-panel';
@@ -227,45 +258,26 @@
     container.dataset.gateActiveBusSignature = signature;
     container.dataset.detailContract = 'otw-female-nat-space-force-departure';
 
-    activeBusRenderInProgress = true;
-    try {
-      if (!buses.length) {
-        container.innerHTML = '<span class="text-muted text-sm" data-owner="gate-status-board-controller" data-empty-state="true">None</span>';
-        return;
-      }
-
-      container.innerHTML = buses
-        .map(bus => components()?.activeBusCard
-          ? components().activeBusCard(bus).replace('data-owner="gate-active-bus-controller"', 'data-owner="gate-status-board-controller"')
-          : fallbackActiveBusCard(bus))
-        .join('');
-    } finally {
-      activeBusRenderInProgress = false;
+    if (!buses.length) {
+      container.innerHTML = '<span class="text-muted text-sm" data-owner="gate-status-board-controller" data-empty-state="true">None</span>';
+      return;
     }
+
+    container.innerHTML = buses
+      .map(bus => components()?.activeBusCard
+        ? components().activeBusCard(bus).replace('data-owner="gate-active-bus-controller"', 'data-owner="gate-status-board-controller"')
+        : fallbackActiveBusCard(bus))
+      .join('');
   }
 
-  function observeActiveBusPanel() {
-    if (activeBusObserver) return;
+  function applyTimerVisualState(timer, minutes) {
+    const warning = minutes >= 40 && minutes < 50;
+    const critical = minutes >= 50;
 
-    activeBusObserver = new MutationObserver(() => {
-      if (activeBusRenderInProgress) return;
-      const container = document.getElementById('active-buses');
-      const buses = getActiveBuses();
-      if (!hasCompleteActiveBusMarkup(container, buses)) {
-        scheduleRender({ force: true });
-      }
-    });
-
-    const attach = () => {
-      const container = document.getElementById('active-buses');
-      if (!container || container.dataset.gateDetailObserverAttached === 'true') return;
-      container.dataset.gateDetailObserverAttached = 'true';
-      activeBusObserver.observe(container, { childList: true, subtree: true, characterData: true });
-    };
-
-    attach();
-    const bodyObserver = new MutationObserver(attach);
-    bodyObserver.observe(document.body, { childList: true, subtree: true });
+    timer.classList.toggle('timer-yellow', warning);
+    timer.classList.toggle('timer-red', critical);
+    if (timer.classList.contains('timer-flash')) timer.classList.remove('timer-flash');
+    timer.dataset.timerVisualState = critical ? 'critical' : (warning ? 'warning' : 'normal');
   }
 
   function updateBoardTimers() {
@@ -280,9 +292,7 @@
       if (elapsed?.text && timer.textContent !== elapsed.text) timer.textContent = elapsed.text;
 
       const minutes = Number(elapsed?.minutes || 0);
-      timer.classList.toggle('timer-yellow', minutes >= 40 && minutes < 50);
-      timer.classList.toggle('timer-red', minutes >= 50);
-      timer.classList.remove('timer-flash');
+      applyTimerVisualState(timer, minutes);
 
       if (minutes >= 60 && timer.dataset.dormId && typeof triggerOvertimeSoundIfNeeded === 'function') {
         triggerOvertimeSoundIfNeeded(timer.dataset.dormId);
@@ -290,18 +300,66 @@
     });
   }
 
-  function renderStatusBoard(options = {}) {
-    renderQueued = false;
-    const dorms = getDorms();
-    renderColumns(dorms, options);
-    renderActiveBuses(options);
+  function canonicalTimerTick() {
     updateBoardTimers();
   }
 
+  function ensureTimerOwner() {
+    window.updateTimers = canonicalTimerTick;
+    try { updateTimers = canonicalTimerTick; } catch (_) {}
+
+    let legacyInterval = null;
+    try { legacyInterval = typeof timerInterval !== 'undefined' ? timerInterval : null; } catch (_) {}
+    if (legacyInterval && legacyInterval !== canonicalTimerInterval) window.clearInterval(legacyInterval);
+
+    if (!canonicalTimerInterval) canonicalTimerInterval = window.setInterval(canonicalTimerTick, 1000);
+    try { timerInterval = canonicalTimerInterval; } catch (_) {}
+
+    canonicalTimerTick();
+    return canonicalTimerInterval;
+  }
+
+  function renderStatusBoard(options = {}) {
+    renderQueued = false;
+    const force = Boolean(options.force || pendingForceRender);
+    pendingForceRender = false;
+    const dorms = getDorms();
+
+    statusBoardRenderInProgress = true;
+    try {
+      renderColumns(dorms, { force });
+      renderActiveBuses({ force });
+      updateBoardTimers();
+    } finally {
+      statusBoardRenderInProgress = false;
+    }
+  }
+
   function scheduleRender(options = {}) {
+    if (options.force) pendingForceRender = true;
     if (renderQueued) return;
     renderQueued = true;
-    requestAnimationFrame(() => renderStatusBoard(options));
+    requestAnimationFrame(() => renderStatusBoard({ force: pendingForceRender }));
+  }
+
+  function repairStatusBoardSurfaces() {
+    if (statusBoardRenderInProgress) return;
+    const dorms = getDorms();
+    const buses = getActiveBuses();
+    const activeBuses = document.getElementById('active-buses');
+
+    if (!hasCompleteDormMarkup(dorms) || !hasCompleteActiveBusMarkup(activeBuses, buses)) {
+      renderStatusBoard({ force: true });
+    }
+  }
+
+  function observeStatusBoardSurfaces() {
+    if (boardObserver || typeof MutationObserver === 'undefined') return;
+    const board = document.getElementById('page-board');
+    if (!board) return;
+
+    boardObserver = new MutationObserver(repairStatusBoardSurfaces);
+    boardObserver.observe(board, { childList: true, subtree: true });
   }
 
   function patchLegacyBoardGlobals() {
@@ -318,8 +376,10 @@
 
     window.buildBoardDormCard = boardDormCard;
     window.renderDormColumns = boardDormColumns;
+    window.updateTimers = canonicalTimerTick;
     try { buildBoardDormCard = boardDormCard; } catch (_) {}
     try { renderDormColumns = boardDormColumns; } catch (_) {}
+    try { updateTimers = canonicalTimerTick; } catch (_) {}
   }
 
   function exposeControllers() {
@@ -330,6 +390,8 @@
       renderDormColumns: renderColumns,
       renderActiveBuses,
       updateBoardTimers,
+      ensureTimerOwner,
+      repairSurfaces: repairStatusBoardSurfaces,
       getDorms,
       getActiveBuses
     });
@@ -343,13 +405,19 @@
     });
   }
 
+  function handleRenderLifecycle() {
+    ensureTimerOwner();
+    scheduleRender();
+  }
+
   function start() {
     if (installed) return;
     installed = true;
     patchLegacyBoardGlobals();
     exposeControllers();
-    observeActiveBusPanel();
-    window.registerGateHook?.('afterRenderAll', () => scheduleRender());
+    observeStatusBoardSurfaces();
+    ensureTimerOwner();
+    window.registerGateHook?.('afterRenderAll', handleRenderLifecycle);
     window.registerGateHook?.('afterDataChanged', () => scheduleRender());
     window.registerGateHook?.('afterPageChange', () => scheduleRender());
     window.addEventListener('resize', () => scheduleRender({ force: true }), true);
@@ -359,5 +427,9 @@
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, { once: true });
   else start();
-  window.addEventListener('load', start, { once: true });
+  window.addEventListener('load', () => {
+    start();
+    ensureTimerOwner();
+    repairStatusBoardSurfaces();
+  }, { once: true });
 })();

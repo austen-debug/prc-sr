@@ -71,7 +71,7 @@ Injected by middleware in current order:
 22. `/js/prc-dash-modal-mobile-validation.js?v=phase-7e-ui-ownership-20260709`
 23. `/js/gate-render-stability-fix.js?v=status-board-compositing-retired-20260721`
 24. `/js/prc-dash-processing-loaded-summary.js`
-25. `/js/gate-premium-metrics-controller.js?v=metric-minute-cadence-20260721`
+25. `/js/gate-premium-metrics-controller.js?v=metric-live-clock-20260722`
 26. `/js/prc-dash-overtime-audit.js`
 27. `/js/gate-status-board-shadow-controller.js?v=phase-3a-status-board-shadow-20260715`
 
@@ -81,7 +81,7 @@ Injected by middleware in current order:
 - `GateAppShell` owns visible route state, role-aware navigation, drawer/sheet behavior, and Week Group shell context.
 - `GatePermissionGuard` owns client-side action protection; server authorization remains authoritative.
 - `GateStatusBoardController` owns the visible Status Board dorm columns, dorm cards, active-bus panel, timer text, warning/critical timer state, direct-surface integrity repair, and per-column incremental rendering.
-- `GatePremiumMetricsController` owns change-only synchronization of Arrived, Expected, Last, and Local values. Local time is minute-aligned; it does not rescan or rewrite the header every second.
+- `GatePremiumMetricsController` owns change-only synchronization of Arrived, Expected, Last, and Local values. The Local clock is second-aligned, displays `HH:MM:SS`, resumes immediately after visibility/focus/fullscreen transitions, and updates only the `#stat-local` text node.
 - `GateProcessingController` owns Processing page rendering, dorm-modal lifecycle, and all dorm-record mutations.
 - `GateAuditoriumLocationController` owns field hydration and card augmentation for Auditorium Location. It binds the modal field to the active dorm ID and delegates persistence through `GateProcessingController.updateDorm`; it does not call the Data SDK directly.
 - `GateBusWorkflowController` owns airport and local-arrival bus workflows.
@@ -90,7 +90,7 @@ Injected by middleware in current order:
 
 The former `GateStatusBoardTimerVisualStability` corrective layer remains retired. Timer state is consolidated into `GateStatusBoardController`. The Status Board is also excluded from the runtime-injected forced-compositing rules in `gate-render-stability-fix.js`; stable board surfaces and timer geometry are now static CSS contracts.
 
-The served legacy `renderAll()` path delegates Active Buses and dorm columns to `GateStatusBoardController` whenever the canonical owner is available. The legacy fallback clock is reduced to minute cadence, and its timer fallback uses steady warning/critical states without `timer-flash`.
+The served legacy `renderAll()` path delegates Active Buses and dorm columns to `GateStatusBoardController` whenever the canonical owner is available. The legacy Local clock interval is removed at serve time so `GatePremiumMetricsController` is the only live clock owner. The legacy timer fallback uses steady warning/critical states without `timer-flash`.
 
 ## Phase 3A hidden observer
 
@@ -168,7 +168,8 @@ PASS — machine-readable active asset inventory established
 PASS — Build 1 visible owners retained
 PASS — one canonical Status Board timer and direct-surface integrity owner
 PASS — Status Board column writes are incremental by state
-PASS — live metrics use change-only, minute-aligned synchronization
+PASS — live metrics use change-only synchronization
+PASS — Local clock has one second-aligned `HH:MM:SS` owner
 PASS — Status Board forced GPU compositing retired
 PASS — Processing assignment/location saves are bound to the active dorm record
 PASS — Processing Auditorium Location persistence delegates to the canonical dorm mutation owner

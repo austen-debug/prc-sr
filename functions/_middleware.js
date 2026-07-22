@@ -43,7 +43,7 @@ const UI_HEAD_SCRIPTS = [
   '<script src="/js/prc-dash-modal-mobile-validation.js?v=phase-7e-ui-ownership-20260709" defer></script>',
   '<script src="/js/gate-render-stability-fix.js?v=status-board-compositing-retired-20260721" defer></script>',
   '<script src="/js/prc-dash-processing-loaded-summary.js" defer></script>',
-  '<script src="/js/gate-premium-metrics-controller.js?v=metric-minute-cadence-20260721" defer></script>',
+  '<script src="/js/gate-premium-metrics-controller.js?v=metric-live-clock-20260722" defer></script>',
   '<script src="/js/prc-dash-overtime-audit.js" defer></script>',
   '<script src="/js/gate-status-board-shadow-controller.js?v=phase-3a-status-board-shadow-20260715" defer></script>'
 ];
@@ -73,7 +73,7 @@ const STATUS_BOARD_METRICS_HTML = `<div class="board-header gate-premium-metrics
         <div class="metric-header">
          <span class="metric-label">LOCAL</span>
         </div>
-        <div class="metric-value" id="stat-local" data-gate-live-value="true" aria-live="off">00:00</div>
+        <div class="metric-value" id="stat-local" data-gate-live-value="true" aria-live="off">00:00:00</div>
        </div>
       </div>
       <section class="gate-active-buses-block" aria-label="Active buses en route">
@@ -201,12 +201,8 @@ function applyStatusBoardMetricSourceRefactor(html) {
     /function updateAirportMetric\(\) \{[\s\S]*?\n\}\n\n function updateSoundButton/,
     `function updateAirportMetric() {
   const lastAirport = getConfig('last_airport') || '—';
-  const localTime = getLocalTime24();
   const lastEl = document.getElementById('stat-last');
-  const localEl = document.getElementById('stat-local');
-
   if (lastEl && lastEl.textContent !== String(lastAirport)) lastEl.textContent = String(lastAirport);
-  if (localEl && localEl.textContent !== String(localTime)) localEl.textContent = String(localTime);
 }
 
  function updateSoundButton`
@@ -222,7 +218,7 @@ function applyStatusBoardMetricSourceRefactor(html) {
 
   output = output.replace(
     /setInterval\(updateAirportMetric,\s*1000\);/,
-    'setInterval(updateAirportMetric, 60000);'
+    '/* LOCAL metric live clock is owned by GatePremiumMetricsController. */'
   );
 
   output = output.replace(

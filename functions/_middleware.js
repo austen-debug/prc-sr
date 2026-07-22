@@ -31,7 +31,7 @@ const UI_HEAD_SCRIPTS = [
   '<script src="/js/gate-status-board-controller.js?v=status-board-incremental-render-20260721" defer></script>',
   '<script src="/js/gate-processing-controller.js?v=record-display-integrity-20260714" defer></script>',
   '<script src="/js/prc-dash-dorm-flag-validation.js?v=record-display-integrity-20260714b" defer></script>',
-  '<script src="/js/prc-dash-auditorium-location.js" defer></script>',
+  '<script src="/js/prc-dash-auditorium-location.js?v=processing-modal-record-binding-20260721" defer></script>',
   '<script src="/js/gate-bus-workflow-controller.js?v=phase-3-bus-workflow-20260709" defer></script>',
   '<script src="/js/gate-airport-bus-delete-controller.js?v=airport-bus-delete-20260714" defer></script>',
   '<script src="/js/gate-input-page-controller.js?v=record-display-integrity-20260714" defer></script>',

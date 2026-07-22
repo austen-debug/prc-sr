@@ -11,6 +11,7 @@ on:
       - 'public/js/gate-premium-metrics-controller.js'
       - 'public/js/gate-render-stability-fix.js'
       - 'public/js/gate-processing-controller.js'
+      - 'public/js/prc-dash-auditorium-location.js'
       - 'public/js/gate-input-page-controller.js'
       - 'public/js/prc-dash-final-audit.js'
       - 'public/js/prc-dash-dorm-flag-validation.js'
@@ -26,6 +27,7 @@ on:
       - 'public/js/gate-premium-metrics-controller.js'
       - 'public/js/gate-render-stability-fix.js'
       - 'public/js/gate-processing-controller.js'
+      - 'public/js/prc-dash-auditorium-location.js'
       - 'public/js/gate-input-page-controller.js'
       - 'public/js/prc-dash-final-audit.js'
       - 'public/js/prc-dash-dorm-flag-validation.js'
@@ -62,12 +64,16 @@ jobs:
           node --check public/js/gate-premium-metrics-controller.js
           node --check public/js/gate-render-stability-fix.js
           node --check public/js/gate-processing-controller.js
+          node --check public/js/prc-dash-auditorium-location.js
           node --check public/js/gate-input-page-controller.js
           node --check public/js/prc-dash-final-audit.js
           node --check public/js/prc-dash-dorm-flag-validation.js
 
       - name: Record display integrity
         run: node --test tests/runtime/record-display-integrity.test.mjs
+
+      - name: Processing modal record persistence
+        run: node --test tests/runtime/processing-modal-record-persistence.test.mjs
 
       - name: Direct surface observer contract
         run: node --test --test-name-pattern='observer is limited' tests/runtime/status-board-visual-stability.test.mjs

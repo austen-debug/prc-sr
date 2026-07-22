@@ -260,6 +260,12 @@ ${legacyBusBlock}
      // BUS ARRIVAL CONFIRM`
   );
 
+  output = output.replace(
+    /el\.classList\.add\(['"]timer-flash['"]\);/g,
+    `el.classList.remove('timer-flash');
+      el.classList.add('timer-red');`
+  );
+
   return output;
 }
 

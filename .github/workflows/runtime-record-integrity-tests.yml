@@ -4,8 +4,12 @@ on:
   push:
     paths:
       - 'functions/_middleware.js'
+      - 'public/css/gate-utilities-access.css'
+      - 'public/css/gate-premium-metrics.css'
       - 'public/js/gate-record-display-contract.js'
       - 'public/js/gate-status-board-controller.js'
+      - 'public/js/gate-premium-metrics-controller.js'
+      - 'public/js/gate-render-stability-fix.js'
       - 'public/js/gate-processing-controller.js'
       - 'public/js/gate-input-page-controller.js'
       - 'public/js/prc-dash-final-audit.js'
@@ -15,8 +19,12 @@ on:
   pull_request:
     paths:
       - 'functions/_middleware.js'
+      - 'public/css/gate-utilities-access.css'
+      - 'public/css/gate-premium-metrics.css'
       - 'public/js/gate-record-display-contract.js'
       - 'public/js/gate-status-board-controller.js'
+      - 'public/js/gate-premium-metrics-controller.js'
+      - 'public/js/gate-render-stability-fix.js'
       - 'public/js/gate-processing-controller.js'
       - 'public/js/gate-input-page-controller.js'
       - 'public/js/prc-dash-final-audit.js'
@@ -33,7 +41,7 @@ concurrency:
 
 jobs:
   record-integrity:
-    name: Dorm record identity and display integrity
+    name: Runtime record and visual integrity
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
@@ -51,10 +59,14 @@ jobs:
           node --input-type=module --check < functions/_middleware.js
           node --check public/js/gate-record-display-contract.js
           node --check public/js/gate-status-board-controller.js
+          node --check public/js/gate-premium-metrics-controller.js
+          node --check public/js/gate-render-stability-fix.js
           node --check public/js/gate-processing-controller.js
           node --check public/js/gate-input-page-controller.js
           node --check public/js/prc-dash-final-audit.js
           node --check public/js/prc-dash-dorm-flag-validation.js
 
-      - name: Run record display integrity tests
-        run: node --test tests/runtime/record-display-integrity.test.mjs
+      - name: Run runtime integrity tests
+        run: |
+          node --test tests/runtime/record-display-integrity.test.mjs
+          node --test tests/runtime/status-board-visual-stability.test.mjs

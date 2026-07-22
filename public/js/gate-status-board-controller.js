@@ -13,7 +13,7 @@
   let surfaceObserver = null;
   let observerConnected = false;
   let statusBoardRenderInProgress = false;
-  let canonicalTimerInterval = null;
+  let canonicalTimerTimeout = null;
 
   const lastDormSignatures = new Map(DORM_STATES.map(state => [state, '']));
   const renderStats = {
@@ -21,7 +21,9 @@
     columnWrites: 0,
     busWrites: 0,
     surfaceRepairs: 0,
-    timerTicks: 0
+    timerTicks: 0,
+    timerRecordMismatches: 0,
+    invalidOpenTimestamps: 0
   };
 
   function components() {
@@ -73,6 +75,25 @@
       .sort((a, b) => String(a.created_at || '').localeCompare(String(b.created_at || '')));
   }
 
+  function computeElapsedTimer(openedAt, nowMs = Date.now()) {
+    const openedMs = new Date(openedAt || '').getTime();
+    const currentMs = Number(nowMs);
+    if (!Number.isFinite(openedMs) || !Number.isFinite(currentMs)) {
+      return Object.freeze({ text: '00:00', minutes: 0, seconds: 0, totalSeconds: 0, valid: false });
+    }
+
+    const totalSeconds = Math.max(0, Math.floor((currentMs - openedMs) / 1000));
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return Object.freeze({
+      text: `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`,
+      minutes,
+      seconds,
+      totalSeconds,
+      valid: true
+    });
+  }
+
   function dormSignature(dorms) {
     return dorms.map(dorm => [
       dorm.__backendId,
@@ -122,12 +143,20 @@
 
   function fallbackDormCard(dorm) {
     const state = String(dorm?.state || 'empty').toLowerCase();
-    const timer = state === 'closed' ? String(dorm?.closed_timer || '00:00') : '00:00';
+    const id = esc(dorm?.__backendId || '');
+    let timerHtml = '<div class="gate-dorm-timer gate-empty-timer" data-gate-live-value="true" aria-live="off">00:00</div>';
+    if (state === 'open' && dorm?.opened_at) {
+      const elapsed = computeElapsedTimer(dorm.opened_at);
+      timerHtml = `<div class="gate-dorm-timer timer-display" data-gate-live-value="true" aria-live="off" data-opened="${esc(dorm.opened_at)}" data-dorm-id="${id}">${esc(elapsed.text)}</div>`;
+    } else if (state === 'closed') {
+      timerHtml = `<div class="gate-dorm-timer text-muted" data-gate-live-value="true" aria-live="off">${esc(dorm?.closed_timer || '00:00')}</div>`;
+    }
+
     return `
-      <div class="dorm-card tactical-glass-card gate-dorm-card" data-component="dorm-card" data-owner="gate-status-board-controller" data-dorm-id="${esc(dorm?.__backendId || '')}" data-state="${esc(state)}">
+      <div class="dorm-card tactical-glass-card gate-dorm-card" data-component="dorm-card" data-owner="gate-status-board-controller" data-dorm-id="${id}" data-state="${esc(state)}">
         <div class="gate-dorm-name">${esc(dorm?.dorm_name || '')}</div>
         <div class="gate-dorm-status">${esc(dorm?.phase || state.toUpperCase())}</div>
-        <div class="gate-dorm-timer" data-gate-live-value="true" aria-live="off">${esc(timer)}</div>
+        ${timerHtml}
       </div>
     `;
   }
@@ -309,26 +338,55 @@
     if (timer.dataset.timerVisualState !== visualState) timer.dataset.timerVisualState = visualState;
   }
 
+  function ensureTimerElement(card) {
+    let timer = card?.querySelector('.gate-dorm-timer');
+    if (timer) return timer;
+    timer = document.createElement('div');
+    timer.className = 'gate-dorm-timer timer-display';
+    const load = card?.querySelector('.gate-dorm-load');
+    if (load) load.before(timer);
+    else card?.append(timer);
+    return timer;
+  }
+
   function updateBoardTimers() {
     const board = document.getElementById('page-board');
-    if (!board) return;
+    const openColumn = document.getElementById('col-open');
+    if (!board || !openColumn) return;
 
-    board.querySelectorAll('.gate-dorm-timer.timer-display[data-opened]').forEach(timer => {
-      const openedAt = timer.dataset.opened;
-      if (!openedAt || typeof getElapsedTimer !== 'function') return;
+    const openDorms = getDorms().filter(dorm => String(dorm?.state || '').toLowerCase() === 'open');
+    const cards = directDormCards(openColumn);
 
+    openDorms.forEach(dorm => {
+      const id = String(dorm?.__backendId || '');
+      const card = cards.find(candidate => String(candidate.dataset.dormId || '') === id);
+      if (!card) {
+        renderStats.timerRecordMismatches += 1;
+        return;
+      }
+
+      card.dataset.state = 'open';
+      const timer = ensureTimerElement(card);
+      if (!timer) return;
+
+      timer.classList.add('timer-display');
+      timer.classList.remove('text-muted', 'gate-empty-timer');
       timer.dataset.gateLiveValue = 'true';
+      timer.dataset.opened = String(dorm.opened_at || '');
+      timer.dataset.dormId = String(dorm.__backendId || '');
       timer.setAttribute('aria-live', 'off');
-      const elapsed = getElapsedTimer(openedAt);
-      if (elapsed?.text && timer.textContent !== elapsed.text) timer.textContent = elapsed.text;
 
-      const minutes = Number(elapsed?.minutes || 0);
-      applyTimerVisualState(timer, minutes);
+      const elapsed = computeElapsedTimer(dorm.opened_at);
+      timer.dataset.timerRecordState = elapsed.valid ? 'valid' : 'invalid-opened-at';
+      if (!elapsed.valid) renderStats.invalidOpenTimestamps += 1;
+      if (timer.textContent !== elapsed.text) timer.textContent = elapsed.text;
+      applyTimerVisualState(timer, elapsed.minutes);
 
-      if (minutes >= 60 && timer.dataset.dormId && typeof triggerOvertimeSoundIfNeeded === 'function') {
-        triggerOvertimeSoundIfNeeded(timer.dataset.dormId);
+      if (elapsed.valid && elapsed.minutes >= 60 && id && typeof triggerOvertimeSoundIfNeeded === 'function') {
+        triggerOvertimeSoundIfNeeded(id);
       }
     });
+
     renderStats.timerTicks += 1;
   }
 
@@ -336,19 +394,41 @@
     updateBoardTimers();
   }
 
+  function clearCanonicalTimerTimeout() {
+    if (!canonicalTimerTimeout) return;
+    window.clearTimeout(canonicalTimerTimeout);
+    canonicalTimerTimeout = null;
+  }
+
+  function scheduleNextTimerTick() {
+    clearCanonicalTimerTimeout();
+    const delay = Math.max(50, 1000 - (Date.now() % 1000) + 20);
+    canonicalTimerTimeout = window.setTimeout(() => {
+      canonicalTimerTick();
+      scheduleNextTimerTick();
+    }, delay);
+    return canonicalTimerTimeout;
+  }
+
+  function restartTimerOwner() {
+    canonicalTimerTick();
+    return scheduleNextTimerTick();
+  }
+
   function ensureTimerOwner() {
+    window.getElapsedTimer = computeElapsedTimer;
     window.updateTimers = canonicalTimerTick;
+    try { getElapsedTimer = computeElapsedTimer; } catch (_) {}
     try { updateTimers = canonicalTimerTick; } catch (_) {}
 
     let legacyInterval = null;
     try { legacyInterval = typeof timerInterval !== 'undefined' ? timerInterval : null; } catch (_) {}
-    if (legacyInterval && legacyInterval !== canonicalTimerInterval) window.clearInterval(legacyInterval);
+    if (legacyInterval) window.clearInterval(legacyInterval);
+    try { timerInterval = null; } catch (_) {}
 
-    if (!canonicalTimerInterval) canonicalTimerInterval = window.setInterval(canonicalTimerTick, 1000);
-    try { timerInterval = canonicalTimerInterval; } catch (_) {}
-
-    canonicalTimerTick();
-    return canonicalTimerInterval;
+    if (!canonicalTimerTimeout) restartTimerOwner();
+    else canonicalTimerTick();
+    return canonicalTimerTimeout;
   }
 
   function disconnectSurfaceObserver() {
@@ -447,9 +527,11 @@
     };
     boardDormColumns.__gateStatusBoardController = true;
 
+    window.getElapsedTimer = computeElapsedTimer;
     window.buildBoardDormCard = boardDormCard;
     window.renderDormColumns = boardDormColumns;
     window.updateTimers = canonicalTimerTick;
+    try { getElapsedTimer = computeElapsedTimer; } catch (_) {}
     try { buildBoardDormCard = boardDormCard; } catch (_) {}
     try { renderDormColumns = boardDormColumns; } catch (_) {}
     try { updateTimers = canonicalTimerTick; } catch (_) {}
@@ -460,7 +542,8 @@
       ...renderStats,
       observerConnected,
       observedSurfaceCount: SURFACE_IDS.filter(id => document.getElementById(id)).length,
-      timerOwnerActive: Boolean(canonicalTimerInterval),
+      timerOwnerActive: Boolean(canonicalTimerTimeout),
+      timerSchedule: 'second-aligned-timeout',
       pendingRender: renderQueued || pendingForceRender
     });
   }
@@ -468,16 +551,20 @@
   function exposeControllers() {
     window.GateStatusBoardController = Object.freeze({
       isCanonicalOwner: true,
+      isCanonicalElapsedTimerOwner: true,
       render: renderStatusBoard,
       scheduleRender,
       renderDormColumns: renderColumns,
       renderActiveBuses,
       updateBoardTimers,
+      computeElapsedTimer,
       ensureTimerOwner,
+      restartTimerOwner,
       repairSurfaces: repairStatusBoardSurfaces,
       diagnostics,
       getDorms,
-      getActiveBuses
+      getActiveBuses,
+      clockPrecision: 'second'
     });
 
     window.GateActiveBusController = Object.freeze({
@@ -494,6 +581,11 @@
     repairStatusBoardSurfaces();
   }
 
+  function handleDataLifecycle() {
+    scheduleRender();
+    restartTimerOwner();
+  }
+
   function start() {
     if (installed) return;
     installed = true;
@@ -503,8 +595,17 @@
     renderStatusBoard({ force: true });
     observeStatusBoardSurfaces();
     window.registerGateHook?.('afterRenderAll', handleRenderLifecycle);
-    window.registerGateHook?.('afterDataChanged', () => scheduleRender());
-    window.registerGateHook?.('afterPageChange', () => scheduleRender());
+    window.registerGateHook?.('afterDataChanged', handleDataLifecycle);
+    window.registerGateHook?.('afterPageChange', () => {
+      scheduleRender();
+      restartTimerOwner();
+    });
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) restartTimerOwner();
+    });
+    document.addEventListener('fullscreenchange', restartTimerOwner);
+    window.addEventListener('focus', restartTimerOwner);
+    window.addEventListener('pageshow', restartTimerOwner);
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, { once: true });

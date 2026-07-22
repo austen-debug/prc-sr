@@ -26,13 +26,11 @@
   }
 
   function getLocalTimeSafe() {
-    try {
-      return typeof getLocalTime24 === 'function'
-        ? getLocalTime24()
-        : new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
-    } catch (_) {
-      return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
-    }
+    const now = new Date();
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const seconds = String(now.getSeconds()).padStart(2, '0');
+    return `${hours}:${minutes}:${seconds}`;
   }
 
   function calculateMetrics() {
@@ -84,8 +82,8 @@
   }
 
   function syncLocalClock() {
-    if (!document.querySelector('#page-board .gate-metrics-container')) return;
-    setText('stat-local', getLocalTimeSafe());
+    if (!document.querySelector('#page-board .gate-metrics-container')) return false;
+    return setText('stat-local', getLocalTimeSafe());
   }
 
   function run() {
@@ -100,13 +98,18 @@
     requestAnimationFrame(run);
   }
 
-  function scheduleMinuteClock() {
+  function scheduleLiveClock() {
     if (clockTimeout) window.clearTimeout(clockTimeout);
-    const delay = Math.max(250, 60000 - (Date.now() % 60000) + 75);
+    const delay = Math.max(50, 1000 - (Date.now() % 1000) + 20);
     clockTimeout = window.setTimeout(() => {
       syncLocalClock();
-      scheduleMinuteClock();
+      scheduleLiveClock();
     }, delay);
+  }
+
+  function restartLiveClock() {
+    syncLocalClock();
+    scheduleLiveClock();
   }
 
   function start() {
@@ -118,17 +121,23 @@
     document.addEventListener('visibilitychange', () => {
       if (!document.hidden) {
         schedule();
-        scheduleMinuteClock();
+        restartLiveClock();
       }
     });
-    scheduleMinuteClock();
+    document.addEventListener('fullscreenchange', restartLiveClock);
+    window.addEventListener('focus', restartLiveClock);
+    window.addEventListener('pageshow', restartLiveClock);
+    restartLiveClock();
     schedule();
 
     window.GatePremiumMetricsController = Object.freeze({
       isCanonicalMetricSyncOwner: true,
+      isCanonicalLocalClockOwner: true,
       sync: schedule,
       syncLocalClock,
-      clockPrecision: 'minute'
+      restartLiveClock,
+      clockPrecision: 'second',
+      clockFormat: 'HH:MM:SS'
     });
   }
 

@@ -43,7 +43,7 @@ jobs:
   record-integrity:
     name: Runtime record and visual integrity
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 8
 
     steps:
       - name: Check out repository
@@ -66,7 +66,26 @@ jobs:
           node --check public/js/prc-dash-final-audit.js
           node --check public/js/prc-dash-dorm-flag-validation.js
 
-      - name: Run runtime integrity tests
-        run: |
-          node --test tests/runtime/record-display-integrity.test.mjs
-          node --test tests/runtime/status-board-visual-stability.test.mjs
+      - name: Record display integrity
+        run: node --test tests/runtime/record-display-integrity.test.mjs
+
+      - name: Direct surface observer contract
+        run: node --test --test-name-pattern='observer is limited' tests/runtime/status-board-visual-stability.test.mjs
+
+      - name: Incremental column rendering contract
+        run: node --test --test-name-pattern='renders dorm states incrementally' tests/runtime/status-board-visual-stability.test.mjs
+
+      - name: Fixed timer geometry contract
+        run: node --test --test-name-pattern='timer geometry' tests/runtime/status-board-visual-stability.test.mjs
+
+      - name: Fluid metric typography contract
+        run: node --test --test-name-pattern='metrics scale' tests/runtime/status-board-visual-stability.test.mjs
+
+      - name: Change-only metric cadence contract
+        run: node --test --test-name-pattern='Metric synchronization' tests/runtime/status-board-visual-stability.test.mjs
+
+      - name: Served-source delegation contract
+        run: node --test --test-name-pattern='Served source delegates' tests/runtime/status-board-visual-stability.test.mjs
+
+      - name: Status Board compositing retirement contract
+        run: node --test --test-name-pattern='compositing guard' tests/runtime/status-board-visual-stability.test.mjs

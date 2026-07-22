@@ -9,11 +9,11 @@ const UI_STYLESHEETS = [
   '<link rel="stylesheet" href="/css/gate-premium-metrics.css?v=status-board-fluid-metrics-20260721">',
   '<link rel="stylesheet" href="/css/gate-app-shell.css?v=phase-7g-viewport-watermark-20260709">',
   '<link rel="stylesheet" href="/css/gate-mobile-corrective.css?v=phase-7h-ui-patch-retirement-20260709">',
-  '<link rel="stylesheet" href="/css/gate-ui-ownership-correction.css?v=phase-8d-mobile-metric-containment-20260709">',
+  '<link rel="stylesheet" href="/css/gate-ui-ownership-correction.css?v=operational-ui-audit-20260721">',
   '<link rel="stylesheet" href="/css/gate-light-mode-command-contrast.css?v=light-command-contrast-20260714">',
   '<link rel="stylesheet" href="/css/gate-light-mode-grid-correction.css?v=light-grid-correction-20260714">',
   '<link rel="stylesheet" href="/css/gate-tablet-shell.css?v=tablet-shell-20260714">',
-  '<link rel="stylesheet" href="/css/gate-fullscreen-board-contract.css?v=fullscreen-desktop-status-20260714c">'
+  '<link rel="stylesheet" href="/css/gate-fullscreen-board-contract.css?v=fullscreen-compact-bus-tiles-20260721">'
 ];
 
 const UI_INLINE_ASSETS = [];

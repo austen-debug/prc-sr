@@ -43,7 +43,7 @@ jobs:
   record-integrity:
     name: Runtime record and visual integrity
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 10
 
     steps:
       - name: Check out repository
@@ -84,8 +84,17 @@ jobs:
       - name: Change-only metric cadence contract
         run: node --test --test-name-pattern='Metric synchronization' tests/runtime/status-board-visual-stability.test.mjs
 
-      - name: Served-source delegation contract
-        run: node --test --test-name-pattern='Served source delegates' tests/runtime/status-board-visual-stability.test.mjs
+      - name: Middleware rewrite declaration contract
+        run: node --test --test-name-pattern='contains canonical Status Board rewrite' tests/runtime/status-board-visual-stability.test.mjs
+
+      - name: Served renderer delegation contract
+        run: node --test --test-name-pattern='delegates Active Buses and dorm columns' tests/runtime/status-board-visual-stability.test.mjs
+
+      - name: Served metric cadence contract
+        run: node --test --test-name-pattern='uses change-only minute metric updates' tests/runtime/status-board-visual-stability.test.mjs
+
+      - name: Served timer fallback contract
+        run: node --test --test-name-pattern='timer fallback cannot activate' tests/runtime/status-board-visual-stability.test.mjs
 
       - name: Status Board compositing retirement contract
         run: node --test --test-name-pattern='compositing guard' tests/runtime/status-board-visual-stability.test.mjs

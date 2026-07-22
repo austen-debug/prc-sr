@@ -98,7 +98,7 @@ test('Served source contains canonical Status Board rewrite contracts', async ()
   assert.match(middleware, /lastEl\.textContent !== String\(lastAirport\)/);
   assert.doesNotMatch(middleware, /const localEl = document\.getElementById\('stat-local'\)/);
   assert.match(middleware, /el\.classList\.remove\('timer-flash'\)/);
-  assert.match(middleware, /status-board-incremental-render-20260721/);
+  assert.match(middleware, /dorm-timer-record-lifecycle-20260722/);
   assert.match(middleware, /metric-live-clock-20260722/);
 });
 

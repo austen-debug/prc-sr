@@ -119,3 +119,75 @@
   clip-path: none !important;
   transform: none !important;
 }
+
+/* Canonical Status Board live-display stability contract.
+   High-frequency values repaint locally without moving cards or creating GPU seams. */
+#page-board .board-header,
+#page-board .gate-metrics-container,
+#page-board .metric-card,
+#page-board .gate-active-buses-block,
+#page-board .dorm-dashboard,
+#page-board .dorm-column,
+#page-board .dorm-col-content,
+#page-board .gate-dorm-card,
+#page-board .dorm-card {
+  animation: none !important;
+  transition: none !important;
+  transform: none !important;
+  backface-visibility: visible !important;
+  will-change: auto !important;
+}
+
+#page-board .metric-card,
+#page-board .gate-active-buses-block,
+#page-board .gate-dorm-card,
+#page-board .dorm-card {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+body:not(.theme-light) #page-board .metric-card {
+  background: #111d30 !important;
+  background-image: none !important;
+}
+
+body.theme-light #page-board .metric-card {
+  background: #f8fafc !important;
+  background-image: none !important;
+}
+
+body:not(.theme-light) #page-board .gate-active-buses-block {
+  background: #10233d !important;
+}
+
+body.theme-light #page-board .gate-active-buses-block {
+  background: #e7edf3 !important;
+}
+
+#page-board .gate-dorm-timer {
+  grid-area: timer !important;
+  justify-self: start !important;
+  align-self: end !important;
+  inline-size: 7ch !important;
+  min-inline-size: 7ch !important;
+  max-inline-size: 7ch !important;
+  margin: 0 !important;
+  text-align: left !important;
+  white-space: nowrap !important;
+  font-family: "SF Mono", "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace !important;
+  font-variant-numeric: tabular-nums !important;
+  font-feature-settings: "tnum" 1 !important;
+  letter-spacing: 0 !important;
+  contain: layout paint !important;
+}
+
+@media (min-width: 768px) {
+  body:not(.fullscreen-board):not(.gate-fullscreen-board-active):has(#page-board.active)::before {
+    display: none !important;
+    content: none !important;
+    opacity: 0 !important;
+    background-image: none !important;
+    mix-blend-mode: normal !important;
+    filter: none !important;
+  }
+}

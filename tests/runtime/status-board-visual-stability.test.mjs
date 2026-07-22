@@ -32,7 +32,6 @@ function loadMiddlewareTransform(contents) {
 test('Status Board observer is limited to direct canonical render surfaces', async () => {
   const controller = await source('public/js/gate-status-board-controller.js');
 
-  assert.match(controller, /SURFACE_IDS\s*=\s*Object\.freeze\(\['col-empty', 'open'|/);
   assert.match(controller, /SURFACE_IDS\s*=\s*Object\.freeze\(\['col-empty', 'col-open', 'col-closed', 'active-buses'\]\)/);
   assert.match(controller, /surfaceObserver\.observe\(surface, \{ childList: true \}\)/);
   assert.doesNotMatch(controller, /observe\(board,\s*\{\s*childList:\s*true,\s*subtree:\s*true/);

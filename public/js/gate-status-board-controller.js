@@ -3,14 +3,26 @@
 (function () {
   'use strict';
 
+  const DORM_STATES = Object.freeze(['empty', 'open', 'closed']);
+  const SURFACE_IDS = Object.freeze(['col-empty', 'col-open', 'col-closed', 'active-buses']);
+
   let installed = false;
   let renderQueued = false;
   let pendingForceRender = false;
-  let lastDormSignature = '';
   let lastBusSignature = '';
-  let boardObserver = null;
+  let surfaceObserver = null;
+  let observerConnected = false;
   let statusBoardRenderInProgress = false;
   let canonicalTimerInterval = null;
+
+  const lastDormSignatures = new Map(DORM_STATES.map(state => [state, '']));
+  const renderStats = {
+    renderPasses: 0,
+    columnWrites: 0,
+    busWrites: 0,
+    surfaceRepairs: 0,
+    timerTicks: 0
+  };
 
   function components() {
     return window.GateComponents || null;
@@ -110,10 +122,12 @@
 
   function fallbackDormCard(dorm) {
     const state = String(dorm?.state || 'empty').toLowerCase();
+    const timer = state === 'closed' ? String(dorm?.closed_timer || '00:00') : '00:00';
     return `
       <div class="dorm-card tactical-glass-card gate-dorm-card" data-component="dorm-card" data-owner="gate-status-board-controller" data-dorm-id="${esc(dorm?.__backendId || '')}" data-state="${esc(state)}">
         <div class="gate-dorm-name">${esc(dorm?.dorm_name || '')}</div>
         <div class="gate-dorm-status">${esc(dorm?.phase || state.toUpperCase())}</div>
+        <div class="gate-dorm-timer" data-gate-live-value="true" aria-live="off">${esc(timer)}</div>
       </div>
     `;
   }
@@ -122,62 +136,74 @@
     const html = components()?.dormCard
       ? components().dormCard(dorm, { showAuditorium: true })
       : fallbackDormCard(dorm);
-    return html.replace('data-component="dorm-card"', 'data-component="dorm-card" data-owner="gate-status-board-controller"');
+    return html
+      .replace('data-component="dorm-card"', 'data-component="dorm-card" data-owner="gate-status-board-controller"')
+      .replace('class="gate-dorm-timer', 'data-gate-live-value="true" aria-live="off" class="gate-dorm-timer');
   }
 
   function directDormCards(column) {
     return Array.from(column?.children || []).filter(child => child?.dataset?.component === 'dorm-card');
   }
 
+  function expectedDorms(dorms, state) {
+    return dorms.filter(dorm => String(dorm.state || 'empty').toLowerCase() === state);
+  }
+
+  function hasCompleteDormColumnMarkup(column, expected, state) {
+    if (!column || column.dataset.owner !== 'gate-status-board-controller') return false;
+    if (column.dataset.state !== state || Number(column.dataset.count || -1) !== expected.length) return false;
+
+    if (!expected.length) {
+      return Boolean(column.querySelector(':scope > [data-owner="gate-status-board-controller"][data-empty-state="true"]'));
+    }
+
+    const cards = directDormCards(column);
+    if (cards.length !== expected.length) return false;
+
+    const expectedIds = expected.map(dorm => String(dorm.__backendId || '')).filter(Boolean);
+    const actualIds = cards.map(card => String(card.dataset.dormId || '')).filter(Boolean);
+    return cards.every(card => card.dataset.owner === 'gate-status-board-controller') &&
+      expectedIds.length === actualIds.length &&
+      expectedIds.every((id, index) => actualIds[index] === id);
+  }
+
   function hasCompleteDormMarkup(dorms) {
-    return ['empty', 'open', 'closed'].every(state => {
+    return DORM_STATES.every(state => {
       const column = document.getElementById(`col-${state}`);
-      if (!column || column.dataset.owner !== 'gate-status-board-controller') return false;
-
-      const expected = dorms.filter(dorm => String(dorm.state || 'empty').toLowerCase() === state);
-      if (column.dataset.state !== state || Number(column.dataset.count || -1) !== expected.length) return false;
-
-      if (!expected.length) {
-        return Boolean(column.querySelector('[data-owner="gate-status-board-controller"][data-empty-state="true"]'));
-      }
-
-      const cards = directDormCards(column);
-      if (cards.length !== expected.length) return false;
-
-      const expectedIds = expected.map(dorm => String(dorm.__backendId || '')).filter(Boolean);
-      const actualIds = cards.map(card => String(card.dataset.dormId || '')).filter(Boolean);
-      return cards.every(card => card.dataset.owner === 'gate-status-board-controller') &&
-        expectedIds.length === actualIds.length &&
-        expectedIds.every((id, index) => actualIds[index] === id);
+      return hasCompleteDormColumnMarkup(column, expectedDorms(dorms, state), state);
     });
   }
 
-  function renderColumns(dorms, options = {}) {
-    const force = Boolean(options.force);
-    const signature = dormSignature(dorms);
-    const complete = hasCompleteDormMarkup(dorms);
-    if (!force && signature === lastDormSignature && complete) return;
-    lastDormSignature = signature;
-
+  function setBoardOwnership() {
     const board = document.getElementById('page-board');
-    if (board) {
-      board.dataset.component = 'status-board';
-      board.dataset.owner = 'gate-status-board-controller';
-    }
+    if (!board) return;
+    board.dataset.component = 'status-board';
+    board.dataset.owner = 'gate-status-board-controller';
+  }
 
-    ['empty', 'open', 'closed'].forEach(state => {
+  function renderColumns(dorms, options = {}) {
+    const source = Array.isArray(dorms) ? dorms : getDorms();
+    const force = Boolean(options.force);
+    setBoardOwnership();
+
+    DORM_STATES.forEach(state => {
       const column = document.getElementById(`col-${state}`);
       if (!column) return;
 
-      const filtered = dorms.filter(dorm => String(dorm.state || 'empty').toLowerCase() === state);
+      const filtered = expectedDorms(source, state);
+      const signature = dormSignature(filtered);
+      const complete = hasCompleteDormColumnMarkup(column, filtered, state);
+      if (!force && signature === lastDormSignatures.get(state) && complete) return;
+
+      lastDormSignatures.set(state, signature);
       column.dataset.component = 'status-board-dorm-column';
       column.dataset.owner = 'gate-status-board-controller';
       column.dataset.state = state;
       column.dataset.count = String(filtered.length);
-
       column.innerHTML = filtered.length
         ? filtered.map(renderDormCard).join('')
         : '<div class="text-muted text-xs" data-owner="gate-status-board-controller" data-empty-state="true">None</div>';
+      renderStats.columnWrites += 1;
     });
   }
 
@@ -221,9 +247,9 @@
 
   function hasCompleteActiveBusMarkup(container, buses) {
     if (!container || container.dataset.owner !== 'gate-status-board-controller') return false;
-    if (!buses.length) return Boolean(container.querySelector('[data-empty-state="true"]'));
+    if (!buses.length) return Boolean(container.querySelector(':scope > [data-empty-state="true"]'));
 
-    const cards = Array.from(container.querySelectorAll('[data-component="active-bus-card"]'));
+    const cards = Array.from(container.querySelectorAll(':scope > [data-component="active-bus-card"]'));
     if (cards.length !== buses.length) return false;
 
     return cards.every(card => {
@@ -260,6 +286,7 @@
 
     if (!buses.length) {
       container.innerHTML = '<span class="text-muted text-sm" data-owner="gate-status-board-controller" data-empty-state="true">None</span>';
+      renderStats.busWrites += 1;
       return;
     }
 
@@ -268,26 +295,30 @@
         ? components().activeBusCard(bus).replace('data-owner="gate-active-bus-controller"', 'data-owner="gate-status-board-controller"')
         : fallbackActiveBusCard(bus))
       .join('');
+    renderStats.busWrites += 1;
   }
 
   function applyTimerVisualState(timer, minutes) {
     const warning = minutes >= 40 && minutes < 50;
     const critical = minutes >= 50;
+    const visualState = critical ? 'critical' : (warning ? 'warning' : 'normal');
 
     timer.classList.toggle('timer-yellow', warning);
     timer.classList.toggle('timer-red', critical);
     if (timer.classList.contains('timer-flash')) timer.classList.remove('timer-flash');
-    timer.dataset.timerVisualState = critical ? 'critical' : (warning ? 'warning' : 'normal');
+    if (timer.dataset.timerVisualState !== visualState) timer.dataset.timerVisualState = visualState;
   }
 
   function updateBoardTimers() {
     const board = document.getElementById('page-board');
     if (!board) return;
 
-    board.querySelectorAll('.timer-display[data-opened]').forEach(timer => {
+    board.querySelectorAll('.gate-dorm-timer.timer-display[data-opened]').forEach(timer => {
       const openedAt = timer.dataset.opened;
       if (!openedAt || typeof getElapsedTimer !== 'function') return;
 
+      timer.dataset.gateLiveValue = 'true';
+      timer.setAttribute('aria-live', 'off');
       const elapsed = getElapsedTimer(openedAt);
       if (elapsed?.text && timer.textContent !== elapsed.text) timer.textContent = elapsed.text;
 
@@ -298,6 +329,7 @@
         triggerOvertimeSoundIfNeeded(timer.dataset.dormId);
       }
     });
+    renderStats.timerTicks += 1;
   }
 
   function canonicalTimerTick() {
@@ -319,6 +351,35 @@
     return canonicalTimerInterval;
   }
 
+  function disconnectSurfaceObserver() {
+    if (!surfaceObserver) return;
+    surfaceObserver.disconnect();
+    observerConnected = false;
+  }
+
+  function connectSurfaceObserver() {
+    if (!surfaceObserver || typeof MutationObserver === 'undefined') return;
+    surfaceObserver.disconnect();
+    let connected = false;
+    SURFACE_IDS.forEach(id => {
+      const surface = document.getElementById(id);
+      if (!surface) return;
+      surfaceObserver.observe(surface, { childList: true });
+      connected = true;
+    });
+    observerConnected = connected;
+  }
+
+  function withSurfaceObserverPaused(callback) {
+    const reconnect = Boolean(surfaceObserver && observerConnected);
+    if (reconnect) disconnectSurfaceObserver();
+    try {
+      return callback();
+    } finally {
+      if (reconnect) connectSurfaceObserver();
+    }
+  }
+
   function renderStatusBoard(options = {}) {
     renderQueued = false;
     const force = Boolean(options.force || pendingForceRender);
@@ -327,9 +388,12 @@
 
     statusBoardRenderInProgress = true;
     try {
-      renderColumns(dorms, { force });
-      renderActiveBuses({ force });
+      withSurfaceObserverPaused(() => {
+        renderColumns(dorms, { force });
+        renderActiveBuses({ force });
+      });
       updateBoardTimers();
+      renderStats.renderPasses += 1;
     } finally {
       statusBoardRenderInProgress = false;
     }
@@ -343,23 +407,32 @@
   }
 
   function repairStatusBoardSurfaces() {
-    if (statusBoardRenderInProgress) return;
+    if (statusBoardRenderInProgress) return false;
     const dorms = getDorms();
     const buses = getActiveBuses();
     const activeBuses = document.getElementById('active-buses');
+    const dormRepairNeeded = !hasCompleteDormMarkup(dorms);
+    const busRepairNeeded = !hasCompleteActiveBusMarkup(activeBuses, buses);
+    if (!dormRepairNeeded && !busRepairNeeded) return false;
 
-    if (!hasCompleteDormMarkup(dorms) || !hasCompleteActiveBusMarkup(activeBuses, buses)) {
-      renderStatusBoard({ force: true });
+    statusBoardRenderInProgress = true;
+    try {
+      withSurfaceObserverPaused(() => {
+        if (dormRepairNeeded) renderColumns(dorms, { force: true });
+        if (busRepairNeeded) renderActiveBuses({ force: true });
+      });
+      updateBoardTimers();
+      renderStats.surfaceRepairs += 1;
+    } finally {
+      statusBoardRenderInProgress = false;
     }
+    return true;
   }
 
   function observeStatusBoardSurfaces() {
-    if (boardObserver || typeof MutationObserver === 'undefined') return;
-    const board = document.getElementById('page-board');
-    if (!board) return;
-
-    boardObserver = new MutationObserver(repairStatusBoardSurfaces);
-    boardObserver.observe(board, { childList: true, subtree: true });
+    if (surfaceObserver || typeof MutationObserver === 'undefined') return;
+    surfaceObserver = new MutationObserver(() => repairStatusBoardSurfaces());
+    connectSurfaceObserver();
   }
 
   function patchLegacyBoardGlobals() {
@@ -382,6 +455,16 @@
     try { updateTimers = canonicalTimerTick; } catch (_) {}
   }
 
+  function diagnostics() {
+    return Object.freeze({
+      ...renderStats,
+      observerConnected,
+      observedSurfaceCount: SURFACE_IDS.filter(id => document.getElementById(id)).length,
+      timerOwnerActive: Boolean(canonicalTimerInterval),
+      pendingRender: renderQueued || pendingForceRender
+    });
+  }
+
   function exposeControllers() {
     window.GateStatusBoardController = Object.freeze({
       isCanonicalOwner: true,
@@ -392,6 +475,7 @@
       updateBoardTimers,
       ensureTimerOwner,
       repairSurfaces: repairStatusBoardSurfaces,
+      diagnostics,
       getDorms,
       getActiveBuses
     });
@@ -407,7 +491,7 @@
 
   function handleRenderLifecycle() {
     ensureTimerOwner();
-    scheduleRender();
+    repairStatusBoardSurfaces();
   }
 
   function start() {
@@ -415,14 +499,12 @@
     installed = true;
     patchLegacyBoardGlobals();
     exposeControllers();
-    observeStatusBoardSurfaces();
     ensureTimerOwner();
+    renderStatusBoard({ force: true });
+    observeStatusBoardSurfaces();
     window.registerGateHook?.('afterRenderAll', handleRenderLifecycle);
     window.registerGateHook?.('afterDataChanged', () => scheduleRender());
     window.registerGateHook?.('afterPageChange', () => scheduleRender());
-    window.addEventListener('resize', () => scheduleRender({ force: true }), true);
-    window.addEventListener('orientationchange', () => scheduleRender({ force: true }), true);
-    scheduleRender({ force: true });
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, { once: true });

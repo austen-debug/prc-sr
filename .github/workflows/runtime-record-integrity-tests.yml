@@ -93,8 +93,8 @@ jobs:
       - name: Served metric cadence contract
         run: node --test --test-name-pattern='uses change-only minute metric updates' tests/runtime/status-board-visual-stability.test.mjs
 
-      - name: Served timer fallback contract
-        run: node --test --test-name-pattern='timer fallback cannot activate' tests/runtime/status-board-visual-stability.test.mjs
+      - name: Active timer ownership contract
+        run: node --test --test-name-pattern='Active timer ownership disables' tests/runtime/status-board-visual-stability.test.mjs
 
       - name: Status Board compositing retirement contract
         run: node --test --test-name-pattern='compositing guard' tests/runtime/status-board-visual-stability.test.mjs

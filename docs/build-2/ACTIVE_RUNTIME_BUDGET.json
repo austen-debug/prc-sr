@@ -60,7 +60,7 @@
     "/js/prc-dash-modal-mobile-validation.js?v=phase-7e-ui-ownership-20260709",
     "/js/gate-render-stability-fix.js?v=status-board-compositing-retired-20260721",
     "/js/prc-dash-processing-loaded-summary.js",
-    "/js/gate-premium-metrics-controller.js?v=metric-minute-cadence-20260721",
+    "/js/gate-premium-metrics-controller.js?v=metric-live-clock-20260722",
     "/js/prc-dash-overtime-audit.js",
     "/js/gate-status-board-shadow-controller.js?v=phase-3a-status-board-shadow-20260715"
   ],

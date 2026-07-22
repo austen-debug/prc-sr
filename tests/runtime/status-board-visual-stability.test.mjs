@@ -12,8 +12,10 @@ async function source(path) {
   return readFile(resolve(root, path), 'utf8');
 }
 
-function loadMiddlewareTransform(contents) {
-  const executable = `${contents.replace('export async function onRequest', 'async function onRequest')}\nglobalThis.__gateTransform = applyStatusBoardMetricSourceRefactor;`;
+async function transformedIndex() {
+  const middleware = await source('functions/_middleware.js');
+  const index = await source('public/index.html');
+  const executable = `${middleware.replace('export async function onRequest', 'async function onRequest')}\nglobalThis.__gateTransform = applyStatusBoardMetricSourceRefactor;`;
   const sandbox = {
     console,
     TextEncoder,
@@ -26,7 +28,7 @@ function loadMiddlewareTransform(contents) {
     btoa: globalThis.btoa
   };
   vm.runInNewContext(executable, sandbox, { filename: 'functions/_middleware.js' });
-  return sandbox.__gateTransform;
+  return { middleware, transformed: sandbox.__gateTransform(index) };
 }
 
 test('Status Board observer is limited to direct canonical render surfaces', async () => {
@@ -80,11 +82,8 @@ test('Metric synchronization is change-only and minute-aligned', async () => {
   assert.match(metricsController, /clockPrecision:\s*'minute'/);
 });
 
-test('Served source delegates Status Board rendering and removes one-second metric churn', async () => {
+test('Served source contains canonical Status Board rewrite contracts', async () => {
   const middleware = await source('functions/_middleware.js');
-  const index = await source('public/index.html');
-  const transform = loadMiddlewareTransform(middleware);
-  const transformed = transform(index);
 
   assert.match(middleware, /GateStatusBoardController\?\.renderActiveBuses/);
   assert.match(middleware, /GateStatusBoardController\?\.renderDormColumns/);
@@ -93,13 +92,28 @@ test('Served source delegates Status Board rendering and removes one-second metr
   assert.match(middleware, /el\.classList\.remove\('timer-flash'\)/);
   assert.match(middleware, /status-board-incremental-render-20260721/);
   assert.match(middleware, /metric-minute-cadence-20260721/);
+});
+
+test('Served HTML delegates Active Buses and dorm columns to the canonical owner', async () => {
+  const { transformed } = await transformedIndex();
 
   assert.match(transformed, /window\.GateStatusBoardController\?\.renderActiveBuses/);
   assert.match(transformed, /window\.GateStatusBoardController\?\.renderDormColumns/);
+});
+
+test('Served HTML uses change-only minute metric updates', async () => {
+  const { transformed } = await transformedIndex();
+
   assert.match(transformed, /setInterval\(updateAirportMetric, 60000\)/);
   assert.match(transformed, /lastEl && lastEl\.textContent !== String\(lastAirport\)/);
-  assert.match(transformed, /el\.classList\.remove\('timer-flash'\)/);
   assert.doesNotMatch(transformed, /setInterval\(updateAirportMetric,\s*1000\)/);
+});
+
+test('Served HTML timer fallback cannot activate timer-flash', async () => {
+  const { transformed } = await transformedIndex();
+
+  assert.match(transformed, /el\.classList\.remove\('timer-flash'\)/);
+  assert.doesNotMatch(transformed, /el\.classList\.add\('timer-flash'\)/);
 });
 
 test('Runtime compositing guard no longer owns Status Board layers', async () => {

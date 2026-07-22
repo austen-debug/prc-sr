@@ -56,7 +56,7 @@ Injected by middleware in current order:
 7. `/js/prc-dash-space-force.js`
 8. `/js/prc-dash-dorm-reopen.js`
 9. `/js/prc-dash-final-audit.js?v=record-display-integrity-20260714`
-10. `/js/gate-status-board-controller.js?v=status-board-incremental-render-20260721`
+10. `/js/gate-status-board-controller.js?v=dorm-timer-record-lifecycle-20260722`
 11. `/js/gate-processing-controller.js?v=record-display-integrity-20260714`
 12. `/js/prc-dash-dorm-flag-validation.js?v=record-display-integrity-20260714b`
 13. `/js/prc-dash-auditorium-location.js?v=processing-modal-record-binding-20260721`
@@ -80,9 +80,9 @@ Injected by middleware in current order:
 - `GateHooks` owns lifecycle hook registration and the `renderAll()` / `showPage()` wrappers.
 - `GateAppShell` owns visible route state, role-aware navigation, drawer/sheet behavior, and Week Group shell context.
 - `GatePermissionGuard` owns client-side action protection; server authorization remains authoritative.
-- `GateStatusBoardController` owns the visible Status Board dorm columns, dorm cards, active-bus panel, timer text, warning/critical timer state, direct-surface integrity repair, and per-column incremental rendering.
+- `GateStatusBoardController` owns the visible Status Board dorm columns, dorm cards, active-bus panel, elapsed-time calculation, record-bound timer text, warning/critical timer state, direct-surface integrity repair, and per-column incremental rendering. It rebinds every open timer to the current dorm record before each second-aligned tick and publishes the same elapsed-time function to the Processing open/close workflow.
 - `GatePremiumMetricsController` owns change-only synchronization of Arrived, Expected, Last, and Local values. The Local clock is second-aligned, displays `HH:MM:SS`, resumes immediately after visibility/focus/fullscreen transitions, and updates only the `#stat-local` text node.
-- `GateProcessingController` owns Processing page rendering, dorm-modal lifecycle, and all dorm-record mutations.
+- `GateProcessingController` owns Processing page rendering, dorm-modal lifecycle, and all dorm-record mutations. Open writes `opened_at`; Close derives `closed_timer` from that timestamp through the canonical elapsed-time function; Reopen reconstructs `opened_at` from the retained final time.
 - `GateAuditoriumLocationController` owns field hydration and card augmentation for Auditorium Location. It binds the modal field to the active dorm ID and delegates persistence through `GateProcessingController.updateDorm`; it does not call the Data SDK directly.
 - `GateBusWorkflowController` owns airport and local-arrival bus workflows.
 - `GateInputPageController` owns Input and Week Group initialization presentation.
@@ -90,7 +90,7 @@ Injected by middleware in current order:
 
 The former `GateStatusBoardTimerVisualStability` corrective layer remains retired. Timer state is consolidated into `GateStatusBoardController`. The Status Board is also excluded from the runtime-injected forced-compositing rules in `gate-render-stability-fix.js`; stable board surfaces and timer geometry are now static CSS contracts.
 
-The served legacy `renderAll()` path delegates Active Buses and dorm columns to `GateStatusBoardController` whenever the canonical owner is available. The legacy Local clock interval is removed at serve time so `GatePremiumMetricsController` is the only live clock owner. The legacy timer fallback uses steady warning/critical states without `timer-flash`.
+The served legacy `renderAll()` path delegates Active Buses and dorm columns to `GateStatusBoardController` whenever the canonical owner is available. The legacy Local clock interval is removed at serve time so `GatePremiumMetricsController` is the only live clock owner. The legacy timer callback is rebound to the canonical elapsed-time and tick functions and uses steady warning/critical states without `timer-flash`.
 
 ## Phase 3A hidden observer
 
@@ -167,6 +167,8 @@ PASS — active middleware order documented
 PASS — machine-readable active asset inventory established
 PASS — Build 1 visible owners retained
 PASS — one canonical Status Board timer and direct-surface integrity owner
+PASS — open dorm timers are rebound to authoritative records every second
+PASS — close final time is derived from the persisted open timestamp
 PASS — Status Board column writes are incremental by state
 PASS — live metrics use change-only synchronization
 PASS — Local clock has one second-aligned `HH:MM:SS` owner

@@ -44,8 +44,7 @@ const UI_HEAD_SCRIPTS = [
   '<script src="/js/gate-render-stability-fix.js?v=status-board-compositing-retired-20260721" defer></script>',
   '<script src="/js/prc-dash-processing-loaded-summary.js" defer></script>',
   '<script src="/js/gate-premium-metrics-controller.js?v=metric-live-clock-20260722" defer></script>',
-  '<script src="/js/prc-dash-overtime-audit.js" defer></script>',
-  '<script src="/js/gate-status-board-shadow-controller.js?v=phase-3a-status-board-shadow-20260715" defer></script>'
+  '<script src="/js/prc-dash-overtime-audit.js" defer></script>'
 ];
 
 const STATUS_BOARD_METRICS_HTML = `<div class="board-header gate-premium-metrics-enabled" data-owner="gate-status-metrics-source" data-phase="1B">
@@ -258,86 +257,58 @@ ${legacyBusBlock}
 
   output = output.replace(
     /el\.classList\.add\(['"]timer-flash['"]\);/g,
-    `el.classList.remove('timer-flash');
-      el.classList.add('timer-red');`
+    'el.classList.remove(\'timer-flash\');'
   );
 
   return output;
 }
 
-function prepareAppShellHtml(html) {
-  return applyStatusBoardMetricSourceRefactor(
-    normalizeServedBranding(stripLegacyInlineShellCss(applyAppShellIdentity(html)))
-  );
-}
+function injectUiAssets(html) {
+  let output = html;
+  for (const stylesheet of UI_STYLESHEETS) {
+    const href = extractUrl(stylesheet, 'href');
+    if (href && !output.includes(href)) output = output.replace('</head>', `${stylesheet}\n</head>`);
+  }
 
-function applyUiAssets(html) {
-  const updatedHtml = prepareAppShellHtml(html);
-
-  const linksToAdd = UI_STYLESHEETS.filter(link => {
-    const href = extractUrl(link, 'href');
-    return href && !updatedHtml.includes(href);
-  });
-
-  const inlineAssetsToAdd = UI_INLINE_ASSETS.filter(asset => {
-    const id = extractId(asset);
-    return id ? !updatedHtml.includes(`id="${id}"`) : !updatedHtml.includes(asset);
-  });
-
-  const scriptsToAdd = UI_HEAD_SCRIPTS.filter(script => {
+  for (const script of UI_HEAD_SCRIPTS) {
     const src = extractUrl(script, 'src');
-    return src && !updatedHtml.includes(src);
-  });
+    const id = extractId(script);
+    if ((src && output.includes(src)) || (id && output.includes(`id="${id}"`))) continue;
+    output = output.replace('</head>', `${script}\n</head>`);
+  }
 
-  const assetsToAdd = [...linksToAdd, ...inlineAssetsToAdd, ...scriptsToAdd];
-  if (assetsToAdd.length === 0) return updatedHtml;
+  for (const asset of UI_INLINE_ASSETS) {
+    const id = extractId(asset);
+    if (id && output.includes(`id="${id}"`)) continue;
+    output = output.replace('</body>', `${asset}\n</body>`);
+  }
 
-  return updatedHtml.replace(/<\/head>/i, `  ${assetsToAdd.join('\n  ')}\n </head>`);
+  return output;
 }
 
-async function maybeApplyUiAssets(response) {
-  const contentType = response.headers.get('content-type') || '';
-  if (!contentType.includes('text/html')) return response;
-
-  const html = applyUiAssets(await response.text());
-  const headers = new Headers(response.headers);
-  headers.set('content-type', 'text/html; charset=UTF-8');
-  headers.delete('content-length');
-
-  return new Response(html, {
-    status: response.status,
-    statusText: response.statusText,
-    headers
-  });
+function isHtmlResponse(response) {
+  const contentType = response.headers.get('Content-Type') || '';
+  return contentType.includes('text/html');
 }
 
 export async function onRequest(context) {
-  const url = new URL(context.request.url);
-  const pathname = url.pathname;
+  const { request, env, next } = context;
+  const url = new URL(request.url);
 
-  if (pathname === '/login' || pathname === '/login/' || pathname === '/login.html') return context.next();
-  if (pathname === '/api/login' || pathname === '/api/logout' || pathname === '/api/ping') return context.next();
+  if (url.pathname.startsWith('/api/')) return next();
 
-  if (
-    pathname === '/favicon.ico' ||
-    pathname.endsWith('.css') ||
-    pathname.endsWith('.js') ||
-    pathname.endsWith('.png') ||
-    pathname.endsWith('.jpg') ||
-    pathname.endsWith('.jpeg') ||
-    pathname.endsWith('.svg') ||
-    pathname.endsWith('.ico') ||
-    pathname.endsWith('.webp') ||
-    pathname.endsWith('.mp3')
-  ) {
-    return context.next();
-  }
+  const response = await next();
+  if (!isHtmlResponse(response)) return response;
 
-  const session = await verifySession(context.request, context.env);
-  if (!session) {
-    if (pathname.startsWith('/api/')) return jsonResponse({ isOk: false, error: 'Unauthorized.' }, 401);
-    return Response.redirect(`${url.origin}/login/`, 302);
-  }
+  const session = await verifySession(request, env);
+  if (!session && url.pathname !== '/login.html') return Response.redirect(`${url.origin}/login.html`, 302);
 
-  return maybeApplyUiAssets(await context.next());
+  let html = await response.text();
+  html = applyAppShellIdentity(html);
+  html = normalizeServedBranding(html);
+  html = stripLegacyInlineShellCss(html);
+  html = applyStatusBoardMetricSourceRefactor(html);
+  html = injectUiAssets(html);
+
+  return new Response(html, response);
 }

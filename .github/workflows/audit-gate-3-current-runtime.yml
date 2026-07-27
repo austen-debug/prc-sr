@@ -1,6 +1,10 @@
 name: Audit GATE 3 Current Runtime
 
 on:
+  pull_request:
+    branches:
+      - gate-3.0/phase-4-unified-operational-platform
+    types: [opened, synchronize, reopened]
   push:
     branches:
       - gate-3.0/phase-5-certification
@@ -39,4 +43,4 @@ jobs:
           git commit -m 'Re-index actual GATE 3 repository state [gate-3-current-index]'
           git push origin HEAD:gate-3.0/phase-5-certification
 
-# Trigger revision: 2026-07-27T14:20:00-05:00
+# Trigger revision: 2026-07-27T14:24:00-05:00

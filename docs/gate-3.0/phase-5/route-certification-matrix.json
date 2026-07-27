@@ -1,0 +1,119 @@
+{
+  "schema_version": "1.0.0",
+  "status": "blocked",
+  "candidate_commit": null,
+  "routes": [
+    {
+      "route_id": "status-board",
+      "status": "blocked",
+      "required_checks": [
+        "metrics",
+        "active-bus rendering",
+        "dorm rendering",
+        "timer lifecycle",
+        "fullscreen",
+        "responsive postures",
+        "sound behavior",
+        "failure recovery",
+        "single-owner verification",
+        "legacy owner removal"
+      ]
+    },
+    {
+      "route_id": "processing",
+      "status": "blocked",
+      "required_checks": [
+        "exact record binding",
+        "auditorium location persistence",
+        "open-close-reopen lifecycle",
+        "arrived-versus-loaded calculations",
+        "keyboard and touch submission",
+        "version and conflict behavior",
+        "single mutation path",
+        "legacy owner removal"
+      ]
+    },
+    {
+      "route_id": "airport",
+      "status": "blocked",
+      "required_checks": [
+        "bus dispatch",
+        "bus edit",
+        "arrival confirmation",
+        "authorized deletion",
+        "full record detail preservation",
+        "SAT arrival information",
+        "role behavior",
+        "legacy owner removal"
+      ]
+    },
+    {
+      "route_id": "input",
+      "status": "blocked",
+      "required_checks": [
+        "week group initialization",
+        "receiving windows",
+        "dorm input order",
+        "record identity",
+        "sex-band-space-force logic",
+        "mutual exclusion",
+        "preflight validation",
+        "report handoff",
+        "legacy owner removal"
+      ]
+    },
+    {
+      "route_id": "archives-reports",
+      "status": "blocked",
+      "required_checks": [
+        "verified closeout",
+        "immutable archive",
+        "current summary",
+        "Space Force totals",
+        "print output",
+        "historical detail",
+        "live record deletion only after verification",
+        "legacy owner removal"
+      ]
+    },
+    {
+      "route_id": "squadron-board",
+      "status": "blocked",
+      "required_checks": [
+        "restricted read-only projection",
+        "server-side credential handling",
+        "no prohibited fields",
+        "no mutation capability",
+        "role routing",
+        "responsive access",
+        "legacy owner removal"
+      ]
+    },
+    {
+      "route_id": "login-application-shell",
+      "status": "blocked",
+      "required_checks": [
+        "role routing",
+        "navigation",
+        "session behavior",
+        "application shell",
+        "responsive postures",
+        "accessibility",
+        "notification and error surfaces",
+        "single design language",
+        "legacy owner removal"
+      ]
+    }
+  ],
+  "cross_route_workflows": [
+    {"workflow_id":"week-group-lifecycle","status":"blocked"},
+    {"workflow_id":"bus-lifecycle","status":"blocked"},
+    {"workflow_id":"arrival-to-processing","status":"blocked"},
+    {"workflow_id":"dorm-lifecycle","status":"blocked"},
+    {"workflow_id":"archive-closeout","status":"blocked"},
+    {"workflow_id":"current-summary-reporting","status":"blocked"},
+    {"workflow_id":"role-session-routing","status":"blocked"},
+    {"workflow_id":"responsive-command-display","status":"blocked"}
+  ],
+  "final_gate": "Every route and cross-route workflow must pass against the same candidate commit before final certification."
+}

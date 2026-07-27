@@ -1,0 +1,58 @@
+{
+  "schema_version": "1.0.0",
+  "package_status_values": [
+    "unindexed",
+    "phase-1-verified",
+    "phase-2-blocked",
+    "phase-2-verified",
+    "ownership-defined",
+    "activation-ready",
+    "retirement-ready",
+    "executed",
+    "rolled-back"
+  ],
+  "required_fields": [
+    "package_id",
+    "scope",
+    "current_authoritative_owner",
+    "competing_owners",
+    "target_gate_3_owner",
+    "functionality_contract",
+    "operational_intent_contract",
+    "design_responsive_accessibility_contract",
+    "processing_data_integrity_contract",
+    "phase_1_evidence",
+    "phase_2_evidence",
+    "implementation_scope",
+    "activation_steps",
+    "regression_tests",
+    "manual_validation",
+    "runtime_asset_delta",
+    "legacy_retirement_actions",
+    "reference_removal_checks",
+    "rollback_plan",
+    "phase_4_readiness",
+    "evidence"
+  ],
+  "phase_2_verification_fields": [
+    "functionality_status",
+    "intent_status",
+    "design_status",
+    "processing_status",
+    "assumption_only_evidence_present",
+    "blocking_gaps",
+    "source_refs"
+  ],
+  "phase_4_gate": {
+    "phase_1_verified": true,
+    "phase_2_all_dimensions_pass": true,
+    "single_target_owner": true,
+    "semantic_parity": true,
+    "automated_regression": true,
+    "manual_validation_defined": true,
+    "runtime_delta_net_negative": true,
+    "rollback_executable": true,
+    "retirement_actions_complete": true,
+    "permanent_parallel_execution": false
+  }
+}

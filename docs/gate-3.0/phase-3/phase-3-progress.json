@@ -1,0 +1,59 @@
+{
+  "program": "GATE 3.0 Full Lift",
+  "repository": "austen-debug/prc-sr",
+  "phase": 3,
+  "phase_name": "Ownership Lift and Phase 4 Readiness",
+  "status": "active-incomplete",
+  "alignment_status": "governance-aligned",
+  "evidence_status": "not-complete",
+  "phase_4_readiness": "blocked",
+  "base_phase": "gate-3.0/phase-2-enterprise-foundation",
+  "runtime_effect": "none",
+  "binding_rules": {
+    "phase_1_truth_required": true,
+    "phase_2_crosscheck_required": true,
+    "single_target_owner_required": true,
+    "permanent_parallel_execution_allowed": false,
+    "net_negative_activation_required": true,
+    "rollback_required": true,
+    "legacy_retirement_required": true,
+    "production_retirement_allowed_in_phase_3": false,
+    "governance_artifacts_alone_satisfy_phase_intent": false,
+    "current_main_rebaseline_required_before_final_package": true,
+    "new_hotfixes_must_flow_through_phases_1_2_3": true
+  },
+  "closure_controls": {
+    "phase_may_be_marked_complete_without_populated_evidence": false,
+    "phase_may_be_marked_verified_without_source_backing": false,
+    "phase_may_be_marked_ready_without_activation_package": false,
+    "progress_percent_requires_traceable_records": true,
+    "phase_4_requires_complete_route_package": true
+  },
+  "workstreams": [
+    {"id":"canonical-owners","name":"Canonical Owner Registry","status":"initiated","completion_percent":0},
+    {"id":"ownership-transfers","name":"Ownership Transfer Register","status":"initiated","completion_percent":0},
+    {"id":"activation-packages","name":"Activation Package Registry","status":"initiated","completion_percent":0},
+    {"id":"legacy-retirement","name":"Legacy Retirement Register","status":"initiated","completion_percent":0},
+    {"id":"regression-validation","name":"Regression and Operational Validation Matrix","status":"initiated","completion_percent":0},
+    {"id":"phase-2-verification","name":"Phase 2 Verification Ledger","status":"initiated","completion_percent":0},
+    {"id":"phase-4-readiness","name":"Phase 4 Readiness Matrix","status":"initiated","completion_percent":0},
+    {"id":"rollback-continuity","name":"Rollback and Continuity Register","status":"initiated","completion_percent":0}
+  ],
+  "ownership_lift_order": [
+    "status-board",
+    "processing",
+    "airport",
+    "input",
+    "archives-reports",
+    "squadron-board",
+    "shared-shell-auth-navigation-sync-infrastructure"
+  ],
+  "verification_report": "phases-1-3-verification-report.md",
+  "current_blockers": [
+    "Phase 1 authoritative registers are not fully populated",
+    "Phase 2 four-way crosscheck evidence is incomplete",
+    "No Phase 3 ownership-transfer package is activation-ready",
+    "Phase 4 remains blocked"
+  ],
+  "next_authorized_action": "Populate the Phase 1 Repository Ownership Register and served-runtime inventory from current main, then complete the Phase 2 crosscheck evidence and first Phase 3 Status Board ownership-transfer package without activating a visible route or retiring production owners."
+}

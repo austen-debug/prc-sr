@@ -1,0 +1,35 @@
+{
+  "schema_version": "1.0.0",
+  "phase_2_source_branch": "gate-3.0/phase-2-enterprise-foundation",
+  "verification_status": "initiated",
+  "packages": [
+    {
+      "package_id": "status-board",
+      "functionality_status": "pending-evidence",
+      "intent_status": "pending-evidence",
+      "design_status": "pending-evidence",
+      "processing_status": "pending-evidence",
+      "assumption_only_evidence_present": false,
+      "blocking_gaps": [
+        "Phase 1 current-owner register not yet fully populated",
+        "Phase 2 four-way crosscheck evidence not yet fully populated",
+        "live/manual parity evidence remains required"
+      ],
+      "source_refs": []
+    },
+    {
+      "package_id": "processing",
+      "functionality_status": "pending-evidence",
+      "intent_status": "pending-evidence",
+      "design_status": "pending-evidence",
+      "processing_status": "pending-evidence",
+      "assumption_only_evidence_present": false,
+      "blocking_gaps": [
+        "Exact record-mutation owner inventory incomplete",
+        "Modal and dorm-lifecycle parity evidence incomplete"
+      ],
+      "source_refs": []
+    }
+  ],
+  "verification_rule": "No package may advance to activation-ready until all four evidence dimensions pass with source-backed evidence."
+}

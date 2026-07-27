@@ -1,0 +1,63 @@
+{
+  "program": "GATE 3.0 Full Lift",
+  "repository": "austen-debug/prc-sr",
+  "phase": 2,
+  "phase_name": "Enterprise Foundation and Crosscheck",
+  "status": "active",
+  "initiated_on": "2026-07-26",
+  "base_branch": "gate-3.0/phase-1-operational-truth",
+  "runtime_effect": "none-at-initiation",
+  "end_state": "one-gate-3.0-application-no-parallel-legacy-runtime",
+  "crosscheck_dimensions": [
+    "functionality",
+    "operational-intent",
+    "design-and-responsive-behavior",
+    "processing-and-data-integrity"
+  ],
+  "binding_rules": {
+    "phase_1_remains_active": true,
+    "production_behavior_is_authoritative_until_replacement": true,
+    "visible_route_activation_allowed": false,
+    "production_owner_retirement_allowed": false,
+    "new_permanent_compatibility_layers_allowed": false,
+    "active_runtime_growth_allowed": false,
+    "server_authority_required": true,
+    "critical_offline_writes_allowed": false,
+    "semantic_parity_required": true,
+    "legacy_retirement_path_required_for_every_staged_owner": true
+  },
+  "workstreams": [
+    {"id":"bootstrap","name":"Application Bootstrap","status":"initiated","completion_percent":0},
+    {"id":"domain","name":"Canonical Domain Layer","status":"initiated","completion_percent":0},
+    {"id":"repositories-api","name":"Repository and API Layer","status":"initiated","completion_percent":0},
+    {"id":"workflows","name":"Workflow Orchestration","status":"initiated","completion_percent":0},
+    {"id":"design-language","name":"GATE Design Language","status":"initiated","completion_percent":0},
+    {"id":"application-shell","name":"Unified Application Shell","status":"initiated","completion_percent":0},
+    {"id":"responsive-accessibility","name":"Responsive and Accessibility Foundation","status":"initiated","completion_percent":0},
+    {"id":"observability-verification","name":"Observability and Verification","status":"initiated","completion_percent":0}
+  ],
+  "protected_routes": [
+    "login",
+    "application-shell",
+    "status-board",
+    "airport",
+    "input",
+    "processing",
+    "archives-reports",
+    "squadron-board"
+  ],
+  "protected_workflows": [
+    "week-group-initialization",
+    "airport-bus-dispatch-edit-delete-arrival",
+    "local-arrival",
+    "arrival-to-processing-reconciliation",
+    "dorm-open-update-close-reopen",
+    "timer-and-sound-lifecycle",
+    "archive-create-verify-delete-closeout",
+    "immutable-archive-amendment",
+    "current-summary-reporting",
+    "role-session-routing",
+    "responsive-command-display"
+  ],
+  "next_authorized_action": "Populate the Phase 2 crosscheck matrix from Phase 1 registers and current main, then implement only staged foundation owners whose functionality, intent, design, and processing contracts are fully evidenced."
+}

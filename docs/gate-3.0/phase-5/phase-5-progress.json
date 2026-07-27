@@ -1,0 +1,53 @@
+{
+  "program": "GATE 3.0 Full Lift",
+  "repository": "austen-debug/prc-sr",
+  "phase": 5,
+  "phase_name": "Completion, Validation, and Certification",
+  "status": "active",
+  "completion_status": "not-certified",
+  "base_phase": "gate-3.0/phase-4-unified-operational-platform",
+  "runtime_effect": "none-at-initiation",
+  "binding_rules": {
+    "phase_1_exit_required": true,
+    "phase_2_verification_required": true,
+    "phase_3_transfer_completion_required": true,
+    "phase_4_cutover_completion_required": true,
+    "legacy_parallel_runtime_allowed": false,
+    "unknown_active_owner_allowed": false,
+    "transition_only_runtime_allowed_at_certification": false,
+    "current_commit_evidence_required": true,
+    "rollback_validation_required": true
+  },
+  "certification_domains": [
+    {"id":"functional","status":"blocked","completion_percent":0},
+    {"id":"operational-intent","status":"blocked","completion_percent":0},
+    {"id":"processing-data-integrity","status":"blocked","completion_percent":0},
+    {"id":"design-interaction","status":"blocked","completion_percent":0},
+    {"id":"architecture-ownership","status":"blocked","completion_percent":0},
+    {"id":"legacy-elimination","status":"blocked","completion_percent":0},
+    {"id":"reliability-recovery","status":"blocked","completion_percent":0},
+    {"id":"repository-maintainability","status":"blocked","completion_percent":0}
+  ],
+  "protected_routes": [
+    "status-board",
+    "processing",
+    "airport",
+    "input",
+    "archives-reports",
+    "squadron-board",
+    "login-application-shell"
+  ],
+  "final_outcomes": [
+    "certified",
+    "conditionally-certified",
+    "not-certified"
+  ],
+  "current_blockers": [
+    "Phase 1 registers and exit report are incomplete.",
+    "Phase 2 evidence packages are incomplete.",
+    "Phase 3 ownership-transfer packages are incomplete.",
+    "Phase 4 route cutovers and legacy retirement have not been executed.",
+    "No final current-commit runtime and legacy-elimination evidence exists."
+  ],
+  "next_authorized_action": "Complete prior-phase evidence and Phase 4 cutovers, then populate route-by-route certification evidence against the final candidate commit."
+}

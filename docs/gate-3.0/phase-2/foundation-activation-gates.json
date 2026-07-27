@@ -1,0 +1,59 @@
+{
+  "schema_version": "1.0.0",
+  "phase": 2,
+  "authorization_boundary": "staged-foundation-only",
+  "gates": [
+    {
+      "id": "F1",
+      "name": "Functionality Preservation",
+      "required": ["capability-map-complete","commands-and-shortcuts-mapped","failure-and-recovery-mapped","reports-sounds-and-downstream-effects-mapped","regression-contract-defined"]
+    },
+    {
+      "id": "F2",
+      "name": "Operational Intent",
+      "required": ["problem-and-actor-defined","decision-supported-defined","mission-consequence-defined","role-boundary-defined","source-evidence-attached"]
+    },
+    {
+      "id": "F3",
+      "name": "Design and Access",
+      "required": ["approved-hierarchy-mapped","component-contract-defined","six-posture-contract-defined","fullscreen-contract-defined","keyboard-touch-focus-overlay-accessibility-contracts-defined"]
+    },
+    {
+      "id": "F4",
+      "name": "Processing and Data Integrity",
+      "required": ["record-identity-defined","validation-defined","calculation-owner-defined","mutation-and-confirmation-sequence-defined","audit-and-reconciliation-defined","partial-failure-recovery-idempotency-defined","archive-report-continuity-defined"]
+    },
+    {
+      "id": "F5",
+      "name": "Architecture Boundary",
+      "required": ["one-authoritative-owner","no-ui-owned-operational-calculation","server-authority-preserved","no-critical-offline-write-queue","no-middleware-source-rewrite-dependency","portable-module-boundary"]
+    },
+    {
+      "id": "F6",
+      "name": "Runtime Isolation",
+      "required": ["not-loaded-by-production-runtime","no-visible-route","no-production-write-path","no-active-asset-count-growth","no-permanent-parallel-application"]
+    },
+    {
+      "id": "F7",
+      "name": "Future Retirement Path",
+      "required": ["current-owner-identified","target-owner-identified","activation-package-defined","legacy-retirement-package-defined","rollback-boundary-defined","removal-verification-defined"]
+    }
+  ],
+  "blocked_actions": [
+    "visible-route-activation",
+    "production-owner-retirement",
+    "legacy-file-deletion",
+    "production-critical-write-activation",
+    "squadron-login-activation",
+    "operational-service-worker-registration",
+    "permanent-dual-runtime"
+  ],
+  "phase_2_exit": {
+    "all_gates_required": true,
+    "all_required_crosscheck_dimensions_verified": true,
+    "active_runtime_growth": 0,
+    "production_behavior_change": 0,
+    "permanent_parallel_runtime": 0,
+    "legacy_retirement_paths_complete": true
+  }
+}

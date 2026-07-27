@@ -1,0 +1,100 @@
+{
+  "program": "GATE 3.0 Full Lift",
+  "repository": "austen-debug/prc-sr",
+  "phase": 1,
+  "phase_name": "Operational Truth and Digital Twin",
+  "status": "active",
+  "initiated_on": "2026-07-26",
+  "runtime_effect": "none",
+  "binding_rules": {
+    "functional_removal_allowed": false,
+    "production_runtime_changes_allowed": false,
+    "new_corrective_layers_allowed": false,
+    "current_main_is_operational_truth": true,
+    "replacement_before_retirement": true,
+    "semantic_parity_required": true,
+    "rollback_required_before_retirement": true
+  },
+  "workstreams": [
+    {
+      "id": "repository-ownership",
+      "name": "Repository Ownership Register",
+      "status": "initiated",
+      "completion_percent": 0,
+      "deliverable": "repository-ownership-register.json"
+    },
+    {
+      "id": "route-architecture",
+      "name": "Route Architecture Register",
+      "status": "initiated",
+      "completion_percent": 0,
+      "deliverable": "route-architecture-register.json"
+    },
+    {
+      "id": "operational-workflows",
+      "name": "Operational Workflow Register",
+      "status": "initiated",
+      "completion_percent": 0,
+      "deliverable": "workflow-register.json"
+    },
+    {
+      "id": "operational-truth",
+      "name": "Operational Truth Register",
+      "status": "initiated",
+      "completion_percent": 0,
+      "deliverable": "operational-truth-register.json"
+    },
+    {
+      "id": "ui-ownership",
+      "name": "UI Ownership Register",
+      "status": "initiated",
+      "completion_percent": 0,
+      "deliverable": "ui-ownership-register.json"
+    },
+    {
+      "id": "canonical-records",
+      "name": "Canonical Record Register",
+      "status": "initiated",
+      "completion_percent": 0,
+      "deliverable": "canonical-record-register.json"
+    },
+    {
+      "id": "technical-debt",
+      "name": "Technical Debt Register",
+      "status": "initiated",
+      "completion_percent": 0,
+      "deliverable": "technical-debt-register.json"
+    },
+    {
+      "id": "engineering-continuity",
+      "name": "Engineering Continuity Register",
+      "status": "initiated",
+      "completion_percent": 0,
+      "deliverable": "engineering-continuity-register.json"
+    }
+  ],
+  "initial_scope": {
+    "routes": [
+      "login",
+      "application-shell",
+      "status-board",
+      "airport",
+      "input",
+      "processing",
+      "archives-reports",
+      "squadron-board"
+    ],
+    "cross_route_workflows": [
+      "week-group-lifecycle",
+      "bus-lifecycle",
+      "arrival-to-processing",
+      "dorm-lifecycle",
+      "archive-closeout",
+      "current-summary-reporting",
+      "role-session-routing",
+      "responsive-command-display"
+    ]
+  },
+  "exit_report": "phase-1-exit-report.md",
+  "next_authorized_action": "Populate the current-main repository ownership and served-runtime inventories without modifying production behavior."
+}

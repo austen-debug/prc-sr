@@ -31,6 +31,19 @@ jobs:
         with:
           node-version: '22'
 
+      - name: Correct exact route-owner replacement
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('scripts/complete-gate-3-runtime-transition.mjs')
+          text = path.read_text()
+          anchor = "bootstrap = bootstrap.replace(/function showPage\\(id\\) \\{[\\s\\S]*?\\n\\s*\\}/, \"function showPage(id) { if (GateRouteLifecycle.activate(id)) buildNav(); }\");"
+          addition = """bootstrap = bootstrap.replace(/\\s*function showPage\\(id\\) \\{\\s*document\\.querySelectorAll\\('\\.page'\\)\\.forEach\\(p => p\\.classList\\.remove\\('active'\\)\\);\\s*const target = document\\.getElementById\\('page-' \\+ id\\);\\s*if \\(target\\) target\\.classList\\.add\\('active'\\);\\s*buildNav\\(\\);\\s*\\}/, \"\\nfunction showPage(id) { if (GateRouteLifecycle.activate(id)) buildNav(); }\");"""
+          if addition not in text:
+              text = text.replace(anchor, anchor + "\n" + addition)
+          path.write_text(text)
+          PY
+
       - name: Execute final runtime transition
         id: transition
         continue-on-error: true
@@ -83,4 +96,4 @@ jobs:
           git commit -m 'Complete GATE 3 runtime transition [gate-3-runtime-transition-complete]'
           git push origin HEAD:gate-3.0/phase-5-certification
 
-# Trigger revision: 2026-07-27T13:52:00-05:00
+# Trigger revision: 2026-07-27T14:03:00-05:00

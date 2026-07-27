@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.0.0",
+  "schema_version": "1.1.0",
   "record_status_values": [
     "unindexed",
     "indexed",
@@ -12,6 +12,7 @@
     "production-active",
     "production-indirect",
     "staged-gate-3.0",
+    "transition-only",
     "test-only",
     "documentation",
     "tooling",
@@ -27,13 +28,30 @@
     "historical",
     "unknown"
   ],
+  "final_disposition_values": [
+    "retain-as-gate-3.0",
+    "refactor-into-gate-3.0",
+    "replace-and-retire",
+    "remove-as-dead-code",
+    "retain-as-isolated-history",
+    "unknown"
+  ],
+  "prohibited_final_dispositions": [
+    "retain-as-legacy-runtime",
+    "permanent-parallel-runtime",
+    "permanent-corrective-layer-without-enterprise-purpose"
+  ],
   "retirement_gate": {
     "replacement_owner_required": true,
     "semantic_parity_required": true,
     "automated_regression_required": true,
     "manual_operational_validation_required": true,
     "rollback_required": true,
-    "downstream_consumer_reconciliation_required": true
+    "downstream_consumer_reconciliation_required": true,
+    "reference_scan_required": true,
+    "runtime_unreachability_required": true,
+    "same_package_owner_switch_and_retirement_preferred": true,
+    "removal_verification_required": true
   },
   "repository_asset_fields": [
     "path",
@@ -52,8 +70,13 @@
     "operational_behaviors",
     "tests",
     "duplicate_owners",
-    "target_owner",
+    "gate_3_target_owner",
+    "final_disposition",
+    "retirement_phase",
+    "retirement_acceptance_gate",
     "retirement_prerequisites",
+    "removal_verification",
+    "historical_isolation_requirement",
     "evidence"
   ],
   "route_fields": [
@@ -76,8 +99,11 @@
     "failure_states",
     "recovery_paths",
     "current_owners",
-    "staged_owners",
-    "parity_requirements"
+    "duplicate_owners",
+    "gate_3_target_owners",
+    "owners_to_retire",
+    "parity_requirements",
+    "retirement_acceptance_gate"
   ],
   "workflow_fields": [
     "workflow_id",
@@ -95,6 +121,9 @@
     "recovery",
     "idempotency",
     "rollback",
+    "current_owners",
+    "gate_3_target_owner",
+    "legacy_retirement_dependencies",
     "test_coverage"
   ],
   "continuity_fields": [
@@ -107,5 +136,13 @@
     "permanent_contract",
     "regression_tests",
     "source_evidence"
-  ]
+  ],
+  "phase_1_closure_invariants": {
+    "unknown_final_disposition_allowed_for_active_assets": false,
+    "legacy_runtime_allowed_as_final_state": false,
+    "parallel_old_and_new_runtime_allowed_after_phase_5": false,
+    "all_transition_only_assets_require_retirement_phase": true,
+    "all_corrective_assets_require_replacement_and_removal_plan": true,
+    "all_original_runtime_files_accounted_for_in_master_retirement_plan": true
+  }
 }

@@ -18,7 +18,7 @@ permissions:
 
 jobs:
   migrate:
-    if: ${{ !contains(github.event.head_commit.message || '', '[gate-3-bootstrap-migrated]') }}
+    if: ${{ !contains(github.event.head_commit.message || '', '[gate-3-bootstrap-migrated]') && !contains(github.event.head_commit.message || '', '[gate-3-bootstrap-diagnostic]') }}
     runs-on: ubuntu-latest
     steps:
       - name: Check out transition branch
@@ -33,9 +33,32 @@ jobs:
           node-version: '22'
 
       - name: Execute bootstrap and middleware migration
-        run: node scripts/execute-gate-3-bootstrap-migration.mjs
+        id: migration
+        continue-on-error: true
+        run: |
+          set +e
+          node scripts/execute-gate-3-bootstrap-migration.mjs > gate-3-bootstrap-migration.log 2>&1
+          code=$?
+          cat gate-3-bootstrap-migration.log
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          exit $code
+
+      - name: Persist migration diagnostic
+        if: steps.migration.outcome == 'failure'
+        run: |
+          git reset --hard HEAD
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -f gate-3-bootstrap-migration.log
+          git commit -m 'Capture GATE 3 bootstrap migration failure [gate-3-bootstrap-diagnostic]'
+          git push origin HEAD:gate-3.0/phase-5-certification
+
+      - name: Stop after failed migration
+        if: steps.migration.outcome == 'failure'
+        run: exit 1
 
       - name: Verify extraction boundary
+        if: steps.migration.outcome == 'success'
         run: |
           test -f public/css/gate-application-structure.css
           test -f public/js/gate-data-sdk.js
@@ -47,6 +70,7 @@ jobs:
           grep -q '/js/gate-application-bootstrap.js' public/index.html
 
       - name: Commit transformed application
+        if: steps.migration.outcome == 'success'
         run: |
           if git diff --quiet; then
             echo 'Migration produced no changes.'

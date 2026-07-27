@@ -1,0 +1,39 @@
+{
+  "program": "GATE 3.0 Full Lift",
+  "repository": "austen-debug/prc-sr",
+  "decision_status": "not-certified",
+  "candidate_commit": null,
+  "decision_date": null,
+  "required_inputs": {
+    "phase_1_exit_report": "missing",
+    "phase_2_verification_report": "missing",
+    "phase_3_transfer_completion": "missing",
+    "phase_4_cutover_completion": "missing",
+    "route_certification_matrix": "blocked",
+    "legacy_elimination_certification": "blocked",
+    "rollback_validation": "blocked",
+    "final_repository_disposition": "blocked"
+  },
+  "certification_statement": null,
+  "authorized_end_state": {
+    "single_gate_3_0_application": false,
+    "single_production_runtime_architecture": false,
+    "no_parallel_legacy_runtime": false,
+    "no_transition_only_runtime": false,
+    "all_retained_assets_governed_as_gate_3_0": false,
+    "all_approved_capabilities_validated": false,
+    "repository_maintainable_without_undocumented_knowledge": false
+  },
+  "conditional_certification_allowed": true,
+  "conditional_certification_limits": [
+    "No mission-critical deficiency may remain.",
+    "No legacy runtime may remain active.",
+    "No unknown production owner may remain.",
+    "Archive integrity and rollback must be fully certified."
+  ],
+  "final_approval": {
+    "approved_by": null,
+    "approved_on": null,
+    "approval_evidence": []
+  }
+}

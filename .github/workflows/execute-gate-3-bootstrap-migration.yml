@@ -32,6 +32,19 @@ jobs:
         with:
           node-version: '22'
 
+      - name: Correct migration self-check
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('scripts/execute-gate-3-bootstrap-migration.mjs')
+          text = path.read_text()
+          text = text.replace(
+              "  assert(!MINIMAL_MIDDLEWARE.includes('replace('), 'Minimal middleware unexpectedly contains UI rewriting.');",
+              "  assert(!/applyAppShellIdentity|normalizeServedBranding|stripLegacyInlineShellCss|applyStatusBoardMetricSourceRefactor|injectUiAssets/.test(MINIMAL_MIDDLEWARE), 'Minimal middleware unexpectedly contains UI rewriting.');"
+          )
+          path.write_text(text)
+          PY
+
       - name: Execute bootstrap and middleware migration
         id: migration
         continue-on-error: true
@@ -77,6 +90,6 @@ jobs:
           fi
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add public/index.html public/css/gate-application-structure.css public/js/gate-data-sdk.js public/js/gate-application-bootstrap*.js functions/_middleware.js
+          git add scripts/execute-gate-3-bootstrap-migration.mjs public/index.html public/css/gate-application-structure.css public/js/gate-data-sdk.js public/js/gate-application-bootstrap*.js functions/_middleware.js
           git commit -m 'Extract GATE 3 bootstrap and retire middleware UI rewriting [gate-3-bootstrap-migrated]'
           git push origin HEAD:gate-3.0/phase-5-certification

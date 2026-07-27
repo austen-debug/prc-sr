@@ -1,0 +1,63 @@
+name: Complete GATE 3 Runtime Transition
+
+on:
+  pull_request:
+    branches:
+      - gate-3.0/phase-4-unified-operational-platform
+    types: [opened, synchronize, reopened]
+  push:
+    branches:
+      - gate-3.0/phase-5-certification
+    paths:
+      - scripts/complete-gate-3-runtime-transition.mjs
+      - .github/workflows/complete-gate-3-runtime-transition.yml
+
+permissions:
+  contents: write
+
+jobs:
+  transition:
+    if: ${{ !contains(github.event.head_commit.message || '', '[gate-3-runtime-transition-complete]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out transition branch
+        uses: actions/checkout@v4
+        with:
+          ref: gate-3.0/phase-5-certification
+          fetch-depth: 0
+
+      - name: Configure Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Execute final runtime transition
+        run: node scripts/complete-gate-3-runtime-transition.mjs
+
+      - name: Validate retained runtime
+        run: |
+          node --check public/js/gate-application-store.js
+          node --check public/js/gate-route-lifecycle.js
+          node --check public/js/gate-application-bootstrap.js
+          node --check public/js/gate-status-board-controller.js
+          node --check public/js/gate-processing-controller.js
+          node --check public/js/gate-bus-workflow-controller.js
+          node --check public/js/gate-input-page-controller.js
+          node --check public/js/gate-archive-controller.js
+          node --experimental-default-type=module --check functions/_middleware.js
+          ! grep -Eq '\blet allData\b|function renderAll\b|function showPage\b' public/js/gate-application-bootstrap.js
+          ! grep -q 'patchGlobals()' public/js/gate-archive-controller.js
+          ! grep -Eq 'corrective\.css|ui-ownership-correction|light-mode-command-contrast|light-mode-grid-correction|tablet-shell\.css|fullscreen-board-contract' public/index.html
+          ! grep -Eq 'prc-dash-runtime-fixes|prc-dash-dorm-reopen|prc-dash-final-audit|prc-dash-dorm-flag-validation|prc-dash-auditorium-location|gate-airport-bus-delete-controller|prc-dash-modal-mobile-validation|gate-render-stability-fix|prc-dash-processing-loaded-summary|prc-dash-overtime-audit|prc-dash-sat-arrivals' public/index.html
+
+      - name: Commit completed runtime transition
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A public functions
+          if git diff --cached --quiet; then
+            echo 'No runtime changes produced.'
+            exit 0
+          fi
+          git commit -m 'Complete GATE 3 runtime transition [gate-3-runtime-transition-complete]'
+          git push origin HEAD:gate-3.0/phase-5-certification

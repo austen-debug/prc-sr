@@ -10,6 +10,7 @@ on:
       - gate-3.0/phase-5-certification
     paths:
       - scripts/execute-gate-3-bootstrap-migration.mjs
+      - scripts/extract-inline-event-bindings.mjs
       - .github/workflows/execute-gate-3-bootstrap-migration.yml
   workflow_dispatch:
 
@@ -18,7 +19,7 @@ permissions:
 
 jobs:
   migrate:
-    if: ${{ !contains(github.event.head_commit.message || '', '[gate-3-bootstrap-migrated]') }}
+    if: ${{ !contains(github.event.head_commit.message || '', '[gate-3-static-bootstrap-complete]') }}
     runs-on: ubuntu-latest
     steps:
       - name: Check out transition branch
@@ -32,64 +33,38 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Correct migration self-check
+      - name: Extract bootstrap when inline assets remain
         run: |
-          python - <<'PY'
-          from pathlib import Path
-          path = Path('scripts/execute-gate-3-bootstrap-migration.mjs')
-          text = path.read_text()
-          text = text.replace(
-              "  assert(!MINIMAL_MIDDLEWARE.includes('replace('), 'Minimal middleware unexpectedly contains UI rewriting.');",
-              "  assert(!/applyAppShellIdentity|normalizeServedBranding|stripLegacyInlineShellCss|applyStatusBoardMetricSourceRefactor|injectUiAssets/.test(MINIMAL_MIDDLEWARE), 'Minimal middleware unexpectedly contains UI rewriting.');"
-          )
-          path.write_text(text)
-          PY
+          if grep -Eq '<style([[:space:]>])' public/index.html || grep -Eq '<script([^>]*)>[[:space:]]*[^<]' public/index.html; then
+            node scripts/execute-gate-3-bootstrap-migration.mjs
+          else
+            echo 'Inline style/script extraction already complete.'
+          fi
 
-      - name: Execute bootstrap and middleware migration
-        id: migration
-        continue-on-error: true
-        run: |
-          set +e
-          node scripts/execute-gate-3-bootstrap-migration.mjs > gate-3-bootstrap-migration.log 2>&1
-          code=$?
-          cat gate-3-bootstrap-migration.log
-          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
-          exit $code
+      - name: Extract inline event bindings
+        run: node scripts/extract-inline-event-bindings.mjs
 
-      - name: Upload migration diagnostic
-        if: steps.migration.outcome == 'failure'
-        uses: actions/upload-artifact@v4
-        with:
-          name: gate-3-bootstrap-migration-diagnostic
-          path: gate-3-bootstrap-migration.log
-          if-no-files-found: error
-          retention-days: 7
-
-      - name: Stop after failed migration
-        if: steps.migration.outcome == 'failure'
-        run: exit 1
-
-      - name: Verify extraction boundary
-        if: steps.migration.outcome == 'success'
+      - name: Verify static application boundary
         run: |
           test -f public/css/gate-application-structure.css
           test -f public/js/gate-data-sdk.js
           test -f public/js/gate-application-bootstrap.js
-          ! grep -E '<style([[:space:]>])' public/index.html
-          ! grep -E 'applyAppShellIdentity|normalizeServedBranding|stripLegacyInlineShellCss|applyStatusBoardMetricSourceRefactor|injectUiAssets' functions/_middleware.js
+          ! grep -Eq '<style([[:space:]>])' public/index.html
+          ! grep -Eq '[[:space:]]on(click|change|submit|keydown|keyup|input|blur|focus|contextmenu)=' public/index.html
+          ! grep -Eq 'applyAppShellIdentity|normalizeServedBranding|stripLegacyInlineShellCss|applyStatusBoardMetricSourceRefactor|injectUiAssets|UI_STYLESHEETS|UI_HEAD_SCRIPTS' functions/_middleware.js
           grep -q '/css/gate-application-structure.css' public/index.html
           grep -q '/js/gate-data-sdk.js' public/index.html
           grep -q '/js/gate-application-bootstrap.js' public/index.html
+          grep -q 'installGateDeclarativeEventBoundary' public/js/gate-application-bootstrap.js
 
       - name: Commit transformed application
-        if: steps.migration.outcome == 'success'
         run: |
           if git diff --quiet; then
-            echo 'Migration produced no changes.'
+            echo 'Static bootstrap boundary already complete.'
             exit 0
           fi
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add scripts/execute-gate-3-bootstrap-migration.mjs public/index.html public/css/gate-application-structure.css public/js/gate-data-sdk.js public/js/gate-application-bootstrap*.js functions/_middleware.js
-          git commit -m 'Extract GATE 3 bootstrap and retire middleware UI rewriting [gate-3-bootstrap-migrated]'
+          git add scripts/execute-gate-3-bootstrap-migration.mjs scripts/extract-inline-event-bindings.mjs public/index.html public/css/gate-application-structure.css public/js/gate-data-sdk.js public/js/gate-application-bootstrap*.js functions/_middleware.js
+          git commit -m 'Complete static GATE 3 bootstrap and event extraction [gate-3-static-bootstrap-complete]'
           git push origin HEAD:gate-3.0/phase-5-certification

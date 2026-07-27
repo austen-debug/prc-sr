@@ -1,0 +1,58 @@
+name: Consolidate GATE Route Owners
+
+on:
+  pull_request:
+    branches:
+      - gate-3.0/phase-4-unified-operational-platform
+    types: [opened, synchronize, reopened]
+  push:
+    branches:
+      - gate-3.0/phase-5-certification
+    paths:
+      - scripts/consolidate-gate-route-owners.mjs
+      - .github/workflows/consolidate-gate-route-owners.yml
+
+permissions:
+  contents: write
+
+jobs:
+  consolidate:
+    if: ${{ !contains(github.event.head_commit.message || '', '[gate-route-owners-consolidated]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out transition branch
+        uses: actions/checkout@v4
+        with:
+          ref: gate-3.0/phase-5-certification
+          fetch-depth: 0
+
+      - name: Configure Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Consolidate canonical route owners
+        run: node scripts/consolidate-gate-route-owners.mjs
+
+      - name: Verify syntax and ownership retirement
+        run: |
+          node --check public/js/gate-application-bootstrap.js
+          node --check public/js/gate-status-board-controller.js
+          node --check public/js/gate-processing-controller.js
+          node --check public/js/gate-bus-workflow-controller.js
+          node --check public/js/gate-input-page-controller.js
+          ! grep -Eq 'fallbackDormCard|fallbackActiveBusCard' public/js/gate-status-board-controller.js
+          ! grep -Eq 'prc-dash-dorm-reopen|prc-dash-auditorium-location|prc-dash-processing-loaded-summary|prc-dash-sat-arrivals|gate-airport-bus-delete-controller' public/index.html
+          ! grep -Eq 'function (renderDormColumns|updateTimers|updateAirportMetric|initBatchGrid|initializeWeekGroup|returnToBoard|getNextAirportBusId|confirmBusArrival|openLocalBusModal|closeLocalBusModal)' public/js/gate-application-bootstrap.js
+
+      - name: Commit consolidated owners
+        run: |
+          if git diff --quiet; then
+            echo 'No route ownership changes produced.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add public/index.html public/js/gate-application-bootstrap.js public/js/gate-status-board-controller.js public/js/gate-processing-controller.js public/js/gate-bus-workflow-controller.js public/js/gate-input-page-controller.js
+          git commit -m 'Consolidate Status Board, Processing, Airport, and Input owners [gate-route-owners-consolidated]'
+          git push origin HEAD:gate-3.0/phase-5-certification

@@ -1,0 +1,100 @@
+{
+  "package_id": "status-board-001",
+  "route": "status-board",
+  "status": "baseline-populated-blocked",
+  "source_ref": "main@4d831b491d1ed8f9f8c00233fced8a8c4495ab02",
+  "current_authoritative_owners": [
+    "GateStatusBoardController",
+    "GatePremiumMetricsController"
+  ],
+  "current_competing_or_transition_owners": [
+    "served legacy renderAll delegation",
+    "middleware Status Board source rewrites",
+    "GateStatusBoardShadow"
+  ],
+  "target_owners": [
+    "Gate3StatusBoardRoute",
+    "Gate3StatusBoardMetrics"
+  ],
+  "functional_contract": {
+    "must_preserve": [
+      "visible dorm columns",
+      "dorm cards",
+      "active bus panel",
+      "record-bound elapsed timers",
+      "warning and critical timer state",
+      "per-column incremental rendering",
+      "Arrived metric",
+      "Expected metric",
+      "Last metric",
+      "Local HH:MM:SS clock",
+      "fullscreen behavior",
+      "responsive phone, tablet, desktop, and command-display behavior"
+    ]
+  },
+  "operational_intent": {
+    "purpose": "Provide a current, stable, glanceable operational picture of inbound buses, dorm processing state, elapsed processing time, and receiving metrics without record drift or redraw instability.",
+    "protected_outcomes": [
+      "operators can identify active buses and dorm state immediately",
+      "elapsed time remains bound to the authoritative dorm record",
+      "display order and metadata do not drift by array position",
+      "fullscreen command display remains readable and compact",
+      "metrics update without destructive rerendering"
+    ]
+  },
+  "design_contract": {
+    "must_preserve": [
+      "stable board surfaces",
+      "static timer geometry",
+      "compact active-bus cards in fullscreen",
+      "light-mode command contrast",
+      "single-row narrow desktop navigation containment",
+      "modal and shell layering integrity"
+    ]
+  },
+  "processing_and_data_integrity": {
+    "must_preserve": [
+      "timer rebinding to current dorm record each aligned second",
+      "close time derived from persisted opened_at",
+      "reopen reconstruction from retained final time",
+      "change-only metric synchronization",
+      "no direct production mutation from shadow or display-only owners"
+    ]
+  },
+  "phase_2_verification": {
+    "functionality": "partially-verified",
+    "operational_intent": "verified-from-current-runtime-and-correction-history",
+    "design": "partially-verified",
+    "processing": "verified-for-current-owner-contract",
+    "blockers": [
+      "sustained live shadow evidence",
+      "manual accessibility evidence",
+      "manual responsive evidence",
+      "manual fullscreen evidence",
+      "external deployment and rollback verification"
+    ]
+  },
+  "phase_4_activation_requirements": [
+    "one visible GATE 3.0 Status Board owner",
+    "direct stylesheets at or below 12",
+    "imported stylesheets at or below 3",
+    "direct scripts at or below 24",
+    "zero middleware Status Board source rewrites",
+    "remove GateStatusBoardShadow",
+    "remove superseded Status Board corrective and compatibility assets",
+    "pass semantic parity and regression tests",
+    "pass manual responsive, accessibility, and fullscreen validation",
+    "prove rollback"
+  ],
+  "retirement_scope": [
+    "GateStatusBoardController after accepted replacement",
+    "GatePremiumMetricsController after accepted replacement",
+    "legacy Status Board render delegation",
+    "middleware Status Board source rewrites",
+    "GateStatusBoardShadow",
+    "superseded Status Board corrective presentation layers",
+    "obsolete compatibility globals"
+  ],
+  "activation_authorized": false,
+  "next_action": "Implement and verify the canonical GATE 3.0 Status Board package against this contract without increasing active runtime assets."
+}

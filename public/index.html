@@ -61,12 +61,12 @@
    <div class="flex items-center gap-3">
   <span id="week-group-display" class="font-bold text-xs font-tabular"></span>
 
-  <button id="role-toggle" onclick="logout()" class="nav-btn text-xs"></button>
+  <button id="role-toggle" data-gate-onclick="logout()" class="nav-btn text-xs"></button>
 
   <button
   id="fullscreen-btn"
   type="button"
-  onclick="toggleFullscreenBoard()"
+  data-gate-onclick="toggleFullscreenBoard()"
   class="nav-btn text-xs"
 >
   FULL SCREEN
@@ -75,13 +75,13 @@
 <button
   id="sound-toggle-btn"
   type="button"
-  onclick="enableOperationalSounds()"
+  data-gate-onclick="enableOperationalSounds()"
   class="nav-btn text-xs"
 >
   ENABLE SOUND
 </button>
 
-<button onclick="toggleTheme()" class="nav-btn" aria-label="Toggle theme">
+<button data-gate-onclick="toggleTheme()" class="nav-btn" aria-label="Toggle theme">
   <i data-lucide="sun" style="width:16px;height:16px;"></i>
 </button>
 </div>
@@ -124,7 +124,7 @@
    <div class="max-w-3xl mx-auto">
     <h2 data-template-id="airport-title" class="canva-text text-xl font-bold mb-4"></h2>
     <div class="surface border rounded-lg p-4 mb-4"><label class="block text-sm font-medium mb-1" for="flight-time">Flight Arrival Time</label>
-     <div class="flex gap-2"><input id="flight-time" type="time" class="flex-1 border rounded px-3 py-2 bg-transparent" style="border-color:var(--border);color:var(--text);"> <button onclick="updateFlightTime()" class="px-4 py-2 rounded font-bold text-white text-sm" style="background:#16a34a;">UPDATE</button>
+     <div class="flex gap-2"><input id="flight-time" type="time" class="flex-1 border rounded px-3 py-2 bg-transparent" style="border-color:var(--border);color:var(--text);"> <button data-gate-onclick="updateFlightTime()" class="px-4 py-2 rounded font-bold text-white text-sm" style="background:#16a34a;">UPDATE</button>
      </div>
      <div id="flight-time-msg" class="text-sm mt-2 hidden"></div>
     </div>
@@ -226,22 +226,22 @@
     </div>
    </div>
    <div class="flex-shrink-0 border-t px-4 py-3 flex gap-3 justify-between items-center" style="border-color:var(--border);">
-    <div id="init-status-msg" class="text-sm hidden"></div><button id="init-wg-btn" onclick="initializeWeekGroup()" class="px-6 py-3 rounded-lg font-bold text-white text-base" style="background:#16a34a;">INITIALIZE WEEK GROUP</button>
+    <div id="init-status-msg" class="text-sm hidden"></div><button id="init-wg-btn" data-gate-onclick="initializeWeekGroup()" class="px-6 py-3 rounded-lg font-bold text-white text-base" style="background:#16a34a;">INITIALIZE WEEK GROUP</button>
    </div>
    <div id="init-success-overlay" class="confirm-overlay hidden">
     <div class="surface border rounded-lg p-8 text-center max-w-sm" style="border-color:var(--border);">
      <div class="text-green-400 text-2xl font-bold mb-4">
       ✓ Week Group Initialized
      </div>
-     <p class="text-sm text-muted mb-6">All dormitories loaded.</p><button onclick="returnToBoard()" class="w-full px-4 py-3 rounded-lg font-bold text-white" style="background:#16a34a;">Return to Status Board</button>
+     <p class="text-sm text-muted mb-6">All dormitories loaded.</p><button data-gate-onclick="returnToBoard()" class="w-full px-4 py-3 rounded-lg font-bold text-white" style="background:#16a34a;">Return to Status Board</button>
     </div>
    </div>
   </div><!-- PAGE: PROCESSING -->
   <div id="page-processing" class="page flex-col w-full overflow-y-auto">
   <div class="px-4 py-3 flex-shrink-0 flex items-center gap-4 flex-wrap">
-  <button onclick="openLocalBusModal()" class="px-6 py-3 rounded-lg font-bold text-white text-lg" style="background:#2563eb;">+ ADD LOCAL BUS</button>
+  <button data-gate-onclick="openLocalBusModal()" class="px-6 py-3 rounded-lg font-bold text-white text-lg" style="background:#2563eb;">+ ADD LOCAL BUS</button>
 
-  <button id="closeout-btn" onclick="initiateCloseout()" class="px-6 py-3 rounded-lg font-bold text-white text-lg" style="background:#dc2626;">CLOSE OUT WEEK GROUP</button>
+  <button id="closeout-btn" data-gate-onclick="initiateCloseout()" class="px-6 py-3 rounded-lg font-bold text-white text-lg" style="background:#dc2626;">CLOSE OUT WEEK GROUP</button>
 
   <div id="processing-edit-hint" class="text-xs text-muted font-bold hidden">Instructor access: right-click any dorm to edit its record.</div>
 </div>
@@ -283,7 +283,7 @@
   <div id="dorm-modal" class="confirm-overlay hidden">
    <div class="modal-content">
     <div class="flex justify-between items-center mb-4">
-     <h2 id="modal-dorm-name" class="text-2xl font-black"></h2><button onclick="closeDormModal()" class="text-3xl leading-none text-muted hover:text-white">×</button>
+     <h2 id="modal-dorm-name" class="text-2xl font-black"></h2><button data-gate-onclick="closeDormModal()" class="text-3xl leading-none text-muted hover:text-white">×</button>
     </div>
     <div id="modal-dorm-info" class="text-sm text-muted mb-4"></div>
 
@@ -300,12 +300,12 @@
       placeholder="AIRMAN"
       class="flex-1 border rounded px-3 py-2 bg-transparent text-sm uppercase"
       style="border-color:var(--border);color:var(--text);"
-      onkeydown="handleAirmanInputKey(event)"
+      data-gate-onkeydown="handleAirmanInputKey(event)"
     >
 
     <button
       type="button"
-      onclick="saveAssignedAirman()"
+      data-gate-onclick="saveAssignedAirman()"
       class="px-4 py-2 rounded font-bold text-white text-xs"
       style="background:var(--green);"
     >
@@ -325,12 +325,12 @@
      <div class="text-xs uppercase tracking-wider font-bold text-muted mb-2">
       Current Load
      </div>
-     <div class="flex items-center justify-center gap-4 mb-3"><button class="load-btn" onclick="modLoad(-5)">-5</button> <button class="load-btn" onclick="modLoad(-1)">-1</button>
+     <div class="flex items-center justify-center gap-4 mb-3"><button class="load-btn" data-gate-onclick="modLoad(-5)">-5</button> <button class="load-btn" data-gate-onclick="modLoad(-1)">-1</button>
       <div class="text-center"><input id="modal-load-input" type="number" inputmode="numeric" min="0" class="w-24 text-center text-3xl font-black font-tabular border rounded bg-transparent py-2" style="border-color:var(--border);color:var(--text);">
        <div id="modal-load-max" class="text-sm text-muted mt-1"></div>
-      </div><button class="load-btn" onclick="modLoad(1)">+1</button> <button class="load-btn" onclick="modLoad(5)">+5</button>
+      </div><button class="load-btn" data-gate-onclick="modLoad(1)">+1</button> <button class="load-btn" data-gate-onclick="modLoad(5)">+5</button>
      </div>
-     <div class="flex gap-2 justify-center"><button onclick="setLoadFull()" class="px-4 py-2 rounded font-bold text-white" style="background:var(--blue);">FULL</button> <button onclick="saveLoad()" class="px-4 py-2 rounded font-bold text-white" style="background:var(--green);">SAVE LOAD</button>
+     <div class="flex gap-2 justify-center"><button data-gate-onclick="setLoadFull()" class="px-4 py-2 rounded font-bold text-white" style="background:var(--blue);">FULL</button> <button data-gate-onclick="saveLoad()" class="px-4 py-2 rounded font-bold text-white" style="background:var(--green);">SAVE LOAD</button>
      </div>
     </div><!-- Open/Close -->
     <div id="modal-action-section" class="flex gap-3 justify-center"></div>
@@ -342,7 +342,7 @@
   <div class="modal-content">
     <div class="flex justify-between items-center mb-4">
       <h2 class="text-xl font-black">Edit Dorm Record</h2>
-      <button onclick="closeDormEditModal()" class="text-3xl leading-none text-muted hover:text-white">×</button>
+      <button data-gate-onclick="closeDormEditModal()" class="text-3xl leading-none text-muted hover:text-white">×</button>
     </div>
 
     <form id="dorm-edit-form" class="space-y-3">
@@ -418,7 +418,7 @@
       <div class="flex gap-2 pt-3 justify-end items-center">
   <button
     type="button"
-    onclick="closeDormEditModal()"
+    data-gate-onclick="closeDormEditModal()"
     class="px-3 py-1.5 rounded text-xs font-bold surface border"
     style="border-color:var(--border); min-height:30px;"
   >
@@ -427,7 +427,7 @@
 
   <button
     type="button"
-    onclick="deleteDormitoryFromEditModal()"
+    data-gate-onclick="deleteDormitoryFromEditModal()"
     class="px-3 py-1.5 rounded text-xs font-bold text-white"
     style="background:var(--red); min-height:30px;"
   >
@@ -452,7 +452,7 @@
   <div id="local-bus-modal" class="confirm-overlay hidden">
    <div class="modal-content">
     <div class="flex justify-between items-center mb-4">
-     <h2 class="text-xl font-black">Add Local Bus</h2><button onclick="closeLocalBusModal()" class="text-3xl leading-none text-muted hover:text-white">×</button>
+     <h2 class="text-xl font-black">Add Local Bus</h2><button data-gate-onclick="closeLocalBusModal()" class="text-3xl leading-none text-muted hover:text-white">×</button>
     </div>
     <form id="local-bus-form" class="space-y-4">
      <div>
@@ -477,7 +477,7 @@
   <div class="modal-content">
     <div class="flex justify-between items-center mb-4">
       <h2 id="airport-bus-edit-title" class="text-xl font-black">Edit Bus</h2>
-      <button onclick="closeAirportBusEditModal()" class="text-3xl leading-none text-muted hover:text-white">×</button>
+      <button data-gate-onclick="closeAirportBusEditModal()" class="text-3xl leading-none text-muted hover:text-white">×</button>
     </div>
 
     <form id="airport-bus-edit-form" class="space-y-4">
@@ -504,7 +504,7 @@
       </div>
 
       <div class="flex gap-2 pt-3 justify-end items-center">
-        <button type="button" onclick="closeAirportBusEditModal()" class="px-3 py-1.5 rounded text-xs font-bold surface border" style="border-color:var(--border); min-height:30px;">CANCEL</button>
+        <button type="button" data-gate-onclick="closeAirportBusEditModal()" class="px-3 py-1.5 rounded text-xs font-bold surface border" style="border-color:var(--border); min-height:30px;">CANCEL</button>
 
         <button type="submit" class="px-4 py-1.5 rounded text-xs font-bold text-white" style="background:var(--green); min-height:30px;">SAVE BUS UPDATE</button>
       </div>
@@ -519,7 +519,7 @@
   <div class="modal-content" style="max-width: 900px;">
     <div class="flex justify-between items-center mb-4">
       <h2 class="text-xl font-black">Edit Archived Week Group</h2>
-      <button onclick="closeArchiveEditModal()" class="text-3xl leading-none text-muted hover:text-white">×</button>
+      <button data-gate-onclick="closeArchiveEditModal()" class="text-3xl leading-none text-muted hover:text-white">×</button>
     </div>
 
     <form id="archive-edit-form" class="space-y-4">
@@ -566,8 +566,8 @@
         <div>
           <label class="block text-sm font-medium mb-1">Actions</label>
           <div class="flex gap-2">
-            <button type="button" onclick="printArchiveSpreadsheet()" class="flex-1 py-2 rounded font-bold text-white" style="background:var(--blue);">PRINT</button>
-            <button type="button" onclick="deleteArchiveWithOverride()" class="flex-1 py-2 rounded font-bold text-white" style="background:var(--red);">DELETE</button>
+            <button type="button" data-gate-onclick="printArchiveSpreadsheet()" class="flex-1 py-2 rounded font-bold text-white" style="background:var(--blue);">PRINT</button>
+            <button type="button" data-gate-onclick="deleteArchiveWithOverride()" class="flex-1 py-2 rounded font-bold text-white" style="background:var(--red);">DELETE</button>
           </div>
         </div>
       </div>
@@ -588,7 +588,7 @@
 
       <div class="flex gap-3 pt-2">
         <button type="submit" class="flex-1 py-3 rounded-lg font-bold text-white" style="background:var(--green);">SAVE ARCHIVE</button>
-        <button type="button" onclick="closeArchiveEditModal()" class="flex-1 py-3 rounded-lg font-bold surface border" style="border-color:var(--border);">CANCEL</button>
+        <button type="button" data-gate-onclick="closeArchiveEditModal()" class="flex-1 py-3 rounded-lg font-bold surface border" style="border-color:var(--border);">CANCEL</button>
       </div>
 
       <div id="archive-edit-msg" class="hidden text-center text-sm font-bold"></div>

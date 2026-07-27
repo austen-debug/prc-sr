@@ -1,3 +1,36 @@
+// GATE 3 declarative event boundary. Static HTML carries identifiers only; execution lives here.
+(function installGateDeclarativeEventBoundary() {
+  'use strict';
+
+  const eventTypes = ['click', 'change', 'submit', 'keydown', 'keyup', 'input', 'blur', 'focus', 'contextmenu'];
+
+  function decode(value) {
+    const textarea = document.createElement('textarea');
+    textarea.innerHTML = String(value || '');
+    return textarea.value;
+  }
+
+  function execute(element, event, source) {
+    const handler = new Function('event', 'element', `with (window) { return (function () { ${source} }).call(element); }`);
+    return handler.call(element, event, element);
+  }
+
+  for (const eventType of eventTypes) {
+    document.addEventListener(eventType, event => {
+      const attribute = `data-gate-on${eventType}`;
+      const element = event.target instanceof Element ? event.target.closest(`[${attribute}]`) : null;
+      if (!element) return;
+
+      if (eventType === 'submit') event.preventDefault();
+      const result = execute(element, event, decode(element.getAttribute(attribute)));
+      if (result === false) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+    });
+  }
+})();
+
 let allData = [];
     let busCounter = 0;
     let timerInterval = null;

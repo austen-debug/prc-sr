@@ -1,0 +1,10 @@
+file:///home/runner/work/prc-sr/prc-sr/scripts/execute-gate-3-bootstrap-migration.mjs:67
+  if (!condition) throw new Error(message);
+                        ^
+
+Error: Minimal middleware unexpectedly contains UI rewriting.
+    at assert (file:///home/runner/work/prc-sr/prc-sr/scripts/execute-gate-3-bootstrap-migration.mjs:67:25)
+    at main (file:///home/runner/work/prc-sr/prc-sr/scripts/execute-gate-3-bootstrap-migration.mjs:274:3)
+    at async file:///home/runner/work/prc-sr/prc-sr/scripts/execute-gate-3-bootstrap-migration.mjs:278:1
+
+Node.js v22.23.1

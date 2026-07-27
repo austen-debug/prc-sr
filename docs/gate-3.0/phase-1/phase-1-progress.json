@@ -6,6 +6,15 @@
   "status": "active",
   "initiated_on": "2026-07-26",
   "runtime_effect": "none",
+  "five_phase_end_state": {
+    "single_gate_3_runtime": true,
+    "parallel_legacy_runtime_allowed": false,
+    "original_runtime_files_must_receive_final_disposition": true,
+    "transition_only_assets_must_be_removed": true,
+    "dead_duplicate_or_orphaned_code_must_be_removed": true,
+    "retained_code_must_be_governed_as_gate_3": true,
+    "historical_evidence_must_be_non_executable": true
+  },
   "binding_rules": {
     "functional_removal_allowed": false,
     "production_runtime_changes_allowed": false,
@@ -13,7 +22,10 @@
     "current_main_is_operational_truth": true,
     "replacement_before_retirement": true,
     "semantic_parity_required": true,
-    "rollback_required_before_retirement": true
+    "rollback_required_before_retirement": true,
+    "unknown_final_disposition_allowed_at_phase_1_exit": false,
+    "retain_as_legacy_runtime_allowed": false,
+    "all_transitional_assets_require_retirement_gate": true
   },
   "workstreams": [
     {
@@ -71,6 +83,13 @@
       "status": "initiated",
       "completion_percent": 0,
       "deliverable": "engineering-continuity-register.json"
+    },
+    {
+      "id": "legacy-retirement-master-plan",
+      "name": "Legacy Retirement Master Plan",
+      "status": "initiated",
+      "completion_percent": 0,
+      "deliverable": "legacy-retirement-master-plan.json"
     }
   ],
   "initial_scope": {
@@ -95,6 +114,14 @@
       "responsive-command-display"
     ]
   },
+  "phase_1_exit_invariants": [
+    "Every active and indirect production asset has a GATE 3.0 target owner.",
+    "Every original and transitional runtime file has a final disposition.",
+    "Every compatibility, repairing, delegating, shadow, and corrective asset has a retirement phase and acceptance gate.",
+    "No active or indirect production asset has an unknown final disposition.",
+    "No asset is designated to remain as legacy runtime after Phase 5.",
+    "The master retirement plan accounts for removal verification and historical isolation."
+  ],
   "exit_report": "phase-1-exit-report.md",
-  "next_authorized_action": "Populate the current-main repository ownership and served-runtime inventories without modifying production behavior."
+  "next_authorized_action": "Populate the current-main repository ownership and served-runtime inventories, assign preliminary GATE 3.0 target owners and final dispositions, and add every original or transitional runtime asset to the legacy retirement master plan without modifying production behavior."
 }

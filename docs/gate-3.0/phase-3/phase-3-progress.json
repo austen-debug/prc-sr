@@ -1,0 +1,39 @@
+{
+  "program": "GATE 3.0 Full Lift",
+  "repository": "austen-debug/prc-sr",
+  "phase": 3,
+  "phase_name": "Ownership Lift and Phase 4 Readiness",
+  "status": "active",
+  "base_phase": "gate-3.0/phase-2-enterprise-foundation",
+  "runtime_effect": "none",
+  "binding_rules": {
+    "phase_1_truth_required": true,
+    "phase_2_crosscheck_required": true,
+    "single_target_owner_required": true,
+    "permanent_parallel_execution_allowed": false,
+    "net_negative_activation_required": true,
+    "rollback_required": true,
+    "legacy_retirement_required": true,
+    "production_retirement_allowed_in_phase_3": false
+  },
+  "workstreams": [
+    {"id":"canonical-owners","name":"Canonical Owner Registry","status":"initiated","completion_percent":0},
+    {"id":"ownership-transfers","name":"Ownership Transfer Register","status":"initiated","completion_percent":0},
+    {"id":"activation-packages","name":"Activation Package Registry","status":"initiated","completion_percent":0},
+    {"id":"legacy-retirement","name":"Legacy Retirement Register","status":"initiated","completion_percent":0},
+    {"id":"regression-validation","name":"Regression and Operational Validation Matrix","status":"initiated","completion_percent":0},
+    {"id":"phase-2-verification","name":"Phase 2 Verification Ledger","status":"initiated","completion_percent":0},
+    {"id":"phase-4-readiness","name":"Phase 4 Readiness Matrix","status":"initiated","completion_percent":0},
+    {"id":"rollback-continuity","name":"Rollback and Continuity Register","status":"initiated","completion_percent":0}
+  ],
+  "ownership_lift_order": [
+    "status-board",
+    "processing",
+    "airport",
+    "input",
+    "archives-reports",
+    "squadron-board",
+    "shared-shell-auth-navigation-sync-infrastructure"
+  ],
+  "next_authorized_action": "Populate the Phase 2 verification ledger and ownership-transfer register for Status Board without activating a visible route or retiring production owners."
+}

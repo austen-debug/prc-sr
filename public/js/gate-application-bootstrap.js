@@ -48,12 +48,11 @@
   }
 })();
 
-let allData = [];
+const GateStore = window.GateApplicationStore;
     let busCounter = 0;
     let timerInterval = null;
     let isDark = true;
-    let currentRole = 'instructor'; // 'instructor' or 'airman'
-    let currentUsername = '';
+    
     let modalDormId = null;
     let editDormId = null;
     let editArchiveId = null;
@@ -113,8 +112,7 @@ let soundPlayers = {};
     return;
   }
 
-  currentRole = result.role || 'airman';
-  currentUsername = result.username || '';
+  GateStore.setSession({ role: result.role || 'airman', username: result.username || '' });
 }
 
 async function logout() {
@@ -129,39 +127,37 @@ async function logout() {
 }
 
     function buildNav() {
-      const pages = currentRole === 'instructor' ? PAGES_INSTRUCTOR : PAGES_AIRMAN;
-      const container = document.getElementById('nav-links');
-      const activePage = document.querySelector('.page.active');
-      const activeId = activePage ? activePage.id.replace('page-','') : 'board';
-      container.innerHTML = pages.map(p => `<button class="nav-btn ${p===activeId?'active':''}" onclick="showPage('${p}')">${PAGE_LABELS[p]}</button>`).join('');
-     document.getElementById('role-toggle').textContent =
-       currentRole === 'instructor' ? 'INSTRUCTOR / LOGOUT' : 'AIRMAN / LOGOUT';
-      updateRoleVisibility();
-    }
+  const pages = GateStore.session().role === 'instructor' ? PAGES_INSTRUCTOR : PAGES_AIRMAN;
+  const container = document.getElementById('nav-links');
+  const activeId = GateRouteLifecycle.active();
+  container.innerHTML = pages.map(id => `<button type="button" class="nav-btn ${id === activeId ? 'active' : ''}" data-gate-route="${id}">${PAGE_LABELS[id]}</button>`).join('');
+  document.getElementById('role-toggle').textContent = GateStore.session().role === 'instructor' ? 'INSTRUCTOR / LOGOUT' : 'AIRMAN / LOGOUT';
+  updateRoleVisibility();
+}
 
     function updateRoleVisibility() {
   const closeoutBtn = document.getElementById('closeout-btn');
   if (closeoutBtn) {
-    closeoutBtn.style.display = currentRole === 'instructor' ? '' : 'none';
+    closeoutBtn.style.display = GateStore.session().role === 'instructor' ? '' : 'none';
   }
 
   const processingEditHint = document.getElementById('processing-edit-hint');
   if (processingEditHint) {
-    processingEditHint.classList.toggle('hidden', currentRole !== 'instructor');
+    processingEditHint.classList.toggle('hidden', GateStore.session().role !== 'instructor');
   }
 }
 
-    function showPage(id) {
-      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-      const target = document.getElementById('page-' + id);
-      if (target) target.classList.add('active');
-      buildNav();
-    }
 
-    const handler = {
+    document.addEventListener('click', event => {
+  const target = event.target instanceof Element ? event.target.closest('[data-gate-route]') : null;
+  if (!target) return;
+  if (GateRouteLifecycle.activate(target.dataset.gateRoute)) buildNav();
+});
+
+const handler = {
       onDataChanged(data) {
-        allData = data;
-        renderAll();
+        GateStore.replaceRecords(data, 'data-sdk');
+        renderApplication();
       }
     };
 
@@ -180,7 +176,7 @@ async function initApp() {
     }
   } catch (err) {
     console.error('GATE failed to initialize data layer:', err);
-    allData = [];
+    GateStore.replaceRecords([], 'data-sdk-error');
   }
 
   if (window.lucide) {
@@ -191,14 +187,19 @@ async function initApp() {
 /* Local metric is owned by GatePremiumMetricsController. */
 
 initBatchGrid();
+GateRouteLifecycle.register('board', 'gate-status-board-controller');
+GateRouteLifecycle.register('airport', 'gate-bus-workflow-controller');
+GateRouteLifecycle.register('input', 'gate-input-page-controller');
+GateRouteLifecycle.register('processing', 'gate-processing-controller');
+GateRouteLifecycle.register('archives', 'gate-archive-controller');
 buildNav();
 updateSoundButton();
-renderAll();
+renderApplication();
 }
 
-    function getRecords(type) { return allData.filter(r => r.type === type); }
-    function getConfig(key) { const r = allData.find(d => d.type === 'config' && d.key === key); return r ? r.value : ''; }
-    function getActiveWG() { return getConfig('week_group') || ''; }
+    function getRecords(type) { return GateStore.selectType(type); }
+    function getConfig(key) { return GateStore.config(key); }
+    function getActiveWG() { return GateStore.activeWeekGroup(); }
 
  function getLocalTime24() {
   const now = new Date();
@@ -263,7 +264,7 @@ async function createSoundEvent(soundKey, details = {}) {
     return;
   }
 
-  if (allData.length >= 990) {
+  if (GateStore.records().length >= 990) {
     console.warn('Sound event skipped because record count is near the app limit.');
     return;
   }
@@ -341,7 +342,7 @@ async function triggerOvertimeSoundIfNeeded(dormId) {
     return;
   }
 
-  const d = allData.find(r => r.__backendId === dormId);
+  const d = GateStore.records().find(r => r.__backendId === dormId);
 
   if (!d || d.type !== 'dorm' || d.state !== 'open' || d.overtime_sound_sent === 'true') {
     return;
@@ -403,7 +404,7 @@ function getElapsedTimer(openedAt) {
   };
 }
    
-    function renderAll() {
+    function renderApplication() {
       const wg = getActiveWG();
       document.getElementById('week-group-display').textContent = wg || 'No WG';
       const dorms = getRecords('dorm').filter(d => d.week_group === wg);
@@ -538,7 +539,7 @@ const assignedAirmanHtml = d.assigned_airman
   ? `<div class="text-[10px] font-black uppercase tracking-wider text-muted mt-1 text-right">${escapeHtml(d.assigned_airman)}</div>`
   : '';
      
-      const editHandler = currentRole === 'instructor'
+      const editHandler = GateStore.session().role === 'instructor'
   ? `oncontextmenu="openDormEditModal(event, '${d.__backendId}')"`
   : '';
 
@@ -566,7 +567,7 @@ return `<div class="proc-card ${borderClass} ${closedClass}" onclick="openDormMo
     // DORM MODAL
     function openDormModal(id) {
       modalDormId = id;
-      const d = allData.find(r => r.__backendId === id);
+      const d = GateStore.records().find(r => r.__backendId === id);
       if (!d) return;
       document.getElementById('modal-dorm-name').textContent = escapeHtml(d.dorm_name || '');
       document.getElementById('modal-dorm-info').innerHTML = `${[escapeHtml(d.sdq), escapeHtml(d.section), escapeHtml(d.inter_sec)].filter(Boolean).join(' · ')} | ${d.sex === 'female' ? '♀ Female' : '♂ Male'}${d.band === 'true' ? ' | 🎵 Band' : ''} | Max: ${d.max_load}`;
@@ -590,7 +591,7 @@ return `<div class="proc-card ${borderClass} ${closedClass}" onclick="openDormMo
             // Actions
       const actionEl = document.getElementById('modal-action-section');
 
-      if (currentRole !== 'instructor') {
+      if (GateStore.session().role !== 'instructor') {
         if (d.state === 'closed') {
           actionEl.innerHTML = `<div class="text-muted font-bold">DORM CLOSED</div>`;
         } else {
@@ -615,7 +616,7 @@ return `<div class="proc-card ${borderClass} ${closedClass}" onclick="openDormMo
     async function setPhase(phase) {
   if (!modalDormId) return;
 
-  const d = allData.find(r => r.__backendId === modalDormId);
+  const d = GateStore.records().find(r => r.__backendId === modalDormId);
 
   if (d) {
     await window.dataSdk.update({
@@ -639,7 +640,7 @@ async function saveAssignedAirman() {
     return;
   }
 
-  const d = allData.find(r => r.__backendId === modalDormId);
+  const d = GateStore.records().find(r => r.__backendId === modalDormId);
 
   if (!d) {
     return;
@@ -661,11 +662,11 @@ function openDormEditModal(event, id) {
   event.preventDefault();
   event.stopPropagation();
 
-  if (currentRole !== 'instructor') {
+  if (GateStore.session().role !== 'instructor') {
     return;
   }
 
-  const d = allData.find(r => r.__backendId === id);
+  const d = GateStore.records().find(r => r.__backendId === id);
 
   if (!d) {
   return;
@@ -699,11 +700,11 @@ function closeDormEditModal() {
 document.getElementById('dorm-edit-form').addEventListener('submit', async (e) => {
   e.preventDefault();
 
-  if (currentRole !== 'instructor' || !editDormId) {
+  if (GateStore.session().role !== 'instructor' || !editDormId) {
     return;
   }
 
-  const d = allData.find(r => r.__backendId === editDormId);
+  const d = GateStore.records().find(r => r.__backendId === editDormId);
 
   if (!d) {
   return;
@@ -750,24 +751,24 @@ closed_timer: d.state === 'closed'
     }
 
     function setLoadFull() {
-      const d = allData.find(r => r.__backendId === modalDormId);
+      const d = GateStore.records().find(r => r.__backendId === modalDormId);
       if (d) document.getElementById('modal-load-input').value = d.max_load || 0;
     }
 
     async function saveLoad() {
       if (!modalDormId) return;
-      const d = allData.find(r => r.__backendId === modalDormId);
+      const d = GateStore.records().find(r => r.__backendId === modalDormId);
       if (!d) return;
       const val = parseInt(document.getElementById('modal-load-input').value) || 0;
       await window.dataSdk.update({...d, current_load: val});
     }
 
     async function openDorm(id) {
-  if (currentRole !== 'instructor') {
+  if (GateStore.session().role !== 'instructor') {
     return;
   }
 
-  const d = allData.find(r => r.__backendId === id);
+  const d = GateStore.records().find(r => r.__backendId === id);
 
   if (!d) {
     return;
@@ -793,11 +794,11 @@ closed_timer: d.state === 'closed'
 }
 
    async function deleteDormitoryFromEditModal() {
-  if (currentRole !== 'instructor' || !editDormId) {
+  if (GateStore.session().role !== 'instructor' || !editDormId) {
     return;
   }
 
-  const d = allData.find(r => r.__backendId === editDormId);
+  const d = GateStore.records().find(r => r.__backendId === editDormId);
 
   if (!d) {
     return;
@@ -822,11 +823,11 @@ closed_timer: d.state === 'closed'
 }
    
    async function closeDorm(id) {
-  if (currentRole !== 'instructor') {
+  if (GateStore.session().role !== 'instructor') {
     return;
   }
 
-  const d = allData.find(r => r.__backendId === id);
+  const d = GateStore.records().find(r => r.__backendId === id);
 
   if (!d) return;
 
@@ -886,7 +887,7 @@ closed_timer: d.state === 'closed'
         return;
       }
 
-      if (allData.length >= 999) {
+      if (GateStore.records().length >= 999) {
         showMsg('local-bus-msg', 'Record limit reached!', true);
         return;
       }
@@ -939,7 +940,7 @@ closed_timer: d.state === 'closed'
 
     // BUS ARRIVAL CONFIRM
     function confirmBusArrival(id) {
-  const b = allData.find(r => r.__backendId === id);
+  const b = GateStore.records().find(r => r.__backendId === id);
 
   if (!b) {
     return;
@@ -984,7 +985,7 @@ closed_timer: d.state === 'closed'
       if (otw > 44) { document.getElementById('bus-otw-error').textContent = 'Max 44'; document.getElementById('bus-otw-error').classList.remove('hidden'); return; }
       if (females > otw) { document.getElementById('bus-female-error').textContent = 'Females cannot exceed OTW'; document.getElementById('bus-female-error').classList.remove('hidden'); return; }
       if (nats > otw) { document.getElementById('bus-nat-error').textContent = 'Naturalizations cannot exceed OTW'; document.getElementById('bus-nat-error').classList.remove('hidden'); return; }
-      if (allData.length >= 999) { showMsg('airport-msg', 'Record limit reached!', true); return; }
+      if (GateStore.records().length >= 999) { showMsg('airport-msg', 'Record limit reached!', true); return; }
 
       const wg = getActiveWG();
       if (!wg) {
@@ -1022,7 +1023,7 @@ closed_timer: d.state === 'closed'
     async function updateFlightTime() {
       const v = document.getElementById('flight-time').value;
       if (!v) { showMsg('flight-time-msg', 'Select a time', true); return; }
-      const existing = allData.find(d => d.type === 'config' && d.key === 'last_airport');
+      const existing = GateStore.records().find(d => d.type === 'config' && d.key === 'last_airport');
       const result = existing ? await window.dataSdk.update({...existing, value: v}) : await window.dataSdk.create({type: 'config', key: 'last_airport', value: v});
       if (result.isOk) showMsg('flight-time-msg', 'Updated', false);
       else showMsg('flight-time-msg', 'Failed', true);
@@ -1082,12 +1083,12 @@ closed_timer: d.state === 'closed'
       if (!wg) { showBatchMsg('Week Group ID required', true); return; }
       const filledRows = batchRows.filter(r => r.load && parseInt(r.load) > 0);
       if (filledRows.length === 0) { showBatchMsg('At least one row with Load required', true); return; }
-      if (allData.length + filledRows.length + 1 >= 999) { showBatchMsg('Record limit reached', true); return; }
+      if (GateStore.records().length + filledRows.length + 1 >= 999) { showBatchMsg('Record limit reached', true); return; }
 
       const btn = document.getElementById('init-wg-btn');
       btn.disabled = true; btn.textContent = 'Initializing...';
 
-      const existing = allData.find(d => d.type === 'config' && d.key === 'week_group');
+      const existing = GateStore.records().find(d => d.type === 'config' && d.key === 'week_group');
       if (existing) await window.dataSdk.update({...existing, value: wg});
       else await window.dataSdk.create({type: 'config', key: 'week_group', value: wg});
 
@@ -1216,7 +1217,7 @@ closed_timer: d.state === 'closed'
 }
 
 function openAirportBusEditModal(id) {
-  const bus = allData.find(r => r.__backendId === id);
+  const bus = GateStore.records().find(r => r.__backendId === id);
 
   if (!bus || bus.bus_type !== 'airport') {
     return;
@@ -1249,7 +1250,7 @@ document.getElementById('airport-bus-edit-form').addEventListener('submit', asyn
     return;
   }
 
-  const bus = allData.find(r => r.__backendId === editBusId);
+  const bus = GateStore.records().find(r => r.__backendId === editBusId);
 
   if (!bus || bus.bus_type !== 'airport') {
     return;
@@ -1425,7 +1426,7 @@ const natTotal = buses.reduce((s, b) => s + Number(b.nat_count || 0), 0);
 const loadedTotal = dorms.reduce((s, d) => s + Number(d.current_load || 0), 0);
 const expectedTotal = dorms.reduce((s, d) => s + Number(d.max_load || 0), 0);
 
-if (allData.length < 999) {
+if (GateStore.records().length < 999) {
   await window.dataSdk.create({
     type: 'archive',
     week_group: wg,
@@ -1442,9 +1443,9 @@ if (allData.length < 999) {
   });
 }
         for (const rec of [...dorms, ...buses, ...soundEvents]) await window.dataSdk.delete(rec);
-        const lastAirport = allData.find(d => d.type === 'config' && d.key === 'last_airport');
+        const lastAirport = GateStore.records().find(d => d.type === 'config' && d.key === 'last_airport');
         if (lastAirport) await window.dataSdk.update({...lastAirport, value: ''});
-        const activeWgConfig = allData.find(d => d.type === 'config' && d.key === 'week_group');
+        const activeWgConfig = GateStore.records().find(d => d.type === 'config' && d.key === 'week_group');
         if (activeWgConfig) await window.dataSdk.update({...activeWgConfig, value: ''});
         document.getElementById('wg-batch-input').value = '';
         batchRows = Array.from({length: 25}, (_, i) => ({rowIndex: i, sdq:'', sec:'', inter_sec:'', dorm_name:'', sex:'male', band:false, load:''}));
@@ -1476,52 +1477,18 @@ function parseJsonField(fieldId, fallback = []) {
   return JSON.parse(value);
 }
 
-function openArchiveEditModal(event, id) {
-  event.preventDefault();
-  event.stopPropagation();
 
-  if (currentRole !== 'instructor') {
-    return;
-  }
 
-  const archive = allData.find(r => r.__backendId === id);
 
-  if (!archive) {
-    return;
-  }
-
-  editArchiveId = id;
-
-  document.getElementById('archive-edit-wg').value = archive.week_group || '';
-  document.getElementById('archive-edit-archived-at').value = archive.archived_at || '';
-  document.getElementById('archive-edit-dorm-count').value = archive.dorm_count || 0;
-  document.getElementById('archive-edit-bus-count').value = archive.bus_count || 0;
-  document.getElementById('archive-edit-total-arrived').value = archive.total_arrived || 0;
-  document.getElementById('archive-edit-female-total').value = archive.female_total || 0;
-  document.getElementById('archive-edit-nat-total').value = archive.nat_total || 0;
-  document.getElementById('archive-edit-dorm-data').value = safeJsonPretty(archive.dorm_data, []);
-  document.getElementById('archive-edit-bus-data').value = safeJsonPretty(archive.bus_data, []);
-
-  const msg = document.getElementById('archive-edit-msg');
-  msg.classList.add('hidden');
-  msg.textContent = '';
-
-  document.getElementById('archive-edit-modal').classList.remove('hidden');
-}
-
-function closeArchiveEditModal() {
-  document.getElementById('archive-edit-modal').classList.add('hidden');
-  editArchiveId = null;
-}
 
 document.getElementById('archive-edit-form').addEventListener('submit', async (e) => {
   e.preventDefault();
 
-  if (currentRole !== 'instructor' || !editArchiveId) {
+  if (GateStore.session().role !== 'instructor' || !editArchiveId) {
     return;
   }
 
-  const archive = allData.find(r => r.__backendId === editArchiveId);
+  const archive = GateStore.records().find(r => r.__backendId === editArchiveId);
 
   if (!archive) {
     return;
@@ -1560,144 +1527,14 @@ document.getElementById('archive-edit-form').addEventListener('submit', async (e
   }
 });
 
-function printArchiveSpreadsheet() {
-  if (!editArchiveId) {
-    return;
-  }
 
-  const archive = allData.find(r => r.__backendId === editArchiveId);
-
-  if (!archive) {
-    return;
-  }
-
-  let dormData = [];
-  let busData = [];
-
-  try {
-    dormData = parseJsonField('archive-edit-dorm-data', []);
-    busData = parseJsonField('archive-edit-bus-data', []);
-  } catch (error) {
-    alert('Dorm Data JSON or Bus Data JSON is invalid. Fix the JSON before printing.');
-    return;
-  }
-
-  const weekGroup = document.getElementById('archive-edit-wg').value.trim() || archive.week_group || '';
-  const totalArrived = Number(document.getElementById('archive-edit-total-arrived').value || 0);
-  const femaleTotal = Number(document.getElementById('archive-edit-female-total').value || 0);
-  const natTotal = Number(document.getElementById('archive-edit-nat-total').value || 0);
-  const loadedTotal = dormData.reduce((s, d) => s + Number(d.current_load || d.loaded || 0), 0);
-  const expectedTotal = dormData.reduce((s, d) => s + Number(d.max_load || 0), 0);
-
-  const dormRows = dormData.map(d => `
-    <tr>
-      <td>${escapeHtml(d.name || d.dorm_name || '')}</td>
-      <td>${escapeHtml(d.assigned_airman || '')}</td>
-      <td>${escapeHtml(d.sdq || '')}</td>
-      <td>${escapeHtml(d.section || '')}</td>
-      <td>${escapeHtml(d.inter_sec || '')}</td>
-      <td>${escapeHtml(d.sex || '')}</td>
-      <td>${escapeHtml(d.band === 'true' ? 'YES' : '')}</td>
-      <td>${escapeHtml(d.current_load ?? d.loaded ?? 0)}</td>
-      <td>${escapeHtml(d.max_load ?? 0)}</td>
-      <td>${escapeHtml(d.open_time || '')}</td>
-      <td>${escapeHtml(d.close_time || '')}</td>
-      <td>${escapeHtml(d.elapsed || '')}</td>
-      <td>${escapeHtml(d.notes || '')}</td>
-    </tr>
-  `).join('');
-
-  const busRows = busData.map(b => `
-    <tr>
-      <td>${escapeHtml(b.bus_type || '')}</td>
-      <td>${escapeHtml(b.bus_id || '')}</td>
-      <td>${escapeHtml(b.originating_destination || b.destination || '')}</td>
-      <td>${escapeHtml(b.otw_count || 0)}</td>
-      <td>${escapeHtml(b.female_count || 0)}</td>
-      <td>${escapeHtml(b.nat_count || 0)}</td>
-      <td>${b.departed_at ? escapeHtml(new Date(b.departed_at).toLocaleString()) : ''}</td>
-      <td>${b.arrived_at ? escapeHtml(new Date(b.arrived_at).toLocaleString()) : ''}</td>
-      <td>${escapeHtml(b.status || '')}</td>
-    </tr>
-  `).join('');
-
-  const printWindow = window.open('', '_blank');
-
-  printWindow.document.write(`
-    <!doctype html>
-    <html>
-    <head>
-      <title>${escapeHtml(weekGroup)} Archive Report</title>
-      
-    </head>
-    <body>
-      <button class="no-print" onclick="window.print()" style="padding:8px 16px;margin-bottom:12px;">Print</button>
-
-      <h1>GATE Archive Report</h1>
-      <div><strong>Week Group:</strong> ${escapeHtml(weekGroup)}</div>
-      <div><strong>Archived:</strong> ${archive.archived_at ? escapeHtml(new Date(archive.archived_at).toLocaleString()) : ''}</div>
-
-      <div class="summary">
-        <div class="box"><div class="label">Total Arrived</div><div class="value">${totalArrived}</div></div>
-        <div class="box"><div class="label">Loaded to Dorms</div><div class="value">${loadedTotal}</div></div>
-        <div class="box"><div class="label">Expected Capacity</div><div class="value">${expectedTotal}</div></div>
-        <div class="box"><div class="label">Females</div><div class="value">${femaleTotal}</div></div>
-        <div class="box"><div class="label">Naturalizations</div><div class="value">${natTotal}</div></div>
-      </div>
-
-      <h2>Dorm Loadout</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>Dorm</th>
-            <th>Airman</th>
-            <th>SDQ</th>
-            <th>Section</th>
-            <th>Inter/Sec</th>
-            <th>Sex</th>
-            <th>Band</th>
-            <th>Loaded</th>
-            <th>Max</th>
-            <th>Opened</th>
-            <th>Closed</th>
-            <th>Elapsed</th>
-            <th>Notes</th>
-          </tr>
-        </thead>
-        <tbody>${dormRows}</tbody>
-      </table>
-
-      <h2>Bus / Arrival Log</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>Type</th>
-            <th>Bus #</th>
-            <th>Originating Destination</th>
-            <th>Arrived/OTW</th>
-            <th>Females</th>
-            <th>Naturalizations</th>
-            <th>Departed</th>
-            <th>Arrived</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody>${busRows}</tbody>
-      </table>
-    </body>
-    </html>
-  `);
-
-  printWindow.document.close();
-  printWindow.focus();
-}
 
    async function deleteArchiveWithOverride() {
   if (!editArchiveId) {
     return;
   }
 
-  const archive = allData.find(r => r.__backendId === editArchiveId);
+  const archive = GateStore.records().find(r => r.__backendId === editArchiveId);
 
   if (!archive) {
     return;
@@ -1731,8 +1568,8 @@ function printArchiveSpreadsheet() {
 
   if (result.isOk) {
   closeArchiveEditModal();
-  allData = allData.filter(r => r.__backendId !== archive.__backendId);
-  renderAll();
+  allData = GateStore.records().filter(r => r.__backendId !== archive.__backendId);
+  renderApplication();
 } else {
     const msg = document.getElementById('archive-edit-msg');
     msg.textContent = result.error || 'Archive delete failed.';

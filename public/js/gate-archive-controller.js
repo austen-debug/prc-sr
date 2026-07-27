@@ -39,7 +39,7 @@
   }
 
   function records() {
-    try { return Array.isArray(allData) ? allData : []; } catch (_) { return []; }
+    return window.GateApplicationStore?.records?.() || [];
   }
 
   function getRecordsOfType(type) {
@@ -48,11 +48,11 @@
   }
 
   function activeWeekGroup() {
-    try { return typeof window.getActiveWG === 'function' ? window.getActiveWG() : ''; } catch (_) { return ''; }
+    return window.GateApplicationStore?.activeWeekGroup?.() || '';
   }
 
   function isInstructor() {
-    try { return currentRole === 'instructor'; } catch (_) { return false; }
+    return window.GateApplicationStore?.session?.().role === 'instructor';
   }
 
   function setEditArchiveId(id) {
@@ -373,7 +373,7 @@
       await clearConfig('week_group', 'active week group');
       resetInputAfterCloseout();
 
-      try { if (typeof renderAll === 'function') renderAll(); } catch (_) {}
+      try { window.renderApplication?.(); } catch (_) {}
       try { window.runGateHooks?.('afterCloseout', { weekGroup, archiveId: result.data.__backendId, source: 'gate-archive-controller' }); } catch (_) {}
       try { window.runGateHooks?.('afterDataChanged', { weekGroup, archiveId: result.data.__backendId, source: 'gate-archive-controller' }); } catch (_) {}
       renderArchiveManagementView();
@@ -406,7 +406,7 @@
     closeoutStatusElement();
     btn.onclick = initiateCloseoutCanonical;
     btn.dataset.owner = 'gate-archive-controller';
-    window.initiateCloseout = initiateCloseoutCanonical;
+    
     try { initiateCloseout = initiateCloseoutCanonical; } catch (_) {}
     return true;
   }
@@ -720,19 +720,7 @@
     if (current) printCurrentSummaryReport(event);
   }
 
-  function patchGlobals() {
-    window.initiateCloseout = initiateCloseoutCanonical;
-    window.renderArchives = renderArchiveManagementView;
-    window.openArchiveEditModal = openArchiveEditModalCanonical;
-    window.closeArchiveEditModal = closeArchiveEditModalCanonical;
-    window.printArchiveSpreadsheet = printArchiveReport;
-    window.printCurrentSummaryReport = printCurrentSummaryReport;
-    try { initiateCloseout = initiateCloseoutCanonical; } catch (_) {}
-    try { renderArchives = renderArchiveManagementView; } catch (_) {}
-    try { openArchiveEditModal = openArchiveEditModalCanonical; } catch (_) {}
-    try { closeArchiveEditModal = closeArchiveEditModalCanonical; } catch (_) {}
-    try { printArchiveSpreadsheet = printArchiveReport; } catch (_) {}
-  }
+
 
   function scheduleRender() {
     if (renderQueued) return;
@@ -744,7 +732,7 @@
   }
 
   function runPass() {
-    patchGlobals();
+
     patchCloseoutButton();
     ensureArchiveWindowPanel();
     ensureCurrentSummaryButton();

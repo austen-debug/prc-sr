@@ -32,15 +32,15 @@
   }
 
   function records() {
-    try { return Array.isArray(allData) ? allData : []; } catch (_) { return []; }
+    return window.GateApplicationStore?.records?.() || [];
   }
 
   function activeWeekGroup() {
-    try { return typeof getActiveWG === 'function' ? getActiveWG() : ''; } catch (_) { return ''; }
+    return window.GateApplicationStore?.activeWeekGroup?.() || '';
   }
 
   function isInstructor() {
-    try { return currentRole === 'instructor'; } catch (_) { return false; }
+    return window.GateApplicationStore?.session?.().role === 'instructor';
   }
 
   function dormById(id) {

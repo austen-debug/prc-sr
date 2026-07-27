@@ -143,3 +143,22 @@ body { font-family: Arial, sans-serif; color: #111; margin: 24px; }
           body { margin: 12px; }
           .no-print { display: none; }
         }
+
+/* GATE 3 GENERATED INLINE STYLE CLASSES START */
+.gate-inline-style-001 { background-color: #16a34a; color: white; font-weight: 900; letter-spacing: 0.1em; }
+.gate-inline-style-002 { width:16px;height:16px; }
+.gate-inline-style-003 { border-color:var(--border);color:var(--text); }
+.gate-inline-style-004 { background:#16a34a; }
+.gate-inline-style-005 { border-color:var(--border); }
+.gate-inline-style-006 { background:var(--bg); }
+.gate-inline-style-007 { background:#2563eb; }
+.gate-inline-style-008 { background:#dc2626; }
+.gate-inline-style-009 { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); align-content: start; }
+.gate-inline-style-010 { background:var(--green); }
+.gate-inline-style-011 { background:var(--blue); }
+.gate-inline-style-012 { border-color:var(--border); min-height:30px; }
+.gate-inline-style-013 { background:var(--red); min-height:30px; }
+.gate-inline-style-014 { background:var(--green); min-height:30px; }
+.gate-inline-style-015 { max-width: 900px; }
+.gate-inline-style-016 { background:var(--red); }
+/* GATE 3 GENERATED INLINE STYLE CLASSES END */

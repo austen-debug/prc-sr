@@ -1,28 +1,45 @@
-// GATE 3 declarative event boundary. Static HTML carries identifiers only; execution lives here.
-(function installGateDeclarativeEventBoundary() {
+// GATE 3 action registry. Static HTML carries action identifiers only.
+(function installGateActionRegistry() {
   'use strict';
 
-  const eventTypes = ['click', 'change', 'submit', 'keydown', 'keyup', 'input', 'blur', 'focus', 'contextmenu'];
-
-  function decode(value) {
-    const textarea = document.createElement('textarea');
-    textarea.innerHTML = String(value || '');
-    return textarea.value;
-  }
-
-  function execute(element, event, source) {
-    const handler = new Function('event', 'element', `with (window) { return (function () { ${source} }).call(element); }`);
-    return handler.call(element, event, element);
-  }
+  const actions = Object.freeze({
+  "gate-action-001": Object.freeze({ eventType: "click", run(event, element) { return (function () { logout() }).call(element); } }),
+  "gate-action-002": Object.freeze({ eventType: "click", run(event, element) { return (function () { toggleFullscreenBoard() }).call(element); } }),
+  "gate-action-003": Object.freeze({ eventType: "click", run(event, element) { return (function () { enableOperationalSounds() }).call(element); } }),
+  "gate-action-004": Object.freeze({ eventType: "click", run(event, element) { return (function () { toggleTheme() }).call(element); } }),
+  "gate-action-005": Object.freeze({ eventType: "click", run(event, element) { return (function () { updateFlightTime() }).call(element); } }),
+  "gate-action-006": Object.freeze({ eventType: "click", run(event, element) { return (function () { initializeWeekGroup() }).call(element); } }),
+  "gate-action-007": Object.freeze({ eventType: "click", run(event, element) { return (function () { returnToBoard() }).call(element); } }),
+  "gate-action-008": Object.freeze({ eventType: "click", run(event, element) { return (function () { openLocalBusModal() }).call(element); } }),
+  "gate-action-009": Object.freeze({ eventType: "click", run(event, element) { return (function () { initiateCloseout() }).call(element); } }),
+  "gate-action-010": Object.freeze({ eventType: "click", run(event, element) { return (function () { closeDormModal() }).call(element); } }),
+  "gate-action-011": Object.freeze({ eventType: "keydown", run(event, element) { return (function () { handleAirmanInputKey(event) }).call(element); } }),
+  "gate-action-012": Object.freeze({ eventType: "click", run(event, element) { return (function () { saveAssignedAirman() }).call(element); } }),
+  "gate-action-013": Object.freeze({ eventType: "click", run(event, element) { return (function () { modLoad(-5) }).call(element); } }),
+  "gate-action-014": Object.freeze({ eventType: "click", run(event, element) { return (function () { modLoad(-1) }).call(element); } }),
+  "gate-action-015": Object.freeze({ eventType: "click", run(event, element) { return (function () { modLoad(1) }).call(element); } }),
+  "gate-action-016": Object.freeze({ eventType: "click", run(event, element) { return (function () { modLoad(5) }).call(element); } }),
+  "gate-action-017": Object.freeze({ eventType: "click", run(event, element) { return (function () { setLoadFull() }).call(element); } }),
+  "gate-action-018": Object.freeze({ eventType: "click", run(event, element) { return (function () { saveLoad() }).call(element); } }),
+  "gate-action-019": Object.freeze({ eventType: "click", run(event, element) { return (function () { closeDormEditModal() }).call(element); } }),
+  "gate-action-020": Object.freeze({ eventType: "click", run(event, element) { return (function () { deleteDormitoryFromEditModal() }).call(element); } }),
+  "gate-action-021": Object.freeze({ eventType: "click", run(event, element) { return (function () { closeLocalBusModal() }).call(element); } }),
+  "gate-action-022": Object.freeze({ eventType: "click", run(event, element) { return (function () { closeAirportBusEditModal() }).call(element); } }),
+  "gate-action-023": Object.freeze({ eventType: "click", run(event, element) { return (function () { closeArchiveEditModal() }).call(element); } }),
+  "gate-action-024": Object.freeze({ eventType: "click", run(event, element) { return (function () { printArchiveSpreadsheet() }).call(element); } }),
+  "gate-action-025": Object.freeze({ eventType: "click", run(event, element) { return (function () { deleteArchiveWithOverride() }).call(element); } })
+  });
+  const eventTypes = [...new Set(Object.values(actions).map(action => action.eventType))];
 
   for (const eventType of eventTypes) {
     document.addEventListener(eventType, event => {
-      const attribute = `data-gate-on${eventType}`;
+      const attribute = `data-gate-action-${eventType}`;
       const element = event.target instanceof Element ? event.target.closest(`[${attribute}]`) : null;
       if (!element) return;
-
+      const action = actions[element.getAttribute(attribute)];
+      if (!action) return;
       if (eventType === 'submit') event.preventDefault();
-      const result = execute(element, event, decode(element.getAttribute(attribute)));
+      const result = action.run(event, element);
       if (result === false) {
         event.preventDefault();
         event.stopPropagation();

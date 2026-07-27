@@ -1,0 +1,49 @@
+{
+  "schema_version": "1.0.0",
+  "purpose": "Prevent Phase 4 cutover from leaving hidden or parallel legacy execution paths.",
+  "gates": [
+    {
+      "id": "RV-01",
+      "name": "Superseded owner inventory",
+      "required": true,
+      "evidence": ["files", "globals", "handlers", "styles", "middleware transforms", "observers", "timers", "renderers", "fallbacks"]
+    },
+    {
+      "id": "RV-02",
+      "name": "Reference removal",
+      "required": true,
+      "evidence": ["imports", "script injection", "stylesheet injection", "dynamic lookup", "DOM hooks", "event registration", "route registration"]
+    },
+    {
+      "id": "RV-03",
+      "name": "Runtime unreachability",
+      "required": true,
+      "evidence": ["route tests", "event-path tests", "mutation-path tests", "fallback tests", "degraded-mode tests"]
+    },
+    {
+      "id": "RV-04",
+      "name": "Single authoritative owner",
+      "required": true,
+      "evidence": ["render owner", "timer owner", "metric owner", "mutation owner", "repository owner", "permission owner"]
+    },
+    {
+      "id": "RV-05",
+      "name": "Net-negative runtime",
+      "required": true,
+      "evidence": ["before count", "after count", "CSS delta", "script delta", "observer delta", "interval delta", "authoritative-owner delta"]
+    },
+    {
+      "id": "RV-06",
+      "name": "Historical isolation",
+      "required": true,
+      "evidence": ["non-executable location", "no runtime imports", "no build inclusion", "retention rationale"]
+    },
+    {
+      "id": "RV-07",
+      "name": "Rollback continuity",
+      "required": true,
+      "evidence": ["rollback trigger", "rollback steps", "data compatibility", "deployment restoration", "post-rollback validation"]
+    }
+  ],
+  "completion_rule": "A package may be marked retirement-verified only when every required gate is satisfied with source-backed evidence and no original or transition-only owner remains executable."
+}

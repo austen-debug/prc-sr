@@ -32,9 +32,29 @@ jobs:
           node-version: '22'
 
       - name: Execute final runtime transition
-        run: node scripts/complete-gate-3-runtime-transition.mjs
+        id: transition
+        continue-on-error: true
+        run: |
+          set +e
+          node scripts/complete-gate-3-runtime-transition.mjs > gate-3-runtime-transition.log 2>&1
+          code=$?
+          cat gate-3-runtime-transition.log
+          exit $code
+
+      - name: Upload transition diagnostic
+        if: steps.transition.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-3-runtime-transition-diagnostic
+          path: gate-3-runtime-transition.log
+          retention-days: 7
+
+      - name: Stop after failed transition
+        if: steps.transition.outcome == 'failure'
+        run: exit 1
 
       - name: Validate retained runtime
+        if: steps.transition.outcome == 'success'
         run: |
           node --check public/js/gate-application-store.js
           node --check public/js/gate-route-lifecycle.js
@@ -51,6 +71,7 @@ jobs:
           ! grep -Eq 'prc-dash-runtime-fixes|prc-dash-dorm-reopen|prc-dash-final-audit|prc-dash-dorm-flag-validation|prc-dash-auditorium-location|gate-airport-bus-delete-controller|prc-dash-modal-mobile-validation|gate-render-stability-fix|prc-dash-processing-loaded-summary|prc-dash-overtime-audit|prc-dash-sat-arrivals' public/index.html
 
       - name: Commit completed runtime transition
+        if: steps.transition.outcome == 'success'
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
@@ -62,4 +83,4 @@ jobs:
           git commit -m 'Complete GATE 3 runtime transition [gate-3-runtime-transition-complete]'
           git push origin HEAD:gate-3.0/phase-5-certification
 
-# Trigger revision: 2026-07-27T04:18:00-05:00
+# Trigger revision: 2026-07-27T13:52:00-05:00

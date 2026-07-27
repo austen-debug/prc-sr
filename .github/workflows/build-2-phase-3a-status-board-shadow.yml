@@ -1,45 +1,35 @@
-name: Build 2 Phase 3A Status Board Shadow
+name: GATE 3 Status Board Shadow Retirement
 
 on:
   push:
     paths:
+      - 'public/index.html'
       - 'public/app/status-board-shadow/**'
       - 'public/js/gate-status-board-shadow-controller.js'
       - 'functions/_middleware.js'
       - 'tests/build-2/status-board-shadow/**'
-      - 'docs/build-2/STATUS_BOARD_SHADOW_CONTRACT.md'
-      - 'docs/build-2/STATUS_BOARD_PARITY_MATRIX.md'
-      - 'docs/build-2/PHASE_3A_EXECUTION_REPORT.md'
-      - 'docs/build-2/STATUS_BOARD_SHADOW_MIGRATION_AUTHORIZATION.md'
-      - 'docs/build-2/PROGRAM_TRACEABILITY_MATRIX.md'
-      - 'docs/build-2/INDEX.md'
-      - 'docs/ACTIVE_RUNTIME_STACK.md'
+      - 'tests/runtime/**'
       - '.github/workflows/build-2-phase-3a-status-board-shadow.yml'
   pull_request:
     paths:
+      - 'public/index.html'
       - 'public/app/status-board-shadow/**'
       - 'public/js/gate-status-board-shadow-controller.js'
       - 'functions/_middleware.js'
       - 'tests/build-2/status-board-shadow/**'
-      - 'docs/build-2/STATUS_BOARD_SHADOW_CONTRACT.md'
-      - 'docs/build-2/STATUS_BOARD_PARITY_MATRIX.md'
-      - 'docs/build-2/PHASE_3A_EXECUTION_REPORT.md'
-      - 'docs/build-2/STATUS_BOARD_SHADOW_MIGRATION_AUTHORIZATION.md'
-      - 'docs/build-2/PROGRAM_TRACEABILITY_MATRIX.md'
-      - 'docs/build-2/INDEX.md'
-      - 'docs/ACTIVE_RUNTIME_STACK.md'
+      - 'tests/runtime/**'
       - '.github/workflows/build-2-phase-3a-status-board-shadow.yml'
 
 permissions:
   contents: read
 
 concurrency:
-  group: build-2-phase-3a-${{ github.workflow }}-${{ github.ref }}
+  group: gate-3-status-board-retirement-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  phase-3a:
-    name: Hidden Status Board parity and route readiness
+  status-board-retirement:
+    name: Static ownership and shadow retirement
     runs-on: ubuntu-latest
     timeout-minutes: 24
 
@@ -52,14 +42,16 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Validate Phase 3A source syntax
+      - name: Validate migrated source syntax
         run: |
-          for file in public/app/status-board-shadow/*.mjs; do node --check "$file"; done
-          node --check public/js/gate-status-board-shadow-controller.js
+          node --check public/js/gate-data-sdk.js
+          node --check public/js/gate-application-bootstrap.js
+          node --check public/js/gate-status-board-controller.js
           node --experimental-default-type=module --check functions/_middleware.js
 
-      - name: Validate Status Board shadow parity and route readiness
-        run: node --test tests/build-2/status-board-shadow/*.test.mjs
+      - name: Validate runtime and record integrity
+        run: |
+          node --test tests/runtime/*.test.mjs
 
       - name: Validate complete foundation data plane
         run: |
@@ -82,38 +74,22 @@ jobs:
           node --test tests/build-2/responsive/*.test.mjs
           node --test tests/build-2/accessibility/*.test.mjs
 
-      - name: Validate shadow-only runtime boundary
+      - name: Validate static application ownership
         run: |
-          test "$(grep -o 'gate-status-board-shadow-controller\.js' functions/_middleware.js | wc -l)" -eq 1
-          grep -q "import('/app/status-board-shadow/index.mjs" public/js/gate-status-board-shadow-controller.js
-          grep -q "readOnly: true" public/js/gate-status-board-shadow-controller.js
-          grep -q "productionRouteActivated: false" public/js/gate-status-board-shadow-controller.js
-          if grep -En '\bfetch[[:space:]]*\(|localStorage|sessionStorage|indexedDB|serviceWorker|innerHTML[[:space:]]*=|textContent[[:space:]]*=|insertAdjacentHTML|appendChild|replaceChildren' public/js/gate-status-board-shadow-controller.js; then
-            echo 'Phase 3A bridge must remain observation-only.'
-            exit 1
-          fi
-          if grep -En 'GateBusRepository|GateDormRepository|GateArchiveRepository|\.(create|update|delete)[[:space:]]*\(' public/js/gate-status-board-shadow-controller.js; then
-            echo 'Phase 3A bridge may not perform persistence commands.'
-            exit 1
-          fi
-          if grep -q 'status-board-shadow/index.mjs' functions/_middleware.js; then
-            echo 'Middleware may load only the narrow bridge, not the Build 2 route package directly.'
-            exit 1
-          fi
+          grep -q '/css/gate-application-structure.css' public/index.html
+          grep -q '/js/gate-data-sdk.js' public/index.html
+          grep -q '/js/gate-application-bootstrap.js' public/index.html
+          ! grep -Eq '<style([[:space:]>])' public/index.html
+          ! grep -Eq 'UI_STYLESHEETS|UI_HEAD_SCRIPTS|injectUiAssets|applyStatusBoardMetricSourceRefactor|normalizeServedBranding|stripLegacyInlineShellCss' functions/_middleware.js
 
-      - name: Validate no visible route activation
+      - name: Validate Status Board shadow retirement
         run: |
+          ! grep -q 'gate-status-board-shadow-controller.js' public/index.html
+          ! grep -q 'gate-status-board-shadow-controller.js' functions/_middleware.js
+          ! grep -q 'status-board-shadow/index.mjs' functions/_middleware.js
           node --input-type=module <<'NODE'
           import { ROUTES } from './public/app/shell/route-registry.mjs';
           if (ROUTES.length !== 6) throw new Error(`Expected six canonical routes, found ${ROUTES.length}.`);
-          if (ROUTES.some(route => /shadow/i.test(route.id) || /shadow/i.test(route.label))) throw new Error('Shadow must not become a visible route.');
+          if (ROUTES.some(route => /shadow/i.test(route.id) || /shadow/i.test(route.label))) throw new Error('Retired shadow must not be a visible route.');
           if (!ROUTES.some(route => route.id === 'board')) throw new Error('Status Board route is missing.');
           NODE
-
-      - name: Validate governance and continuing production block
-        run: |
-          grep -Eq 'Phase 3A — Status Board Shadow Migration[[:space:]]+(IMPLEMENTED / VALIDATION PENDING|COMPLETE / SHADOW ACTIVE)' docs/build-2/INDEX.md
-          grep -Eq 'Foundation Alignment Gate F[[:space:]]+COMPLETE' docs/build-2/INDEX.md
-          grep -Eq 'Production Build 2 route activation[[:space:]]+NOT AUTHORIZED' docs/build-2/INDEX.md
-          grep -q 'NOT AUTHORIZED — visible Build 2 Status Board' docs/build-2/STATUS_BOARD_SHADOW_CONTRACT.md
-          grep -q 'Build 1 remains the sole visible Status Board owner' docs/build-2/PHASE_3A_EXECUTION_REPORT.md

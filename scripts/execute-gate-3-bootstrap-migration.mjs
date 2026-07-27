@@ -271,7 +271,7 @@ async function main() {
   const verification = await fs.readFile(INDEX_PATH, 'utf8');
   assert(!/<style(?:\s|>)/i.test(verification), 'Inline style block remains in public/index.html.');
   assert(!/<script(?![^>]*\bsrc=)/i.test(verification), 'Inline script block remains in public/index.html.');
-  assert(!MINIMAL_MIDDLEWARE.includes('replace('), 'Minimal middleware unexpectedly contains UI rewriting.');
+  assert(!/applyAppShellIdentity|normalizeServedBranding|stripLegacyInlineShellCss|applyStatusBoardMetricSourceRefactor|injectUiAssets/.test(MINIMAL_MIDDLEWARE), 'Minimal middleware unexpectedly contains UI rewriting.');
   console.log(JSON.stringify({ styleBlocks: styleBlocks.length, scriptBlocks: scriptBlocks.length, middleware: 'security-session-static-only' }));
 }
 

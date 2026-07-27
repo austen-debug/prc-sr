@@ -1,0 +1,84 @@
+{
+  "schema_version": "1.0.0",
+  "phase_4_name": "Unified Operational Platform Activation",
+  "readiness_states": [
+    "blocked",
+    "evidence-ready",
+    "activation-ready",
+    "retirement-ready",
+    "executed"
+  ],
+  "packages": [
+    {
+      "package_id": "status-board",
+      "readiness": "blocked",
+      "required_before_activation": [
+        "Phase 1 owner and behavior index complete",
+        "Phase 2 functionality, intent, design, and processing evidence pass",
+        "single visible GATE 3.0 Status Board owner",
+        "net-negative CSS and script asset delta",
+        "middleware Status Board rewrites removed",
+        "legacy renderer and repair layers retired",
+        "responsive, accessibility, fullscreen, degraded-state, and rollback evidence complete"
+      ],
+      "phase_4_execution_intent": "Activate canonical GATE 3.0 Status Board and retire all superseded Status Board owners in the same bounded package."
+    },
+    {
+      "package_id": "processing",
+      "readiness": "blocked",
+      "required_before_activation": [
+        "Status Board ownership handoff stable",
+        "exact backend-record binding proven",
+        "dorm lifecycle and timer authority proven",
+        "modal persistence and role behavior regression complete",
+        "legacy Processing mutation paths retired"
+      ],
+      "phase_4_execution_intent": "Activate canonical Processing route and retire duplicate modal, mutation, and repair owners."
+    },
+    {
+      "package_id": "airport",
+      "readiness": "blocked",
+      "required_before_activation": [
+        "Bus lifecycle parity complete",
+        "arrival confirmation and destructive action authority proven",
+        "Space Force and local-arrival continuity proven",
+        "legacy bus workflow owners retired"
+      ],
+      "phase_4_execution_intent": "Activate canonical Airport route and one bus workflow owner."
+    },
+    {
+      "package_id": "input",
+      "readiness": "blocked",
+      "required_before_activation": [
+        "Week Group initialization and idempotency proven",
+        "input/display order preserved",
+        "receiving-window and Space Force continuity proven",
+        "legacy initialization owners retired"
+      ],
+      "phase_4_execution_intent": "Activate canonical Input route and one initialization workflow owner."
+    },
+    {
+      "package_id": "archives-reports",
+      "readiness": "blocked",
+      "required_before_activation": [
+        "Archive immutability and create-verify-delete closeout proven",
+        "historical schema compatibility proven",
+        "current-summary parity proven",
+        "legacy print and archive owners retired"
+      ],
+      "phase_4_execution_intent": "Activate canonical Archives and Reports routes and retire duplicate report/closeout owners."
+    },
+    {
+      "package_id": "squadron-board",
+      "readiness": "blocked",
+      "required_before_activation": [
+        "Server-enforced read-only projection proven",
+        "restricted field non-disclosure proven",
+        "dedicated role/session authority proven",
+        "legacy shared-render leakage paths retired"
+      ],
+      "phase_4_execution_intent": "Activate canonical Squadron Board with server-authoritative restricted access."
+    }
+  ],
+  "final_phase_4_rule": "No activation package may leave a permanent original or transition-only execution path behind."
+}

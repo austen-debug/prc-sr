@@ -1,6 +1,10 @@
 name: Execute GATE 3 Bootstrap Migration
 
 on:
+  pull_request:
+    branches:
+      - gate-3.0/phase-4-unified-operational-platform
+    types: [opened, synchronize, reopened]
   push:
     branches:
       - gate-3.0/phase-5-certification
@@ -53,5 +57,3 @@ jobs:
           git add public/index.html public/css/gate-application-structure.css public/js/gate-data-sdk.js public/js/gate-application-bootstrap*.js functions/_middleware.js
           git commit -m 'Extract GATE 3 bootstrap and retire middleware UI rewriting [gate-3-bootstrap-migrated]'
           git push origin HEAD:gate-3.0/phase-5-certification
-
-# Trigger revision: 2026-07-27T03:45:00-05:00

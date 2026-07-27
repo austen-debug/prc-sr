@@ -1,20 +1,20 @@
 # GATE Active Runtime Stack
 
-Status: Phase 3A Status Board shadow active; Audit Remediation Gate 1 complete; Gate 2 next  
+Status: GATE 3.0 transition active; Status Board shadow bridge retired; canonical visible owners retained  
 Scope: authoritative served-runtime order from `functions/_middleware.js`
 
 ## Purpose
 
-The active GATE application is not defined only by `public/index.html`. Cloudflare Functions middleware injects and source-refactors the CSS and JavaScript layers used by authenticated pages. This register identifies the active order, operational ownership, the narrow Phase 3A shadow boundary, and the enforced runtime-growth ceiling.
+The active GATE application is not defined only by `public/index.html`. Cloudflare Functions middleware injects and source-refactors the CSS and JavaScript layers used by authenticated pages. This register identifies the active order, operational ownership, completed transition retirements, and the enforced runtime-growth ceiling.
 
 ## Active asset totals
 
 ```text
 Direct stylesheets: 13
 Imported stylesheets: 3
-Direct scripts: 27
+Direct scripts: 26
 Visible Build 2 routes: 0
-Hidden Build 2 runtime observers: 1
+Hidden Build 2 runtime observers: 0
 ```
 
 The machine-readable inventory and ceilings are governed by `docs/build-2/ACTIVE_RUNTIME_BUDGET.json` and validated by `tests/runtime/active-runtime-budget.test.mjs`.
@@ -73,7 +73,6 @@ Injected by middleware in current order:
 24. `/js/prc-dash-processing-loaded-summary.js`
 25. `/js/gate-premium-metrics-controller.js?v=metric-live-clock-20260722`
 26. `/js/prc-dash-overtime-audit.js`
-27. `/js/gate-status-board-shadow-controller.js?v=phase-3a-status-board-shadow-20260715`
 
 ## Operational owners
 
@@ -92,34 +91,22 @@ The former `GateStatusBoardTimerVisualStability` corrective layer remains retire
 
 The served legacy `renderAll()` path delegates Active Buses and dorm columns to `GateStatusBoardController` whenever the canonical owner is available. The legacy Local clock interval is removed at serve time so `GatePremiumMetricsController` is the only live clock owner. The legacy timer callback is rebound to the canonical elapsed-time and tick functions and uses steady warning/critical states without `timer-flash`.
 
-## Phase 3A hidden observer
+## Completed transition retirement
 
-`gate-status-board-shadow-controller.js` is active only as a hidden, read-only observer.
+`gate-status-board-shadow-controller.js` is no longer injected into the authenticated runtime.
 
-It may:
+Reason:
 
-- read the same in-memory `allData` record list;
-- read the active Week Group;
-- capture visible Build 1 Status Board metrics and rendered timer presentation;
-- import `/app/status-board-shadow/index.mjs`;
-- run canonical comparison after lifecycle hooks and on a 30-second cadence;
-- retain aggregate comparison evidence in memory;
-- expose frozen diagnostics at `window.GateStatusBoardShadow`.
+- it was a transition-only, hidden, read-only observer;
+- it did not own visible UI, API access, mutations, persistence, routing, or service-worker behavior;
+- the canonical visible Status Board and metrics owners remain unchanged;
+- its removal reduces active direct scripts from 27 to 26 and hidden runtime observers from 1 to 0.
 
-It may not:
-
-- create or expose a visible route;
-- replace or modify Status Board markup;
-- call an API;
-- create, update, or delete a record;
-- persist evidence in browser storage;
-- queue a write;
-- register a service worker;
-- supersede `GateStatusBoardController` or any other Build 1 owner.
+The source file remains available as non-active historical transition evidence until the final legacy-elimination pass determines whether it should be deleted or isolated under documentation/test-only scope.
 
 ## Build 2 runtime boundary
 
-Only the narrow Phase 3A bridge is injected. The following remain staged and are not directly loaded as visible application owners by middleware:
+The following remain staged and are not directly loaded as visible application owners by middleware:
 
 - Build 2 shell and route host;
 - Build 2 components and page renderers;
@@ -129,8 +116,6 @@ Only the narrow Phase 3A bridge is injected. The following remain staged and are
 - Processing, Airport, Input, Archives, and Squadron Build 2 routes;
 - fixture evidence harness and evidence-retention utilities.
 
-The shadow bridge dynamically imports only the pure Status Board shadow package after authenticated page load.
-
 ## Runtime-bloat controls
 
 The current counts are ceilings, not targets.
@@ -138,12 +123,12 @@ The current counts are ceilings, not targets.
 - A normal pull request may not increase direct or imported active assets.
 - No new active asset may be named or scoped as a fix, patch, corrective layer, restore layer, finalizer, cleanup layer, or stability layer.
 - Any active-asset change must update this register and `ACTIVE_RUNTIME_BUDGET.json` in the same pull request.
-- A visible Phase 3B route must be net-negative and meet the retirement targets in `STATUS_BOARD_RETIREMENT_MANIFEST.md`.
+- A visible Status Board replacement must be net-negative and meet the retirement targets in `STATUS_BOARD_RETIREMENT_MANIFEST.md`.
 - Build 2 evidence, fixtures, and review tooling remain outside active middleware and routing.
 
 ## Status Board retirement boundary
 
-Phase 3B must not add a second visible owner on top of the existing Status Board stack. The activation package must remove the legacy Status Board controllers, corrective presentation layers, middleware source rewrites, compatibility globals, and the Phase 3A shadow observer identified in `docs/build-2/STATUS_BOARD_RETIREMENT_MANIFEST.md`.
+The activation package must not add a second visible owner on top of the existing Status Board stack. It must remove remaining legacy Status Board controllers, corrective presentation layers, middleware source rewrites, and compatibility globals identified in `docs/build-2/STATUS_BOARD_RETIREMENT_MANIFEST.md`.
 
 Target after accepted Status Board activation:
 
@@ -171,7 +156,7 @@ PASS — open dorm timers are rebound to authoritative records every second
 PASS — close final time is derived from the persisted open timestamp
 PASS — Status Board column writes are incremental by state
 PASS — live metrics use change-only synchronization
-PASS — Local clock has one second-aligned `HH:MM:SS` owner
+PASS — Local clock has one second-aligned HH:MM:SS owner
 PASS — Status Board forced GPU compositing retired
 PASS — Processing assignment/location saves are bound to the active dorm record
 PASS — Processing Auditorium Location persistence delegates to the canonical dorm mutation owner
@@ -179,16 +164,14 @@ PASS — modal layers remain above phone and tablet shell layers
 PASS — Processing modal reachability covers coarse-pointer tablets through 1366 px
 PASS — narrow fine-pointer desktops retain a fixed single-row navigation shell
 PASS — fullscreen Active Bus cards are bounded compact tiles with versioned delivery
-PASS — one hidden Phase 3A bridge loaded after the visible Status Board owner
+PASS — hidden Status Board shadow bridge retired from served runtime
 PASS — runtime record-integrity workflow
 PASS — no visible Build 2 route
 PASS — no Build 2 production write path
-PASS — active asset growth blocked below the audited ceiling
+PASS — active direct-script count reduced from 27 to 26
 
-PENDING — sustained live shadow evidence
 PENDING — manual route accessibility, responsive, and fullscreen evidence
 PENDING — external deployment and rollback verification
-PENDING — Status Board legacy owner retirement
-NOT AUTHORIZED — Phase 3B controlled test surface
-NOT AUTHORIZED — Build 1 Status Board retirement
+PENDING — remaining Status Board legacy owner retirement
+NOT AUTHORIZED — visible replacement cutover until package gates pass
 ```

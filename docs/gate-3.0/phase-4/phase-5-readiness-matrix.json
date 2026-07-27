@@ -1,0 +1,35 @@
+{
+  "schema_version": "1.0.0",
+  "purpose": "Track evidence required for final GATE 3.0 certification after Phase 4 cutover.",
+  "readiness_dimensions": [
+    "functional-regression",
+    "operational-workflow",
+    "permissions-and-security",
+    "data-integrity",
+    "archive-and-reporting",
+    "responsive-and-fullscreen",
+    "accessibility",
+    "performance-and-runtime-reduction",
+    "degraded-mode-and-recovery",
+    "deployment-and-rollback",
+    "legacy-removal",
+    "documentation-and-continuity"
+  ],
+  "route_readiness": [
+    {"route":"status-board","status":"blocked-phase-4-not-executed"},
+    {"route":"processing","status":"blocked-phase-4-not-executed"},
+    {"route":"airport","status":"blocked-phase-4-not-executed"},
+    {"route":"input","status":"blocked-phase-4-not-executed"},
+    {"route":"archives-reports","status":"blocked-phase-4-not-executed"},
+    {"route":"squadron-board","status":"blocked-phase-4-not-executed"},
+    {"route":"shared-shell-auth-navigation-sync-infrastructure","status":"blocked-phase-4-not-executed"}
+  ],
+  "certification_gate": {
+    "all_routes_phase_5_ready": true,
+    "zero_parallel_legacy_runtime": true,
+    "zero_unknown_active_assets": true,
+    "all_rollbacks_verified": true,
+    "all_historical_regressions_pass": true,
+    "repository_is_gate_3_0_only": true
+  }
+}

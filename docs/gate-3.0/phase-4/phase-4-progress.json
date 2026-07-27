@@ -1,0 +1,51 @@
+{
+  "program": "GATE 3.0 Full Lift",
+  "repository": "austen-debug/prc-sr",
+  "phase": 4,
+  "phase_name": "Unified Operational Platform",
+  "status": "active-governance-only",
+  "base_phase": "gate-3.0/phase-3-ownership-lift",
+  "runtime_effect": "none",
+  "activation_state": "blocked-pending-package-readiness",
+  "binding_rules": {
+    "phase_1_truth_required": true,
+    "phase_2_crosscheck_required": true,
+    "phase_3_activation_package_required": true,
+    "single_canonical_owner_required": true,
+    "same_package_retirement_required_when_feasible": true,
+    "permanent_parallel_execution_allowed": false,
+    "net_negative_runtime_required": true,
+    "rollback_required": true,
+    "reference_removal_verification_required": true,
+    "phase_5_evidence_required": true
+  },
+  "workstreams": [
+    {"id":"activation-execution","name":"Activation Package Execution","status":"initiated","completion_percent":0},
+    {"id":"route-cutover","name":"Canonical Route Cutover","status":"initiated","completion_percent":0},
+    {"id":"legacy-retirement","name":"Legacy Owner Retirement","status":"initiated","completion_percent":0},
+    {"id":"unified-design","name":"Unified Design and Interaction","status":"initiated","completion_percent":0},
+    {"id":"processing-integrity","name":"Processing and Data Integrity","status":"initiated","completion_percent":0},
+    {"id":"runtime-reduction","name":"Runtime Reduction","status":"initiated","completion_percent":0},
+    {"id":"rollback-continuity","name":"Rollback and Operational Continuity","status":"initiated","completion_percent":0},
+    {"id":"phase-5-readiness","name":"Phase 5 Certification Readiness","status":"initiated","completion_percent":0}
+  ],
+  "execution_order": [
+    "status-board",
+    "processing",
+    "airport",
+    "input",
+    "archives-reports",
+    "squadron-board",
+    "shared-shell-auth-navigation-sync-infrastructure"
+  ],
+  "package_status": {
+    "status-board": "blocked-phase-3-evidence-incomplete",
+    "processing": "blocked-phase-3-evidence-incomplete",
+    "airport": "blocked-phase-3-evidence-incomplete",
+    "input": "blocked-phase-3-evidence-incomplete",
+    "archives-reports": "blocked-phase-3-evidence-incomplete",
+    "squadron-board": "blocked-phase-3-evidence-incomplete",
+    "shared-shell-auth-navigation-sync-infrastructure": "blocked-phase-3-evidence-incomplete"
+  },
+  "next_authorized_action": "Complete the first Phase 3 Status Board activation package, verify all Phase 1 and Phase 2 evidence, then execute a net-negative Phase 4 cutover package with rollback and same-package legacy retirement."
+}

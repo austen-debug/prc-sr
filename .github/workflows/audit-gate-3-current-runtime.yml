@@ -1,0 +1,40 @@
+name: Audit GATE 3 Current Runtime
+
+on:
+  push:
+    branches:
+      - gate-3.0/phase-5-certification
+    paths:
+      - scripts/audit-gate-3-current-runtime.mjs
+      - .github/workflows/audit-gate-3-current-runtime.yml
+
+permissions:
+  contents: write
+
+jobs:
+  audit:
+    if: ${{ !contains(github.event.head_commit.message || '', '[gate-3-current-index]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out transition branch
+        uses: actions/checkout@v4
+        with:
+          ref: gate-3.0/phase-5-certification
+          fetch-depth: 0
+
+      - name: Configure Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Generate repository audit and runtime index
+        run: node scripts/audit-gate-3-current-runtime.mjs
+
+      - name: Commit authoritative index and remove audit tooling
+        run: |
+          rm -f scripts/audit-gate-3-current-runtime.mjs .github/workflows/audit-gate-3-current-runtime.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'Re-index actual GATE 3 repository state [gate-3-current-index]'
+          git push origin HEAD:gate-3.0/phase-5-certification

@@ -1,0 +1,70 @@
+{
+  "schema_version": "1.0.0",
+  "purpose": "Require every GATE 3.0 foundation owner to be crosschecked against current functionality, operational intent, approved design, and processing/data-integrity contracts before activation.",
+  "status_values": ["unassessed","collecting-evidence","blocked","crosschecked","verified"],
+  "required_dimensions": {
+    "functionality": [
+      "current_capabilities",
+      "controls_and_commands",
+      "keyboard_and_touch_actions",
+      "reports_and_sounds",
+      "failure_and_recovery_behavior",
+      "downstream_effects",
+      "current_runtime_owners",
+      "regression_evidence"
+    ],
+    "operational_intent": [
+      "operational_problem",
+      "actors",
+      "decision_supported",
+      "time_sensitivity",
+      "mission_consequence",
+      "role_boundary",
+      "source_evidence"
+    ],
+    "design_and_responsive_behavior": [
+      "information_hierarchy",
+      "approved_visual_contract",
+      "component_contracts",
+      "six_postures",
+      "fullscreen_command_display",
+      "touch_and_keyboard_parity",
+      "accessibility_contract",
+      "focus_and_overlay_behavior",
+      "source_evidence"
+    ],
+    "processing_and_data_integrity": [
+      "source_records",
+      "record_identity",
+      "validation",
+      "calculation_owner",
+      "mutation_sequence",
+      "server_confirmation",
+      "audit_sequence",
+      "downstream_reconciliation",
+      "partial_failure",
+      "recovery_and_idempotency",
+      "archive_and_report_continuity",
+      "source_evidence"
+    ]
+  },
+  "foundation_packages": [
+    {"id":"bootstrap","status":"collecting-evidence","dimensions":{"functionality":"unassessed","operational_intent":"unassessed","design_and_responsive_behavior":"unassessed","processing_and_data_integrity":"unassessed"}},
+    {"id":"domain","status":"collecting-evidence","dimensions":{"functionality":"unassessed","operational_intent":"unassessed","design_and_responsive_behavior":"not-applicable-with-boundary-evidence","processing_and_data_integrity":"unassessed"}},
+    {"id":"repositories-api","status":"collecting-evidence","dimensions":{"functionality":"unassessed","operational_intent":"unassessed","design_and_responsive_behavior":"not-applicable-with-boundary-evidence","processing_and_data_integrity":"unassessed"}},
+    {"id":"workflows","status":"collecting-evidence","dimensions":{"functionality":"unassessed","operational_intent":"unassessed","design_and_responsive_behavior":"interaction-contract-required","processing_and_data_integrity":"unassessed"}},
+    {"id":"design-language","status":"collecting-evidence","dimensions":{"functionality":"component-access-required","operational_intent":"unassessed","design_and_responsive_behavior":"unassessed","processing_and_data_integrity":"no-calculation-or-write-ownership"}},
+    {"id":"application-shell","status":"collecting-evidence","dimensions":{"functionality":"unassessed","operational_intent":"unassessed","design_and_responsive_behavior":"unassessed","processing_and_data_integrity":"context-only-no-operational-calculation"}},
+    {"id":"responsive-accessibility","status":"collecting-evidence","dimensions":{"functionality":"all-actions-reachable","operational_intent":"unassessed","design_and_responsive_behavior":"unassessed","processing_and_data_integrity":"no-data-authority"}},
+    {"id":"observability-verification","status":"collecting-evidence","dimensions":{"functionality":"unassessed","operational_intent":"unassessed","design_and_responsive_behavior":"diagnostic-ui-if-any","processing_and_data_integrity":"no-pii-expansion"}}
+  ],
+  "activation_rule": "No package may be activated when a required dimension is unassessed, assumption-only, contradicted, or blocked.",
+  "evidence_priority": [
+    "current-main-served-runtime",
+    "phase-1-registers",
+    "merged-correction-history",
+    "approved-gate-3.0-specification",
+    "automated-regression",
+    "manual-operational-validation"
+  ]
+}

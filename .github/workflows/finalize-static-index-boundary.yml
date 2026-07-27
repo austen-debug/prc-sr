@@ -1,0 +1,58 @@
+name: Finalize GATE 3 Static Index Boundary
+
+on:
+  pull_request:
+    branches:
+      - gate-3.0/phase-4-unified-operational-platform
+    types: [opened, synchronize, reopened]
+  push:
+    branches:
+      - gate-3.0/phase-5-certification
+    paths:
+      - scripts/finalize-static-index-boundary.mjs
+      - .github/workflows/finalize-static-index-boundary.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    if: ${{ !contains(github.event.head_commit.message || '', '[gate-3-static-index-finalized]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out transition branch
+        uses: actions/checkout@v4
+        with:
+          ref: gate-3.0/phase-5-certification
+          fetch-depth: 0
+
+      - name: Configure Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Finalize structural HTML boundary
+        run: node scripts/finalize-static-index-boundary.mjs
+
+      - name: Verify no inline style or behavior ownership remains
+        run: |
+          ! grep -Eq '[[:space:]]style=' public/index.html
+          ! grep -Eq '[[:space:]]on[a-z]+=' public/index.html
+          ! grep -Eq 'data-gate-on[a-z]+=' public/index.html
+          grep -q 'data-gate-action-' public/index.html
+          grep -q 'installGateActionRegistry' public/js/gate-application-bootstrap.js
+          grep -q 'GATE 3 GENERATED INLINE STYLE CLASSES START' public/css/gate-application-structure.css
+          node --check public/js/gate-application-bootstrap.js
+
+      - name: Commit finalized static boundary
+        run: |
+          if git diff --quiet; then
+            echo 'Static index boundary already final.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add public/index.html public/js/gate-application-bootstrap.js public/css/gate-application-structure.css
+          git commit -m 'Finalize static GATE 3 index ownership [gate-3-static-index-finalized]'
+          git push origin HEAD:gate-3.0/phase-5-certification

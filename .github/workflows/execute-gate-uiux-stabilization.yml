@@ -1,0 +1,63 @@
+name: Execute GATE UI UX Stabilization
+
+on:
+  pull_request:
+    branches:
+      - gate-3.0/phase-4-unified-operational-platform
+    types: [opened, synchronize, reopened]
+  push:
+    branches:
+      - gate-3.0/phase-5-certification
+    paths:
+      - scripts/execute-gate-uiux-stabilization.mjs
+      - .github/workflows/execute-gate-uiux-stabilization.yml
+
+permissions:
+  contents: write
+
+jobs:
+  stabilize:
+    if: ${{ !contains(github.event.head_commit.message || '', '[gate-uiux-stabilized]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out transition branch
+        uses: actions/checkout@v4
+        with:
+          ref: gate-3.0/phase-5-certification
+          fetch-depth: 0
+
+      - name: Configure Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Execute stabilization
+        run: node scripts/execute-gate-uiux-stabilization.mjs
+
+      - name: Validate retained runtime
+        run: |
+          node --check public/js/gate-application-bootstrap.js
+          node --check public/js/gate-status-board-controller.js
+          node --check public/js/gate-processing-controller.js
+          node --check public/js/gate-bus-workflow-controller.js
+          node --check public/js/gate-input-page-controller.js
+          node --check public/js/gate-archive-controller.js
+          node --check public/js/gate-application-store.js
+          node --check public/js/gate-route-lifecycle.js
+          ! grep -Eq 'function (renderDormColumns|buildBoardDormCard|renderProcessingPage|buildProcCard|openDormModal|confirmBusArrival|initBatchGrid|renderArchives|initiateCloseout|updateTimers)' public/js/gate-application-bootstrap.js
+          ! grep -Eq 'fallbackDormCard|fallbackActiveBusCard' public/js/gate-status-board-controller.js
+          ! grep -REq 'onclick="|oncontextmenu="' public/js/gate-status-board-controller.js public/js/gate-processing-controller.js public/js/gate-bus-workflow-controller.js public/js/gate-input-page-controller.js public/js/gate-archive-controller.js
+          grep -q '/js/gate-application-store.js' public/index.html
+          grep -q '/js/gate-route-lifecycle.js' public/index.html
+
+      - name: Commit stabilization
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A public .github/workflows
+          if git diff --cached --quiet; then
+            echo 'No stabilization changes produced.'
+            exit 0
+          fi
+          git commit -m 'Stabilize GATE runtime for UI UX cleanup [gate-uiux-stabilized]'
+          git push origin HEAD:gate-3.0/phase-5-certification

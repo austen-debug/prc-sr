@@ -127,6 +127,10 @@ body > * {
     .modal-content { background: var(--surface); border: 1px solid var(--border); border-radius: 1rem; padding: 2rem; max-width: 500px; width: 95%; max-height: 90vh; overflow-y: auto; }
     @media (max-width: 768px) {
       .board-header { grid-template-columns: 1fr; }
+      #page-board .board-header.gate-premium-metrics-enabled .gate-metrics-container {
+        display: grid !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+      }
       .dorm-dashboard { grid-template-columns: 1fr; overflow-y: auto; }
     }
 

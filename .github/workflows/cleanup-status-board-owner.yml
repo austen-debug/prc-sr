@@ -1,0 +1,34 @@
+name: Cleanup Status Board Owner
+
+on:
+  push:
+    branches:
+      - gate-3.0/phase-5-certification
+    paths:
+      - scripts/cleanup-status-board-owner.mjs
+      - .github/workflows/cleanup-status-board-owner.yml
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: gate-3.0/phase-5-certification
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node scripts/cleanup-status-board-owner.mjs
+      - run: node --check public/js/gate-status-board-controller.js
+      - run: |
+          ! grep -Eq 'fallbackDormCard|fallbackActiveBusCard|patchLegacyBoardGlobals|onclick="|window\.(getElapsedTimer|updateTimers)' public/js/gate-status-board-controller.js
+      - run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add public/js/gate-status-board-controller.js
+          git commit -m 'Remove Status Board fallbacks and compatibility globals' || exit 0
+          git push origin HEAD:gate-3.0/phase-5-certification

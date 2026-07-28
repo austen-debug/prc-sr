@@ -32,29 +32,9 @@ jobs:
           node-version: '22'
 
       - name: Execute stabilization
-        id: stabilize
-        continue-on-error: true
-        run: |
-          set +e
-          node scripts/execute-gate-uiux-stabilization.mjs > gate-uiux-stabilization.log 2>&1
-          code=$?
-          cat gate-uiux-stabilization.log
-          exit $code
-
-      - name: Upload stabilization diagnostic
-        if: steps.stabilize.outcome == 'failure'
-        uses: actions/upload-artifact@v4
-        with:
-          name: gate-uiux-stabilization-diagnostic
-          path: gate-uiux-stabilization.log
-          retention-days: 7
-
-      - name: Stop after failed stabilization
-        if: steps.stabilize.outcome == 'failure'
-        run: exit 1
+        run: node scripts/execute-gate-uiux-stabilization.mjs
 
       - name: Validate retained runtime
-        if: steps.stabilize.outcome == 'success'
         run: |
           node --check public/js/gate-application-bootstrap.js
           node --check public/js/gate-status-board-controller.js
@@ -72,7 +52,6 @@ jobs:
           grep -q '/js/gate-route-lifecycle.js' public/index.html
 
       - name: Commit stabilization
-        if: steps.stabilize.outcome == 'success'
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
@@ -84,4 +63,4 @@ jobs:
           git commit -m 'Stabilize GATE runtime for UI UX cleanup [gate-uiux-stabilized]'
           git push origin HEAD:gate-3.0/phase-5-certification
 
-# Trigger revision: 2026-07-28T03:24:00-05:00
+# Trigger revision: 2026-07-28T03:28:00-05:00

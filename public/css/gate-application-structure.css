@@ -99,7 +99,7 @@ body > * {
     .metric-block { background: var(--surface); border: 1px solid var(--border); border-radius: 0.5rem; padding: 0.75rem; }
     .board-footer { flex-shrink: 0; padding: 0.5rem; display: flex; justify-content: center; border-top: 1px solid var(--border); }
 
-   .fullscreen-board .app-nav {
+    .fullscreen-board .app-nav {
   display: none !important;
 }
 
@@ -127,10 +127,7 @@ body > * {
     .modal-content { background: var(--surface); border: 1px solid var(--border); border-radius: 1rem; padding: 2rem; max-width: 500px; width: 95%; max-height: 90vh; overflow-y: auto; }
     @media (max-width: 768px) {
       .board-header { grid-template-columns: 1fr; }
-      #page-board .board-header.gate-premium-metrics-enabled .gate-metrics-container {
-        display: grid !important;
-        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-      }
+      #page-board .gate-metrics-container { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
       .dorm-dashboard { grid-template-columns: 1fr; overflow-y: auto; }
     }
 
@@ -166,3 +163,78 @@ body { font-family: Arial, sans-serif; color: #111; margin: 24px; }
 .gate-inline-style-015 { max-width: 900px; }
 .gate-inline-style-016 { background:var(--red); }
 /* GATE 3 GENERATED INLINE STYLE CLASSES END */
+
+/* Fine-pointer laptop containment contract. Wide desktop, touch/tablet, phone,
+   fullscreen, data, and timer behavior are intentionally unaffected. */
+@media (hover: hover) and (pointer: fine) and (min-width: 1024px) and (max-width: 1440px) {
+  body.gate-app-shell-ready .app-nav.command-header-bar {
+    flex-wrap: nowrap !important;
+    gap: 0.42rem !important;
+    overflow: hidden !important;
+    padding-inline: 0.65rem !important;
+  }
+
+  body.gate-app-shell-ready .app-nav.command-header-bar .nav-group-left,
+  body.gate-app-shell-ready .app-nav.command-header-bar #main-nav-menu,
+  body.gate-app-shell-ready .app-nav.command-header-bar .nav-group-right {
+    flex-wrap: nowrap !important;
+    gap: 0.22rem !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+  }
+
+  body.gate-app-shell-ready .app-nav.command-header-bar .nav-group-left,
+  body.gate-app-shell-ready .app-nav.command-header-bar #main-nav-menu {
+    flex: 1 1 auto !important;
+  }
+
+  body.gate-app-shell-ready .app-nav.command-header-bar .nav-group-right {
+    flex: 0 0 auto !important;
+  }
+
+  body.gate-app-shell-ready .app-nav.command-header-bar .nav-btn,
+  body.gate-app-shell-ready .app-nav.command-header-bar .gate-component-nav-button,
+  body.gate-app-shell-ready #week-group-display {
+    min-width: 0 !important;
+    padding-inline: clamp(0.38rem, 0.72vw, 0.62rem) !important;
+    font-size: clamp(0.62rem, 0.78vw, 0.72rem) !important;
+    letter-spacing: 0.025em !important;
+    white-space: nowrap !important;
+  }
+
+  #page-board .board-header.gate-premium-metrics-enabled {
+    display: grid !important;
+    grid-template-columns: minmax(0, 4fr) minmax(260px, 1.15fr) !important;
+    align-items: start !important;
+    align-content: start !important;
+    gap: 0.7rem !important;
+  }
+
+  #page-board .gate-metrics-container {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    align-items: start !important;
+    align-content: start !important;
+    min-height: 0 !important;
+  }
+
+  #page-board .gate-metrics-container .metric-card,
+  #page-board .gate-active-buses-block {
+    align-self: start !important;
+    height: clamp(128px, 18vh, 168px) !important;
+    min-height: clamp(128px, 18vh, 168px) !important;
+    max-height: clamp(128px, 18vh, 168px) !important;
+    box-sizing: border-box !important;
+  }
+
+  #page-board .gate-active-buses-block {
+    overflow: hidden !important;
+  }
+
+  #page-board #active-buses {
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    align-items: stretch !important;
+    min-width: 0 !important;
+  }
+}

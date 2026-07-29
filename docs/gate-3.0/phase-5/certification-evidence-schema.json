@@ -1,0 +1,68 @@
+{
+  "schema_version": "1.0.0",
+  "certification_record_fields": [
+    "certification_id",
+    "candidate_commit",
+    "route_or_subsystem",
+    "phase_1_truth_evidence",
+    "phase_2_crosscheck_evidence",
+    "phase_3_transfer_evidence",
+    "phase_4_cutover_evidence",
+    "functional_validation",
+    "operational_intent_validation",
+    "processing_data_integrity_validation",
+    "design_interaction_validation",
+    "architecture_ownership_validation",
+    "legacy_elimination_validation",
+    "reliability_recovery_validation",
+    "repository_maintainability_validation",
+    "regression_results",
+    "manual_validation",
+    "rollback_test",
+    "exceptions",
+    "decision",
+    "approved_by",
+    "approved_on",
+    "evidence_links"
+  ],
+  "allowed_status_values": [
+    "not-started",
+    "blocked",
+    "in-review",
+    "passed",
+    "failed",
+    "conditionally-passed"
+  ],
+  "hard_failure_conditions": [
+    "mission-critical workflow regression",
+    "record identity or ordering failure",
+    "incorrect field-to-record binding",
+    "archive mutation or reconciliation failure",
+    "unknown production mutation owner",
+    "multiple authoritative runtime owners",
+    "reachable superseded legacy path",
+    "missing executable rollback",
+    "critical accessibility failure",
+    "critical responsive command-display failure",
+    "evidence not current to candidate commit"
+  ],
+  "conditional_certification_exclusions": [
+    "legacy runtime remains active",
+    "unknown active owner remains",
+    "archive integrity incomplete",
+    "rollback untested",
+    "critical workflow validation incomplete",
+    "security or role-projection failure"
+  ],
+  "final_decision_gate": {
+    "all_routes_certified": true,
+    "all_production_mutation_paths_certified": true,
+    "legacy_elimination_passed": true,
+    "single_owner_passed": true,
+    "regression_suite_passed": true,
+    "manual_operational_validation_passed": true,
+    "rollback_validation_passed": true,
+    "repository_disposition_complete": true,
+    "candidate_commit_matches_evidence": true
+  }
+}

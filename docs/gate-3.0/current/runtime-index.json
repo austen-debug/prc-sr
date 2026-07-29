@@ -1,0 +1,964 @@
+{
+  "generatedAt": "2026-07-27T19:20:50.164Z",
+  "branch": "gate-3.0/phase-5-certification",
+  "candidateSha": "2a43762608dd70eddc2624bf313c95f529d65f2b",
+  "scope": "actual checked-out repository and served runtime",
+  "summary": {
+    "indexLines": 596,
+    "bootstrapLines": 1610,
+    "activeStyles": 8,
+    "activeLocalStyles": 8,
+    "activeScripts": 19,
+    "activeLocalScripts": 17,
+    "publicJsFiles": 40,
+    "publicCssFiles": 29,
+    "workflowFiles": 21,
+    "build2DocFiles": 62,
+    "build2TestFiles": 24,
+    "gate3ProgramFiles": 27,
+    "bootstrapFunctions": 64,
+    "bootstrapInlineHandlerMarkupCount": 9,
+    "indexInlineHandlerCount": 0,
+    "activeLegacyNamedAssets": 2,
+    "failingActiveScriptSyntaxChecks": 0,
+    "workflowsWithStaleRemovedAssetReferences": 4
+  },
+  "servedRuntime": {
+    "activeStyles": [
+      "/css/gate-index-legacy-shell.css",
+      "/css/gate-base-tokens.css",
+      "/css/gate-layout-pages.css",
+      "/css/gate-components.css",
+      "/css/gate-utilities-access.css?v=status-board-stable-surfaces-20260721",
+      "/css/gate-premium-metrics.css?v=status-board-fluid-metrics-20260721",
+      "/css/gate-app-shell.css?v=phase-7g-viewport-watermark-20260709",
+      "/css/gate-application-structure.css?v=gate-3-bootstrap-extraction"
+    ],
+    "activeScripts": [
+      "https://cdn.tailwindcss.com/3.4.17",
+      "https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js",
+      "/js/gate-record-display-contract.js?v=record-display-integrity-20260714b",
+      "/js/gate-component-contracts.js",
+      "/js/gate-ui-hooks.js?v=phase-6-hooks-20260709",
+      "/js/gate-branding-controller.js",
+      "/js/prc-dash-space-force.js",
+      "/js/gate-status-board-controller.js?v=dorm-timer-record-lifecycle-20260722",
+      "/js/gate-processing-controller.js?v=record-display-integrity-20260714",
+      "/js/gate-bus-workflow-controller.js?v=phase-3-bus-workflow-20260709",
+      "/js/gate-input-page-controller.js?v=record-display-integrity-20260714",
+      "/js/gate-archive-controller.js?v=phase-8c-report-wording-20260709",
+      "/js/gate-permission-guard.js?v=phase-1a-permission-guard-20260709",
+      "/js/gate-tablet-shell-classifier.js?v=tablet-shell-20260714",
+      "/js/gate-app-shell-controller.js?v=phase-7g-viewport-watermark-20260709",
+      "/js/gate-fullscreen-board-layout-controller.js?v=fullscreen-board-containment-20260714b",
+      "/js/gate-premium-metrics-controller.js?v=metric-live-clock-20260722",
+      "/js/gate-data-sdk.js",
+      "/js/gate-application-bootstrap.js"
+    ],
+    "activeStylePaths": [
+      "public/css/gate-index-legacy-shell.css",
+      "public/css/gate-base-tokens.css",
+      "public/css/gate-layout-pages.css",
+      "public/css/gate-components.css",
+      "public/css/gate-utilities-access.css",
+      "public/css/gate-premium-metrics.css",
+      "public/css/gate-app-shell.css",
+      "public/css/gate-application-structure.css"
+    ],
+    "activeScriptPaths": [
+      "public/js/gate-record-display-contract.js",
+      "public/js/gate-component-contracts.js",
+      "public/js/gate-ui-hooks.js",
+      "public/js/gate-branding-controller.js",
+      "public/js/prc-dash-space-force.js",
+      "public/js/gate-status-board-controller.js",
+      "public/js/gate-processing-controller.js",
+      "public/js/gate-bus-workflow-controller.js",
+      "public/js/gate-input-page-controller.js",
+      "public/js/gate-archive-controller.js",
+      "public/js/gate-permission-guard.js",
+      "public/js/gate-tablet-shell-classifier.js",
+      "public/js/gate-app-shell-controller.js",
+      "public/js/gate-fullscreen-board-layout-controller.js",
+      "public/js/gate-premium-metrics-controller.js",
+      "public/js/gate-data-sdk.js",
+      "public/js/gate-application-bootstrap.js"
+    ],
+    "activeLegacyNamedAssets": [
+      "public/js/prc-dash-space-force.js",
+      "public/css/gate-index-legacy-shell.css"
+    ]
+  },
+  "middleware": {
+    "lines": 69,
+    "uiRewriteMarkers": [
+      ".replace("
+    ],
+    "sessionVerification": true,
+    "securityHeaders": true
+  },
+  "stateAndRouting": {
+    "applicationStorePresent": true,
+    "routeLifecyclePresent": true,
+    "legacyAllDataDeclarationPresent": false,
+    "legacyRenderAllDeclarationPresent": false,
+    "legacyShowPageDeclarationPresent": false,
+    "bootstrapWindowAssignments": [],
+    "bootstrapFunctions": [
+      "escapeHtml",
+      "toggleTheme",
+      "loadSession",
+      "logout",
+      "buildNav",
+      "updateRoleVisibility",
+      "initApp",
+      "getRecords",
+      "getConfig",
+      "getActiveWG",
+      "getLocalTime24",
+      "updateAirportMetric",
+      "updateSoundButton",
+      "enableOperationalSounds",
+      "savePlayedSoundEventIds",
+      "createSoundEvent",
+      "playOperationalSound",
+      "processSoundEvents",
+      "triggerOvertimeSoundIfNeeded",
+      "getNextAirportBusId",
+      "getElapsedTimer",
+      "renderApplication",
+      "renderDormColumns",
+      "buildBoardDormCard",
+      "renderProcessingPage",
+      "buildProcCard",
+      "openDormModal",
+      "closeDormModal",
+      "setPhase",
+      "handleAirmanInputKey",
+      "saveAssignedAirman",
+      "openDormEditModal",
+      "closeDormEditModal",
+      "modLoad",
+      "setLoadFull",
+      "saveLoad",
+      "openDorm",
+      "deleteDormitoryFromEditModal",
+      "closeDorm",
+      "openLocalBusModal",
+      "closeLocalBusModal",
+      "updateTimers",
+      "confirmBusArrival",
+      "showConfirm",
+      "updateFlightTime",
+      "initBatchGrid",
+      "handleBatchInput",
+      "updateTotalLoadCalc",
+      "clearBatchRow",
+      "initializeWeekGroup",
+      "returnToBoard",
+      "showBatchMsg",
+      "renderArrivals",
+      "renderAirportBusLog",
+      "openAirportBusEditModal",
+      "closeAirportBusEditModal",
+      "renderArchives",
+      "initiateCloseout",
+      "showMsg",
+      "safeJsonPretty",
+      "parseJsonField",
+      "deleteArchiveWithOverride",
+      "toggleFullscreenBoard",
+      "syncFullscreenBoardState"
+    ]
+  },
+  "canonicalControllers": {
+    "board": {
+      "file": "public/js/gate-status-board-controller.js",
+      "lines": 619,
+      "syntax": "pass",
+      "usesStore": true,
+      "legacyGlobalReferences": [
+        "getElapsedTimer"
+      ],
+      "windowExports": [
+        "getElapsedTimer",
+        "updateTimers",
+        "buildBoardDormCard",
+        "renderDormColumns",
+        "GateStatusBoardController",
+        "GateActiveBusController"
+      ],
+      "inlineHandlerMarkupCount": 1,
+      "fallbackMarkers": [
+        "fallbackDormCard",
+        "fallbackActiveBusCard"
+      ]
+    },
+    "processing": {
+      "file": "public/js/gate-processing-controller.js",
+      "lines": 794,
+      "syntax": "pass",
+      "usesStore": true,
+      "legacyGlobalReferences": [
+        "getElapsedTimer"
+      ],
+      "windowExports": [
+        "renderProcessingPage",
+        "buildProcCard",
+        "openDormModal",
+        "closeDormModal",
+        "setPhase",
+        "modLoad",
+        "setLoadFull",
+        "saveLoad",
+        "saveAssignedAirman",
+        "openDorm",
+        "closeDorm",
+        "openDormEditModal",
+        "closeDormEditModal",
+        "deleteDormitoryFromEditModal",
+        "reopenDormFromEditModal",
+        "GateProcessingController"
+      ],
+      "inlineHandlerMarkupCount": 0,
+      "fallbackMarkers": [
+        "else {\n        actionSection.innerHTML"
+      ]
+    },
+    "airport": {
+      "file": "public/js/gate-bus-workflow-controller.js",
+      "lines": 622,
+      "syntax": "pass",
+      "usesStore": true,
+      "legacyGlobalReferences": [
+        "allData",
+        "getRecords",
+        "renderAll"
+      ],
+      "windowExports": [
+        "editBusId",
+        "renderAirportBusLog",
+        "openAirportBusEditModal",
+        "closeAirportBusEditModal",
+        "openLocalBusModal",
+        "closeLocalBusModal",
+        "confirmBusArrival",
+        "GateBusWorkflowController"
+      ],
+      "inlineHandlerMarkupCount": 0,
+      "fallbackMarkers": [
+        "else {\n      body.innerHTML"
+      ]
+    },
+    "input": {
+      "file": "public/js/gate-input-page-controller.js",
+      "lines": 828,
+      "syntax": "pass",
+      "usesStore": true,
+      "legacyGlobalReferences": [
+        "showPage"
+      ],
+      "windowExports": [
+        "batchRows",
+        "openArchiveEditModal",
+        "initBatchGrid",
+        "clearBatchRow",
+        "handleBatchInput",
+        "updateTotalLoadCalc",
+        "initializeWeekGroup",
+        "returnToBoard",
+        "showBatchMsg",
+        "collectReceivingWindowsForReport",
+        "GateInputPageController"
+      ],
+      "inlineHandlerMarkupCount": 0,
+      "fallbackMarkers": []
+    },
+    "archives": {
+      "file": "public/js/gate-archive-controller.js",
+      "lines": 791,
+      "syntax": "pass",
+      "usesStore": true,
+      "legacyGlobalReferences": [
+        "getRecords"
+      ],
+      "windowExports": [
+        "getRecords",
+        "editArchiveId",
+        "collectReceivingWindowsForReport",
+        "batchRows",
+        "GateArchiveController"
+      ],
+      "inlineHandlerMarkupCount": 6,
+      "fallbackMarkers": []
+    }
+  },
+  "duplicateOwnership": {
+    "statusBoard": [
+      "renderDormColumns",
+      "buildBoardDormCard",
+      "updateTimers",
+      "updateAirportMetric",
+      "getElapsedTimer"
+    ],
+    "processing": [
+      "renderProcessingPage",
+      "buildProcCard",
+      "openDormModal",
+      "closeDormModal",
+      "saveAssignedAirman",
+      "saveLoad",
+      "openDormEditModal",
+      "closeDormEditModal"
+    ],
+    "airportBus": [
+      "getNextAirportBusId",
+      "renderArrivals",
+      "renderAirportBusLog",
+      "confirmBusArrival",
+      "openLocalBusModal",
+      "closeLocalBusModal"
+    ],
+    "input": [
+      "initBatchGrid",
+      "initializeWeekGroup",
+      "returnToBoard"
+    ],
+    "archives": [
+      "renderArchives",
+      "initiateCloseout"
+    ]
+  },
+  "syntax": [
+    {
+      "file": "public/js/gate-record-display-contract.js",
+      "status": "pass",
+      "error": ""
+    },
+    {
+      "file": "public/js/gate-component-contracts.js",
+      "status": "pass",
+      "error": ""
+    },
+    {
+      "file": "public/js/gate-ui-hooks.js",
+      "status": "pass",
+      "error": ""
+    },
+    {
+      "file": "public/js/gate-branding-controller.js",
+      "status": "pass",
+      "error": ""
+    },
+    {
+      "file": "public/js/prc-dash-space-force.js",
+      "status": "pass",
+      "error": ""
+    },
+    {
+      "file": "public/js/gate-status-board-controller.js",
+      "status": "pass",
+      "error": ""
+    },
+    {
+      "file": "public/js/gate-processing-controller.js",
+      "status": "pass",
+      "error": ""
+    },
+    {
+      "file": "public/js/gate-bus-workflow-controller.js",
+      "status": "pass",
+      "error": ""
+    },
+    {
+      "file": "public/js/gate-input-page-controller.js",
+      "status": "pass",
+      "error": ""
+    },
+    {
+      "file": "public/js/gate-archive-controller.js",
+      "status": "pass",
+      "error": ""
+    },
+    {
+      "file": "public/js/gate-permission-guard.js",
+      "status": "pass",
+      "error": ""
+    },
+    {
+      "file": "public/js/gate-tablet-shell-classifier.js",
+      "status": "pass",
+      "error": ""
+    },
+    {
+      "file": "public/js/gate-app-shell-controller.js",
+      "status": "pass",
+      "error": ""
+    },
+    {
+      "file": "public/js/gate-fullscreen-board-layout-controller.js",
+      "status": "pass",
+      "error": ""
+    },
+    {
+      "file": "public/js/gate-premium-metrics-controller.js",
+      "status": "pass",
+      "error": ""
+    },
+    {
+      "file": "public/js/gate-data-sdk.js",
+      "status": "pass",
+      "error": ""
+    },
+    {
+      "file": "public/js/gate-application-bootstrap.js",
+      "status": "pass",
+      "error": ""
+    }
+  ],
+  "css": {
+    "activeStylePaths": [
+      "public/css/gate-index-legacy-shell.css",
+      "public/css/gate-base-tokens.css",
+      "public/css/gate-layout-pages.css",
+      "public/css/gate-components.css",
+      "public/css/gate-utilities-access.css",
+      "public/css/gate-premium-metrics.css",
+      "public/css/gate-app-shell.css",
+      "public/css/gate-application-structure.css"
+    ],
+    "allCss": [
+      "public/css/gate-app-shell.css",
+      "public/css/gate-application-structure.css",
+      "public/css/gate-archive-management.css",
+      "public/css/gate-base-tokens.css",
+      "public/css/gate-board-presentation.css",
+      "public/css/gate-clean-ui-pass.css",
+      "public/css/gate-components.css",
+      "public/css/gate-index-legacy-shell.css",
+      "public/css/gate-layout-pages.css",
+      "public/css/gate-mobile-ui-polish.css",
+      "public/css/gate-premium-metrics.css",
+      "public/css/gate-theme-unified-contract.css",
+      "public/css/gate-utilities-access.css",
+      "public/css/liquid-command.css",
+      "public/css/prc-dash-board-header.css",
+      "public/css/prc-dash-danger-actions.css",
+      "public/css/prc-dash-dorm-cards.css",
+      "public/css/prc-dash-input-layout.css",
+      "public/css/prc-dash-liquid-refinement.css",
+      "public/css/prc-dash-login-cleanup.css",
+      "public/css/prc-dash-login.css",
+      "public/css/prc-dash-modal-layer.css",
+      "public/css/prc-dash-modal-scroll.css",
+      "public/css/prc-dash-modal-systems.css",
+      "public/css/prc-dash-nav-compact.css",
+      "public/css/prc-dash-nav-polish.css",
+      "public/css/prc-dash-nav.css",
+      "public/css/prc-dash-view-cleanup.css",
+      "public/css/prc-dash-watermark.css"
+    ],
+    "unreferencedCss": [
+      "public/css/gate-archive-management.css",
+      "public/css/gate-board-presentation.css",
+      "public/css/gate-clean-ui-pass.css",
+      "public/css/gate-mobile-ui-polish.css",
+      "public/css/gate-theme-unified-contract.css",
+      "public/css/liquid-command.css",
+      "public/css/prc-dash-board-header.css",
+      "public/css/prc-dash-danger-actions.css",
+      "public/css/prc-dash-dorm-cards.css",
+      "public/css/prc-dash-input-layout.css",
+      "public/css/prc-dash-liquid-refinement.css",
+      "public/css/prc-dash-login-cleanup.css",
+      "public/css/prc-dash-login.css",
+      "public/css/prc-dash-modal-layer.css",
+      "public/css/prc-dash-modal-scroll.css",
+      "public/css/prc-dash-modal-systems.css",
+      "public/css/prc-dash-nav-compact.css",
+      "public/css/prc-dash-nav-polish.css",
+      "public/css/prc-dash-nav.css",
+      "public/css/prc-dash-view-cleanup.css",
+      "public/css/prc-dash-watermark.css"
+    ]
+  },
+  "javascript": {
+    "activeScriptPaths": [
+      "public/js/gate-record-display-contract.js",
+      "public/js/gate-component-contracts.js",
+      "public/js/gate-ui-hooks.js",
+      "public/js/gate-branding-controller.js",
+      "public/js/prc-dash-space-force.js",
+      "public/js/gate-status-board-controller.js",
+      "public/js/gate-processing-controller.js",
+      "public/js/gate-bus-workflow-controller.js",
+      "public/js/gate-input-page-controller.js",
+      "public/js/gate-archive-controller.js",
+      "public/js/gate-permission-guard.js",
+      "public/js/gate-tablet-shell-classifier.js",
+      "public/js/gate-app-shell-controller.js",
+      "public/js/gate-fullscreen-board-layout-controller.js",
+      "public/js/gate-premium-metrics-controller.js",
+      "public/js/gate-data-sdk.js",
+      "public/js/gate-application-bootstrap.js"
+    ],
+    "allJs": [
+      "public/js/gate-access-control-controller.js",
+      "public/js/gate-airman-modal-close-safety.js",
+      "public/js/gate-airport-phone-layout-fix.js",
+      "public/js/gate-app-shell-controller.js",
+      "public/js/gate-application-bootstrap.js",
+      "public/js/gate-application-store.js",
+      "public/js/gate-archive-controller.js",
+      "public/js/gate-archive-print-controller.js",
+      "public/js/gate-branding-controller.js",
+      "public/js/gate-bus-workflow-controller.js",
+      "public/js/gate-component-contracts.js",
+      "public/js/gate-data-sdk.js",
+      "public/js/gate-desktop-nav-restore.js",
+      "public/js/gate-fullscreen-board-layout-controller.js",
+      "public/js/gate-input-page-controller.js",
+      "public/js/gate-mobile-app-shell-finalizer.js",
+      "public/js/gate-mobile-nav-routing-fix.js",
+      "public/js/gate-mobile-shell-redesign.js",
+      "public/js/gate-permission-guard.js",
+      "public/js/gate-premium-metrics-controller.js",
+      "public/js/gate-processing-controller.js",
+      "public/js/gate-processing-final-time-commit.js",
+      "public/js/gate-record-display-contract.js",
+      "public/js/gate-route-lifecycle.js",
+      "public/js/gate-status-board-controller.js",
+      "public/js/gate-status-board-timer-visual-stability.js",
+      "public/js/gate-tablet-processing-modal-fix.js",
+      "public/js/gate-tablet-shell-classifier.js",
+      "public/js/gate-ui-hooks.js",
+      "public/js/prc-dash-access-control-validation.js",
+      "public/js/prc-dash-archive-actions.js",
+      "public/js/prc-dash-archive-print-cleanup.js",
+      "public/js/prc-dash-board-header.js",
+      "public/js/prc-dash-current-summary-live-records.js",
+      "public/js/prc-dash-dorm-block-polish.js",
+      "public/js/prc-dash-dorm-final-time.js",
+      "public/js/prc-dash-print-report.js",
+      "public/js/prc-dash-processing-context-menu.js",
+      "public/js/prc-dash-receiving-summary-window-fix.js",
+      "public/js/prc-dash-space-force.js"
+    ],
+    "unreferencedJs": [
+      "public/js/gate-access-control-controller.js",
+      "public/js/gate-airman-modal-close-safety.js",
+      "public/js/gate-airport-phone-layout-fix.js",
+      "public/js/gate-application-store.js",
+      "public/js/gate-archive-print-controller.js",
+      "public/js/gate-desktop-nav-restore.js",
+      "public/js/gate-mobile-app-shell-finalizer.js",
+      "public/js/gate-mobile-nav-routing-fix.js",
+      "public/js/gate-mobile-shell-redesign.js",
+      "public/js/gate-processing-final-time-commit.js",
+      "public/js/gate-route-lifecycle.js",
+      "public/js/gate-status-board-timer-visual-stability.js",
+      "public/js/gate-tablet-processing-modal-fix.js",
+      "public/js/prc-dash-access-control-validation.js",
+      "public/js/prc-dash-archive-actions.js",
+      "public/js/prc-dash-archive-print-cleanup.js",
+      "public/js/prc-dash-board-header.js",
+      "public/js/prc-dash-current-summary-live-records.js",
+      "public/js/prc-dash-dorm-block-polish.js",
+      "public/js/prc-dash-dorm-final-time.js",
+      "public/js/prc-dash-print-report.js",
+      "public/js/prc-dash-processing-context-menu.js",
+      "public/js/prc-dash-receiving-summary-window-fix.js"
+    ]
+  },
+  "workflows": [
+    {
+      "file": ".github/workflows/audit-gate-3-current-runtime.yml",
+      "lines": 41,
+      "staleRemovedAssetReferences": [],
+      "referencesTransitionOrBuild2": false
+    },
+    {
+      "file": ".github/workflows/build-2-accessibility-tests.yml",
+      "lines": 78,
+      "staleRemovedAssetReferences": [],
+      "referencesTransitionOrBuild2": true
+    },
+    {
+      "file": ".github/workflows/build-2-audit-remediation-gate-1.yml",
+      "lines": 133,
+      "staleRemovedAssetReferences": [
+        "gate-fullscreen-board-contract.css",
+        "prc-dash-auditorium-location.js"
+      ],
+      "referencesTransitionOrBuild2": true
+    },
+    {
+      "file": ".github/workflows/build-2-component-tests.yml",
+      "lines": 58,
+      "staleRemovedAssetReferences": [],
+      "referencesTransitionOrBuild2": true
+    },
+    {
+      "file": ".github/workflows/build-2-data-tests.yml",
+      "lines": 41,
+      "staleRemovedAssetReferences": [],
+      "referencesTransitionOrBuild2": true
+    },
+    {
+      "file": ".github/workflows/build-2-design-tests.yml",
+      "lines": 52,
+      "staleRemovedAssetReferences": [],
+      "referencesTransitionOrBuild2": true
+    },
+    {
+      "file": ".github/workflows/build-2-domain-tests.yml",
+      "lines": 39,
+      "staleRemovedAssetReferences": [],
+      "referencesTransitionOrBuild2": true
+    },
+    {
+      "file": ".github/workflows/build-2-foundation-alignment-tests.yml",
+      "lines": 83,
+      "staleRemovedAssetReferences": [],
+      "referencesTransitionOrBuild2": true
+    },
+    {
+      "file": ".github/workflows/build-2-gate-b-tests.yml",
+      "lines": 89,
+      "staleRemovedAssetReferences": [],
+      "referencesTransitionOrBuild2": true
+    },
+    {
+      "file": ".github/workflows/build-2-gate-c-tests.yml",
+      "lines": 105,
+      "staleRemovedAssetReferences": [],
+      "referencesTransitionOrBuild2": true
+    },
+    {
+      "file": ".github/workflows/build-2-gate-d-tests.yml",
+      "lines": 105,
+      "staleRemovedAssetReferences": [],
+      "referencesTransitionOrBuild2": true
+    },
+    {
+      "file": ".github/workflows/build-2-gate-e-tests.yml",
+      "lines": 123,
+      "staleRemovedAssetReferences": [],
+      "referencesTransitionOrBuild2": true
+    },
+    {
+      "file": ".github/workflows/build-2-gate-f-tests.yml",
+      "lines": 134,
+      "staleRemovedAssetReferences": [],
+      "referencesTransitionOrBuild2": true
+    },
+    {
+      "file": ".github/workflows/build-2-phase-1-validation.yml",
+      "lines": 49,
+      "staleRemovedAssetReferences": [],
+      "referencesTransitionOrBuild2": true
+    },
+    {
+      "file": ".github/workflows/build-2-phase-3a-evidence-harness.yml",
+      "lines": 105,
+      "staleRemovedAssetReferences": [],
+      "referencesTransitionOrBuild2": true
+    },
+    {
+      "file": ".github/workflows/build-2-phase-3a-evidence-review.yml",
+      "lines": 113,
+      "staleRemovedAssetReferences": [
+        "gate-status-board-shadow-controller.js"
+      ],
+      "referencesTransitionOrBuild2": true
+    },
+    {
+      "file": ".github/workflows/build-2-phase-3a-status-board-shadow.yml",
+      "lines": 96,
+      "staleRemovedAssetReferences": [
+        "gate-status-board-shadow-controller.js"
+      ],
+      "referencesTransitionOrBuild2": true
+    },
+    {
+      "file": ".github/workflows/build-2-responsive-tests.yml",
+      "lines": 74,
+      "staleRemovedAssetReferences": [],
+      "referencesTransitionOrBuild2": true
+    },
+    {
+      "file": ".github/workflows/build-2-shell-tests.yml",
+      "lines": 82,
+      "staleRemovedAssetReferences": [],
+      "referencesTransitionOrBuild2": true
+    },
+    {
+      "file": ".github/workflows/consolidate-gate-route-owners.yml",
+      "lines": 61,
+      "staleRemovedAssetReferences": [],
+      "referencesTransitionOrBuild2": false
+    },
+    {
+      "file": ".github/workflows/runtime-record-integrity-tests.yml",
+      "lines": 120,
+      "staleRemovedAssetReferences": [
+        "gate-ui-ownership-correction.css",
+        "gate-fullscreen-board-contract.css",
+        "prc-dash-final-audit.js",
+        "prc-dash-dorm-flag-validation.js",
+        "prc-dash-auditorium-location.js",
+        "gate-render-stability-fix.js"
+      ],
+      "referencesTransitionOrBuild2": false
+    }
+  ],
+  "historicalMaterial": {
+    "build2Docs": [
+      "docs/build-2/ACCESSIBILITY_FOUNDATION.md",
+      "docs/build-2/ACCESSIBILITY_VALIDATION_MATRIX.md",
+      "docs/build-2/ACTIVE_RUNTIME_BUDGET.json",
+      "docs/build-2/APP_SHELL_CONTRACT.md",
+      "docs/build-2/AUDIT_REMEDIATION_GATE_1_REPORT.md",
+      "docs/build-2/AUDIT_REMEDIATION_PLAN.md",
+      "docs/build-2/BACKEND_VERSIONING_AUDIT_CONTRACT.md",
+      "docs/build-2/BUILD_2_CHARTER.md",
+      "docs/build-2/CANONICAL_ENTITY_CONTRACT.md",
+      "docs/build-2/COMPONENT_CONTRACTS.md",
+      "docs/build-2/COMPONENT_WORKSHOP.md",
+      "docs/build-2/CORRECTED_PHASE_1_EXIT_DECISION.md",
+      "docs/build-2/CRITICAL_WORKFLOW_ORCHESTRATION.md",
+      "docs/build-2/DEPLOYMENT_PREREQUISITES.md",
+      "docs/build-2/DOMAIN_CALCULATION_CATALOG.md",
+      "docs/build-2/FOUNDATION_ALIGNMENT_GATE.md",
+      "docs/build-2/FOUNDATION_REVALIDATION_MATRIX.md",
+      "docs/build-2/FRONTEND_ARCHITECTURE_ADR.md",
+      "docs/build-2/GATE_A_EXECUTION_REPORT.md",
+      "docs/build-2/GATE_B_EXECUTION_REPORT.md",
+      "docs/build-2/GATE_C_EXECUTION_REPORT.md",
+      "docs/build-2/GATE_D_EXECUTION_REPORT.md",
+      "docs/build-2/GATE_E_EXECUTION_REPORT.md",
+      "docs/build-2/GATE_F_EXECUTION_REPORT.md",
+      "docs/build-2/GDL_FOUNDATIONS.md",
+      "docs/build-2/GDL_TOKEN_REGISTRY.md",
+      "docs/build-2/INDEX.md",
+      "docs/build-2/METRIC_PROVENANCE_REGISTRY.md",
+      "docs/build-2/PHASE_1B_EXECUTION_REPORT.md",
+      "docs/build-2/PHASE_1C_EXECUTION_REPORT.md",
+      "docs/build-2/PHASE_1D_EXECUTION_REPORT.md",
+      "docs/build-2/PHASE_1E_EXECUTION_REPORT.md",
+      "docs/build-2/PHASE_1_OPERATIONAL_TRUTH.md",
+      "docs/build-2/PHASE_2A_EXECUTION_REPORT.md",
+      "docs/build-2/PHASE_2B_EXECUTION_REPORT.md",
+      "docs/build-2/PHASE_2C_EXECUTION_REPORT.md",
+      "docs/build-2/PHASE_2D_EXECUTION_REPORT.md",
+      "docs/build-2/PHASE_2E_EXECUTION_REPORT.md",
+      "docs/build-2/PHASE_2_CHARTER.md",
+      "docs/build-2/PHASE_2_EXIT_REPORT.md",
+      "docs/build-2/PHASE_3A_EVIDENCE_HARNESS_REPORT.md",
+      "docs/build-2/PHASE_3A_EVIDENCE_REVIEW_REPORT.md",
+      "docs/build-2/PHASE_3A_EXECUTION_REPORT.md",
+      "docs/build-2/PROGRAM_INTENT_BASELINE.md",
+      "docs/build-2/PROGRAM_TRACEABILITY_MATRIX.md",
+      "docs/build-2/README.md",
+      "docs/build-2/RECORD_NORMALIZATION_CONTRACT.md",
+      "docs/build-2/REPOSITORY_CONTRACTS.md",
+      "docs/build-2/RESPONSIVE_COMPOSITION_CONTRACTS.md",
+      "docs/build-2/RESPONSIVE_VALIDATION_MATRIX.md",
+      "docs/build-2/ROUTE_PERMISSION_REGISTRY.md",
+      "docs/build-2/STATUS_BOARD_EVIDENCE_HARNESS.md",
+      "docs/build-2/STATUS_BOARD_EVIDENCE_REVIEW_CONTRACT.md",
+      "docs/build-2/STATUS_BOARD_MANUAL_EVIDENCE_MATRIX.md",
+      "docs/build-2/STATUS_BOARD_PARITY_MATRIX.md",
+      "docs/build-2/STATUS_BOARD_RETIREMENT_MANIFEST.md",
+      "docs/build-2/STATUS_BOARD_ROLLBACK_PLAN.md",
+      "docs/build-2/STATUS_BOARD_SHADOW_CONTRACT.md",
+      "docs/build-2/STATUS_BOARD_SHADOW_MIGRATION_AUTHORIZATION.md",
+      "docs/build-2/STATUS_BOARD_UX_DECISIONS.md",
+      "docs/build-2/SYNCHRONIZATION_DEGRADED_OPERATION.md",
+      "docs/build-2/VALIDATION_FIXTURES.md"
+    ],
+    "build2Tests": [
+      "tests/build-2/accessibility/accessibility-foundation.test.mjs",
+      "tests/build-2/components/component-workshop.test.mjs",
+      "tests/build-2/data/canonical-entities.test.mjs",
+      "tests/build-2/data/record-normalization.test.mjs",
+      "tests/build-2/data/repositories.test.mjs",
+      "tests/build-2/design/gdl-foundations.test.mjs",
+      "tests/build-2/domain/dorm-identity.test.mjs",
+      "tests/build-2/domain/foundation-alignment-gate-a.test.mjs",
+      "tests/build-2/domain/operational-truth.test.mjs",
+      "tests/build-2/fixtures/B2-P1-F001-receiving-parity.json",
+      "tests/build-2/fixtures/B2-P1-F011-record-compatibility.json",
+      "tests/build-2/foundation/consolidated-foundation.test.mjs",
+      "tests/build-2/parity/phase-1e-parity.test.mjs",
+      "tests/build-2/responsive/fixtures/B2-P2-F002-postures.json",
+      "tests/build-2/responsive/responsive-composition.test.mjs",
+      "tests/build-2/server/records-api.test.mjs",
+      "tests/build-2/shell/fixtures/B2-P2-F001-shell-parity.json",
+      "tests/build-2/shell/unified-shell.test.mjs",
+      "tests/build-2/status-board-shadow/fixtures/B2-P3A-F001-route-readiness.json",
+      "tests/build-2/status-board-shadow/status-board-evidence-harness.test.mjs",
+      "tests/build-2/status-board-shadow/status-board-evidence-review.test.mjs",
+      "tests/build-2/status-board-shadow/status-board-shadow.test.mjs",
+      "tests/build-2/synchronization/synchronization-degraded-operation.test.mjs",
+      "tests/build-2/workflows/critical-workflows.test.mjs"
+    ],
+    "gate3Docs": [
+      "docs/gate-3.0/phase-1/README.md",
+      "docs/gate-3.0/phase-1/legacy-retirement-master-plan.json",
+      "docs/gate-3.0/phase-1/phase-1-progress.json",
+      "docs/gate-3.0/phase-1/register-schema.json",
+      "docs/gate-3.0/phase-1/repository-ownership-register.json",
+      "docs/gate-3.0/phase-2/README.md",
+      "docs/gate-3.0/phase-2/foundation-activation-gates.json",
+      "docs/gate-3.0/phase-2/foundation-crosscheck-matrix.json",
+      "docs/gate-3.0/phase-2/phase-2-progress.json",
+      "docs/gate-3.0/phase-3/README.md",
+      "docs/gate-3.0/phase-3/ownership-transfer-schema.json",
+      "docs/gate-3.0/phase-3/phase-2-verification-ledger.json",
+      "docs/gate-3.0/phase-3/phase-3-progress.json",
+      "docs/gate-3.0/phase-3/phase-4-readiness-matrix.json",
+      "docs/gate-3.0/phase-3/phases-1-3-verification-report.md",
+      "docs/gate-3.0/phase-3/status-board-ownership-transfer.json",
+      "docs/gate-3.0/phase-4/README.md",
+      "docs/gate-3.0/phase-4/cutover-package-schema.json",
+      "docs/gate-3.0/phase-4/phase-4-progress.json",
+      "docs/gate-3.0/phase-4/phase-5-readiness-matrix.json",
+      "docs/gate-3.0/phase-4/retirement-verification-gates.json",
+      "docs/gate-3.0/phase-5/README.md",
+      "docs/gate-3.0/phase-5/certification-evidence-schema.json",
+      "docs/gate-3.0/phase-5/final-transition-decision.json",
+      "docs/gate-3.0/phase-5/legacy-elimination-certification.json",
+      "docs/gate-3.0/phase-5/phase-5-progress.json",
+      "docs/gate-3.0/phase-5/route-certification-matrix.json"
+    ]
+  },
+  "auditFindings": [
+    {
+      "severity": "critical",
+      "id": "BOOTSTRAP-SYNTAX",
+      "statement": "The active application bootstrap passes syntax validation."
+    },
+    {
+      "severity": "critical",
+      "id": "DUPLICATE-ROUTE-OWNERS",
+      "statement": "The bootstrap still defines route and workflow functions also assigned to canonical controllers.",
+      "evidence": {
+        "statusBoard": [
+          "renderDormColumns",
+          "buildBoardDormCard",
+          "updateTimers",
+          "updateAirportMetric",
+          "getElapsedTimer"
+        ],
+        "processing": [
+          "renderProcessingPage",
+          "buildProcCard",
+          "openDormModal",
+          "closeDormModal",
+          "saveAssignedAirman",
+          "saveLoad",
+          "openDormEditModal",
+          "closeDormEditModal"
+        ],
+        "airportBus": [
+          "getNextAirportBusId",
+          "renderArrivals",
+          "renderAirportBusLog",
+          "confirmBusArrival",
+          "openLocalBusModal",
+          "closeLocalBusModal"
+        ],
+        "input": [
+          "initBatchGrid",
+          "initializeWeekGroup",
+          "returnToBoard"
+        ],
+        "archives": [
+          "renderArchives",
+          "initiateCloseout"
+        ]
+      }
+    },
+    {
+      "severity": "high",
+      "id": "FALLBACK-RENDERING",
+      "statement": "renderApplication still contains conditional fallback rendering and direct route rendering calls."
+    },
+    {
+      "severity": "high",
+      "id": "INLINE-HANDLER-GENERATION",
+      "statement": "Active JavaScript still generates 16 inline event-handler attributes."
+    },
+    {
+      "severity": "high",
+      "id": "STALE-CI",
+      "statement": "Workflows and tests still reference removed Build 2 shadow/evidence assets.",
+      "evidence": [
+        {
+          "file": ".github/workflows/build-2-audit-remediation-gate-1.yml",
+          "lines": 133,
+          "staleRemovedAssetReferences": [
+            "gate-fullscreen-board-contract.css",
+            "prc-dash-auditorium-location.js"
+          ],
+          "referencesTransitionOrBuild2": true
+        },
+        {
+          "file": ".github/workflows/build-2-phase-3a-evidence-review.yml",
+          "lines": 113,
+          "staleRemovedAssetReferences": [
+            "gate-status-board-shadow-controller.js"
+          ],
+          "referencesTransitionOrBuild2": true
+        },
+        {
+          "file": ".github/workflows/build-2-phase-3a-status-board-shadow.yml",
+          "lines": 96,
+          "staleRemovedAssetReferences": [
+            "gate-status-board-shadow-controller.js"
+          ],
+          "referencesTransitionOrBuild2": true
+        },
+        {
+          "file": ".github/workflows/runtime-record-integrity-tests.yml",
+          "lines": 120,
+          "staleRemovedAssetReferences": [
+            "gate-ui-ownership-correction.css",
+            "gate-fullscreen-board-contract.css",
+            "prc-dash-final-audit.js",
+            "prc-dash-dorm-flag-validation.js",
+            "prc-dash-auditorium-location.js",
+            "gate-render-stability-fix.js"
+          ],
+          "referencesTransitionOrBuild2": false
+        }
+      ]
+    },
+    {
+      "severity": "medium",
+      "id": "LEGACY-NAMED-ACTIVE-ASSETS",
+      "statement": "Legacy-named assets remain in the served runtime.",
+      "evidence": [
+        "public/js/prc-dash-space-force.js",
+        "public/css/gate-index-legacy-shell.css"
+      ]
+    },
+    {
+      "severity": "medium",
+      "id": "HISTORICAL-BLOAT",
+      "statement": "Build 2 documentation and tests remain in executable repository paths and require final disposition.",
+      "counts": {
+        "docs": 62,
+        "tests": 24
+      }
+    }
+  ],
+  "uiUxPassEntryCriteria": [
+    "Restore a syntactically valid active bootstrap.",
+    "Remove duplicate route rendering and mutation ownership from the bootstrap.",
+    "Retire or rewrite stale Build 2 workflows and tests so CI reflects GATE 3.0.",
+    "Confirm every active CSS file has one permanent design-system responsibility.",
+    "Then perform route-by-route visual, responsive, accessibility, and interaction cleanup."
+  ]
+}

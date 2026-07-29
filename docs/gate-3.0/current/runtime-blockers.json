@@ -1,0 +1,79 @@
+{
+  "verified_at": "2026-07-27T19:35:00Z",
+  "branch": "gate-3.0/phase-5-certification",
+  "source_index": "docs/gate-3.0/current/runtime-index.json",
+  "hard_blockers": [
+    {
+      "id": "FOUNDATION-FILES-NOT-LOADED",
+      "severity": "critical",
+      "evidence": {
+        "files_present": [
+          "public/js/gate-application-store.js",
+          "public/js/gate-route-lifecycle.js"
+        ],
+        "index_html_loads": [
+          "public/js/gate-data-sdk.js",
+          "public/js/gate-application-bootstrap.js"
+        ],
+        "missing_from_index_html": [
+          "public/js/gate-application-store.js",
+          "public/js/gate-route-lifecycle.js"
+        ]
+      },
+      "impact": "gate-application-bootstrap.js reads window.GateApplicationStore and GateRouteLifecycle before either foundation file is loaded."
+    },
+    {
+      "id": "DUPLICATE-BOOTSTRAP-OWNERS",
+      "severity": "critical",
+      "impact": "The 1,610-line bootstrap still contains route rendering, modal, mutation, timer, bus, input, and archive functions also exposed by canonical controllers.",
+      "domains": {
+        "status_board": ["renderDormColumns", "buildBoardDormCard", "updateTimers", "updateAirportMetric", "getElapsedTimer"],
+        "processing": ["renderProcessingPage", "buildProcCard", "openDormModal", "closeDormModal", "saveAssignedAirman", "saveLoad", "openDormEditModal", "closeDormEditModal"],
+        "airport_bus": ["getNextAirportBusId", "renderArrivals", "renderAirportBusLog", "confirmBusArrival", "openLocalBusModal", "closeLocalBusModal"],
+        "input": ["initBatchGrid", "initializeWeekGroup", "returnToBoard"],
+        "archives": ["renderArchives", "initiateCloseout"]
+      }
+    },
+    {
+      "id": "FALLBACK-RENDER-PATHS",
+      "severity": "high",
+      "impact": "renderApplication delegates to canonical controllers conditionally but retains direct DOM fallback renderers, so UI ownership remains non-exclusive."
+    },
+    {
+      "id": "INLINE-HANDLER-GENERATION",
+      "severity": "high",
+      "impact": "The bootstrap and canonical controllers still generate onclick/oncontextmenu attributes in dynamic markup."
+    },
+    {
+      "id": "STALE-CI-AND-HISTORICAL-EXECUTION",
+      "severity": "high",
+      "evidence": {
+        "workflow_files": 21,
+        "workflows_referencing_removed_assets": 4,
+        "build_2_document_files": 62,
+        "build_2_test_files": 24
+      },
+      "impact": "Several CI failures reflect retired Build 2 contracts rather than the current GATE 3 runtime."
+    }
+  ],
+  "clarifications": [
+    {
+      "id": "MIDDLEWARE-REPLACE-FALSE-POSITIVE",
+      "statement": "The runtime index reports a .replace( middleware marker, but the remaining replacements are base64url encoding operations, not UI rewriting."
+    },
+    {
+      "id": "ACTIVE-JAVASCRIPT-SYNTAX",
+      "statement": "The repository scanner found zero direct node --check failures across active local scripts. Runtime Record Integrity failure requires CI-contract remediation rather than being treated as proven bootstrap syntax failure."
+    }
+  ],
+  "ui_ux_gate": {
+    "cosmetic_cleanup_ready": false,
+    "required_first": [
+      "Load the application store and route lifecycle before the bootstrap.",
+      "Remove duplicate route owners and fallback renderers from the bootstrap.",
+      "Replace generated inline event handlers with delegated controller events.",
+      "Retire or rewrite stale Build 2 CI workflows and tests.",
+      "Then execute route-by-route UI/UX cleanup."
+    ]
+  }
+}

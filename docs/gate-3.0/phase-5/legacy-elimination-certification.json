@@ -1,0 +1,37 @@
+{
+  "schema_version": "1.0.0",
+  "status": "blocked",
+  "candidate_commit": null,
+  "required_proofs": {
+    "active_runtime_inventory_complete": false,
+    "all_assets_have_final_disposition": false,
+    "superseded_files_removed": false,
+    "transition_only_files_removed": false,
+    "compatibility_wrappers_removed_or_permanently_justified": false,
+    "repairing_observers_removed_or_permanently_justified": false,
+    "duplicate_renderers_removed": false,
+    "duplicate_timers_removed": false,
+    "corrective_stylesheets_removed_or_permanently_justified": false,
+    "middleware_source_rewrites_removed_or_permanently_justified": false,
+    "legacy_globals_removed": false,
+    "fallback_paths_removed": false,
+    "unused_assets_removed": false,
+    "orphaned_modules_removed": false,
+    "reference_scans_passed": false,
+    "runtime_reachability_scans_passed": false,
+    "single_authoritative_owner_verified": false,
+    "historical_evidence_is_non_executable": false,
+    "runtime_asset_count_reconciled": false,
+    "repository_cannot_be_split_into_old_and_new_gate": false
+  },
+  "prohibited_final_conditions": [
+    "parallel legacy application",
+    "hidden legacy fallback",
+    "permanent transition-only runtime",
+    "unknown active file disposition",
+    "multiple authoritative owners",
+    "legacy code retained only because removal was not investigated"
+  ],
+  "decision": "not-certified",
+  "evidence": []
+}

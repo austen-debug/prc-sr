@@ -24,12 +24,12 @@
   }
 
   function wg() {
-    try { return typeof getActiveWG === 'function' ? getActiveWG() : ''; } catch (_) { return ''; }
+    return window.GateApplicationStore?.activeWeekGroup?.() || '';
   }
 
   function data() {
     if (Array.isArray(window.allData)) return window.allData;
-    try { return Array.isArray(allData) ? allData : []; } catch (_) { return []; }
+    return window.GateApplicationStore?.records?.() || [];
   }
 
   function isBusRecord(record) {
@@ -141,7 +141,7 @@
   }
 
   function refreshAllSurfaces(source = 'gate-bus-workflow-controller') {
-    try { if (typeof renderAll === 'function') renderAll(); } catch (error) { console.warn('GATE bus renderAll refresh failed:', error); }
+    try { window.renderApplication?.(); } catch (error) { console.warn('GATE bus renderAll refresh failed:', error); }
     runPass();
     try { window.GateStatusBoardController?.scheduleRender?.({ force: true }); } catch (_) {}
     try { window.GateActiveBusController?.render?.({ force: true }); } catch (_) {}

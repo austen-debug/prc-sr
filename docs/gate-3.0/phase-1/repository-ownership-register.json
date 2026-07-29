@@ -1,0 +1,117 @@
+{
+  "schema_version": "1.0.0",
+  "source_ref": "main@4d831b491d1ed8f9f8c00233fced8a8c4495ab02",
+  "source_document": "docs/ACTIVE_RUNTIME_STACK.md",
+  "status": "populated-initial-runtime-baseline",
+  "active_asset_totals": {
+    "direct_stylesheets": 13,
+    "imported_stylesheets": 3,
+    "direct_scripts": 27,
+    "visible_gate_3_routes": 0,
+    "hidden_gate_3_observers": 1
+  },
+  "runtime_owners": [
+    {
+      "path": "/js/gate-status-board-controller.js",
+      "classification": "production-active",
+      "status": "verified",
+      "runtime_owner": "GateStatusBoardController",
+      "ownership_type": "authoritative",
+      "routes": ["status-board", "processing"],
+      "operational_behaviors": ["visible dorm columns", "dorm cards", "active bus panel", "elapsed time", "record-bound timer text", "timer warning and critical state", "incremental per-column rendering"],
+      "target_owner": "Gate3StatusBoardRoute",
+      "final_disposition": "replace-and-retire"
+    },
+    {
+      "path": "/js/gate-premium-metrics-controller.js",
+      "classification": "production-active",
+      "status": "verified",
+      "runtime_owner": "GatePremiumMetricsController",
+      "ownership_type": "authoritative",
+      "routes": ["status-board"],
+      "operational_behaviors": ["Arrived", "Expected", "Last", "Local HH:MM:SS clock"],
+      "target_owner": "Gate3StatusBoardMetrics",
+      "final_disposition": "replace-and-retire"
+    },
+    {
+      "path": "/js/gate-processing-controller.js",
+      "classification": "production-active",
+      "status": "verified",
+      "runtime_owner": "GateProcessingController",
+      "ownership_type": "authoritative",
+      "routes": ["processing"],
+      "operational_behaviors": ["processing rendering", "dorm modal lifecycle", "dorm mutations", "open", "close", "reopen"],
+      "target_owner": "Gate3ProcessingRoute",
+      "final_disposition": "replace-and-retire"
+    },
+    {
+      "path": "/js/prc-dash-auditorium-location.js",
+      "classification": "production-active",
+      "status": "verified",
+      "runtime_owner": "GateAuditoriumLocationController",
+      "ownership_type": "delegating",
+      "routes": ["processing"],
+      "operational_behaviors": ["auditorium location hydration", "record-bound persistence delegation"],
+      "target_owner": "Gate3ProcessingDormModal",
+      "final_disposition": "replace-and-retire"
+    },
+    {
+      "path": "/js/gate-bus-workflow-controller.js",
+      "classification": "production-active",
+      "status": "verified",
+      "runtime_owner": "GateBusWorkflowController",
+      "ownership_type": "authoritative",
+      "routes": ["airport"],
+      "operational_behaviors": ["airport bus workflow", "local-arrival bus workflow"],
+      "target_owner": "Gate3AirportWorkflow",
+      "final_disposition": "replace-and-retire"
+    },
+    {
+      "path": "/js/gate-input-page-controller.js",
+      "classification": "production-active",
+      "status": "verified",
+      "runtime_owner": "GateInputPageController",
+      "ownership_type": "authoritative",
+      "routes": ["input"],
+      "operational_behaviors": ["input presentation", "week group initialization presentation"],
+      "target_owner": "Gate3InputRoute",
+      "final_disposition": "replace-and-retire"
+    },
+    {
+      "path": "/js/gate-archive-controller.js",
+      "classification": "production-active",
+      "status": "verified",
+      "runtime_owner": "GateArchiveController",
+      "ownership_type": "authoritative",
+      "routes": ["archives-reports"],
+      "operational_behaviors": ["archives", "reporting", "print", "PDF", "closeout presentation"],
+      "target_owner": "Gate3ArchiveRoute",
+      "final_disposition": "replace-and-retire"
+    },
+    {
+      "path": "/js/gate-status-board-shadow-controller.js",
+      "classification": "production-indirect",
+      "status": "verified",
+      "runtime_owner": "GateStatusBoardShadow",
+      "ownership_type": "shadow",
+      "routes": ["status-board"],
+      "operational_behaviors": ["hidden read-only parity observation"],
+      "target_owner": null,
+      "final_disposition": "remove-as-transition-only"
+    }
+  ],
+  "status_board_retirement_targets": {
+    "direct_stylesheets_max": 12,
+    "imported_stylesheets_max": 3,
+    "direct_scripts_max": 24,
+    "new_corrective_assets": 0,
+    "visible_status_board_owners": 1,
+    "middleware_status_board_source_rewrites": 0
+  },
+  "known_blockers": [
+    "sustained live shadow evidence",
+    "manual route accessibility, responsive, and fullscreen evidence",
+    "external deployment and rollback verification",
+    "Status Board legacy owner retirement"
+  ]
+}

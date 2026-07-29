@@ -40,11 +40,11 @@
   }
 
   function activeWeekGroup() {
-    try { return typeof getActiveWG === 'function' ? getActiveWG() : ''; } catch (_) { return ''; }
+    return window.GateApplicationStore?.activeWeekGroup?.() || '';
   }
 
   function allDataSafe() {
-    try { return Array.isArray(allData) ? allData : []; } catch (_) { return []; }
+    return window.GateApplicationStore?.records?.() || [];
   }
 
   function emptyRow(index) {

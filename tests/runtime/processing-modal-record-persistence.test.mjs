@@ -64,3 +64,47 @@ test('Auditorium card augmentation no longer observes the entire document', asyn
   assert.doesNotMatch(adapter, /originalOpen/);
   assert.match(adapter, /delegatesPersistenceTo: 'gate-processing-controller'/);
 });
+
+test('closed dorm timer edits declare the server manual override contract', async () => {
+  const lifecycle = await source('public/js/prc-dash-modal-mobile-validation.js');
+
+  assert.match(lifecycle, /function withManualClosedTimerOverride\(record\)/);
+  assert.match(lifecycle, /existingState !== 'closed' \|\| incomingState !== 'closed'/);
+  assert.match(lifecycle, /manual_closed_timer_override: 'true'/);
+  assert.match(lifecycle, /const payload = withManualClosedTimerOverride\(record\)/);
+});
+
+test('successful Processing mutations share one completion lifecycle', async () => {
+  const lifecycle = await source('public/js/prc-dash-modal-mobile-validation.js');
+
+  assert.match(lifecycle, /function returnToProcessingAfterSuccess\(\)/);
+  assert.match(lifecycle, /if \(result\?\.isOk && isProcessingDormMutation\(payload\)\) returnToProcessingAfterSuccess\(\)/);
+  assert.match(lifecycle, /window\.closeDormEditModal\?\.\(\)/);
+  assert.match(lifecycle, /window\.closeDormModal\?\.\(\)/);
+  assert.match(lifecycle, /window\.showPage\('processing'\)/);
+  assert.match(lifecycle, /GateProcessingController\?\.scheduleRender\?\.\(\{ force: true \}\)/);
+  assert.doesNotMatch(lifecycle, /GateProcessingController\?\.refresh\?\.\(\)/);
+});
+
+test('validation failures stay open while Escape only cancels the topmost modal', async () => {
+  const lifecycle = await source('public/js/prc-dash-modal-mobile-validation.js');
+
+  assert.doesNotMatch(lifecycle, /finally\s*\{[^}]*returnToProcessingAfterSuccess/s);
+  assert.match(lifecycle, /if \(event\.key === 'Escape'\) \{\s*cancelTopmostProcessingModal\(event\)/s);
+  assert.match(lifecycle, /if \(isVisible\(editModal\)\)/);
+  assert.match(lifecycle, /if \(isVisible\(processingModal\)\)/);
+  assert.match(lifecycle, /event\.target\?\.id === 'modal-load-input'/);
+  assert.match(lifecycle, /window\.saveLoad\?\.\(\)/);
+});
+
+test('Processing workspace uses responsive geometry and persistent action rails', async () => {
+  const css = await source('public/css/gate-processing-modal-workspace.css');
+
+  assert.match(css, /grid-template-areas:[\s\S]*"phase load"[\s\S]*"footer footer"/);
+  assert.match(css, /max-height: calc\(100dvh - 1rem\)/);
+  assert.match(css, /\.gate-processing-workspace__footer[\s\S]*grid-area: footer/);
+  assert.match(css, /@media \(max-height: 800px\) and \(min-width: 761px\)/);
+  assert.match(css, /@media \(max-width: 760px\)/);
+  assert.match(css, /position: sticky !important;/);
+  assert.match(css, /grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/);
+});

@@ -5,7 +5,7 @@
 (function () {
   'use strict';
 
-  const WORKSPACE_STYLESHEET = '/css/gate-processing-modal-workspace.css?v=processing-modal-persistence-20260729';
+  const WORKSPACE_STYLESHEET = '/css/gate-processing-modal-workspace.css?v=closed-dorm-layout-20260729';
   const WRAPPED_UPDATE = Symbol.for('gate.processing.persistence.update.wrapped');
   const WRAPPED_DELETE = Symbol.for('gate.processing.persistence.delete.wrapped');
 

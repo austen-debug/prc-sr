@@ -22,6 +22,11 @@
     var(--gate-shadow-strong, 0 24px 54px rgba(0, 0, 0, 0.42)) !important;
 }
 
+#dorm-modal .gate-processing-workspace,
+#dorm-modal .gate-processing-workspace * {
+  box-sizing: border-box !important;
+}
+
 #dorm-modal .gate-processing-workspace {
   width: min(calc(100vw - 2rem), 940px) !important;
   max-width: 940px !important;
@@ -47,6 +52,16 @@
 #dorm-modal .gate-processing-workspace__load { grid-area: load !important; }
 #dorm-modal .gate-processing-workspace__footer { grid-area: footer !important; }
 
+/* Empty and closed dorms intentionally hide phase controls. In those states the
+   load workspace must leave the narrow phase/load split and use the full row. */
+#dorm-modal #modal-phase-section[style*="display: none"] + #modal-load-section,
+#dorm-modal #modal-phase-section[style*="display:none"] + #modal-load-section {
+  grid-column: 1 / -1 !important;
+  width: min(100%, 38rem) !important;
+  max-width: 38rem !important;
+  justify-self: center !important;
+}
+
 #dorm-modal .gate-processing-workspace__header,
 #dorm-edit-modal .gate-processing-edit-workspace__header {
   position: relative !important;
@@ -65,11 +80,13 @@
 #dorm-modal .gate-processing-workspace__phase,
 #dorm-modal .gate-processing-workspace__load {
   min-width: 0 !important;
+  max-width: 100% !important;
   margin: 0 !important;
   padding: 0.72rem !important;
   border: 1px solid rgba(148, 163, 184, 0.14) !important;
   border-radius: 0.95rem !important;
   background: rgba(15, 23, 42, 0.18) !important;
+  overflow: hidden !important;
 }
 
 .theme-light #dorm-modal .gate-processing-workspace__assignment,
@@ -94,22 +111,57 @@
   line-height: 1.05 !important;
 }
 
+/* The source markup uses Tailwind flex utilities. This row must be an actual
+   grid—not merely have grid-template-columns—so every control remains inside
+   the load panel at tablet and laptop widths. */
 #dorm-modal #modal-load-section > .flex.items-center.justify-center.gap-4 {
-  grid-template-columns: 2.65rem 2.65rem minmax(5.8rem, 1fr) 2.65rem 2.65rem !important;
+  display: grid !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  grid-template-columns:
+    repeat(2, minmax(2.25rem, 0.58fr))
+    minmax(4.75rem, 1.45fr)
+    repeat(2, minmax(2.25rem, 0.58fr)) !important;
+  align-items: center !important;
+  justify-content: stretch !important;
   gap: 0.38rem !important;
   margin: 0 0 0.55rem !important;
 }
 
+#dorm-modal #modal-load-section > .flex.items-center.justify-center.gap-4 > * {
+  min-width: 0 !important;
+  max-width: 100% !important;
+}
+
 #dorm-modal .load-btn {
-  width: 2.65rem !important;
+  width: 100% !important;
   height: 2.65rem !important;
-  min-width: 2.65rem !important;
+  min-width: 0 !important;
   min-height: 2.65rem !important;
+  padding: 0.35rem !important;
+  white-space: nowrap !important;
 }
 
 #dorm-modal #modal-load-input {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
   min-height: 3.55rem !important;
+  padding-inline: 0.35rem !important;
   font-size: clamp(1.7rem, 4vw, 2.25rem) !important;
+}
+
+#dorm-modal #modal-load-section > .flex.gap-2.justify-center {
+  display: grid !important;
+  width: 100% !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 0.5rem !important;
+}
+
+#dorm-modal #modal-load-section > .flex.gap-2.justify-center button {
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
 }
 
 #dorm-modal .gate-processing-workspace__footer {
@@ -120,9 +172,11 @@
   padding: 0.72rem 0 0 !important;
   min-height: 3.5rem !important;
   background: transparent !important;
+  flex-wrap: wrap !important;
 }
 
 #dorm-modal .gate-processing-workspace__footer button {
+  min-width: 0 !important;
   min-height: 2.65rem !important;
   padding: 0.62rem 0.95rem !important;
 }
@@ -230,6 +284,13 @@
     overscroll-behavior: contain !important;
   }
 
+  #dorm-modal #modal-phase-section[style*="display: none"] + #modal-load-section,
+  #dorm-modal #modal-phase-section[style*="display:none"] + #modal-load-section {
+    grid-column: 1 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
   #dorm-modal .gate-processing-workspace__header {
     position: sticky !important;
     top: -0.1rem !important;
@@ -255,15 +316,17 @@
   }
 
   #dorm-modal #modal-load-section > .flex.items-center.justify-center.gap-4 {
-    grid-template-columns: 2.45rem 2.45rem minmax(5.2rem, 1fr) 2.45rem 2.45rem !important;
+    grid-template-columns:
+      repeat(2, minmax(2.1rem, 0.58fr))
+      minmax(4.45rem, 1.45fr)
+      repeat(2, minmax(2.1rem, 0.58fr)) !important;
     gap: 0.28rem !important;
   }
 
   #dorm-modal .load-btn {
-    width: 2.45rem !important;
     height: 2.45rem !important;
-    min-width: 2.45rem !important;
     min-height: 2.45rem !important;
+    font-size: 0.95rem !important;
   }
 
   #dorm-edit-modal .gate-processing-edit-workspace {

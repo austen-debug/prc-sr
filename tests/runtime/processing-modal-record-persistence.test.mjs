@@ -108,3 +108,14 @@ test('Processing workspace uses responsive geometry and persistent action rails'
   assert.match(css, /position: sticky !important;/);
   assert.match(css, /grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/);
 });
+
+test('closed and empty Processing modals contain the entire load control workspace', async () => {
+  const css = await source('public/css/gate-processing-modal-workspace.css');
+
+  assert.match(css, /#modal-phase-section\[style\*="display: none"\] \+ #modal-load-section[\s\S]*grid-column: 1 \/ -1 !important;/);
+  assert.match(css, /#modal-load-section > \.flex\.items-center\.justify-center\.gap-4 \{[\s\S]*display: grid !important;/);
+  assert.match(css, /#modal-load-section > \.flex\.items-center\.justify-center\.gap-4 \{[\s\S]*width: 100% !important;/);
+  assert.match(css, /\.load-btn \{[\s\S]*width: 100% !important;[\s\S]*min-width: 0 !important;/);
+  assert.match(css, /#modal-load-input \{[\s\S]*width: 100% !important;[\s\S]*max-width: 100% !important;/);
+  assert.match(css, /#modal-load-section > \.flex\.gap-2\.justify-center \{[\s\S]*grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/);
+});

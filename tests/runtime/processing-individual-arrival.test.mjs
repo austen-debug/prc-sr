@@ -27,7 +27,7 @@ test('Processing ADD menu retains Local Bus and adds quick Trainee action', asyn
   assert.match(controller, /data-processing-add-action="local"/);
   assert.match(controller, /data-processing-add-action="trainee"/);
   assert.match(controller, /window\.openLocalBusModal\?\.\(\)/);
-  assert.match(controller, /ADD \$\{count\} \$\{count === 1 \? 'TRAINEE' : 'TRAINEES'\}/);
+  assert.match(controller, /Add \$\{count\} \$\{count === 1 \? 'Trainee' : 'Trainees'\}/);
 });
 
 test('Individual arrival correction supports update and delete without bus mutation', async () => {
@@ -36,7 +36,7 @@ test('Individual arrival correction supports update and delete without bus mutat
   assert.match(controller, /window\.dataSdk\.update\(payload\)/);
   assert.match(controller, /window\.dataSdk\.delete\(record\)/);
   assert.match(controller, /data-trainee-arrival-manage/);
-  assert.match(controller, /Instructor entries can be corrected or deleted/);
+  assert.match(controller, /Correct the recorded quantity/);
   assert.doesNotMatch(controller, /bus_type\s*:/);
 });
 
@@ -51,8 +51,29 @@ test('Processing accountability reconciles expected, bus, individual, arrived, a
   assert.match(controller, /gate-accountability-individual/);
   assert.match(controller, /gate-accountability-arrived/);
   assert.match(controller, /gate-accountability-variance/);
-  assert.match(controller, /BALANCED/);
-  assert.match(controller, /RECONCILE/);
+  assert.match(controller, /balanced/);
+  assert.match(controller, /reconcile/);
+});
+
+test('Processing arrival overlays follow the controlled responsive dialog contract', async () => {
+  const controller = await source('public/js/gate-processing-arrival-controller.js');
+
+  assert.match(controller, /role="dialog"/);
+  assert.match(controller, /aria-modal="true"/);
+  assert.match(controller, /max-height:\s*100dvh/);
+  assert.match(controller, /safe-area-inset-bottom/);
+  assert.match(controller, /event\.key !== 'Tab'/);
+  assert.match(controller, /lastInvoker/);
+  assert.match(controller, /gate-arrival-dialog-footer/);
+});
+
+test('Processing arrival UI uses one compact accountability panel and collapsible history', async () => {
+  const controller = await source('public/js/gate-processing-arrival-controller.js');
+
+  assert.match(controller, /Arrival Accountability/);
+  assert.match(controller, /<details class="gate-arrival-history">/);
+  assert.match(controller, /grid\.insertAdjacentElement\('beforebegin', panel\)/);
+  assert.match(controller, /gate-processing-commandbar/);
 });
 
 test('Arrived metric includes arrived buses plus individual trainee arrivals', async () => {

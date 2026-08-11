@@ -319,12 +319,26 @@ export async function onRequest(context) {
   if (pathname === '/login' || pathname === '/login/' || pathname === '/login.html') return context.next();
   if (pathname === '/api/login' || pathname === '/api/logout' || pathname === '/api/ping') return context.next();
 
-  const session = await verifySession(context.request, context.env);
-  if (!session) {
-    if (pathname.startsWith('/api/')) return jsonResponse({ error: 'Unauthorized' }, 401);
-    return Response.redirect(`${url.origin}/login`, 302);
+  if (
+    pathname === '/favicon.ico' ||
+    pathname.endsWith('.css') ||
+    pathname.endsWith('.js') ||
+    pathname.endsWith('.png') ||
+    pathname.endsWith('.jpg') ||
+    pathname.endsWith('.jpeg') ||
+    pathname.endsWith('.svg') ||
+    pathname.endsWith('.ico') ||
+    pathname.endsWith('.webp') ||
+    pathname.endsWith('.mp3')
+  ) {
+    return context.next();
   }
 
-  const response = await context.next();
-  return maybeApplyUiAssets(response);
+  const session = await verifySession(context.request, context.env);
+  if (!session) {
+    if (pathname.startsWith('/api/')) return jsonResponse({ isOk: false, error: 'Unauthorized.' }, 401);
+    return Response.redirect(`${url.origin}/login/`, 302);
+  }
+
+  return maybeApplyUiAssets(await context.next());
 }

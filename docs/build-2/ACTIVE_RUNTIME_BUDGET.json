@@ -1,11 +1,11 @@
 {
-  "contractVersion": "AR-1.0.0",
+  "contractVersion": "AR-1.0.1",
   "capturedFrom": "functions/_middleware.js",
   "runtimeOwner": "Build 1",
   "maximums": {
     "directStyles": 13,
     "importedStyles": 3,
-    "directScripts": 27
+    "directScripts": 28
   },
   "phase3BExitTargets": {
     "directStylesMaximum": 12,
@@ -47,6 +47,7 @@
     "/js/prc-dash-final-audit.js?v=record-display-integrity-20260714",
     "/js/gate-status-board-controller.js?v=dorm-timer-record-lifecycle-20260722",
     "/js/gate-processing-controller.js?v=record-display-integrity-20260714",
+    "/js/gate-processing-arrival-controller.js?v=individual-arrival-20260811",
     "/js/prc-dash-dorm-flag-validation.js?v=record-display-integrity-20260714b",
     "/js/prc-dash-auditorium-location.js?v=processing-modal-record-binding-20260721",
     "/js/gate-bus-workflow-controller.js?v=phase-3-bus-workflow-20260709",
@@ -76,6 +77,7 @@
     "The active middleware stack may not exceed the recorded maximums.",
     "No new asset named as a fix, patch, corrective layer, restore layer, finalizer, cleanup, or stability layer may be activated.",
     "Any active-asset change must update this inventory and the active runtime register in the same pull request.",
+    "The Processing trainee-arrival owner is an approved operational capability addition and is not a corrective or compatibility layer.",
     "A visible Phase 3B Status Board must be net-negative in active assets and meet the Phase 3B exit targets.",
     "The hidden Phase 3A shadow observer remains the only Build 2 runtime asset until a separate authorization decision."
   ]

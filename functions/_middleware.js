@@ -30,6 +30,7 @@ const UI_HEAD_SCRIPTS = [
   '<script src="/js/prc-dash-final-audit.js?v=record-display-integrity-20260714" defer></script>',
   '<script src="/js/gate-status-board-controller.js?v=dorm-timer-record-lifecycle-20260722" defer></script>',
   '<script src="/js/gate-processing-controller.js?v=record-display-integrity-20260714" defer></script>',
+  '<script src="/js/gate-processing-arrival-controller.js?v=individual-arrival-20260811" defer></script>',
   '<script src="/js/prc-dash-dorm-flag-validation.js?v=record-display-integrity-20260714b" defer></script>',
   '<script src="/js/prc-dash-auditorium-location.js?v=processing-modal-record-binding-20260721" defer></script>',
   '<script src="/js/gate-bus-workflow-controller.js?v=phase-3-bus-workflow-20260709" defer></script>',
@@ -318,26 +319,12 @@ export async function onRequest(context) {
   if (pathname === '/login' || pathname === '/login/' || pathname === '/login.html') return context.next();
   if (pathname === '/api/login' || pathname === '/api/logout' || pathname === '/api/ping') return context.next();
 
-  if (
-    pathname === '/favicon.ico' ||
-    pathname.endsWith('.css') ||
-    pathname.endsWith('.js') ||
-    pathname.endsWith('.png') ||
-    pathname.endsWith('.jpg') ||
-    pathname.endsWith('.jpeg') ||
-    pathname.endsWith('.svg') ||
-    pathname.endsWith('.ico') ||
-    pathname.endsWith('.webp') ||
-    pathname.endsWith('.mp3')
-  ) {
-    return context.next();
-  }
-
   const session = await verifySession(context.request, context.env);
   if (!session) {
-    if (pathname.startsWith('/api/')) return jsonResponse({ isOk: false, error: 'Unauthorized.' }, 401);
-    return Response.redirect(`${url.origin}/login/`, 302);
+    if (pathname.startsWith('/api/')) return jsonResponse({ error: 'Unauthorized' }, 401);
+    return Response.redirect(`${url.origin}/login`, 302);
   }
 
-  return maybeApplyUiAssets(await context.next());
+  const response = await context.next();
+  return maybeApplyUiAssets(response);
 }

@@ -323,11 +323,21 @@
     if (!result?.isOk) return showMessage('airport-msg', result?.error || 'Failed to dispatch bus.', true);
 
     updateCache(result.data || payload);
-    await createSoundEvent?.('bus_dispatch', { bus_id: String(busId), otw_count: total, female_count: females, nat_count: naturals, space_force_count: spaceForce, action: 'dispatch_bus' });
+    refreshAllSurfaces('airport-dispatch');
     form.reset();
     ['bus-female', 'bus-nat', 'bus-sf'].forEach(id => { const input = document.getElementById(id); if (input) input.value = '0'; });
     showMessage('airport-msg', `Bus #${busId} Dispatched`, false);
-    refreshAllSurfaces('airport-dispatch');
+
+    if (typeof createSoundEvent === 'function') {
+      Promise.resolve(createSoundEvent('bus_dispatch', {
+        bus_id: String(busId),
+        otw_count: total,
+        female_count: females,
+        nat_count: naturals,
+        space_force_count: spaceForce,
+        action: 'dispatch_bus'
+      })).catch(error => console.warn('GATE bus dispatch sound event failed:', error));
+    }
   }
 
   async function createLocal(form) {

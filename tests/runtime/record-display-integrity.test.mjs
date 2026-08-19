@@ -114,3 +114,22 @@ test('Status Board uses one canonical timer and direct-surface integrity owner',
   assert.doesNotMatch(middleware, /gate-status-board-timer-visual-stability\.js/);
   assert.match(middleware, /gate-status-board-controller\.js\?v=dorm-timer-record-lifecycle-20260722/);
 });
+
+test('airport bus persistence refreshes Status Board before auxiliary sound persistence', async () => {
+  const workflow = await source('public/js/gate-bus-workflow-controller.js');
+  const recordsApi = await source('functions/api/records.js');
+  const createStart = workflow.indexOf('async function createAirport(form)');
+  const createEnd = workflow.indexOf('async function createLocal(form)');
+  const createAirport = workflow.slice(createStart, createEnd);
+
+  const cacheIndex = createAirport.indexOf('updateCache(result.data || payload)');
+  const refreshIndex = createAirport.indexOf("refreshAllSurfaces('airport-dispatch')");
+  const soundIndex = createAirport.indexOf("createSoundEvent('bus_dispatch'");
+
+  assert.ok(cacheIndex >= 0, 'persisted bus must enter the local authoritative cache');
+  assert.ok(refreshIndex > cacheIndex, 'Status Board refresh must follow the persisted bus cache update');
+  assert.ok(soundIndex > refreshIndex, 'auxiliary sound persistence must not gate Status Board rendering');
+  assert.doesNotMatch(createAirport, /await\s+createSoundEvent/);
+  assert.match(workflow, /GateActiveBusController\?\.render\?\.\(\{ force: true \}\)/);
+  assert.match(recordsApi, /await env\.DB\.prepare\([\s\S]*INSERT INTO records[\s\S]*\.run\(\);[\s\S]*return jsonResponse\(\{ isOk: true, data: storedRecord \}, 201/);
+});

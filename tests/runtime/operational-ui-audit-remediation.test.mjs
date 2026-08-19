@@ -31,6 +31,20 @@ test('Processing modal tablet reachability covers the complete shell range', asy
   assert.match(css, /mb-4 > button[\s\S]*min-width:\s*44px\s*!important[\s\S]*min-height:\s*44px\s*!important/);
 });
 
+test('tablet Processing owns vertical scrolling without rubber-banding the fixed shell', async () => {
+  const css = await source('public/css/gate-tablet-shell.css');
+
+  assert.match(css, /any-pointer:\s*coarse[\s\S]*min-width:\s*768px[\s\S]*max-width:\s*1366px[\s\S]*min-height:\s*561px/);
+  assert.match(css, /html\s*\{[\s\S]*overscroll-behavior-y:\s*none\s*!important/);
+  assert.match(css, /data-gate-active-page='processing'[\s\S]*height:\s*100dvh\s*!important[\s\S]*overflow-y:\s*hidden\s*!important/);
+  assert.match(css, /#page-processing\.active\s*\{[\s\S]*display:\s*flex\s*!important[\s\S]*height:\s*100dvh\s*!important/);
+  assert.match(css, /#page-processing\.active\s*\{[\s\S]*overflow-y:\s*auto\s*!important[\s\S]*overscroll-behavior-y:\s*contain\s*!important/);
+  assert.match(css, /security-banner-fixed[\s\S]*position:\s*fixed\s*!important[\s\S]*translate3d\(0, 0, 0\)/);
+  assert.match(css, /app-nav\.command-header-bar[\s\S]*position:\s*fixed\s*!important[\s\S]*translate3d\(0, 0, 0\)/);
+  assert.match(css, /#gate-mobile-nav-sheet[\s\S]*overscroll-behavior:\s*contain\s*!important[\s\S]*-webkit-overflow-scrolling:\s*touch\s*!important/);
+  assert.match(css, /#page-processing \.proc-card:hover[\s\S]*transform:\s*none\s*!important/);
+});
+
 test('narrow fine-pointer desktops keep a single-row navigation shell', async () => {
   const css = await source('public/css/gate-ui-ownership-correction.css');
 

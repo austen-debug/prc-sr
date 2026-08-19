@@ -9,8 +9,25 @@
     --gate-tablet-drawer-top: calc(var(--gate-tablet-banner-height) + var(--gate-tablet-nav-height) + 10px);
   }
 
+  html {
+    overscroll-behavior-x: none !important;
+    overscroll-behavior-y: none !important;
+  }
+
   body.gate-app-shell-ready.gate-app-shell-mobile {
     overflow-x: hidden !important;
+    overscroll-behavior-x: none !important;
+    overscroll-behavior-y: none !important;
+  }
+
+  /* Processing is a viewport-owned tablet workspace. Keeping document scroll
+     disabled for this route prevents iPad/Safari rubber-band scrolling from
+     visually displacing the fixed classification and command shell. */
+  body.gate-app-shell-ready.gate-app-shell-mobile[data-gate-active-page='processing'] {
+    height: 100dvh !important;
+    min-height: 100dvh !important;
+    max-height: 100dvh !important;
+    overflow-y: hidden !important;
   }
 
   body.gate-app-shell-ready.gate-app-shell-mobile .security-banner-fixed {
@@ -22,6 +39,10 @@
     padding: 0 var(--gate-tablet-safe-x) !important;
     font-size: 0.66rem !important;
     z-index: 12100 !important;
+    transform: translate3d(0, 0, 0) !important;
+    -webkit-transform: translate3d(0, 0, 0) !important;
+    -webkit-backface-visibility: hidden !important;
+    backface-visibility: hidden !important;
   }
 
   body.gate-app-shell-ready.gate-app-shell-mobile .app-nav.command-header-bar,
@@ -42,6 +63,10 @@
     overflow: visible !important;
     box-sizing: border-box !important;
     z-index: 12080 !important;
+    transform: translate3d(0, 0, 0) !important;
+    -webkit-transform: translate3d(0, 0, 0) !important;
+    -webkit-backface-visibility: hidden !important;
+    backface-visibility: hidden !important;
   }
 
   body.gate-app-shell-ready.gate-app-shell-mobile .app-nav.command-header-bar::before,
@@ -136,6 +161,7 @@
     background: rgba(2, 6, 23, 0.34) !important;
     -webkit-backdrop-filter: blur(2px) !important;
     backdrop-filter: blur(2px) !important;
+    touch-action: none !important;
   }
 
   body.gate-app-shell-ready.gate-app-shell-mobile.gate-mobile-drawer-open #gate-mobile-menu-scrim {
@@ -158,6 +184,9 @@
     padding: 16px !important;
     overflow-x: hidden !important;
     overflow-y: auto !important;
+    overscroll-behavior: contain !important;
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-y !important;
     border: 1px solid rgba(184, 190, 199, 0.34) !important;
     border-radius: 18px !important;
     background: rgba(8, 18, 31, 0.985) !important;
@@ -226,6 +255,52 @@
     padding-right: var(--gate-tablet-safe-x) !important;
     max-width: 100vw !important;
     box-sizing: border-box !important;
+  }
+
+  /* GateAppShell intentionally uses block layout for general routes. Processing
+     is different: its DOM already declares a flex column with a scrollable card
+     workspace. Restore that contract on tablets so the route—not the document—
+     owns vertical scrolling. */
+  body.gate-app-shell-ready.gate-app-shell-mobile #page-processing.active {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    height: 100dvh !important;
+    min-height: 100dvh !important;
+    max-height: 100dvh !important;
+    padding-top: calc(var(--gate-tablet-banner-height) + var(--gate-tablet-nav-height) + 12px) !important;
+    padding-left: var(--gate-tablet-safe-x) !important;
+    padding-right: var(--gate-tablet-safe-x) !important;
+    padding-bottom: max(18px, env(safe-area-inset-bottom)) !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    overscroll-behavior-x: none !important;
+    overscroll-behavior-y: contain !important;
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-y !important;
+    box-sizing: border-box !important;
+    scroll-padding-top: calc(var(--gate-tablet-banner-height) + var(--gate-tablet-nav-height) + 12px) !important;
+    scroll-padding-bottom: max(18px, env(safe-area-inset-bottom)) !important;
+  }
+
+  body.gate-app-shell-ready.gate-app-shell-mobile #page-processing.active > .px-4.py-3.flex-shrink-0 {
+    flex: 0 0 auto !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  body.gate-app-shell-ready.gate-app-shell-mobile #page-processing.active #proc-dorm-grid {
+    flex: 1 0 auto !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Touch browsers can retain :hover after a tap. Disable the legacy scale-up
+     so Processing cards do not jump or clip while operators are selecting them. */
+  body.gate-app-shell-ready.gate-app-shell-mobile #page-processing .proc-card:hover {
+    transform: none !important;
   }
 
   body.fullscreen-board.gate-app-shell-ready.gate-app-shell-mobile #page-board.active {

@@ -1,0 +1,60 @@
+{
+  "program": "GATE 3.0 Full Lift",
+  "document": "Legacy Retirement Master Plan",
+  "schema_version": "1.0.0",
+  "status": "initiated",
+  "purpose": "Account for every original, compatibility, corrective, delegating, repairing, shadow, and transition-only runtime asset and govern its movement into the single GATE 3.0 architecture.",
+  "final_state": {
+    "production_runtime": "gate-3.0-only",
+    "parallel_legacy_execution_paths": 0,
+    "unknown_active_asset_dispositions": 0,
+    "transition_only_runtime_assets": 0,
+    "unjustified_corrective_layers": 0,
+    "duplicate_authoritative_owners": 0,
+    "executable_historical_assets": 0
+  },
+  "allowed_dispositions": [
+    "retain-as-gate-3.0",
+    "refactor-into-gate-3.0",
+    "replace-and-retire",
+    "remove-as-dead-code",
+    "retain-as-isolated-history"
+  ],
+  "prohibited_dispositions": [
+    "retain-as-legacy-runtime",
+    "permanent-parallel-runtime",
+    "permanent-transition-layer",
+    "unknown-at-phase-1-exit"
+  ],
+  "retirement_package_requirements": [
+    "current owner and protected behavior indexed",
+    "GATE 3.0 replacement owner identified",
+    "semantic parity demonstrated",
+    "historical regression coverage passed",
+    "manual operational validation completed where applicable",
+    "downstream consumers reconciled",
+    "rollback procedure validated",
+    "production ownership switched",
+    "legacy imports, injections, globals, selectors, and references removed",
+    "legacy file removed or isolated as non-executable history",
+    "runtime and repository reference scans pass",
+    "active asset budget is net-negative or explicitly justified"
+  ],
+  "phase_retirement_intent": {
+    "phase_1": "Index every asset and assign target owner, final disposition, retirement phase, acceptance gate, and removal verification method.",
+    "phase_2": "Establish the complete GATE 3.0 enterprise foundation without creating an uncontrolled parallel production runtime.",
+    "phase_3": "Transfer subsystem ownership to GATE 3.0 and retire superseded owners in bounded, parity-proven packages.",
+    "phase_4": "Complete unified route, shell, design, responsive, accessibility, and operational-platform ownership; remove remaining transition layers.",
+    "phase_5": "Certify the GATE 3.0-only runtime, remove remaining dead or orphaned files, isolate historical evidence, and prove no legacy execution path remains."
+  },
+  "asset_register": [],
+  "route_retirement_register": [],
+  "cross_cutting_retirement_register": [],
+  "verification_summary": {
+    "assets_accounted_for": 0,
+    "assets_verified": 0,
+    "assets_retired": 0,
+    "assets_blocked": 0,
+    "unknown_dispositions": 0
+  }
+}

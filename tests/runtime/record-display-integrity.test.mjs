@@ -67,6 +67,16 @@ test('Input owns dorm identity and never re-matches a created dorm to the live g
   assert.doesNotMatch(input, /liveDorms\.find\(item => String\(item\.dorm_name/);
 });
 
+test('Input dorm loads accept 1 through 100 consistently in field and preflight validation', async () => {
+  const input = await source('public/js/gate-input-page-controller.js');
+
+  assert.match(input, /class="batch-load[\s\S]*?min="1"\s+max="100"/);
+  assert.match(input, /n\(row\.load\)\s*>\s*100/);
+  assert.match(input, /Dorm loads must be between 1 and 100\./);
+  assert.doesNotMatch(input, /n\(row\.load\)\s*>\s*60/);
+  assert.doesNotMatch(input, /Dorm loads must be between 1 and 60\./);
+});
+
 test('dorm designation validation is identity-bound, card-scoped, and non-observing', async () => {
   const flags = await source('public/js/prc-dash-dorm-flag-validation.js');
 

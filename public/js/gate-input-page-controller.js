@@ -296,7 +296,7 @@
         </select>
         <label class="flex items-center justify-center" title="Band dorm"><input type="checkbox" class="batch-band w-4 h-4" data-row="${index}" ${row.band ? 'checked' : ''} aria-label="Row ${index + 1} Band"></label>
         <label class="flex items-center justify-center" title="Space Force dorm"><input type="checkbox" class="batch-space-force w-4 h-4" data-row="${index}" ${row.space_force ? 'checked' : ''} aria-label="Row ${index + 1} Space Force"></label>
-        <input type="number" class="batch-load border rounded px-1 py-1 bg-transparent text-xs font-tabular" style="border-color:var(--border);color:var(--text);" inputmode="numeric" data-row="${index}" min="0" value="${esc(row.load)}" aria-label="Row ${index + 1} Load">
+        <input type="number" class="batch-load border rounded px-1 py-1 bg-transparent text-xs font-tabular" style="border-color:var(--border);color:var(--text);" inputmode="numeric" data-row="${index}" min="1" max="100" value="${esc(row.load)}" aria-label="Row ${index + 1} Load">
         <button type="button" data-gate-input-clear-row="${index}" class="text-red-500 text-lg leading-none" aria-label="Clear row ${index + 1}">×</button>
       </div>
     `).join('');
@@ -413,8 +413,8 @@
     const conflict = rows.find(row => row.band && row.space_force);
     if (conflict) return { ok: false, message: 'A dorm cannot be both Band and Space Force. Clear one selection before initializing.' };
 
-    const invalidLoad = rows.find(row => n(row.load) <= 0 || n(row.load) > 60);
-    if (invalidLoad) return { ok: false, message: 'Dorm loads must be between 1 and 60.' };
+    const invalidLoad = rows.find(row => n(row.load) <= 0 || n(row.load) > 100);
+    if (invalidLoad) return { ok: false, message: 'Dorm loads must be between 1 and 100.' };
 
     const duplicate = findDuplicateDormIdentity(rows);
     if (duplicate) {

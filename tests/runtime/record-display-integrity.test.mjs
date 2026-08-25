@@ -77,6 +77,17 @@ test('Input dorm loads accept 1 through 100 consistently in field and preflight 
   assert.doesNotMatch(input, /Dorm loads must be between 1 and 60\./);
 });
 
+test('Processing Space Force marker is bound to the canonical persistent card class', async () => {
+  const processing = await source('public/js/gate-processing-controller.js');
+  const css = await source('public/css/prc-dash-dorm-cards.css');
+
+  assert.match(processing, /const spaceForce = normalizedFlags \? normalizedFlags\.spaceForce/);
+  assert.match(processing, /spaceForce \? 'border-space-force'/);
+  assert.match(css, /#page-processing \.proc-card\.border-space-force > \.text-xl\.font-black\.font-tabular::before/);
+  assert.match(css, /content:\s*'SPACE FORCE'/);
+  assert.match(css, /#page-processing \.proc-card\.border-space-force \.gate-dorm-flags\s*\{[\s\S]*?display:\s*none\s*!important/);
+});
+
 test('dorm designation validation is identity-bound, card-scoped, and non-observing', async () => {
   const flags = await source('public/js/prc-dash-dorm-flag-validation.js');
 

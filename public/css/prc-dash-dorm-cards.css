@@ -87,6 +87,42 @@
   justify-content: flex-start !important;
 }
 
+/*
+   Processing cards are rebuilt canonically by GateProcessingController. The
+   Space Force class survives every rebuild because it is derived directly from
+   the persisted dorm flags. Bind the visible marker to that stable class so a
+   later card render cannot remove it. The legacy injected chip is suppressed on
+   Space Force cards to avoid a transient duplicate during validation passes.
+*/
+#page-processing .proc-card.border-space-force .gate-dorm-flags {
+  display: none !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+}
+
+#page-processing .proc-card.border-space-force > .text-xl.font-black.font-tabular::before {
+  content: 'SPACE FORCE';
+  width: fit-content;
+  min-height: var(--gate-dorm-chip-height);
+  max-height: var(--gate-dorm-chip-height);
+  margin: 0 0 0.3rem;
+  padding: 0 0.52rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(69, 202, 255, 0.72);
+  border-radius: 999px;
+  background: rgba(69, 202, 255, 0.18);
+  color: #e0f8ff;
+  font-size: 0.56rem;
+  font-weight: 950;
+  line-height: 1;
+  letter-spacing: 0.075em;
+  text-transform: uppercase;
+  text-shadow: 0 0 10px rgba(69, 202, 255, 0.36);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.14), 0 3px 10px rgba(0,0,0,0.14);
+}
+
 #page-processing .proc-card .gate-dorm-flag-chip,
 #page-processing .proc-card .gate-auditorium-location {
   min-height: var(--gate-dorm-chip-height) !important;
@@ -160,6 +196,13 @@
   border-color: rgba(2, 132, 199, 0.34) !important;
   color: #075985 !important;
   text-shadow: none !important;
+}
+
+.theme-light #page-processing .proc-card.border-space-force > .text-xl.font-black.font-tabular::before {
+  background: rgba(224, 248, 255, 0.86);
+  border-color: rgba(2, 132, 199, 0.34);
+  color: #075985;
+  text-shadow: none;
 }
 
 .theme-light #page-processing .proc-card .gate-auditorium-location {

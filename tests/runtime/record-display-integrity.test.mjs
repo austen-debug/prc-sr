@@ -88,6 +88,17 @@ test('Processing Space Force marker is bound to the canonical persistent card cl
   assert.match(css, /#page-processing \.proc-card\.border-space-force \.gate-dorm-flags\s*\{[\s\S]*?display:\s*none\s*!important/);
 });
 
+test('Processing female highlight is pronounced and scoped to the Processing grid', async () => {
+  const css = await source('public/css/prc-dash-dorm-cards.css');
+  const match = css.match(/#page-processing #proc-dorm-grid \.proc-card\.border-female\s*\{([\s\S]*?)\}/);
+
+  assert.ok(match, 'Processing female-card selector must exist');
+  assert.match(match[1], /border-width:\s*3px\s*!important/);
+  assert.match(match[1], /border-color:\s*var\(--gate-flag-female-red\)\s*!important/);
+  assert.match(match[1], /0 0 20px rgba\(255, 59, 48, 0\.34\)/);
+  assert.doesNotMatch(match[0], /#page-board|#page-squadron/);
+});
+
 test('dorm designation validation is identity-bound, card-scoped, and non-observing', async () => {
   const flags = await source('public/js/prc-dash-dorm-flag-validation.js');
 

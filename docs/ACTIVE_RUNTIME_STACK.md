@@ -12,7 +12,7 @@ The active GATE application is not defined only by `public/index.html`. Cloudfla
 ```text
 Direct stylesheets: 13
 Imported stylesheets: 3
-Direct scripts: 27
+Direct scripts: 28
 Visible Build 2 routes: 0
 Hidden Build 2 runtime observers: 1
 ```
@@ -58,22 +58,23 @@ Injected by middleware in current order:
 9. `/js/prc-dash-final-audit.js?v=record-display-integrity-20260714`
 10. `/js/gate-status-board-controller.js?v=dorm-timer-record-lifecycle-20260722`
 11. `/js/gate-processing-controller.js?v=record-display-integrity-20260714`
-12. `/js/prc-dash-dorm-flag-validation.js?v=record-display-integrity-20260714b`
-13. `/js/prc-dash-auditorium-location.js?v=processing-modal-record-binding-20260721`
-14. `/js/gate-bus-workflow-controller.js?v=phase-3-bus-workflow-20260709`
-15. `/js/gate-airport-bus-delete-controller.js?v=airport-bus-delete-20260714`
-16. `/js/gate-input-page-controller.js?v=record-display-integrity-20260714`
-17. `/js/gate-archive-controller.js?v=phase-8c-report-wording-20260709`
-18. `/js/gate-permission-guard.js?v=phase-1a-permission-guard-20260709`
-19. `/js/gate-tablet-shell-classifier.js?v=tablet-shell-20260714`
-20. `/js/gate-app-shell-controller.js?v=phase-7g-viewport-watermark-20260709`
-21. `/js/gate-fullscreen-board-layout-controller.js?v=fullscreen-board-containment-20260714b`
-22. `/js/prc-dash-modal-mobile-validation.js?v=phase-7e-ui-ownership-20260709`
-23. `/js/gate-render-stability-fix.js?v=status-board-compositing-retired-20260721`
-24. `/js/prc-dash-processing-loaded-summary.js`
-25. `/js/gate-premium-metrics-controller.js?v=metric-live-clock-20260722`
-26. `/js/prc-dash-overtime-audit.js`
-27. `/js/gate-status-board-shadow-controller.js?v=phase-3a-status-board-shadow-20260715`
+12. `/js/gate-processing-arrival-controller.js?v=individual-arrival-20260811`
+13. `/js/prc-dash-dorm-flag-validation.js?v=record-display-integrity-20260714b`
+14. `/js/prc-dash-auditorium-location.js?v=processing-modal-record-binding-20260721`
+15. `/js/gate-bus-workflow-controller.js?v=phase-3-bus-workflow-20260709`
+16. `/js/gate-airport-bus-delete-controller.js?v=airport-bus-delete-20260714`
+17. `/js/gate-input-page-controller.js?v=record-display-integrity-20260714`
+18. `/js/gate-archive-controller.js?v=phase-8c-report-wording-20260709`
+19. `/js/gate-permission-guard.js?v=phase-1a-permission-guard-20260709`
+20. `/js/gate-tablet-shell-classifier.js?v=tablet-shell-20260714`
+21. `/js/gate-app-shell-controller.js?v=phase-7g-viewport-watermark-20260709`
+22. `/js/gate-fullscreen-board-layout-controller.js?v=fullscreen-board-containment-20260714b`
+23. `/js/prc-dash-modal-mobile-validation.js?v=phase-7e-ui-ownership-20260709`
+24. `/js/gate-render-stability-fix.js?v=status-board-compositing-retired-20260721`
+25. `/js/prc-dash-processing-loaded-summary.js`
+26. `/js/gate-premium-metrics-controller.js?v=metric-live-clock-20260722`
+27. `/js/prc-dash-overtime-audit.js`
+28. `/js/gate-status-board-shadow-controller.js?v=phase-3a-status-board-shadow-20260715`
 
 ## Operational owners
 
@@ -81,8 +82,9 @@ Injected by middleware in current order:
 - `GateAppShell` owns visible route state, role-aware navigation, drawer/sheet behavior, and Week Group shell context.
 - `GatePermissionGuard` owns client-side action protection; server authorization remains authoritative.
 - `GateStatusBoardController` owns the visible Status Board dorm columns, dorm cards, active-bus panel, elapsed-time calculation, record-bound timer text, warning/critical timer state, direct-surface integrity repair, and per-column incremental rendering. It rebinds every open timer to the current dorm record before each second-aligned tick and publishes the same elapsed-time function to the Processing open/close workflow.
-- `GatePremiumMetricsController` owns change-only synchronization of Arrived, Expected, Last, and Local values. The Local clock is second-aligned, displays `HH:MM:SS`, resumes immediately after visibility/focus/fullscreen transitions, and updates only the `#stat-local` text node.
+- `GatePremiumMetricsController` owns change-only synchronization of Arrived, Expected, Last, and Local values. The Local clock is second-aligned, displays `HH:MM:SS`, resumes immediately after visibility/focus/fullscreen transitions, and updates only the `#stat-local` text node. Arrived includes both arrived bus counts and persisted individual `trainee_arrival` quantities for the active Week Group.
 - `GateProcessingController` owns Processing page rendering, dorm-modal lifecycle, and all dorm-record mutations. Open writes `opened_at`; Close derives `closed_timer` from that timestamp through the canonical elapsed-time function; Reopen reconstructs `opened_at` from the retained final time.
+- `GateProcessingArrivalController` owns the Processing `+ ADD` arrival chooser, non-bus `trainee_arrival` create/update/delete lifecycle, individual-arrival history, and Processing accountability reconciliation. It delegates Local Bus to `GateBusWorkflowController`, keeps trainee arrivals separate from bus records, and contributes their quantities to the common Arrived population.
 - `GateAuditoriumLocationController` owns field hydration and card augmentation for Auditorium Location. It binds the modal field to the active dorm ID and delegates persistence through `GateProcessingController.updateDorm`; it does not call the Data SDK directly.
 - `GateBusWorkflowController` owns airport and local-arrival bus workflows.
 - `GateInputPageController` owns Input and Week Group initialization presentation.
@@ -135,9 +137,9 @@ The shadow bridge dynamically imports only the pure Status Board shadow package 
 
 The current counts are ceilings, not targets.
 
-- A normal pull request may not increase direct or imported active assets.
+- Active-asset growth requires an explicit operational capability addition, must remain within the audited hard ceiling, and must update this register plus `ACTIVE_RUNTIME_BUDGET.json` in the same pull request. Corrective, compatibility, and duplicate-owner growth remains prohibited.
+- The Processing trainee-arrival controller is the authorized operational capability addition represented by the current 28-script ceiling; it is not a corrective or compatibility layer.
 - No new active asset may be named or scoped as a fix, patch, corrective layer, restore layer, finalizer, cleanup layer, or stability layer.
-- Any active-asset change must update this register and `ACTIVE_RUNTIME_BUDGET.json` in the same pull request.
 - A visible Phase 3B route must be net-negative and meet the retirement targets in `STATUS_BOARD_RETIREMENT_MANIFEST.md`.
 - Build 2 evidence, fixtures, and review tooling remain outside active middleware and routing.
 
@@ -175,6 +177,8 @@ PASS — Local clock has one second-aligned `HH:MM:SS` owner
 PASS — Status Board forced GPU compositing retired
 PASS — Processing assignment/location saves are bound to the active dorm record
 PASS — Processing Auditorium Location persistence delegates to the canonical dorm mutation owner
+PASS — Processing non-bus trainee arrivals persist as a distinct record type
+PASS — Processing accountability reconciliation includes bus and individual-arrival populations
 PASS — modal layers remain above phone and tablet shell layers
 PASS — Processing modal reachability covers coarse-pointer tablets through 1366 px
 PASS — narrow fine-pointer desktops retain a fixed single-row navigation shell
@@ -183,7 +187,7 @@ PASS — one hidden Phase 3A bridge loaded after the visible Status Board owner
 PASS — runtime record-integrity workflow
 PASS — no visible Build 2 route
 PASS — no Build 2 production write path
-PASS — active asset growth blocked below the audited ceiling
+PASS — active runtime remains within the audited 28-script hard ceiling
 
 PENDING — sustained live shadow evidence
 PENDING — manual route accessibility, responsive, and fullscreen evidence

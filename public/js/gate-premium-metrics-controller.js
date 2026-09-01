@@ -39,8 +39,15 @@
     const dorms = records.filter(record => record?.type === 'dorm' && record.week_group === wg);
     const buses = records.filter(record => record?.type === 'bus' && record.week_group === wg);
     const arrivedBuses = buses.filter(bus => bus.status === 'arrived');
+    const traineeArrivals = records.filter(record => (
+      record?.type === 'trainee_arrival' &&
+      record.week_group === wg &&
+      record.status === 'arrived'
+    ));
     const totalExpected = dorms.reduce((sum, dorm) => sum + (Number(dorm.max_load) || 0), 0);
-    const totalArrived = arrivedBuses.reduce((sum, bus) => sum + (Number(bus.otw_count) || 0), 0);
+    const busArrived = arrivedBuses.reduce((sum, bus) => sum + (Number(bus.otw_count) || 0), 0);
+    const individualArrived = traineeArrivals.reduce((sum, record) => sum + (Number(record.quantity) || 0), 0);
+    const totalArrived = busArrived + individualArrived;
     const lastAirport = records.find(record => record?.type === 'config' && record.key === 'last_airport')?.value || '—';
 
     return {
@@ -136,6 +143,7 @@
       sync: schedule,
       syncLocalClock,
       restartLiveClock,
+      calculateMetrics,
       clockPrecision: 'second',
       clockFormat: 'HH:MM:SS'
     });

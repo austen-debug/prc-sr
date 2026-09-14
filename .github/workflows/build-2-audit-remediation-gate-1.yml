@@ -7,6 +7,7 @@ on:
       - 'functions/_middleware.js'
       - 'functions/api/**'
       - 'public/index.html'
+      - 'public/login/**'
       - 'public/css/military-glass-terminal.css'
       - 'public/js/**'
       - 'public/app/status-board-shadow/**'
@@ -28,6 +29,7 @@ on:
       - 'functions/_middleware.js'
       - 'functions/api/**'
       - 'public/index.html'
+      - 'public/login/**'
       - 'public/css/military-glass-terminal.css'
       - 'public/js/**'
       - 'public/app/status-board-shadow/**'
@@ -69,6 +71,7 @@ jobs:
       - name: Validate active runtime budget and record integrity
         run: |
           node --test tests/runtime/full-system-integrity.test.mjs
+          node --test tests/runtime/military-glass-v2-ui-contract.test.mjs
           node --test tests/runtime/active-runtime-budget.test.mjs
           node --test tests/runtime/record-display-integrity.test.mjs
           node --test tests/runtime/dorm-timer-record-lifecycle.test.mjs

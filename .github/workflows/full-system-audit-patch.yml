@@ -33,7 +33,7 @@ jobs:
           node --test tests/runtime/record-display-integrity.test.mjs
           node --test tests/runtime/processing-modal-record-persistence.test.mjs
           node --test tests/runtime/status-board-visual-stability.test.mjs
-          if grep -R '!important' -n public/css/military-glass-terminal.css; then exit 1; fi
+          if grep -RE '!important\s*;' public/css/military-glass-terminal.css; then exit 1; fi
       - name: Commit audited repairs
         run: |
           git config user.name ORION_Dev

@@ -1,6 +1,6 @@
 # GATE Active Runtime Stack
 
-Status: Phase 3A Status Board shadow active; Audit Remediation Gate 1 complete; Gate 2 next  
+Status: Phase 3A Status Board shadow active; CSS infrastructure consolidated; Audit Remediation Gate 1 complete  
 Scope: authoritative served-runtime order from `functions/_middleware.js`
 
 ## Purpose
@@ -10,8 +10,8 @@ The active GATE application is not defined only by `public/index.html`. Cloudfla
 ## Active asset totals
 
 ```text
-Direct stylesheets: 13
-Imported stylesheets: 3
+Direct stylesheets: 1
+Imported stylesheets: 0
 Direct scripts: 27
 Visible Build 2 routes: 0
 Hidden Build 2 runtime observers: 1
@@ -21,27 +21,13 @@ The machine-readable inventory and ceilings are governed by `docs/build-2/ACTIVE
 
 ## Active CSS load path
 
-Injected directly by middleware in current order:
+Middleware now injects one stylesheet and no stylesheet imports:
 
-1. `/css/gate-index-legacy-shell.css`
-2. `/css/gate-base-tokens.css`
-3. `/css/gate-layout-pages.css`
-4. `/css/gate-components.css`
-5. `/css/gate-utilities-access.css?v=status-board-stable-surfaces-20260721`
-6. `/css/gate-premium-metrics.css?v=status-board-fluid-metrics-20260721`
-7. `/css/gate-app-shell.css?v=phase-7g-viewport-watermark-20260709`
-8. `/css/gate-mobile-corrective.css?v=phase-7h-ui-patch-retirement-20260709`
-9. `/css/gate-ui-ownership-correction.css?v=operational-ui-audit-20260721`
-10. `/css/gate-light-mode-command-contrast.css?v=light-command-contrast-20260714`
-11. `/css/gate-light-mode-grid-correction.css?v=light-grid-correction-20260714`
-12. `/css/gate-tablet-shell.css?v=tablet-shell-20260714`
-13. `/css/gate-fullscreen-board-contract.css?v=fullscreen-compact-bus-tiles-20260721`
+1. `/css/military-glass-terminal.css?v=military-glass-terminal-20260914`
 
-Imported through the active utility chain:
+`public/css/military-glass-terminal.css` is the production visual source of truth for tokens, light/dark themes, shell geometry, page spacing, Status/Squadron boards, Processing, Airport, Input, Archives, login, modal geometry, responsive behavior, fullscreen behavior, skeleton geometry, z-index bands, and interaction motion.
 
-- `/css/gate-board-presentation.css?v=status-board-light-clarity-20260714`
-- `/css/gate-theme-unified-contract.css`
-- `/css/gate-clean-ui-pass.css`
+The former multi-file CSS stack and its corrective/import cascade are retired from the production filesystem. New visual changes must extend the canonical asset rather than restore a stylesheet graph or priority-lock cascade.
 
 ## Active JavaScript load path
 
@@ -88,7 +74,7 @@ Injected by middleware in current order:
 - `GateInputPageController` owns Input and Week Group initialization presentation.
 - `GateArchiveController` owns Archives, reporting, print/PDF, and closeout presentation.
 
-The former `GateStatusBoardTimerVisualStability` corrective layer remains retired. Timer state is consolidated into `GateStatusBoardController`. The Status Board is also excluded from the runtime-injected forced-compositing rules in `gate-render-stability-fix.js`; stable board surfaces and timer geometry are now static CSS contracts.
+`prc-dash-modal-mobile-validation.js` and the legacy Status-header compatibility path no longer create stylesheet requests. They reuse the canonical CSS asset while retaining their existing lifecycle and interaction behavior.
 
 The served legacy `renderAll()` path delegates Active Buses and dorm columns to `GateStatusBoardController` whenever the canonical owner is available. The legacy Local clock interval is removed at serve time so `GatePremiumMetricsController` is the only live clock owner. The legacy timer callback is rebound to the canonical elapsed-time and tick functions and uses steady warning/critical states without `timer-flash`.
 
@@ -119,50 +105,23 @@ It may not:
 
 ## Build 2 runtime boundary
 
-Only the narrow Phase 3A bridge is injected. The following remain staged and are not directly loaded as visible application owners by middleware:
-
-- Build 2 shell and route host;
-- Build 2 components and page renderers;
-- Build 2 write workflows;
-- Build 2 synchronization service as an operational data owner;
-- Build 2 service worker;
-- Processing, Airport, Input, Archives, and Squadron Build 2 routes;
-- fixture evidence harness and evidence-retention utilities.
-
-The shadow bridge dynamically imports only the pure Status Board shadow package after authenticated page load.
+Only the narrow Phase 3A bridge is injected. Build 2 shell/routes, write workflows, synchronization ownership, service worker, and fixture/evidence tooling remain staged and are not directly loaded as visible application owners by middleware.
 
 ## Runtime-bloat controls
 
-The current counts are ceilings, not targets.
+The production CSS budget is now fixed at one direct stylesheet and zero imported stylesheets.
 
-- A normal pull request may not increase direct or imported active assets.
+- A normal pull request may not add another active stylesheet or import.
 - No new active asset may be named or scoped as a fix, patch, corrective layer, restore layer, finalizer, cleanup layer, or stability layer.
 - Any active-asset change must update this register and `ACTIVE_RUNTIME_BUDGET.json` in the same pull request.
-- A visible Phase 3B route must be net-negative and meet the retirement targets in `STATUS_BOARD_RETIREMENT_MANIFEST.md`.
 - Build 2 evidence, fixtures, and review tooling remain outside active middleware and routing.
-
-## Status Board retirement boundary
-
-Phase 3B must not add a second visible owner on top of the existing Status Board stack. The activation package must remove the legacy Status Board controllers, corrective presentation layers, middleware source rewrites, compatibility globals, and the Phase 3A shadow observer identified in `docs/build-2/STATUS_BOARD_RETIREMENT_MANIFEST.md`.
-
-Target after accepted Status Board activation:
-
-```text
-Direct stylesheets: 12 or fewer
-Imported stylesheets: 3 or fewer
-Direct scripts: 24 or fewer
-New corrective assets: 0
-Visible Status Board owners: 1
-Middleware Status Board source rewrites: 0
-```
-
-## Historical continuity
-
-Earlier ownership consolidation, removed patch files, and page-specific migrations remain documented in the phase reports under `docs/`. Git history retains the prior expanded runtime register. This document governs the current served order when those earlier reports conflict with present middleware.
 
 ## Current acceptance state
 
 ```text
+PASS — one canonical production stylesheet
+PASS — zero active stylesheet imports
+PASS — canonical CSS contains no priority-lock declarations
 PASS — active middleware order documented
 PASS — machine-readable active asset inventory established
 PASS — Build 1 visible owners retained
@@ -171,19 +130,15 @@ PASS — open dorm timers are rebound to authoritative records every second
 PASS — close final time is derived from the persisted open timestamp
 PASS — Status Board column writes are incremental by state
 PASS — live metrics use change-only synchronization
-PASS — Local clock has one second-aligned `HH:MM:SS` owner
-PASS — Status Board forced GPU compositing retired
+PASS — Local clock has one second-aligned HH:MM:SS owner
 PASS — Processing assignment/location saves are bound to the active dorm record
 PASS — Processing Auditorium Location persistence delegates to the canonical dorm mutation owner
-PASS — modal layers remain above phone and tablet shell layers
-PASS — Processing modal reachability covers coarse-pointer tablets through 1366 px
-PASS — narrow fine-pointer desktops retain a fixed single-row navigation shell
-PASS — fullscreen Active Bus cards are bounded compact tiles with versioned delivery
+PASS — canonical z-index bands place modals above shell/popover layers
+PASS — responsive 3-column / 2-column / 1-column grid matrix present
+PASS — fullscreen Active Bus cards remain bounded compact tiles
 PASS — one hidden Phase 3A bridge loaded after the visible Status Board owner
-PASS — runtime record-integrity workflow
 PASS — no visible Build 2 route
 PASS — no Build 2 production write path
-PASS — active asset growth blocked below the audited ceiling
 
 PENDING — sustained live shadow evidence
 PENDING — manual route accessibility, responsive, and fullscreen evidence
@@ -192,3 +147,7 @@ PENDING — Status Board legacy owner retirement
 NOT AUTHORIZED — Phase 3B controlled test surface
 NOT AUTHORIZED — Build 1 Status Board retirement
 ```
+
+## Historical continuity
+
+Earlier ownership consolidation, removed patch files, and page-specific migrations remain documented in the phase reports under `docs/`. Git history retains the prior expanded CSS stack. This document governs the current served runtime when those earlier reports conflict with present middleware.

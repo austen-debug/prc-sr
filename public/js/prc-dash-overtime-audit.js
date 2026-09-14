@@ -65,45 +65,8 @@
   }
 
   function ensureTimerStyles() {
-    if (document.getElementById('gate-timer-sound-controller-styles')) return;
-
-    const style = document.createElement('style');
-    style.id = 'gate-timer-sound-controller-styles';
-    style.textContent = `
-      #page-squadron .timer-display.timer-yellow,
-      #page-squadron .timer-display.timer-red,
-      #page-squadron .timer-display.timer-flash {
-        display: inline-flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        box-sizing: border-box !important;
-        width: auto !important;
-        min-width: 6.35ch !important;
-        max-width: 100% !important;
-        min-height: 1.28em !important;
-        padding: 0.18em 0.36em 0.16em !important;
-        line-height: 1 !important;
-        letter-spacing: -0.045em !important;
-        white-space: nowrap !important;
-        font-variant-numeric: tabular-nums !important;
-        vertical-align: middle !important;
-      }
-
-      #page-squadron .timer-display.timer-yellow::before,
-      #page-squadron .timer-display.timer-red::before,
-      #page-squadron .timer-display.timer-flash::before {
-        content: '' !important;
-        width: 0 !important;
-        min-width: 0 !important;
-      }
-
-      #page-squadron .timer-display.timer-red,
-      #page-squadron .timer-display.timer-flash {
-        border-radius: var(--radius-pill) !important;
-      }
-    `;
-
-    document.head.appendChild(style);
+    const canonical = document.querySelector('link[href^="/css/military-glass-terminal.css"]');
+    if (canonical) canonical.dataset.gateTimerSoundController = 'true';
   }
 
   function elapsedTimer(openedAt) {

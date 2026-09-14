@@ -11,66 +11,68 @@ async function source(path) {
   return readFile(resolve(root, path), 'utf8');
 }
 
-test('modal hierarchy remains above every phone and tablet shell layer', async () => {
-  const css = await source('public/css/gate-ui-ownership-correction.css');
+test('canonical layer pipeline keeps modals and critical overlays above the shell', async () => {
+  const css = await source('public/css/military-glass-terminal.css');
 
-  assert.match(css, /--z-modal-backdrop:\s*13000/);
-  assert.match(css, /--z-modal-window:\s*13010/);
-  assert.match(css, /body\.gate-app-shell-ready \.confirm-overlay[\s\S]*z-index:\s*var\(--z-modal-backdrop\)\s*!important/);
-  assert.match(css, /confirm-overlay > \.modal-content[\s\S]*z-index:\s*var\(--z-modal-window\)\s*!important/);
+  assert.match(css, /--mg-z-base:\s*0/);
+  assert.match(css, /--mg-z-static:\s*10/);
+  assert.match(css, /--mg-z-shell:\s*100/);
+  assert.match(css, /--mg-z-popover:\s*500/);
+  assert.match(css, /--mg-z-modal:\s*50000/);
+  assert.match(css, /--mg-z-critical:\s*999999/);
+  assert.match(css, /\.confirm-overlay,[\s\S]*z-index:\s*var\(--mg-z-modal\)/);
+  assert.match(css, /\.gate-critical-alert[\s\S]*z-index:\s*var\(--mg-z-critical\)/);
 });
 
-test('Processing modal tablet reachability covers the complete shell range', async () => {
-  const css = await source('public/css/gate-ui-ownership-correction.css');
+test('Processing modal tablet reachability uses contained scrolling and sticky action rails', async () => {
+  const css = await source('public/css/military-glass-terminal.css');
+  const tabletStart = css.indexOf('@media (min-width: 768px) and (max-width: 1199px)');
+  const mobileStart = css.indexOf('@media (max-width: 767px)', tabletStart);
+  assert.ok(tabletStart >= 0);
+  const tablet = css.slice(tabletStart, mobileStart > tabletStart ? mobileStart : undefined);
 
-  assert.match(css, /any-pointer:\s*coarse[\s\S]*min-width:\s*768px[\s\S]*max-width:\s*1366px/);
-  assert.match(css, /#dorm-modal\.confirm-overlay:not\(\.hidden\)[\s\S]*overflow-y:\s*auto\s*!important/);
-  assert.match(css, /#dorm-modal\.confirm-overlay:not\(\.hidden\)[\s\S]*max-height:\s*calc\(100dvh/);
-  assert.match(css, /modal-content > \.flex\.justify-between\.items-center\.mb-4[\s\S]*position:\s*sticky\s*!important/);
-  assert.match(css, /#modal-action-section[\s\S]*position:\s*sticky\s*!important/);
-  assert.match(css, /mb-4 > button[\s\S]*min-width:\s*44px\s*!important[\s\S]*min-height:\s*44px\s*!important/);
+  assert.match(tablet, /#dorm-modal\.confirm-overlay:not\(\.hidden\)[\s\S]*align-items:\s*flex-start/);
+  assert.match(tablet, /#dorm-modal \.gate-processing-workspace[\s\S]*max-height:\s*calc\(100dvh - 1\.5rem\)/);
+  assert.match(tablet, /#dorm-modal \.gate-processing-workspace[\s\S]*overflow-y:\s*auto/);
+  assert.match(tablet, /scrollbar-gutter:\s*stable/);
+  assert.match(tablet, /\.gate-processing-workspace__header,[\s\S]*position:\s*sticky/);
+  assert.match(tablet, /\.gate-processing-workspace__footer[\s\S]*bottom:\s*0/);
 });
 
-test('tablet Processing owns vertical scrolling without rubber-banding the fixed shell', async () => {
-  const css = await source('public/css/gate-tablet-shell.css');
+test('tablet workspaces use independent contained scroll lanes', async () => {
+  const css = await source('public/css/military-glass-terminal.css');
+  const tabletStart = css.indexOf('@media (min-width: 768px) and (max-width: 1199px)');
+  const mobileStart = css.indexOf('@media (max-width: 767px)', tabletStart);
+  const tablet = css.slice(tabletStart, mobileStart > tabletStart ? mobileStart : undefined);
 
-  assert.match(css, /any-pointer:\s*coarse[\s\S]*min-width:\s*768px[\s\S]*max-width:\s*1366px[\s\S]*min-height:\s*561px/);
-  assert.match(css, /html\s*\{[\s\S]*overscroll-behavior-y:\s*none\s*!important/);
-  assert.match(css, /data-gate-active-page='processing'[\s\S]*height:\s*100dvh\s*!important[\s\S]*overflow-y:\s*hidden\s*!important/);
-  assert.match(css, /#page-processing\.active\s*\{[\s\S]*display:\s*flex\s*!important[\s\S]*height:\s*100dvh\s*!important/);
-  assert.match(css, /#page-processing\.active\s*\{[\s\S]*overflow-y:\s*auto\s*!important[\s\S]*overscroll-behavior-y:\s*contain\s*!important/);
-  assert.match(css, /security-banner-fixed[\s\S]*position:\s*fixed\s*!important[\s\S]*translate3d\(0, 0, 0\)/);
-  assert.match(css, /app-nav\.command-header-bar[\s\S]*position:\s*fixed\s*!important[\s\S]*translate3d\(0, 0, 0\)/);
-  assert.match(css, /#gate-mobile-nav-sheet[\s\S]*overscroll-behavior:\s*contain\s*!important[\s\S]*-webkit-overflow-scrolling:\s*touch\s*!important/);
-  assert.match(css, /#page-processing \.proc-card:hover[\s\S]*transform:\s*none\s*!important/);
+  assert.match(tablet, /#page-board \.dorm-column,[\s\S]*max-height:\s*calc\(100dvh - var\(--mg-shell-top\) - 2rem\)/);
+  assert.match(tablet, /overflow-y:\s*auto/);
+  assert.match(tablet, /scrollbar-gutter:\s*stable/);
+  assert.match(tablet, /overscroll-behavior:\s*contain/);
 });
 
-test('narrow fine-pointer desktops keep a single-row navigation shell', async () => {
-  const css = await source('public/css/gate-ui-ownership-correction.css');
+test('narrow desktops retain a single fixed command shell with scrollable nav lane', async () => {
+  const css = await source('public/css/military-glass-terminal.css');
 
-  assert.match(css, /hover:\s*hover[\s\S]*pointer:\s*fine[\s\S]*min-width:\s*768px[\s\S]*max-width:\s*1279px/);
-  assert.match(css, /gate-app-shell-desktop \.app-nav\.command-header-bar[\s\S]*grid-template-rows:\s*54px\s*!important/);
-  assert.match(css, /#main-nav-menu\.nav-group-left[\s\S]*flex-flow:\s*row nowrap\s*!important/);
-  assert.match(css, /#main-nav-menu\.nav-group-left[\s\S]*overflow-x:\s*auto\s*!important/);
-  assert.match(css, /#main-nav-menu\.nav-group-left > \.nav-btn[\s\S]*flex:\s*0 0 auto\s*!important/);
+  assert.match(css, /\.app-nav,[\s\S]*position:\s*fixed/);
+  assert.match(css, /\.app-nav \.nav-group-left,[\s\S]*display:\s*flex/);
+  assert.match(css, /\.app-nav \.nav-group-left,[\s\S]*overflow-x:\s*auto/);
+  assert.match(css, /@media \(min-width:\s*768px\) and \(max-width:\s*1199px\)[\s\S]*grid-template-columns:\s*112px minmax\(0,\s*1fr\) max-content/);
 });
 
-test('fullscreen Active Bus cards are exact-DOM bounded tiles', async () => {
-  const css = await source('public/css/gate-ui-ownership-correction.css');
+test('fullscreen Active Bus cards remain bounded non-stretching tiles', async () => {
+  const css = await source('public/css/military-glass-terminal.css');
 
-  assert.match(css, /--gate-command-bus-tile-width:\s*clamp\(280px,\s*17vw,\s*320px\)/);
-  assert.match(css, /#active-buses\[data-owner='gate-status-board-controller'\][\s\S]*display:\s*flex\s*!important/);
-  assert.match(css, /flex-flow:\s*row wrap\s*!important/);
-  assert.match(css, /button\[data-component='active-bus-card'\]\.gate-component-active-bus-card[\s\S]*flex-grow:\s*0\s*!important/);
-  assert.match(css, /button\[data-component='active-bus-card'\]\.gate-component-active-bus-card[\s\S]*flex-basis:\s*var\(--gate-command-bus-tile-width\)\s*!important/);
-  assert.match(css, /button\[data-component='active-bus-card'\]\.gate-component-active-bus-card[\s\S]*min-width:\s*var\(--gate-command-bus-tile-width\)\s*!important/);
-  assert.match(css, /button\[data-component='active-bus-card'\]\.gate-component-active-bus-card[\s\S]*max-width:\s*var\(--gate-command-bus-tile-width\)\s*!important/);
+  assert.match(css, /body\.fullscreen-board #page-board #active-buses[\s\S]*flex-flow:\s*row wrap/);
+  assert.match(css, /gate-component-active-bus-card[\s\S]*flex:\s*0 0 clamp\(280px,\s*17vw,\s*320px\)/);
+  assert.match(css, /gate-component-active-bus-card[\s\S]*width:\s*clamp\(280px,\s*17vw,\s*320px\)/);
+  assert.match(css, /gate-component-active-bus-card[\s\S]*max-width:\s*clamp\(280px,\s*17vw,\s*320px\)/);
 });
 
-test('middleware advances both operational UI cache keys', async () => {
+test('middleware delivers one canonical stylesheet and no retired CSS assets', async () => {
   const middleware = await source('functions/_middleware.js');
 
-  assert.match(middleware, /gate-ui-ownership-correction\.css\?v=operational-ui-audit-20260721/);
-  assert.match(middleware, /gate-fullscreen-board-contract\.css\?v=fullscreen-compact-bus-tiles-20260721/);
-  assert.doesNotMatch(middleware, /gate-fullscreen-board-contract\.css\?v=fullscreen-desktop-status-20260714c/);
+  assert.match(middleware, /military-glass-terminal\.css\?v=military-glass-terminal-20260914/);
+  assert.equal((middleware.match(/<link rel="stylesheet"/g) || []).length, 1);
+  assert.doesNotMatch(middleware, /gate-ui-ownership-correction\.css|gate-fullscreen-board-contract\.css|gate-tablet-shell\.css|gate-mobile-corrective\.css/);
 });

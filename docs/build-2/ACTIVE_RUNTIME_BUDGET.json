@@ -1,40 +1,24 @@
 {
-  "contractVersion": "AR-1.0.0",
+  "contractVersion": "AR-2.0.0",
   "capturedFrom": "functions/_middleware.js",
   "runtimeOwner": "Build 1",
   "maximums": {
-    "directStyles": 13,
-    "importedStyles": 3,
+    "directStyles": 1,
+    "importedStyles": 0,
     "directScripts": 27
   },
   "phase3BExitTargets": {
-    "directStylesMaximum": 12,
-    "importedStylesMaximum": 3,
+    "directStylesMaximum": 1,
+    "importedStylesMaximum": 0,
     "directScriptsMaximum": 24,
     "correctiveAssetsAdded": 0,
     "statusBoardLegacyOwnersRetired": true,
     "middlewareStatusBoardSourceRewriteRemoved": true
   },
   "currentDirectStyles": [
-    "/css/gate-index-legacy-shell.css",
-    "/css/gate-base-tokens.css",
-    "/css/gate-layout-pages.css",
-    "/css/gate-components.css",
-    "/css/gate-utilities-access.css?v=status-board-stable-surfaces-20260721",
-    "/css/gate-premium-metrics.css?v=status-board-fluid-metrics-20260721",
-    "/css/gate-app-shell.css?v=phase-7g-viewport-watermark-20260709",
-    "/css/gate-mobile-corrective.css?v=phase-7h-ui-patch-retirement-20260709",
-    "/css/gate-ui-ownership-correction.css?v=operational-ui-audit-20260721",
-    "/css/gate-light-mode-command-contrast.css?v=light-command-contrast-20260714",
-    "/css/gate-light-mode-grid-correction.css?v=light-grid-correction-20260714",
-    "/css/gate-tablet-shell.css?v=tablet-shell-20260714",
-    "/css/gate-fullscreen-board-contract.css?v=fullscreen-compact-bus-tiles-20260721"
+    "/css/military-glass-terminal.css?v=military-glass-terminal-20260914"
   ],
-  "currentImportedStyles": [
-    "/css/gate-board-presentation.css?v=status-board-light-clarity-20260714",
-    "/css/gate-theme-unified-contract.css",
-    "/css/gate-clean-ui-pass.css"
-  ],
+  "currentImportedStyles": [],
   "currentDirectScripts": [
     "/js/gate-record-display-contract.js?v=record-display-integrity-20260714b",
     "/js/gate-component-contracts.js",
@@ -65,18 +49,15 @@
     "/js/gate-status-board-shadow-controller.js?v=phase-3a-status-board-shadow-20260715"
   ],
   "grandfatheredCorrectiveAssets": [
-    "/css/gate-mobile-corrective.css",
-    "/css/gate-ui-ownership-correction.css",
-    "/css/gate-light-mode-grid-correction.css",
     "/js/prc-dash-runtime-fixes.js",
     "/js/prc-dash-modal-mobile-validation.js",
     "/js/gate-render-stability-fix.js"
   ],
   "rules": [
     "The active middleware stack may not exceed the recorded maximums.",
+    "The production CSS runtime is one canonical direct stylesheet and zero imported stylesheets.",
     "No new asset named as a fix, patch, corrective layer, restore layer, finalizer, cleanup, or stability layer may be activated.",
     "Any active-asset change must update this inventory and the active runtime register in the same pull request.",
-    "A visible Phase 3B Status Board must be net-negative in active assets and meet the Phase 3B exit targets.",
     "The hidden Phase 3A shadow observer remains the only Build 2 runtime asset until a separate authorization decision."
   ]
 }

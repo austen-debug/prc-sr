@@ -27,12 +27,12 @@ function pathOnly(value) {
 
 test('active middleware assets match the governed runtime inventory and remain below the cleanup ceiling', async () => {
   const middleware = await source('functions/_middleware.js');
-  const utilityCss = await source('public/css/gate-utilities-access.css');
+  const canonicalCss = await source('public/css/military-glass-terminal.css');
   const budget = JSON.parse(await source('docs/build-2/ACTIVE_RUNTIME_BUDGET.json'));
 
   const styles = extractAttributeValues(extractArrayBlock(middleware, 'UI_STYLESHEETS'), 'href');
   const scripts = extractAttributeValues(extractArrayBlock(middleware, 'UI_HEAD_SCRIPTS'), 'src');
-  const imports = [...utilityCss.matchAll(/@import\s+url\(['"]([^'"]+)['"]\)/g)].map(match => match[1]);
+  const imports = [...canonicalCss.matchAll(/@import\s+url\(['"]([^'"]+)['"]\)/g)].map(match => match[1]);
 
   assert.deepEqual(styles, budget.currentDirectStyles);
   assert.deepEqual(scripts, budget.currentDirectScripts);
@@ -42,15 +42,31 @@ test('active middleware assets match the governed runtime inventory and remain b
   assert.ok(scripts.length <= budget.maximums.directScripts);
   assert.ok(imports.length <= budget.maximums.importedStyles);
 
-  assert.ok(budget.maximums.directStyles <= 13, 'The direct stylesheet ceiling may not increase above the audited baseline.');
-  assert.ok(budget.maximums.directScripts <= 28, 'The direct script ceiling may not increase above the audited baseline.');
-  assert.ok(budget.maximums.importedStyles <= 3, 'The imported stylesheet ceiling may not increase above the audited baseline.');
+  assert.equal(styles.length, 1, 'Production must load exactly one canonical stylesheet.');
+  assert.equal(pathOnly(styles[0]), '/css/military-glass-terminal.css');
+  assert.equal(imports.length, 0, 'The canonical stylesheet may not restore an import graph.');
+  assert.doesNotMatch(canonicalCss, /!important\s*;/, 'Canonical CSS may not use priority-locked declarations.');
 
-  assert.ok(budget.phase3BExitTargets.directStylesMaximum < budget.maximums.directStyles);
+  assert.ok(budget.maximums.directStyles <= 1, 'The direct stylesheet ceiling is one canonical production asset.');
+  assert.ok(budget.maximums.directScripts <= 28, 'The direct script ceiling may not increase above the audited baseline.');
+  assert.equal(budget.maximums.importedStyles, 0, 'Imported stylesheet budget is permanently zero.');
+
+  assert.ok(budget.phase3BExitTargets.directStylesMaximum <= budget.maximums.directStyles);
   assert.ok(budget.phase3BExitTargets.directScriptsMaximum < budget.maximums.directScripts);
   assert.equal(budget.phase3BExitTargets.correctiveAssetsAdded, 0);
   assert.equal(budget.phase3BExitTargets.statusBoardLegacyOwnersRetired, true);
   assert.equal(budget.phase3BExitTargets.middlewareStatusBoardSourceRewriteRemoved, true);
+});
+
+test('active scripts do not inject secondary stylesheet authorities', async () => {
+  const middleware = await source('functions/_middleware.js');
+  const scripts = extractAttributeValues(extractArrayBlock(middleware, 'UI_HEAD_SCRIPTS'), 'src').map(pathOnly);
+
+  for (const asset of scripts) {
+    const contents = await source(`public${asset}`);
+    assert.doesNotMatch(contents, /createElement\(['"]style['"]\)/, `${asset} may not inject a runtime style block.`);
+    assert.doesNotMatch(contents, /createElement\(['"]link['"]\)[\s\S]{0,400}stylesheet/, `${asset} may not inject a runtime stylesheet.`);
+  }
 });
 
 test('no new corrective, patch, restoration, finalizer, cleanup, or stability asset is active', async () => {

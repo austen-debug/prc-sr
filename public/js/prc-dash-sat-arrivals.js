@@ -257,12 +257,8 @@
   let hooksRegistered = false;
 
   function ensureHeaderStylesheet() {
-    if (document.querySelector('link[href="/css/prc-dash-board-header.css"]')) return;
-
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = '/css/prc-dash-board-header.css';
-    document.head.appendChild(link);
+    const canonical = document.querySelector('link[href^="/css/military-glass-terminal.css"]');
+    if (canonical) canonical.dataset.gateStatusHeaderCompatibility = 'true';
   }
 
   function buildMetric(kind, label, id, fallback) {

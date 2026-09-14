@@ -7,145 +7,9 @@
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;900&amp;display=swap" rel="stylesheet">
-
-  
-  <style>
-:root {
-  --bg: #121212;
-  --surface: #1e1e1e;
-  --surface-alt: #2a2a2a;
-  --text: #e8e8e8;
-  --text-muted: #8a8a8a;
-  --border: #333333;
-  --green: #16a34a;
-  --red: #dc2626;
-  --yellow: #eab308;
-  --blue: #38bdf8;
-
-  --dorm-empty-text: #8a8a8a;
-  --dorm-open-text: #e8e8e8;
-  --dorm-full-text: #22c55e;
-  --dorm-closed-text: #8a8a8a;
-}
-
-.theme-light {
-  --bg: #f3f4f6;
-  --surface: #ffffff;
-  --surface-alt: #e5e7eb;
-  --text: #111827;
-  --text-muted: #6b7280;
-  --border: #d1d5db;
-
-  --dorm-empty-text: #6b7280;
-  --dorm-open-text: #111827;
-  --dorm-full-text: #15803d;
-  --dorm-closed-text: #6b7280;
-}
-
-html,
-body {
-  background: var(--bg);
-  min-height: 100vh;
-}
-
-body {
-  font-family: 'DM Sans', sans-serif;
-  color: var(--text);
-  margin: 0;
-  overflow-x: hidden;
-  position: relative;
-}
-
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background-image: url('/assets/prc-logo-blue.png');
-  background-repeat: no-repeat;
-  background-position: center center;
-  background-size: 75vw auto;
-  opacity: 0.3;
-  pointer-events: none;
-  z-index: 0;
-}
-
-body > * {
-  position: relative;
-  z-index: 1;
-}
-    .surface { background: var(--surface); border-color: var(--border); }
-    .text-muted { color: var(--text-muted); }
-    .page { display: none; min-height: calc(100 * min(var(--vh, 1vh), 1vh)); padding-top: 80px; padding-bottom: 40px; }
-    .page.active { display: flex; flex-direction: column; }
-    .border-female { border: 4px solid var(--red) !important; }
-    .border-band { border: 4px solid var(--blue) !important; }
-    .bus-badge { background: var(--green); color: #fff; padding: 0.5rem 1rem; border-radius: 0.5rem; font-weight: 700; font-size: 0.8rem; cursor: pointer; min-height: 40px; display: inline-flex; align-items: center; white-space: nowrap; }
-    .bus-badge:hover { background: #15803d; }
-    .nav-btn { color: var(--text-muted); min-height: 36px; display: inline-flex; align-items: center; justify-content: center; border-radius: 4px; padding: 0 0.75rem; font-size: 0.8rem; }
-    .nav-btn.active { background: var(--surface-alt); color: var(--text); font-weight: 700; }
-    .timer-yellow { color: var(--yellow) !important; }
-    .timer-red { color: var(--red) !important; }
-    .timer-flash { animation: flash 1s step-end infinite; }
-    @keyframes flash { 0%,100% { color: var(--red); } 50% { color: #ffffff; } }
-    .dorm-closed { opacity: 0.55; background: var(--surface-alt) !important; }
-    .confirm-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 9000; }
-    .font-tabular { font-variant-numeric: tabular-nums; }
-    select { background-color: var(--surface) !important; color: var(--text) !important; }
-    select option { background-color: var(--surface); color: var(--text); }
-    input, select, button { min-height: 36px; }
-
-#page-input input:not([type="checkbox"]),
-#page-input select {
-  background-color: rgba(211, 211, 211, 0.25) !important;
-  border-color: rgba(211, 211, 211, 0.35) !important;
-}
-    .security-banner-fixed { position: fixed; top: 0; left: 0; right: 0; height: 32px; z-index: 9999; display: flex; align-items: center; justify-content: center; font-size: 12px; }
-    .app-nav { position: fixed; top: 32px; left: 0; right: 0; height: 44px; z-index: 9998; display: flex; align-items: center; justify-content: space-between; padding: 0 1rem; border-bottom: 1px solid var(--border); background: var(--surface); }
-    .board-header { display: grid; grid-template-columns: 1fr 1fr 2fr; gap: 0.75rem; padding: 0.75rem; flex-shrink: 0; }
-    .dorm-dashboard { flex: 1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; padding: 0 0.75rem; }
-    .dorm-column { display: flex; flex-direction: column; }
-    .dorm-col-header { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 0.5rem; }
-    .dorm-col-content { flex: 1; display: flex; flex-direction: column; gap: 0.5rem; }
-    .dorm-card { background: var(--surface); border: 1px solid var(--border); border-radius: 0.5rem; padding: 0.6rem; display: flex; flex-direction: column; cursor: pointer; transition: transform 0.1s; }
-    .dorm-card:hover { transform: scale(1.01); }
-    .metric-block { background: var(--surface); border: 1px solid var(--border); border-radius: 0.5rem; padding: 0.75rem; }
-    .board-footer { flex-shrink: 0; padding: 0.5rem; display: flex; justify-content: center; border-top: 1px solid var(--border); }
-
-   .fullscreen-board .app-nav {
-  display: none !important;
-}
-
-.fullscreen-board #page-board {
-  padding-top: 32px;
-  padding-bottom: 0;
-  min-height: 100vh;
-}
-
-.fullscreen-board .board-footer {
-  display: none !important;
-}
-
-.fullscreen-board .dorm-dashboard {
-  padding-bottom: 0.75rem;
-}
-   
-    .phase-btn { padding: 0.75rem 1rem; border-radius: 0.5rem; font-weight: 700; font-size: 1rem; border: 2px solid var(--border); background: var(--surface); color: var(--text); cursor: pointer; transition: all 0.15s; }
-    .phase-btn.selected { background: var(--green); color: #fff; border-color: var(--green); }
-    .phase-btn:hover:not(.selected) { background: var(--surface-alt); }
-    .load-btn { min-width: 50px; min-height: 50px; font-size: 1.2rem; font-weight: 700; border-radius: 0.5rem; border: 2px solid var(--border); background: var(--surface); color: var(--text); cursor: pointer; }
-    .load-btn:hover { background: var(--surface-alt); }
-    .proc-card { background: var(--surface); border: 2px solid var(--border); border-radius: 0.75rem; padding: 1.25rem; cursor: pointer; transition: transform 0.1s, box-shadow 0.1s; }
-    .proc-card:hover { transform: scale(1.02); box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
-    .modal-content { background: var(--surface); border: 1px solid var(--border); border-radius: 1rem; padding: 2rem; max-width: 500px; width: 95%; max-height: 90vh; overflow-y: auto; }
-    @media (max-width: 768px) {
-      .board-header { grid-template-columns: 1fr; }
-      .dorm-dashboard { grid-template-columns: 1fr; overflow-y: auto; }
-    }
-  </style>
-  
- </head>
+</head>
  <body data-template-id="__page-root" class="w-full"><!-- Security Banner -->
-  <div data-template-id="security-banner" class="canva-banner security-banner-fixed" style="background-color: #16a34a; color: white; font-weight: 900; letter-spacing: 0.1em;">
+  <div data-template-id="security-banner" class="canva-banner security-banner-fixed">
    UNCLASSIFIED / NO PII / STATUS COUNTS ONLY
   </div><!-- Navigation -->
   <nav class="app-nav" role="navigation" aria-label="Main navigation">
@@ -231,7 +95,7 @@ body > * {
    <div class="max-w-3xl mx-auto">
     <h2 data-template-id="airport-title" class="canva-text text-xl font-bold mb-4"></h2>
     <div class="surface border rounded-lg p-4 mb-4"><label class="block text-sm font-medium mb-1" for="flight-time">Flight Arrival Time</label>
-     <div class="flex gap-2"><input id="flight-time" type="time" class="flex-1 border rounded px-3 py-2 bg-transparent" style="border-color:var(--border);color:var(--text);"> <button onclick="updateFlightTime()" class="px-4 py-2 rounded font-bold text-white text-sm" style="background:#16a34a;">UPDATE</button>
+     <div class="flex gap-2"><input id="flight-time" type="time" class="flex-1 border rounded px-3 py-2 bg-transparent" style="border-color:var(--border);color:var(--text);"> <button onclick="updateFlightTime()" class="gate-primary-action px-4 py-2 rounded font-bold text-white text-sm">UPDATE</button>
      </div>
      <div id="flight-time-msg" class="text-sm mt-2 hidden"></div>
     </div>
@@ -248,7 +112,7 @@ body > * {
      <div>
       <label class="block text-sm font-medium mb-1" for="bus-nat">Naturalizations</label><input id="bus-nat" type="number" inputmode="numeric" min="0" value="0" class="w-full border rounded px-3 py-2 bg-transparent" style="border-color:var(--border);color:var(--text);">
       <div id="bus-nat-error" class="text-red-500 text-xs mt-1 hidden"></div>
-     </div><button type="submit" class="w-full py-3 rounded-lg font-bold text-white text-lg" style="background:#16a34a;">DISPATCH BUS</button>
+     </div><button type="submit" class="gate-primary-action w-full py-3 rounded-lg font-bold text-white text-lg">DISPATCH BUS</button>
           <div id="airport-msg" class="text-center text-sm hidden"></div>
     </form>
 
@@ -333,26 +197,26 @@ body > * {
     </div>
    </div>
    <div class="flex-shrink-0 border-t px-4 py-3 flex gap-3 justify-between items-center" style="border-color:var(--border);">
-    <div id="init-status-msg" class="text-sm hidden"></div><button id="init-wg-btn" onclick="initializeWeekGroup()" class="px-6 py-3 rounded-lg font-bold text-white text-base" style="background:#16a34a;">INITIALIZE WEEK GROUP</button>
+    <div id="init-status-msg" class="text-sm hidden"></div><button id="init-wg-btn" onclick="initializeWeekGroup()" class="gate-primary-action px-6 py-3 rounded-lg font-bold text-white text-base">INITIALIZE WEEK GROUP</button>
    </div>
    <div id="init-success-overlay" class="confirm-overlay hidden">
     <div class="surface border rounded-lg p-8 text-center max-w-sm" style="border-color:var(--border);">
      <div class="text-green-400 text-2xl font-bold mb-4">
       ✓ Week Group Initialized
      </div>
-     <p class="text-sm text-muted mb-6">All dormitories loaded.</p><button onclick="returnToBoard()" class="w-full px-4 py-3 rounded-lg font-bold text-white" style="background:#16a34a;">Return to Status Board</button>
+     <p class="text-sm text-muted mb-6">All dormitories loaded.</p><button onclick="returnToBoard()" class="gate-primary-action w-full px-4 py-3 rounded-lg font-bold text-white">Return to Status Board</button>
     </div>
    </div>
   </div><!-- PAGE: PROCESSING -->
   <div id="page-processing" class="page flex-col w-full overflow-y-auto">
   <div class="px-4 py-3 flex-shrink-0 flex items-center gap-4 flex-wrap">
-  <button onclick="openLocalBusModal()" class="px-6 py-3 rounded-lg font-bold text-white text-lg" style="background:#2563eb;">+ ADD LOCAL BUS</button>
+  <button onclick="openLocalBusModal()" class="gate-primary-action px-6 py-3 rounded-lg font-bold text-white text-lg">+ ADD LOCAL BUS</button>
 
-  <button id="closeout-btn" onclick="initiateCloseout()" class="px-6 py-3 rounded-lg font-bold text-white text-lg" style="background:#dc2626;">CLOSE OUT WEEK GROUP</button>
+  <button id="closeout-btn" onclick="initiateCloseout()" class="gate-danger-action px-6 py-3 rounded-lg font-bold text-white text-lg">CLOSE OUT WEEK GROUP</button>
 
   <div id="processing-edit-hint" class="text-xs text-muted font-bold hidden">Instructor access: right-click any dorm to edit its record.</div>
 </div>
-   <div id="proc-dorm-grid" class="flex-1 px-4 pb-4 grid gap-4" style="grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); align-content: start;"></div>
+   <div id="proc-dorm-grid" class="flex-1 px-4 pb-4 grid gap-4"></div>
   </div><!-- PAGE: ARCHIVES -->
   <div id="page-archives" class="page px-4 pb-4 overflow-y-auto">
    <div class="max-w-3xl mx-auto">
@@ -413,8 +277,7 @@ body > * {
     <button
       type="button"
       onclick="saveAssignedAirman()"
-      class="px-4 py-2 rounded font-bold text-white text-xs"
-      style="background:var(--green);"
+      class="gate-primary-action px-4 py-2 rounded font-bold text-white text-xs"
     >
       SAVE
     </button>
@@ -437,7 +300,7 @@ body > * {
        <div id="modal-load-max" class="text-sm text-muted mt-1"></div>
       </div><button class="load-btn" onclick="modLoad(1)">+1</button> <button class="load-btn" onclick="modLoad(5)">+5</button>
      </div>
-     <div class="flex gap-2 justify-center"><button onclick="setLoadFull()" class="px-4 py-2 rounded font-bold text-white" style="background:var(--blue);">FULL</button> <button onclick="saveLoad()" class="px-4 py-2 rounded font-bold text-white" style="background:var(--green);">SAVE LOAD</button>
+     <div class="flex gap-2 justify-center"><button onclick="setLoadFull()" class="gate-primary-action px-4 py-2 rounded font-bold text-white">FULL</button> <button onclick="saveLoad()" class="gate-primary-action px-4 py-2 rounded font-bold text-white">SAVE LOAD</button>
      </div>
     </div><!-- Open/Close -->
     <div id="modal-action-section" class="flex gap-3 justify-center"></div>
@@ -573,7 +436,7 @@ body > * {
      </div>
      <div>
       <label class="block text-sm font-medium mb-1" for="local-nat">Naturalizations</label><input id="local-nat" type="number" inputmode="numeric" min="0" value="0" class="w-full border rounded px-3 py-2 bg-transparent" style="border-color:var(--border);color:var(--text);">
-     </div><button type="submit" class="w-full py-3 rounded-lg font-bold text-white text-lg" style="background:#2563eb;">ADD LOCAL ARRIVAL</button>
+     </div><button type="submit" class="gate-primary-action w-full py-3 rounded-lg font-bold text-white text-lg">ADD LOCAL ARRIVAL</button>
      <div id="local-bus-msg" class="text-center text-sm hidden"></div>
     </form>
       </div>
@@ -673,7 +536,7 @@ body > * {
         <div>
           <label class="block text-sm font-medium mb-1">Actions</label>
           <div class="flex gap-2">
-            <button type="button" onclick="printArchiveSpreadsheet()" class="flex-1 py-2 rounded font-bold text-white" style="background:var(--blue);">PRINT</button>
+            <button type="button" onclick="printArchiveSpreadsheet()" class="gate-primary-action flex-1 py-2 rounded font-bold text-white">PRINT</button>
             <button type="button" onclick="deleteArchiveWithOverride()" class="flex-1 py-2 rounded font-bold text-white" style="background:var(--red);">DELETE</button>
           </div>
         </div>
@@ -694,7 +557,7 @@ body > * {
       </div>
 
       <div class="flex gap-3 pt-2">
-        <button type="submit" class="flex-1 py-3 rounded-lg font-bold text-white" style="background:var(--green);">SAVE ARCHIVE</button>
+        <button type="submit" class="gate-primary-action flex-1 py-3 rounded-lg font-bold text-white">SAVE ARCHIVE</button>
         <button type="button" onclick="closeArchiveEditModal()" class="flex-1 py-3 rounded-lg font-bold surface border" style="border-color:var(--border);">CANCEL</button>
       </div>
 
@@ -707,7 +570,7 @@ body > * {
   <div id="confirm-dialog" class="confirm-overlay hidden">
    <div class="surface border rounded-lg p-6 max-w-sm w-full mx-4 text-center" style="border-color:var(--border);">
     <p id="confirm-msg" class="font-bold mb-4"></p>
-    <div class="flex gap-3 justify-center"><button id="confirm-yes" class="px-4 py-2 rounded font-bold text-white" style="background:#16a34a;">Yes</button> <button id="confirm-no" class="px-4 py-2 rounded font-bold surface border" style="border-color:var(--border);">Cancel</button>
+    <div class="flex gap-3 justify-center"><button id="confirm-yes" class="gate-primary-action px-4 py-2 rounded font-bold text-white">Yes</button> <button id="confirm-no" class="px-4 py-2 rounded font-bold surface border" style="border-color:var(--border);">Cancel</button>
     </div>
    </div>
   </div>
@@ -1374,7 +1237,7 @@ return `<div class="proc-card ${borderClass} ${closedClass}" onclick="openDormMo
           actionEl.innerHTML = `<div class="text-muted font-bold text-center">Instructor access required to open or close dorms.</div>`;
         }
       } else if (d.state === 'empty') {
-        actionEl.innerHTML = `<button onclick="openDorm('${id}')" class="px-8 py-3 rounded-lg font-bold text-white text-lg" style="background:var(--green);">OPEN DORM</button>`;
+        actionEl.innerHTML = `<button onclick="openDorm('${id}')" class="gate-primary-action px-8 py-3 rounded-lg font-bold text-white text-lg">OPEN DORM</button>`;
       } else if (d.state === 'open') {
         actionEl.innerHTML = `<button onclick="closeDorm('${id}')" class="px-8 py-3 rounded-lg font-bold text-white text-lg" style="background:var(--red);">CLOSE DORM</button>`;
       } else {

@@ -1,7 +1,7 @@
 const COOKIE_NAME = 'prc_sr_session';
 
 const UI_STYLESHEETS = [
-  '<link rel="stylesheet" href="/css/military-glass-terminal.css?v=military-glass-terminal-20260914">'
+  '<link rel="stylesheet" href="/css/military-glass-terminal.css?v=military-glass-terminal-v2-20260914">'
 ];
 
 const UI_INLINE_ASSETS = [];

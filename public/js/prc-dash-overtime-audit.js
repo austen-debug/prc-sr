@@ -1,5 +1,6 @@
 // GATE Timer and Sound Controller
-// Canonical owner for timer display updates, sound event playback, and one-time overtime sound eligibility.
+// Owns Squadron timer display updates plus shared sound-event playback and one-time overtime eligibility.
+// Status Board and Processing timer DOM are owned by their route-specific canonical controllers.
 (function () {
   'use strict';
 
@@ -69,9 +70,6 @@
     const style = document.createElement('style');
     style.id = 'gate-timer-sound-controller-styles';
     style.textContent = `
-      #page-board .timer-display.timer-yellow,
-      #page-board .timer-display.timer-red,
-      #page-board .timer-display.timer-flash,
       #page-squadron .timer-display.timer-yellow,
       #page-squadron .timer-display.timer-red,
       #page-squadron .timer-display.timer-flash {
@@ -91,9 +89,6 @@
         vertical-align: middle !important;
       }
 
-      #page-board .timer-display.timer-yellow::before,
-      #page-board .timer-display.timer-red::before,
-      #page-board .timer-display.timer-flash::before,
       #page-squadron .timer-display.timer-yellow::before,
       #page-squadron .timer-display.timer-red::before,
       #page-squadron .timer-display.timer-flash::before {
@@ -102,8 +97,6 @@
         min-width: 0 !important;
       }
 
-      #page-board .timer-display.timer-red,
-      #page-board .timer-display.timer-flash,
       #page-squadron .timer-display.timer-red,
       #page-squadron .timer-display.timer-flash {
         border-radius: var(--radius-pill) !important;
@@ -157,7 +150,7 @@
 
   function updateTimerDisplays() {
     ensureTimerStyles();
-    document.querySelectorAll('.timer-display[data-opened]').forEach(el => {
+    document.querySelectorAll('#page-squadron .timer-display[data-opened]').forEach(el => {
       applyTimerState(el, elapsedTimer(el.dataset.opened));
     });
   }

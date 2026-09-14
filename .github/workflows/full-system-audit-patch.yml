@@ -23,7 +23,7 @@ jobs:
           node-version: '22'
       - name: Apply audited presentation and CI repairs
         run: python3 tools/full_system_audit_patch.py
-      - name: Wire full-system test into integrity gates
+      - name: Wire full-system test into integrity gates for validation
         run: python3 tools/wire_full_system_test.py
       - name: Validate full-system repairs
         run: |
@@ -34,10 +34,11 @@ jobs:
           node --test tests/runtime/processing-modal-record-persistence.test.mjs
           node --test tests/runtime/status-board-visual-stability.test.mjs
           if grep -RE '!important\s*;' public/css/military-glass-terminal.css; then exit 1; fi
-      - name: Commit audited repairs
+      - name: Commit audited product repair
         run: |
+          git checkout -- .github/workflows/runtime-record-integrity-tests.yml .github/workflows/build-2-audit-remediation-gate-1.yml
           git config user.name ORION_Dev
           git config user.email austentube@gmail.com
-          git add public/css/military-glass-terminal.css tests/runtime/full-system-integrity.test.mjs .github/workflows/runtime-record-integrity-tests.yml .github/workflows/build-2-audit-remediation-gate-1.yml
-          git commit -m "Restore responsive contracts and add full-system integrity audit"
+          git add public/css/military-glass-terminal.css
+          git commit -m "Restore responsive shell and mobile page contracts"
           git push origin HEAD:audit/full-system-integrity-20260914

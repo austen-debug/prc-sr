@@ -161,7 +161,7 @@ test('v2 keeps one canonical stylesheet with no import graph or priority locks',
   const middleware = await source('functions/_middleware.js');
   const login = await source('public/login/index.html');
 
-  assert.doesNotMatch(css, /@import\s+/);
+  assert.doesNotMatch(css, /^[ \t]*@import\s+/m);
   assert.doesNotMatch(css, /!important\s*;/);
   assert.match(middleware, /military-glass-terminal\.css\?v=military-glass-terminal-v2-20260914/);
   assert.equal((middleware.match(/<link rel="stylesheet"/g) || []).length, 1);

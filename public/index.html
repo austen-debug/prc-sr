@@ -398,16 +398,16 @@
   <button
     type="button"
     onclick="deleteDormitoryFromEditModal()"
-    class="px-3 py-1.5 rounded text-xs font-bold text-white"
-    style="background:var(--red); min-height:30px;"
+    class="gate-danger-action px-3 py-1.5 rounded text-xs font-bold text-white"
+    style="min-height:30px;"
   >
     DELETE
   </button>
 
   <button
     type="submit"
-    class="px-4 py-1.5 rounded text-xs font-bold text-white"
-    style="background:var(--green); min-height:30px;"
+    class="gate-primary-action px-4 py-1.5 rounded text-xs font-bold text-white"
+    style="min-height:30px;"
   >
     SAVE
   </button>
@@ -476,7 +476,7 @@
       <div class="flex gap-2 pt-3 justify-end items-center">
         <button type="button" onclick="closeAirportBusEditModal()" class="px-3 py-1.5 rounded text-xs font-bold surface border" style="border-color:var(--border); min-height:30px;">CANCEL</button>
 
-        <button type="submit" class="px-4 py-1.5 rounded text-xs font-bold text-white" style="background:var(--green); min-height:30px;">SAVE BUS UPDATE</button>
+        <button type="submit" class="gate-primary-action px-4 py-1.5 rounded text-xs font-bold text-white" style="min-height:30px;">SAVE BUS UPDATE</button>
       </div>
 
       <div id="edit-bus-msg" class="hidden text-center text-sm font-bold"></div>
@@ -537,7 +537,7 @@
           <label class="block text-sm font-medium mb-1">Actions</label>
           <div class="flex gap-2">
             <button type="button" onclick="printArchiveSpreadsheet()" class="gate-primary-action flex-1 py-2 rounded font-bold text-white">PRINT</button>
-            <button type="button" onclick="deleteArchiveWithOverride()" class="flex-1 py-2 rounded font-bold text-white" style="background:var(--red);">DELETE</button>
+            <button type="button" onclick="deleteArchiveWithOverride()" class="gate-danger-action flex-1 py-2 rounded font-bold text-white">DELETE</button>
           </div>
         </div>
       </div>

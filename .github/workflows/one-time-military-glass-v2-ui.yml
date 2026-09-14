@@ -1,4 +1,4 @@
-name: One-time Military Glass v2 UI diagnostic
+name: One-time Military Glass v2 UI repair
 
 on:
   push:
@@ -11,7 +11,7 @@ permissions:
   contents: write
 
 jobs:
-  diagnose-v2:
+  repair-v2:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -21,13 +21,34 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Capture Military Glass v2 contract output
+      - name: Move static modal actions to semantic v2 classes
         run: |
-          node --test tests/runtime/military-glass-v2-ui-contract.test.mjs > tests/runtime/v2-diagnostic.txt 2>&1 || true
-      - name: Commit diagnostic output
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('public/index.html')
+          text = path.read_text()
+          replacements = {
+              'class="px-3 py-1.5 rounded text-xs font-bold text-white"\n    style="background:var(--red); min-height:30px;"': 'class="gate-danger-action px-3 py-1.5 rounded text-xs font-bold text-white"\n    style="min-height:30px;"',
+              'class="px-4 py-1.5 rounded text-xs font-bold text-white"\n    style="background:var(--green); min-height:30px;"': 'class="gate-primary-action px-4 py-1.5 rounded text-xs font-bold text-white"\n    style="min-height:30px;"',
+              'class="px-4 py-1.5 rounded text-xs font-bold text-white" style="background:var(--green); min-height:30px;"': 'class="gate-primary-action px-4 py-1.5 rounded text-xs font-bold text-white" style="min-height:30px;"',
+              'class="flex-1 py-2 rounded font-bold text-white" style="background:var(--red);"': 'class="gate-danger-action flex-1 py-2 rounded font-bold text-white"'
+          }
+          missing = []
+          for old, new in replacements.items():
+              if old not in text:
+                  missing.append(old)
+              else:
+                  text = text.replace(old, new)
+          if missing:
+              raise SystemExit('Expected modal action markup was not found; refusing partial rewrite.')
+          path.write_text(text)
+          PY
+      - name: Validate Military Glass v2 contract
+        run: node --test tests/runtime/military-glass-v2-ui-contract.test.mjs
+      - name: Commit repaired modal action ownership
         run: |
           git config user.name ORION_Dev
           git config user.email austentube@gmail.com
-          git add tests/runtime/v2-diagnostic.txt
-          git commit -m "Capture Military Glass v2 contract diagnostics"
+          git add public/index.html
+          git commit -m "Move remaining modal actions to Military Glass semantics"
           git push origin HEAD:audit/military-glass-v2-ui

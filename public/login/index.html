@@ -47,11 +47,11 @@
           <input id="password" name="password" type="password" autocomplete="current-password" required>
         </div>
 
-        <button type="submit" class="login-button gate-liquid-ready">
+        <button id="login-submit" type="submit" class="login-button gate-liquid-ready">
           Sign In
         </button>
 
-        <div id="login-message" class="hidden text-center text-sm font-bold" role="alert"></div>
+        <div id="login-message" class="hidden text-center text-sm font-bold" role="alert" aria-live="polite"></div>
       </form>
 
       <div class="login-footer-note">
@@ -63,34 +63,64 @@
   <script>
     const form = document.getElementById('login-form');
     const msg = document.getElementById('login-message');
+    const submit = document.getElementById('login-submit');
+
+    function showMessage(message) {
+      msg.textContent = message;
+      msg.style.color = '#ff8a8a';
+      msg.classList.remove('hidden');
+    }
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
 
       msg.classList.add('hidden');
+      submit.disabled = true;
+      submit.setAttribute('aria-busy', 'true');
 
       const username = document.getElementById('username').value.trim();
       const password = document.getElementById('password').value;
 
-      const response = await fetch('/api/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify({ username, password })
-      });
+      try {
+        const response = await fetch('/api/login', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify({ username, password })
+        });
 
-      const result = await response.json();
+        const contentType = response.headers.get('content-type') || '';
+        const result = contentType.includes('application/json')
+          ? await response.json()
+          : { isOk: false, error: 'Authentication service returned an invalid response.' };
 
-      if (result.isOk) {
-        window.location.href = '/';
-        return;
+        if (!response.ok || !result.isOk) {
+          showMessage(result.error || 'Login failed.');
+          return;
+        }
+
+        const sessionResponse = await fetch('/api/session', {
+          method: 'GET',
+          credentials: 'same-origin',
+          headers: { 'Accept': 'application/json' },
+          cache: 'no-store'
+        });
+
+        if (!sessionResponse.ok) {
+          showMessage('Login succeeded, but the session could not be verified. Please try again.');
+          return;
+        }
+
+        window.location.assign('/');
+      } catch (error) {
+        showMessage('Unable to reach the authentication service. Please retry.');
+      } finally {
+        submit.disabled = false;
+        submit.removeAttribute('aria-busy');
       }
-
-      msg.textContent = result.error || 'Login failed.';
-      msg.style.color = '#ff8a8a';
-      msg.classList.remove('hidden');
     });
   </script>
 </body>

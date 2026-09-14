@@ -24,7 +24,7 @@ jobs:
       - name: Apply audited presentation and CI repairs
         run: python3 tools/full_system_audit_patch.py
       - name: Wire full-system test into integrity gates
-        run: python3 -c "from pathlib import Path; p=Path('.github/workflows/runtime-record-integrity-tests.yml'); t=p.read_text(); m='      - name: Record display integrity\\n        run: node --test tests/runtime/record-display-integrity.test.mjs\\n'; t=t if 'Full system integrity' in t else t.replace(m,m+'\\n      - name: Full system integrity\\n        run: node --test tests/runtime/full-system-integrity.test.mjs\\n',1); p.write_text(t); p=Path('.github/workflows/build-2-audit-remediation-gate-1.yml'); t=p.read_text(); m='          node --test tests/runtime/active-runtime-budget.test.mjs\\n'; t=t if 'tests/runtime/full-system-integrity.test.mjs' in t else t.replace(m,m+'          node --test tests/runtime/full-system-integrity.test.mjs\\n',1); p.write_text(t)"
+        run: python3 tools/wire_full_system_test.py
       - name: Validate full-system repairs
         run: |
           node --test tests/runtime/full-system-integrity.test.mjs

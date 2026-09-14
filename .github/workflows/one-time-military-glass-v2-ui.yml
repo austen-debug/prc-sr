@@ -1,4 +1,4 @@
-name: One-time Military Glass v2 UI repair
+name: One-time Military Glass v2 UI diagnostic
 
 on:
   push:
@@ -11,7 +11,7 @@ permissions:
   contents: write
 
 jobs:
-  repair-v2:
+  diagnose-post-repair:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -21,7 +21,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Move static modal actions to semantic v2 classes
+      - name: Apply prospective modal action repair
         run: |
           python3 - <<'PY'
           from pathlib import Path
@@ -33,22 +33,19 @@ jobs:
               'class="px-4 py-1.5 rounded text-xs font-bold text-white" style="background:var(--green); min-height:30px;"': 'class="gate-primary-action px-4 py-1.5 rounded text-xs font-bold text-white" style="min-height:30px;"',
               'class="flex-1 py-2 rounded font-bold text-white" style="background:var(--red);"': 'class="gate-danger-action flex-1 py-2 rounded font-bold text-white"'
           }
-          missing = []
           for old, new in replacements.items():
               if old not in text:
-                  missing.append(old)
-              else:
-                  text = text.replace(old, new)
-          if missing:
-              raise SystemExit('Expected modal action markup was not found; refusing partial rewrite.')
+                  raise SystemExit('Expected modal action markup was not found; refusing partial diagnostic rewrite.')
+              text = text.replace(old, new)
           path.write_text(text)
           PY
-      - name: Validate Military Glass v2 contract
-        run: node --test tests/runtime/military-glass-v2-ui-contract.test.mjs
-      - name: Commit repaired modal action ownership
+      - name: Capture post-repair contract output
+        run: node --test tests/runtime/military-glass-v2-ui-contract.test.mjs > tests/runtime/v2-diagnostic-post-repair.txt 2>&1 || true
+      - name: Commit diagnostic only
         run: |
+          git restore public/index.html
           git config user.name ORION_Dev
           git config user.email austentube@gmail.com
-          git add public/index.html
-          git commit -m "Move remaining modal actions to Military Glass semantics"
+          git add tests/runtime/v2-diagnostic-post-repair.txt
+          git commit -m "Capture post-repair Military Glass v2 diagnostics"
           git push origin HEAD:audit/military-glass-v2-ui

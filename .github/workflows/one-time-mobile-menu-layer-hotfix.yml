@@ -1,0 +1,111 @@
+name: One-time mobile menu layer hotfix
+
+on:
+  push:
+    branches:
+      - hotfix/mobile-menu-scrim-layering
+    paths:
+      - '.github/workflows/one-time-mobile-menu-layer-hotfix.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch-mobile-menu:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: hotfix/mobile-menu-scrim-layering
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Repair mobile sheet compositing and interaction layer
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          css_path = Path('public/css/military-glass-terminal.css')
+          css = css_path.read_text()
+
+          old_scrim = '''  #gate-mobile-menu-scrim {
+    position: fixed;
+    inset: var(--mg-shell-top) 0 0;
+    z-index: calc(var(--mg-z-popover) - 1);
+    background: rgba(2, 5, 2, .42);
+    backdrop-filter: blur(2px);
+  }'''
+          new_scrim = '''  #gate-mobile-menu-scrim {
+    position: fixed;
+    inset: var(--mg-shell-top) 0 0;
+    z-index: var(--mg-z-popover);
+    background: rgba(2, 5, 2, .58);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }'''
+
+          old_sheet = '''  body.gate-app-shell-ready #gate-mobile-nav-sheet {
+    position: fixed;
+    top: calc(var(--mg-shell-top) + .5rem);
+    left: max(.75rem, env(safe-area-inset-left));
+    right: max(.75rem, env(safe-area-inset-right));
+    z-index: var(--mg-z-popover);
+    display: none;'''
+          new_sheet = '''  body.gate-app-shell-ready #gate-mobile-nav-sheet {
+    position: fixed;
+    top: calc(var(--mg-shell-top) + .5rem);
+    left: max(.75rem, env(safe-area-inset-left));
+    right: max(.75rem, env(safe-area-inset-right));
+    z-index: var(--mg-z-modal);
+    isolation: isolate;
+    transform: translate3d(0, 0, 0);
+    touch-action: manipulation;
+    display: none;'''
+
+          if old_scrim not in css:
+              raise SystemExit('Expected mobile scrim contract not found; refusing partial rewrite.')
+          if old_sheet not in css:
+              raise SystemExit('Expected mobile sheet contract not found; refusing partial rewrite.')
+
+          css = css.replace(old_scrim, new_scrim, 1).replace(old_sheet, new_sheet, 1)
+          css_path.write_text(css)
+
+          test_path = Path('tests/runtime/operational-ui-audit-remediation.test.mjs')
+          test = test_path.read_text()
+          anchor = "test('Processing modal tablet reachability uses contained scrolling and sticky action rails', async () => {"
+          addition = r'''test('mobile navigation sheet stays above its non-blurring outside-tap scrim', async () => {
+  const css = await source('public/css/military-glass-terminal.css');
+  const mobileStart = css.indexOf('@media (max-width: 767px)');
+  assert.ok(mobileStart >= 0, 'mobile shell media query must exist');
+  const mobile = css.slice(mobileStart);
+
+  assert.match(mobile, /#gate-mobile-menu-scrim\s*\{[\s\S]*z-index:\s*var\(--mg-z-popover\)[\s\S]*backdrop-filter:\s*none[\s\S]*-webkit-backdrop-filter:\s*none/);
+  assert.match(mobile, /#gate-mobile-nav-sheet\s*\{[\s\S]*z-index:\s*var\(--mg-z-modal\)[\s\S]*isolation:\s*isolate[\s\S]*translate3d\(0,\s*0,\s*0\)[\s\S]*touch-action:\s*manipulation/);
+  assert.match(mobile, /gate-mobile-drawer-open #gate-mobile-menu-scrim\s*\{[\s\S]*pointer-events:\s*auto/);
+  assert.match(mobile, /gate-mobile-nav-sheet\.gate-mobile-sheet-open[\s\S]*pointer-events:\s*auto/);
+});
+
+'''
+          if addition.strip() not in test:
+              if anchor not in test:
+                  raise SystemExit('Expected operational UI test anchor not found.')
+              test = test.replace(anchor, addition + anchor, 1)
+              test_path.write_text(test)
+          PY
+
+      - name: Validate mobile hotfix and protected runtime contracts
+        run: |
+          node --test tests/runtime/operational-ui-audit-remediation.test.mjs
+          node --test tests/runtime/login-session-integrity.test.mjs
+          node --test tests/runtime/full-system-integrity.test.mjs
+          node --test tests/runtime/active-runtime-budget.test.mjs
+
+      - name: Commit mobile interaction repair
+        run: |
+          git config user.name ORION_Dev
+          git config user.email austentube@gmail.com
+          git add public/css/military-glass-terminal.css tests/runtime/operational-ui-audit-remediation.test.mjs
+          git commit -m "Fix iOS mobile menu scrim layering"
+          git push origin HEAD:hotfix/mobile-menu-scrim-layering

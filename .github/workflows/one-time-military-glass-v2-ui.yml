@@ -1,4 +1,4 @@
-name: One-time Military Glass v2 UI audit patch
+name: One-time Military Glass v2 UI diagnostic
 
 on:
   push:
@@ -11,7 +11,7 @@ permissions:
   contents: write
 
 jobs:
-  rebuild-ui:
+  diagnose-v2:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -21,21 +21,13 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Apply Military Glass v2 canonical UI patch
-        run: python3 tools/military_glass_v2_ui_patch.py
-      - name: Validate canonical visual and runtime contracts
+      - name: Capture Military Glass v2 contract output
         run: |
-          node --test tests/runtime/active-runtime-budget.test.mjs
-          node --test tests/runtime/record-display-integrity.test.mjs
-          node --test tests/runtime/full-system-integrity.test.mjs
-          if grep -RE '!important\s*;' public/css/military-glass-terminal.css; then exit 1; fi
-          if grep -Eq '<style>[[:space:]]*:root' public/index.html; then exit 1; fi
-          grep -q -- '--mg-signal: #4fc3e8' public/css/military-glass-terminal.css
-          grep -q -- '--mg-accent: #3fd98a' public/css/military-glass-terminal.css
-      - name: Commit Military Glass v2 audit update
+          node --test tests/runtime/military-glass-v2-ui-contract.test.mjs > tests/runtime/v2-diagnostic.txt 2>&1 || true
+      - name: Commit diagnostic output
         run: |
           git config user.name ORION_Dev
           git config user.email austentube@gmail.com
-          git add public/css/military-glass-terminal.css public/index.html public/login/index.html functions/_middleware.js docs/build-2/ACTIVE_RUNTIME_BUDGET.json docs/ACTIVE_RUNTIME_STACK.md
-          git commit -m "Apply Military Glass Terminal v2 UI contract"
+          git add tests/runtime/v2-diagnostic.txt
+          git commit -m "Capture Military Glass v2 contract diagnostics"
           git push origin HEAD:audit/military-glass-v2-ui

@@ -46,6 +46,7 @@ test('coarse-pointer tablet Processing retains route-owned scrolling and touch s
   const nextMedia = css.indexOf('@media ', start + 8);
   const tablet = css.slice(start, nextMedia > start ? nextMedia : undefined);
 
+  assert.doesNotMatch(tablet, /gate-app-shell-mobile/, 'tablet recovery must not depend on the legacy mobile-shell class');
   assert.match(tablet, /html\s*\{[\s\S]*overscroll-behavior-y:\s*none/);
   assert.match(tablet, /body\.gate-app-shell-ready\[data-gate-active-page=['"]processing['"]\][\s\S]*height:\s*100dvh[\s\S]*overflow-y:\s*hidden/);
   assert.match(tablet, /#page-processing\.active[\s\S]*display:\s*flex[\s\S]*height:\s*100dvh[\s\S]*overflow-y:\s*auto[\s\S]*overscroll-behavior-y:\s*contain/);

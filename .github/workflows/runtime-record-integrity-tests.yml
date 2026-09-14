@@ -6,7 +6,7 @@ on:
       - 'functions/_middleware.js'
       - 'functions/api/**'
       - 'public/index.html'
-      - 'public/login/index.html'
+      - 'public/login/**'
       - 'public/css/military-glass-terminal.css'
       - 'public/js/**'
       - 'tests/runtime/**'
@@ -16,7 +16,7 @@ on:
       - 'functions/_middleware.js'
       - 'functions/api/**'
       - 'public/index.html'
-      - 'public/login/index.html'
+      - 'public/login/**'
       - 'public/css/military-glass-terminal.css'
       - 'public/js/**'
       - 'tests/runtime/**'
@@ -52,6 +52,9 @@ jobs:
 
       - name: Full system integrity
         run: node --test tests/runtime/full-system-integrity.test.mjs
+
+      - name: Military Glass v2 visual contracts
+        run: node --test tests/runtime/military-glass-v2-ui-contract.test.mjs
 
       - name: Record display integrity
         run: node --test tests/runtime/record-display-integrity.test.mjs

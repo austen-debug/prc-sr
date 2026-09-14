@@ -1,0 +1,52 @@
+name: One-time Military Glass v2 release transplant
+
+on:
+  push:
+    branches:
+      - release/military-glass-v2-ui
+    paths:
+      - '.github/workflows/one-time-v2-release-transplant.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  transplant-v2:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: release/military-glass-v2-ui
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Fetch validated audit branch
+        run: git fetch origin audit/military-glass-v2-ui:refs/remotes/origin/audit/military-glass-v2-ui
+      - name: Transplant validated non-workflow files
+        run: |
+          git checkout origin/audit/military-glass-v2-ui -- \
+            docs/ACTIVE_RUNTIME_STACK.md \
+            docs/build-2/ACTIVE_RUNTIME_BUDGET.json \
+            functions/_middleware.js \
+            public/css/military-glass-terminal.css \
+            public/index.html \
+            public/login/index.html \
+            tests/runtime/military-glass-v2-ui-contract.test.mjs \
+            tests/runtime/operational-ui-audit-remediation.test.mjs
+      - name: Validate transplanted runtime
+        run: |
+          node --input-type=module --check < functions/_middleware.js
+          node --test tests/runtime/login-session-integrity.test.mjs
+          node --test tests/runtime/military-glass-v2-ui-contract.test.mjs
+          node --test tests/runtime/full-system-integrity.test.mjs
+          node --test tests/runtime/record-display-integrity.test.mjs
+          node --test tests/runtime/processing-modal-record-persistence.test.mjs
+          node --test tests/runtime/operational-ui-audit-remediation.test.mjs
+      - name: Commit clean v2 runtime transplant
+        run: |
+          git config user.name ORION_Dev
+          git config user.email austentube@gmail.com
+          git add docs/ACTIVE_RUNTIME_STACK.md docs/build-2/ACTIVE_RUNTIME_BUDGET.json functions/_middleware.js public/css/military-glass-terminal.css public/index.html public/login/index.html tests/runtime/military-glass-v2-ui-contract.test.mjs tests/runtime/operational-ui-audit-remediation.test.mjs
+          git commit -m "Apply Military Glass v2 UI contract on authenticated main"
+          git push origin HEAD:release/military-glass-v2-ui

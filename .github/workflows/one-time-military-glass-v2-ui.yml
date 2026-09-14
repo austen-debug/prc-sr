@@ -1,4 +1,4 @@
-name: One-time Military Glass v2 UI diagnostic
+name: One-time Military Glass v2 UI final repair
 
 on:
   push:
@@ -11,7 +11,7 @@ permissions:
   contents: write
 
 jobs:
-  diagnose-post-repair:
+  finalize-v2:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -21,12 +21,13 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Apply prospective modal action repair
+      - name: Apply final source and validator repairs
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          path = Path('public/index.html')
-          text = path.read_text()
+
+          index = Path('public/index.html')
+          text = index.read_text()
           replacements = {
               'class="px-3 py-1.5 rounded text-xs font-bold text-white"\n    style="background:var(--red); min-height:30px;"': 'class="gate-danger-action px-3 py-1.5 rounded text-xs font-bold text-white"\n    style="min-height:30px;"',
               'class="px-4 py-1.5 rounded text-xs font-bold text-white"\n    style="background:var(--green); min-height:30px;"': 'class="gate-primary-action px-4 py-1.5 rounded text-xs font-bold text-white"\n    style="min-height:30px;"',
@@ -35,17 +36,30 @@ jobs:
           }
           for old, new in replacements.items():
               if old not in text:
-                  raise SystemExit('Expected modal action markup was not found; refusing partial diagnostic rewrite.')
+                  raise SystemExit('Expected modal action markup was not found; refusing partial rewrite.')
               text = text.replace(old, new)
-          path.write_text(text)
+          index.write_text(text)
+
+          test_path = Path('tests/runtime/military-glass-v2-ui-contract.test.mjs')
+          test_text = test_path.read_text()
+          old = "assert.doesNotMatch(css, /@import\\s+/);"
+          new = "assert.doesNotMatch(css, /^[ \\t]*@import\\s+/m);"
+          if old not in test_text:
+              raise SystemExit('Expected import assertion was not found.')
+          test_path.write_text(test_text.replace(old, new))
           PY
-      - name: Capture post-repair contract output
-        run: node --test tests/runtime/military-glass-v2-ui-contract.test.mjs > tests/runtime/v2-diagnostic-post-repair.txt 2>&1 || true
-      - name: Commit diagnostic only
+      - name: Validate v2 and system contracts
         run: |
-          git restore public/index.html
+          node --test tests/runtime/military-glass-v2-ui-contract.test.mjs
+          node --test tests/runtime/login-session-integrity.test.mjs
+          node --test tests/runtime/full-system-integrity.test.mjs
+          node --test tests/runtime/record-display-integrity.test.mjs
+          node --test tests/runtime/processing-modal-record-persistence.test.mjs
+          node --test tests/runtime/operational-ui-audit-remediation.test.mjs
+      - name: Commit final v2 repair
+        run: |
           git config user.name ORION_Dev
           git config user.email austentube@gmail.com
-          git add tests/runtime/v2-diagnostic-post-repair.txt
-          git commit -m "Capture post-repair Military Glass v2 diagnostics"
+          git add public/index.html tests/runtime/military-glass-v2-ui-contract.test.mjs
+          git commit -m "Finalize Military Glass v2 semantic UI contracts"
           git push origin HEAD:audit/military-glass-v2-ui

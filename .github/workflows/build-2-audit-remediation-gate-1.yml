@@ -5,11 +5,10 @@ on:
     paths:
       - 'README.md'
       - 'functions/_middleware.js'
-      - 'public/css/gate-utilities-access.css'
-      - 'public/css/gate-fullscreen-board-contract.css'
-      - 'public/js/gate-status-board-controller.js'
-      - 'public/js/gate-processing-controller.js'
-      - 'public/js/prc-dash-auditorium-location.js'
+      - 'functions/api/**'
+      - 'public/index.html'
+      - 'public/css/military-glass-terminal.css'
+      - 'public/js/**'
       - 'public/app/status-board-shadow/**'
       - 'tests/runtime/**'
       - 'tests/build-2/**'
@@ -27,11 +26,10 @@ on:
     paths:
       - 'README.md'
       - 'functions/_middleware.js'
-      - 'public/css/gate-utilities-access.css'
-      - 'public/css/gate-fullscreen-board-contract.css'
-      - 'public/js/gate-status-board-controller.js'
-      - 'public/js/gate-processing-controller.js'
-      - 'public/js/prc-dash-auditorium-location.js'
+      - 'functions/api/**'
+      - 'public/index.html'
+      - 'public/css/military-glass-terminal.css'
+      - 'public/js/**'
       - 'public/app/status-board-shadow/**'
       - 'tests/runtime/**'
       - 'tests/build-2/**'
@@ -70,6 +68,7 @@ jobs:
 
       - name: Validate active runtime budget and record integrity
         run: |
+          node --test tests/runtime/full-system-integrity.test.mjs
           node --test tests/runtime/active-runtime-budget.test.mjs
           node --test tests/runtime/record-display-integrity.test.mjs
           node --test tests/runtime/dorm-timer-record-lifecycle.test.mjs

@@ -4,37 +4,19 @@ on:
   push:
     paths:
       - 'functions/_middleware.js'
-      - 'public/css/gate-utilities-access.css'
-      - 'public/css/gate-premium-metrics.css'
-      - 'public/css/gate-ui-ownership-correction.css'
-      - 'public/css/gate-fullscreen-board-contract.css'
-      - 'public/js/gate-record-display-contract.js'
-      - 'public/js/gate-status-board-controller.js'
-      - 'public/js/gate-premium-metrics-controller.js'
-      - 'public/js/gate-render-stability-fix.js'
-      - 'public/js/gate-processing-controller.js'
-      - 'public/js/prc-dash-auditorium-location.js'
-      - 'public/js/gate-input-page-controller.js'
-      - 'public/js/prc-dash-final-audit.js'
-      - 'public/js/prc-dash-dorm-flag-validation.js'
+      - 'functions/api/**'
+      - 'public/index.html'
+      - 'public/css/military-glass-terminal.css'
+      - 'public/js/**'
       - 'tests/runtime/**'
       - '.github/workflows/runtime-record-integrity-tests.yml'
   pull_request:
     paths:
       - 'functions/_middleware.js'
-      - 'public/css/gate-utilities-access.css'
-      - 'public/css/gate-premium-metrics.css'
-      - 'public/css/gate-ui-ownership-correction.css'
-      - 'public/css/gate-fullscreen-board-contract.css'
-      - 'public/js/gate-record-display-contract.js'
-      - 'public/js/gate-status-board-controller.js'
-      - 'public/js/gate-premium-metrics-controller.js'
-      - 'public/js/gate-render-stability-fix.js'
-      - 'public/js/gate-processing-controller.js'
-      - 'public/js/prc-dash-auditorium-location.js'
-      - 'public/js/gate-input-page-controller.js'
-      - 'public/js/prc-dash-final-audit.js'
-      - 'public/js/prc-dash-dorm-flag-validation.js'
+      - 'functions/api/**'
+      - 'public/index.html'
+      - 'public/css/military-glass-terminal.css'
+      - 'public/js/**'
       - 'tests/runtime/**'
       - '.github/workflows/runtime-record-integrity-tests.yml'
 
@@ -60,18 +42,11 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Parse active JavaScript
-        run: |
-          node --input-type=module --check < functions/_middleware.js
-          node --check public/js/gate-record-display-contract.js
-          node --check public/js/gate-status-board-controller.js
-          node --check public/js/gate-premium-metrics-controller.js
-          node --check public/js/gate-render-stability-fix.js
-          node --check public/js/gate-processing-controller.js
-          node --check public/js/prc-dash-auditorium-location.js
-          node --check public/js/gate-input-page-controller.js
-          node --check public/js/prc-dash-final-audit.js
-          node --check public/js/prc-dash-dorm-flag-validation.js
+      - name: Parse middleware
+        run: node --input-type=module --check < functions/_middleware.js
+
+      - name: Full system integrity
+        run: node --test tests/runtime/full-system-integrity.test.mjs
 
       - name: Record display integrity
         run: node --test tests/runtime/record-display-integrity.test.mjs

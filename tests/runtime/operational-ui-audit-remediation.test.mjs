@@ -39,25 +39,62 @@ test('Processing modal tablet reachability uses contained scrolling and sticky a
   assert.match(tablet, /\.gate-processing-workspace__footer[\s\S]*bottom:\s*0/);
 });
 
-test('tablet workspaces use independent contained scroll lanes', async () => {
+test('coarse-pointer tablet Processing retains route-owned scrolling and touch stability through 1366px', async () => {
   const css = await source('public/css/military-glass-terminal.css');
-  const tabletStart = css.indexOf('@media (min-width: 768px) and (max-width: 1199px)');
-  const mobileStart = css.indexOf('@media (max-width: 767px)', tabletStart);
-  const tablet = css.slice(tabletStart, mobileStart > tabletStart ? mobileStart : undefined);
+  const start = css.indexOf('@media (any-pointer: coarse) and (min-width: 768px) and (max-width: 1366px) and (min-height: 561px)');
+  assert.ok(start >= 0, 'coarse-pointer tablet restoration media query must exist');
+  const nextMedia = css.indexOf('@media ', start + 8);
+  const tablet = css.slice(start, nextMedia > start ? nextMedia : undefined);
 
-  assert.match(tablet, /#page-board \.dorm-column,[\s\S]*max-height:\s*calc\(100dvh - var\(--mg-shell-top\) - 2rem\)/);
-  assert.match(tablet, /overflow-y:\s*auto/);
-  assert.match(tablet, /scrollbar-gutter:\s*stable/);
-  assert.match(tablet, /overscroll-behavior:\s*contain/);
+  assert.doesNotMatch(tablet, /gate-app-shell-mobile/, 'tablet recovery must not depend on the legacy mobile-shell class');
+  assert.match(tablet, /html\s*\{[\s\S]*overscroll-behavior-y:\s*none/);
+  assert.match(tablet, /body\.gate-app-shell-ready\[data-gate-active-page=['"]processing['"]\][\s\S]*height:\s*100dvh[\s\S]*overflow-y:\s*hidden/);
+  assert.match(tablet, /#page-processing\.active[\s\S]*display:\s*flex[\s\S]*height:\s*100dvh[\s\S]*overflow-y:\s*auto[\s\S]*overscroll-behavior-y:\s*contain/);
+  assert.match(tablet, /\.security-banner-fixed,[\s\S]*position:\s*fixed[\s\S]*translate3d\(0,\s*0,\s*0\)/);
+  assert.match(tablet, /#gate-mobile-nav-sheet[\s\S]*overscroll-behavior:\s*contain[\s\S]*-webkit-overflow-scrolling:\s*touch/);
+  assert.match(tablet, /#page-processing \.proc-card:hover[\s\S]*transform:\s*none/);
+  assert.match(tablet, /#dorm-modal\.confirm-overlay:not\(\.hidden\)[\s\S]*overflow-y:\s*auto/);
+  assert.match(tablet, /#dorm-modal \.gate-processing-workspace__header,[\s\S]*position:\s*sticky/);
+  assert.match(tablet, /#dorm-modal \.gate-processing-workspace__footer[\s\S]*position:\s*sticky/);
 });
 
-test('narrow desktops retain a single fixed command shell with scrollable nav lane', async () => {
+test('short-height Processing workspace retains compact controls without losing action reachability', async () => {
+  const css = await source('public/css/military-glass-terminal.css');
+  const start = css.indexOf('@media (max-height: 800px) and (min-width: 761px)');
+  assert.ok(start >= 0, 'short-height Processing restoration media query must exist');
+  const nextMedia = css.indexOf('@media ', start + 8);
+  const compact = css.slice(start, nextMedia > start ? nextMedia : undefined);
+
+  assert.match(compact, /#dorm-modal \.gate-processing-workspace[\s\S]*gap:\s*\.5rem \.75rem[\s\S]*padding:\s*\.72rem/);
+  assert.match(compact, /\.gate-processing-workspace__header[\s\S]*min-height:\s*3\.2rem[\s\S]*padding:\s*\.48rem \.68rem/);
+  assert.match(compact, /#modal-dorm-name[\s\S]*font-size:\s*clamp\(1\.7rem,\s*3vw,\s*2\.2rem\)/);
+  assert.match(compact, /\.phase-btn[\s\S]*min-height:\s*2\.3rem/);
+});
+
+test('touch Input workflow retains stacked setup controls and a controlled scrollable dorm matrix', async () => {
+  const css = await source('public/css/military-glass-terminal.css');
+  const start = css.indexOf('@media (max-width: 900px), (pointer: coarse) and (max-width: 1024px)');
+  assert.ok(start >= 0, 'touch Input restoration media query must exist');
+  const nextMedia = css.indexOf('@media ', start + 8);
+  const touch = css.slice(start, nextMedia > start ? nextMedia : undefined);
+
+  assert.match(touch, /#page-input > \.flex-shrink-0\.px-4\.py-3 > \.flex[\s\S]*display:\s*grid[\s\S]*grid-template-columns:\s*minmax\(0,\s*1fr\)/);
+  assert.match(touch, /#wg-batch-input,[\s\S]*#init-wg-btn[\s\S]*min-height:\s*46px/);
+  assert.match(touch, /#init-wg-btn[\s\S]*width:\s*100%/);
+  assert.match(touch, /#receiving-windows-panel,[\s\S]*#archive-receiving-windows-panel[\s\S]*grid-template-columns:\s*minmax\(0,\s*1fr\)/);
+  assert.match(touch, /#receiving-windows-panel input,[\s\S]*min-height:\s*44px/);
+  assert.match(touch, /#batch-grid-wrapper[\s\S]*overflow-x:\s*auto[\s\S]*-webkit-overflow-scrolling:\s*touch/);
+  assert.match(touch, /#batch-grid-wrapper > div[\s\S]*min-width:\s*860px/);
+  assert.match(touch, /#batch-rows-container input,[\s\S]*#batch-rows-container select,[\s\S]*#batch-rows-container button[\s\S]*min-height:\s*42px/);
+});
+
+test('narrow fine-pointer desktops keep a single fixed command shell and non-wrapping route lane', async () => {
   const css = await source('public/css/military-glass-terminal.css');
 
   assert.match(css, /\.app-nav,[\s\S]*position:\s*fixed/);
-  assert.match(css, /\.app-nav \.nav-group-left,[\s\S]*display:\s*flex/);
-  assert.match(css, /\.app-nav \.nav-group-left,[\s\S]*overflow-x:\s*auto/);
-  assert.match(css, /@media \(min-width:\s*768px\) and \(max-width:\s*1199px\)[\s\S]*grid-template-columns:\s*112px minmax\(0,\s*1fr\) max-content/);
+  assert.match(css, /@media \(hover:\s*hover\) and \(pointer:\s*fine\) and \(min-width:\s*768px\) and \(max-width:\s*1279px\)/);
+  assert.match(css, /#main-nav-menu\.nav-group-left[\s\S]*flex-flow:\s*row nowrap[\s\S]*overflow-x:\s*auto/);
+  assert.match(css, /#main-nav-menu\.nav-group-left > \.nav-btn[\s\S]*flex:\s*0 0 auto/);
 });
 
 test('fullscreen Active Bus cards remain bounded non-stretching tiles', async () => {

@@ -24,6 +24,18 @@ test('canonical layer pipeline keeps modals and critical overlays above the shel
   assert.match(css, /\.gate-critical-alert[\s\S]*z-index:\s*var\(--mg-z-critical\)/);
 });
 
+test('mobile navigation sheet stays above its non-blurring outside-tap scrim', async () => {
+  const css = await source('public/css/military-glass-terminal.css');
+  const mobileStart = css.indexOf('@media (max-width: 767px)');
+  assert.ok(mobileStart >= 0, 'mobile shell media query must exist');
+  const mobile = css.slice(mobileStart);
+
+  assert.match(mobile, /#gate-mobile-menu-scrim\s*\{[\s\S]*z-index:\s*var\(--mg-z-popover\)[\s\S]*backdrop-filter:\s*none[\s\S]*-webkit-backdrop-filter:\s*none/);
+  assert.match(mobile, /#gate-mobile-nav-sheet\s*\{[\s\S]*z-index:\s*var\(--mg-z-modal\)[\s\S]*isolation:\s*isolate[\s\S]*translate3d\(0,\s*0,\s*0\)[\s\S]*touch-action:\s*manipulation/);
+  assert.match(mobile, /gate-mobile-drawer-open #gate-mobile-menu-scrim\s*\{[\s\S]*pointer-events:\s*auto/);
+  assert.match(mobile, /gate-mobile-nav-sheet\.gate-mobile-sheet-open[\s\S]*pointer-events:\s*auto/);
+});
+
 test('Processing modal tablet reachability uses contained scrolling and sticky action rails', async () => {
   const css = await source('public/css/military-glass-terminal.css');
   const tabletStart = css.indexOf('@media (min-width: 768px) and (max-width: 1199px)');

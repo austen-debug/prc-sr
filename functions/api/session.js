@@ -1,4 +1,5 @@
 const COOKIE_NAME = 'prc_sr_session';
+const SESSION_SECRET_FALLBACK = 'missing-secret';
 
 function jsonResponse(data, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -60,6 +61,10 @@ function safeEqual(a, b) {
   return result === 0;
 }
 
+function resolveSessionSecret(env) {
+  return env.AUTH_SECRET || SESSION_SECRET_FALLBACK;
+}
+
 async function sign(value, secret) {
   const encoder = new TextEncoder();
 
@@ -89,7 +94,7 @@ async function verifySession(request, env) {
 
   if (!body || !signature) return null;
 
-  const expected = await sign(body, env.AUTH_SECRET);
+  const expected = await sign(body, resolveSessionSecret(env));
 
   if (!safeEqual(signature, expected)) return null;
 

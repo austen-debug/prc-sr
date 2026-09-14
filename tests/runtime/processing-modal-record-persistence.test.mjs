@@ -98,24 +98,32 @@ test('validation failures stay open while Escape only cancels the topmost modal'
 });
 
 test('Processing workspace uses responsive geometry and persistent action rails', async () => {
-  const css = await source('public/css/gate-processing-modal-workspace.css');
+  const css = await source('public/css/military-glass-terminal.css');
 
   assert.match(css, /grid-template-areas:[\s\S]*"phase load"[\s\S]*"footer footer"/);
-  assert.match(css, /max-height: calc\(100dvh - 1rem\)/);
-  assert.match(css, /\.gate-processing-workspace__footer[\s\S]*grid-area: footer/);
-  assert.match(css, /@media \(max-height: 800px\) and \(min-width: 761px\)/);
-  assert.match(css, /@media \(max-width: 760px\)/);
-  assert.match(css, /position: sticky !important;/);
-  assert.match(css, /grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/);
+  assert.match(css, /max-height:\s*calc\(100dvh - 1rem\)/);
+  assert.match(css, /\.gate-processing-workspace__footer\s*\{\s*grid-area:\s*footer/);
+  assert.match(css, /@media \(min-width:\s*768px\) and \(max-width:\s*1199px\)/);
+  assert.match(css, /@media \(max-width:\s*767px\)/);
+  assert.match(css, /\.gate-processing-workspace__footer[\s\S]*position:\s*sticky/);
+  assert.match(css, /grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\)/);
 });
 
 test('closed and empty Processing modals contain the entire load control workspace', async () => {
-  const css = await source('public/css/gate-processing-modal-workspace.css');
+  const css = await source('public/css/military-glass-terminal.css');
 
-  assert.match(css, /#modal-phase-section\[style\*="display: none"\] \+ #modal-load-section[\s\S]*grid-column: 1 \/ -1 !important;/);
-  assert.match(css, /#modal-load-section > \.flex\.items-center\.justify-center\.gap-4 \{[\s\S]*display: grid !important;/);
-  assert.match(css, /#modal-load-section > \.flex\.items-center\.justify-center\.gap-4 \{[\s\S]*width: 100% !important;/);
-  assert.match(css, /\.load-btn \{[\s\S]*width: 100% !important;[\s\S]*min-width: 0 !important;/);
-  assert.match(css, /#modal-load-input \{[\s\S]*width: 100% !important;[\s\S]*max-width: 100% !important;/);
-  assert.match(css, /#modal-load-section > \.flex\.gap-2\.justify-center \{[\s\S]*grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/);
+  assert.match(css, /#dorm-modal #modal-phase-section\[style\*="display: none"\] \+ #modal-load-section[\s\S]*grid-column:\s*1 \/ -1/);
+  assert.match(css, /#dorm-modal #modal-load-section > \.flex\.items-center\.justify-center\.gap-4\s*\{[\s\S]*display:\s*grid/);
+  assert.match(css, /#dorm-modal #modal-load-section > \.flex\.items-center\.justify-center\.gap-4\s*\{[\s\S]*width:\s*100%/);
+  assert.match(css, /#dorm-modal \.load-btn\s*\{[\s\S]*width:\s*100%[\s\S]*min-width:\s*0/);
+  assert.match(css, /#dorm-modal #modal-load-input\s*\{[\s\S]*width:\s*100%[\s\S]*max-width:\s*100%/);
+  assert.match(css, /#dorm-modal #modal-load-section > \.flex\.gap-2\.justify-center\s*\{[\s\S]*grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\)/);
+});
+
+test('Processing modal validation reuses the canonical stylesheet and does not request a second CSS asset', async () => {
+  const lifecycle = await source('public/js/prc-dash-modal-mobile-validation.js');
+
+  assert.match(lifecycle, /military-glass-terminal\.css/);
+  assert.doesNotMatch(lifecycle, /gate-processing-modal-workspace\.css/);
+  assert.doesNotMatch(lifecycle, /createElement\(['"]link['"]\)/);
 });

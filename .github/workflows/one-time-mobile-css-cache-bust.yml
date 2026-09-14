@@ -1,0 +1,54 @@
+name: One-time mobile CSS cache bust
+
+on:
+  push:
+    branches:
+      - hotfix/mobile-menu-cache-key
+    paths:
+      - '.github/workflows/one-time-mobile-css-cache-bust.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  cache-bust:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: hotfix/mobile-menu-cache-key
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Advance canonical stylesheet cache key
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          files = [
+              Path('functions/_middleware.js'),
+              Path('docs/ACTIVE_RUNTIME_STACK.md'),
+              Path('docs/build-2/ACTIVE_RUNTIME_BUDGET.json'),
+              Path('tests/runtime/operational-ui-audit-remediation.test.mjs'),
+          ]
+          old = 'military-glass-terminal-20260914'
+          new = 'military-glass-terminal-20260914-mobile-nav1'
+          for path in files:
+              text = path.read_text()
+              if old not in text:
+                  raise SystemExit(f'Expected cache key not found in {path}')
+              path.write_text(text.replace(old, new))
+          PY
+      - name: Validate runtime inventory and UI contracts
+        run: |
+          node --test tests/runtime/operational-ui-audit-remediation.test.mjs
+          node --test tests/runtime/active-runtime-budget.test.mjs
+          node --test tests/runtime/login-session-integrity.test.mjs
+          node --test tests/runtime/full-system-integrity.test.mjs
+      - name: Commit cache-busted asset contract
+        run: |
+          git config user.name ORION_Dev
+          git config user.email austentube@gmail.com
+          git add functions/_middleware.js docs/ACTIVE_RUNTIME_STACK.md docs/build-2/ACTIVE_RUNTIME_BUDGET.json tests/runtime/operational-ui-audit-remediation.test.mjs
+          git commit -m "Bust mobile menu stylesheet cache"
+          git push origin HEAD:hotfix/mobile-menu-cache-key

@@ -21,6 +21,22 @@ function attrs(text, attribute) {
   return [...text.matchAll(new RegExp(`${attribute}="([^"]+)"`, 'g'))].map(match => match[1]);
 }
 
+function controllerBlock(text, name) {
+  const marker = `window.${name} = Object.freeze({`;
+  const start = text.indexOf(marker);
+  assert.notEqual(start, -1, `${name} canonical contract is missing`);
+  const end = text.indexOf('\n    });', start);
+  assert.notEqual(end, -1, `${name} canonical contract is not statically bounded`);
+  return text.slice(start, end);
+}
+
+function assertControllerMethods(text, name, methods) {
+  const block = controllerBlock(text, name);
+  for (const method of methods) {
+    assert.match(block, new RegExp(`\\b${method}\\b\\s*(?::|,)`), `${name}.${method} is missing`);
+  }
+}
+
 test('all active middleware assets exist and every active JavaScript file parses', async () => {
   const middleware = await source('functions/_middleware.js');
   const styles = attrs(arrayBlock(middleware, 'UI_STYLESHEETS'), 'href').map(pathOnly);
@@ -52,20 +68,72 @@ test('all six operational routes and their critical DOM surfaces remain present'
   assert.match(squadron, /gate-squadron-page/);
 });
 
-test('canonical page and workflow owners remain exposed', async () => {
-  const contracts = [
-    ['public/js/gate-status-board-controller.js', /window\.GateStatusBoardController\s*=\s*Object\.freeze/],
-    ['public/js/gate-processing-controller.js', /window\.GateProcessingController\s*=\s*Object\.freeze/],
-    ['public/js/gate-bus-workflow-controller.js', /window\.GateBusWorkflowController\s*=\s*Object\.freeze/],
-    ['public/js/gate-input-page-controller.js', /window\.GateInputPageController\s*=\s*Object\.freeze/],
-    ['public/js/gate-archive-controller.js', /window\.GateArchiveController\s*=\s*Object\.freeze/],
-    ['public/js/gate-app-shell-controller.js', /window\.GateAppShell/],
-    ['public/js/gate-permission-guard.js', /window\.GatePermissionGuard/],
-    ['public/js/gate-premium-metrics-controller.js', /window\.GatePremiumMetricsController/]
-  ];
-  for (const [path, pattern] of contracts) {
-    assert.match(await source(path), pattern, `${path} lost its canonical global`);
-  }
+test('canonical workflow owners retain the required operational function contracts', async () => {
+  const status = await source('public/js/gate-status-board-controller.js');
+  assertControllerMethods(status, 'GateStatusBoardController', [
+    'render', 'scheduleRender', 'renderDormColumns', 'renderActiveBuses',
+    'updateBoardTimers', 'computeElapsedTimer', 'ensureTimerOwner',
+    'restartTimerOwner', 'repairSurfaces', 'diagnostics', 'getDorms', 'getActiveBuses'
+  ]);
+
+  const processing = await source('public/js/gate-processing-controller.js');
+  assertControllerMethods(processing, 'GateProcessingController', [
+    'render', 'scheduleRender', 'openDormModal', 'closeDormModal', 'openDorm',
+    'closeDorm', 'reopenDorm', 'openDormEditModal', 'closeDormEditModal',
+    'saveLoad', 'saveAssignedAirman', 'updateDorm', 'refresh'
+  ]);
+
+  const buses = await source('public/js/gate-bus-workflow-controller.js');
+  assertControllerMethods(buses, 'GateBusWorkflowController', [
+    'renderBusLog', 'openBusModal', 'closeBusModal', 'openLocalBusModal',
+    'closeLocalBusModal', 'confirmBusArrival', 'refresh', 'getEditableBuses'
+  ]);
+  assert.match(buses, /function createAirport\(/);
+  assert.match(buses, /function createLocal\(/);
+  assert.match(buses, /function updateBus\(/);
+
+  const input = await source('public/js/gate-input-page-controller.js');
+  assertControllerMethods(input, 'GateInputPageController', [
+    'renderBatchGrid', 'clearBatchRow', 'initializeWeekGroup', 'returnToBoard',
+    'refresh', 'collectReceivingWindows', 'validateReceivingWindows',
+    'preflightInitialization', 'findDuplicateDormIdentity', 'buildDormPayload', 'getRows'
+  ]);
+
+  const archive = await source('public/js/gate-archive-controller.js');
+  assertControllerMethods(archive, 'GateArchiveController', [
+    'buildArchivePayload', 'runSafeCloseout', 'initiateCloseout', 'renderArchives',
+    'openArchiveEditModal', 'closeArchiveEditModal', 'printArchiveReport',
+    'printCurrentSummaryReport', 'refresh'
+  ]);
+
+  const shell = await source('public/js/gate-app-shell-controller.js');
+  assertControllerMethods(shell, 'GateAppShell', [
+    'go', 'renderNav', 'allowedPages', 'pageIsAllowed', 'currentPage', 'setDrawer', 'sync'
+  ]);
+
+  const guard = await source('public/js/gate-permission-guard.js');
+  assertControllerMethods(guard, 'GatePermissionGuard', [
+    'role', 'isInstructor', 'allowedPagesForRole', 'pageIsAllowed', 'enforce'
+  ]);
+
+  const metrics = await source('public/js/gate-premium-metrics-controller.js');
+  assertControllerMethods(metrics, 'GatePremiumMetricsController', [
+    'sync', 'syncLocalClock', 'restartLiveClock'
+  ]);
+});
+
+test('login, session, and authentication surfaces remain reachable', async () => {
+  const redirect = await source('public/login.html');
+  const login = await source('public/login/index.html');
+  assert.match(redirect, /url=\/login\//);
+  assert.match(login, /id="login-form"/);
+  assert.match(login, /id="username"/);
+  assert.match(login, /id="password"/);
+  assert.match(login, /fetch\('\/api\/login'/);
+  assert.match(login, /\/css\/military-glass-terminal\.css/);
+  await exists('functions/api/login.js');
+  await exists('functions/api/logout.js');
+  await exists('functions/api/session.js');
 });
 
 test('backend CRUD, session, SAT, and archive endpoints remain present without changing persistence', async () => {
@@ -92,10 +160,17 @@ test('authoritative records refresh contract remains live and mutation-confirmed
 
 test('canonical CSS preserves desktop/mobile shell ownership and accepted phone workflows', async () => {
   const css = await source('public/css/military-glass-terminal.css');
+  const shell = await source('public/js/gate-app-shell-controller.js');
+  const mediaMatch = shell.match(/const MOBILE_MEDIA = '([^']+)'/);
+  assert.ok(mediaMatch, 'GateAppShell mobile media contract is missing');
+  assert.ok(css.includes(`@media ${mediaMatch[1]} {`), 'CSS mobile shell breakpoint must match GateAppShell');
+
   assert.match(css, /#mobile-menu-trigger,[\s\S]*#gate-mobile-nav-sheet,[\s\S]*display:\s*none/);
   assert.doesNotMatch(css, /#week-group-display,\s*#mobile-menu-trigger\s*\{\s*display:\s*inline-flex/);
-  assert.match(css, /@media \(max-width:\s*767px\)[\s\S]*#gate-mobile-nav-sheet\.gate-mobile-sheet-open[\s\S]*display:\s*grid/);
-  assert.match(css, /@media \(max-width:\s*767px\)[\s\S]*#main-nav-menu,[\s\S]*display:\s*none/);
+  assert.match(css, /#mobile-menu-trigger\s*\{[\s\S]*display:\s*inline-flex[\s\S]*visibility:\s*visible[\s\S]*pointer-events:\s*auto/);
+  assert.match(css, /gate-mobile-drawer-open #gate-mobile-menu-scrim\s*\{[\s\S]*display:\s*block[\s\S]*visibility:\s*visible[\s\S]*pointer-events:\s*auto/);
+  assert.match(css, /#gate-mobile-nav-sheet\.gate-mobile-sheet-open[\s\S]*display:\s*grid[\s\S]*visibility:\s*visible[\s\S]*pointer-events:\s*auto/);
+  assert.match(css, /#main-nav-menu,[\s\S]*display:\s*none[\s\S]*visibility:\s*hidden/);
   assert.match(css, /#page-airport #airport-form input,[\s\S]*font-size:\s*16px/);
   assert.match(css, /#page-airport \.surface:has\(#airport-bus-log-body\)[\s\S]*overflow-x:\s*auto/);
   assert.match(css, /button::before[\s\S]*content:\s*"BACK"/);
@@ -108,13 +183,14 @@ test('background is route-scoped and the global tactical grid is retired', async
   assert.doesNotMatch(css, /background-size:\s*32px 32px,\s*32px 32px/);
 });
 
-test('runtime workflows are keyed to the canonical stylesheet', async () => {
+test('runtime workflows are keyed to the canonical runtime instead of deleted CSS assets', async () => {
   for (const path of [
     '.github/workflows/runtime-record-integrity-tests.yml',
     '.github/workflows/build-2-audit-remediation-gate-1.yml'
   ]) {
     const workflow = await source(path);
     assert.match(workflow, /public\/css\/military-glass-terminal\.css/);
+    assert.match(workflow, /public\/js\/\*\*/);
     assert.doesNotMatch(workflow, /public\/css\/(?:gate-utilities-access|gate-premium-metrics|gate-ui-ownership-correction|gate-fullscreen-board-contract)\.css/);
   }
 });

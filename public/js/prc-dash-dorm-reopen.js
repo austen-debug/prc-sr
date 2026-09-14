@@ -51,18 +51,8 @@
   }
 
   function ensureStyles() {
-    if (document.getElementById('gate-dorm-reopen-styles')) return;
-
-    const style = document.createElement('style');
-    style.id = 'gate-dorm-reopen-styles';
-    style.textContent = '' +
-      '#dorm-edit-form .prc-dorm-edit-actions{display:flex!important;flex-wrap:wrap!important;gap:.5rem!important;justify-content:flex-end!important;align-items:center!important;}' +
-      '#dorm-edit-form .prc-dorm-edit-actions>button{box-sizing:border-box!important;min-width:88px!important;width:88px!important;min-height:36px!important;padding:.5rem .65rem!important;border-radius:.65rem!important;font-size:.72rem!important;font-weight:900!important;letter-spacing:.065em!important;line-height:1!important;text-align:center!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;}' +
-      '#reopen-dorm-btn{background:linear-gradient(135deg,rgba(37,99,235,.94),rgba(56,189,248,.84))!important;color:#fff!important;border:1px solid rgba(125,211,252,.52)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 8px 18px rgba(2,132,199,.16)!important;}' +
-      '#reopen-dorm-btn:hover{border-color:rgba(186,230,253,.82)!important;}' +
-      '#reopen-dorm-btn.hidden{display:none!important;}';
-
-    document.head.appendChild(style);
+    const canonical = document.querySelector('link[href^="/css/military-glass-terminal.css"]');
+    if (canonical) canonical.dataset.gateDormReopen = 'true';
   }
 
   function findFooter(form, saveButton) {

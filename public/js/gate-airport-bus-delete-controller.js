@@ -4,7 +4,6 @@
   'use strict';
 
   const MENU_ID = 'gate-airport-bus-context-menu';
-  const STYLE_ID = 'gate-airport-bus-context-menu-styles';
 
   let installed = false;
   let hooksRegistered = false;
@@ -45,83 +44,8 @@
   }
 
   function ensureStyles() {
-    if (document.getElementById(STYLE_ID)) return;
-
-    const style = document.createElement('style');
-    style.id = STYLE_ID;
-    style.textContent = `
-      #${MENU_ID} {
-        position: fixed;
-        z-index: 12050;
-        width: min(260px, calc(100vw - 24px));
-        padding: 8px;
-        border: 1px solid var(--border-strong, var(--border, #475569));
-        border-radius: 10px;
-        background: var(--bg-card-elevated, var(--surface, #111827));
-        color: var(--color-text-primary, var(--text, #f8fafc));
-        box-shadow: 0 18px 46px rgba(2, 6, 23, 0.34);
-        -webkit-backdrop-filter: blur(18px) saturate(1.18);
-        backdrop-filter: blur(18px) saturate(1.18);
-      }
-
-      #${MENU_ID}[aria-hidden='true'] {
-        display: none !important;
-      }
-
-      #${MENU_ID} .gate-airport-bus-context-label {
-        padding: 7px 9px 8px;
-        color: var(--color-text-muted, var(--text-muted, #94a3b8));
-        font-size: 0.68rem;
-        font-weight: 850;
-        line-height: 1.25;
-        letter-spacing: 0.055em;
-        text-transform: uppercase;
-        overflow-wrap: anywhere;
-      }
-
-      #${MENU_ID} [data-airport-bus-action='delete'] {
-        width: 100%;
-        min-height: 40px;
-        display: flex;
-        align-items: center;
-        justify-content: flex-start;
-        padding: 0 12px;
-        border: 1px solid color-mix(in srgb, var(--red, #dc2626) 58%, transparent);
-        border-radius: 7px;
-        background: color-mix(in srgb, var(--red, #dc2626) 14%, transparent);
-        color: var(--red, #dc2626);
-        font-size: 0.78rem;
-        font-weight: 900;
-        letter-spacing: 0.045em;
-        text-transform: uppercase;
-        cursor: pointer;
-      }
-
-      #${MENU_ID} [data-airport-bus-action='delete']:hover,
-      #${MENU_ID} [data-airport-bus-action='delete']:focus-visible {
-        background: var(--red, #dc2626);
-        border-color: var(--red, #dc2626);
-        color: #ffffff;
-        outline: none;
-      }
-
-      #${MENU_ID} [data-airport-bus-action='delete']:disabled {
-        cursor: wait;
-        opacity: 0.58;
-      }
-
-      body.theme-light #${MENU_ID} {
-        background: linear-gradient(180deg, #f8fafc 0%, #e4ebf2 100%);
-        border-color: #718399;
-        color: #10243d;
-        box-shadow: 0 18px 42px rgba(20, 49, 91, 0.24);
-      }
-
-      body.theme-light #${MENU_ID} .gate-airport-bus-context-label {
-        color: #42566d;
-      }
-    `;
-    document.head.appendChild(style);
+    const canonical = document.querySelector('link[href^="/css/military-glass-terminal.css"]');
+    if (canonical) canonical.dataset.gateAirportBusContextMenu = 'true';
   }
 
   function ensureMenu() {
@@ -132,13 +56,14 @@
 
     menu = document.createElement('div');
     menu.id = MENU_ID;
+    menu.className = 'gate-processing-context-menu hidden';
     menu.setAttribute('role', 'menu');
     menu.setAttribute('aria-label', 'Airport Bus Log actions');
     menu.setAttribute('aria-hidden', 'true');
     menu.dataset.owner = 'gate-airport-bus-delete-controller';
     menu.innerHTML = `
-      <div class="gate-airport-bus-context-label" data-airport-bus-context-label>Bus</div>
-      <button type="button" role="menuitem" data-airport-bus-action="delete">Delete Bus</button>
+      <div class="gate-processing-context-title gate-airport-bus-context-label" data-airport-bus-context-label>Bus</div>
+      <button type="button" class="gate-processing-context-action danger" role="menuitem" data-airport-bus-action="delete">Delete Bus</button>
     `;
     document.body.appendChild(menu);
     return menu;
@@ -146,7 +71,10 @@
 
   function hideMenu(options = {}) {
     const menu = document.getElementById(MENU_ID);
-    if (menu) menu.setAttribute('aria-hidden', 'true');
+    if (menu) {
+      menu.setAttribute('aria-hidden', 'true');
+      menu.classList.add('hidden');
+    }
     if (!options.preserveSelection) selectedBusId = '';
   }
 
@@ -155,6 +83,7 @@
     menu.style.left = `${Math.max(margin, clientX)}px`;
     menu.style.top = `${Math.max(margin, clientY)}px`;
     menu.setAttribute('aria-hidden', 'false');
+    menu.classList.remove('hidden');
 
     const rect = menu.getBoundingClientRect();
     const left = Math.min(Math.max(margin, clientX), Math.max(margin, window.innerWidth - rect.width - margin));

@@ -109,7 +109,7 @@ test('fullscreen Active Bus cards remain bounded non-stretching tiles', async ()
 test('middleware delivers one canonical stylesheet and no retired CSS assets', async () => {
   const middleware = await source('functions/_middleware.js');
 
-  assert.match(middleware, /military-glass-terminal\.css\?v=military-glass-terminal-20260914/);
+  assert.match(middleware, /military-glass-terminal\.css\?v=military-glass-terminal-v2-20260914/);
   assert.equal((middleware.match(/<link rel="stylesheet"/g) || []).length, 1);
   assert.doesNotMatch(middleware, /gate-ui-ownership-correction\.css|gate-fullscreen-board-contract\.css|gate-tablet-shell\.css|gate-mobile-corrective\.css/);
 });

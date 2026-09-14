@@ -130,7 +130,11 @@
     const normalizedFlags = recordDisplay()?.normalizeDormFlags?.(dorm);
     const band = normalizedFlags ? normalizedFlags.band : (dorm?.band === true || dorm?.band === 'true');
     const spaceForce = normalizedFlags ? normalizedFlags.spaceForce : (dorm?.space_force === true || dorm?.space_force === 'true' || dorm?.is_space_force === true || dorm?.is_space_force === 'true');
-    const borderClass = female ? 'border-female' : (spaceForce ? 'border-space-force' : (band ? 'border-band' : ''));
+    const borderClasses = [
+      female ? 'border-female' : '',
+      spaceForce ? 'border-space-force' : '',
+      !spaceForce && band ? 'border-band' : ''
+    ].filter(Boolean).join(' ');
     const closedClass = dorm.state === 'closed' ? 'dorm-closed' : '';
     const assignedAirmanHtml = dorm.assigned_airman
       ? `<div class="text-[10px] font-black uppercase tracking-wider text-muted mt-1 text-right">${esc(dorm.assigned_airman)}</div>`
@@ -140,7 +144,7 @@
       : (dorm.phase ? `<div class="text-sm font-bold mt-1" style="color:var(--green);">${esc(dorm.phase)}</div>` : '');
     const info = [esc(dorm.sdq), esc(dorm.section), esc(dorm.inter_sec)].filter(Boolean).join(' · ');
 
-    return `<div class="proc-card ${borderClass} ${closedClass}" data-component="processing-dorm-card" data-owner="gate-processing-controller" data-dorm-id="${esc(dorm.__backendId)}" data-state="${esc(dorm.state || 'empty')}" tabindex="0" role="button" aria-label="Open Processing controls for ${esc(dorm.dorm_name || 'dorm')}">
+    return `<div class="proc-card ${borderClasses} ${closedClass}" data-component="processing-dorm-card" data-owner="gate-processing-controller" data-dorm-id="${esc(dorm.__backendId)}" data-state="${esc(dorm.state || 'empty')}" tabindex="0" role="button" aria-label="Open Processing controls for ${esc(dorm.dorm_name || 'dorm')}">
       <div class="flex justify-between items-start mb-2 gap-3">
         <div class="font-black text-3xl">${esc(dorm.dorm_name || '')}</div>
         <div class="flex flex-col items-end">

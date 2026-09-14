@@ -58,6 +58,17 @@ test('active middleware assets match the governed runtime inventory and remain b
   assert.equal(budget.phase3BExitTargets.middlewareStatusBoardSourceRewriteRemoved, true);
 });
 
+test('active scripts do not inject secondary stylesheet authorities', async () => {
+  const middleware = await source('functions/_middleware.js');
+  const scripts = extractAttributeValues(extractArrayBlock(middleware, 'UI_HEAD_SCRIPTS'), 'src').map(pathOnly);
+
+  for (const asset of scripts) {
+    const contents = await source(`public${asset}`);
+    assert.doesNotMatch(contents, /createElement\(['"]style['"]\)/, `${asset} may not inject a runtime style block.`);
+    assert.doesNotMatch(contents, /createElement\(['"]link['"]\)[\s\S]{0,400}stylesheet/, `${asset} may not inject a runtime stylesheet.`);
+  }
+});
+
 test('no new corrective, patch, restoration, finalizer, cleanup, or stability asset is active', async () => {
   const middleware = await source('functions/_middleware.js');
   const budget = JSON.parse(await source('docs/build-2/ACTIVE_RUNTIME_BUDGET.json'));

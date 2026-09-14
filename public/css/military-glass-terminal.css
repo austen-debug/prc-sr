@@ -2410,7 +2410,7 @@ body.gate-fullscreen-board-active #page-board #active-buses .gate-component-acti
   }
 }
 
-@media (max-width: 767px) {
+@media (max-width: 767px), (pointer: coarse) and (max-width: 1024px) and (max-height: 560px) {
   :root {
     --mg-banner-h: 28px;
     --mg-nav-h: 60px;
@@ -2469,6 +2469,8 @@ body.gate-fullscreen-board-active #page-board #active-buses .gate-component-acti
     width: clamp(92px, 27vw, 116px);
     min-width: clamp(92px, 27vw, 116px);
     height: 44px;
+    visibility: visible;
+    pointer-events: auto;
   }
 
   #gate-mobile-menu-scrim {
@@ -2481,6 +2483,8 @@ body.gate-fullscreen-board-active #page-board #active-buses .gate-component-acti
 
   body.gate-mobile-drawer-open #gate-mobile-menu-scrim {
     display: block;
+    visibility: visible;
+    pointer-events: auto;
   }
 
   body.gate-app-shell-ready #main-nav-menu,

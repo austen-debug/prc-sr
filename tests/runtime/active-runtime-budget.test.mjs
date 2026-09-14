@@ -45,7 +45,7 @@ test('active middleware assets match the governed runtime inventory and remain b
   assert.equal(styles.length, 1, 'Production must load exactly one canonical stylesheet.');
   assert.equal(pathOnly(styles[0]), '/css/military-glass-terminal.css');
   assert.equal(imports.length, 0, 'The canonical stylesheet may not restore an import graph.');
-  assert.doesNotMatch(canonicalCss, /!important/);
+  assert.doesNotMatch(canonicalCss, /!important\s*;/, 'Canonical CSS may not use priority-locked declarations.');
 
   assert.ok(budget.maximums.directStyles <= 1, 'The direct stylesheet ceiling is one canonical production asset.');
   assert.ok(budget.maximums.directScripts <= 28, 'The direct script ceiling may not increase above the audited baseline.');

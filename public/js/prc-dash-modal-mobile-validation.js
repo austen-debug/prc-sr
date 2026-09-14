@@ -5,7 +5,6 @@
 (function () {
   'use strict';
 
-  const WORKSPACE_STYLESHEET = '/css/gate-processing-modal-workspace.css?v=closed-dorm-layout-20260729';
   const WRAPPED_UPDATE = Symbol.for('gate.processing.persistence.update.wrapped');
   const WRAPPED_DELETE = Symbol.for('gate.processing.persistence.delete.wrapped');
 
@@ -31,12 +30,8 @@
   }
 
   function ensureWorkspaceStylesheet() {
-    if (document.querySelector('link[data-gate-processing-modal-workspace="true"]')) return;
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = WORKSPACE_STYLESHEET;
-    link.dataset.gateProcessingModalWorkspace = 'true';
-    document.head.appendChild(link);
+    const canonical = document.querySelector('link[href^="/css/military-glass-terminal.css"]');
+    if (canonical) canonical.dataset.gateProcessingModalWorkspace = 'true';
   }
 
   function classifyProcessingModals() {

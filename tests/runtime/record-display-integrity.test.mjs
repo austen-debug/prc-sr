@@ -161,20 +161,20 @@ test('Status Board uses one canonical timer and direct-surface integrity owner',
   assert.match(middleware, /gate-status-board-controller\.js\?v=dorm-timer-record-lifecycle-20260722/);
 });
 
-test('shared overtime controller only paints Squadron timers', async () => {
+test('shared overtime controller only paints Squadron timers and delegates styling to canonical CSS', async () => {
   const overtime = await source('public/js/prc-dash-overtime-audit.js');
+  const css = await source('public/css/military-glass-terminal.css');
   const displayStart = overtime.indexOf('function updateTimerDisplays()');
   const displayEnd = overtime.indexOf('async function markDormOvertimeSent', displayStart);
   const display = overtime.slice(displayStart, displayEnd);
-  const styleStart = overtime.indexOf('function ensureTimerStyles()');
-  const styleEnd = overtime.indexOf('function elapsedTimer', styleStart);
-  const styles = overtime.slice(styleStart, styleEnd);
 
   assert.match(display, /#page-squadron \.timer-display\[data-opened\]/);
   assert.doesNotMatch(display, /querySelectorAll\('\.timer-display\[data-opened\]'\)/);
   assert.doesNotMatch(display, /#page-board|#page-processing/);
-  assert.match(styles, /#page-squadron \.timer-display/);
-  assert.doesNotMatch(styles, /#page-board|#page-processing/);
+  assert.match(css, /#page-squadron \.timer-display\.timer-yellow/);
+  assert.match(css, /#page-squadron \.timer-display\.timer-red/);
+  assert.doesNotMatch(overtime, /createElement\(['"]style['"]\)/);
+  assert.match(overtime, /military-glass-terminal\.css/);
   assert.match(overtime, /auditOpenDormsForOvertime/);
   assert.match(overtime, /processSoundEventsDeduped/);
 });

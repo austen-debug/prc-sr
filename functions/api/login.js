@@ -1,4 +1,5 @@
 const COOKIE_NAME = 'prc_sr_session';
+const SESSION_SECRET_FALLBACK = 'missing-secret';
 
 function jsonResponse(data, status = 200, extraHeaders = {}) {
   return new Response(JSON.stringify(data), {
@@ -30,6 +31,10 @@ function base64urlEncodeBytes(bytes) {
     .replace(/\+/g, '-')
     .replace(/\//g, '_')
     .replace(/=+$/g, '');
+}
+
+function resolveSessionSecret(env) {
+  return env.AUTH_SECRET || SESSION_SECRET_FALLBACK;
 }
 
 async function sign(value, secret) {
@@ -87,7 +92,7 @@ export async function onRequestPost({ request, env }) {
       role,
       iat: now,
       exp: now + (12 * 60 * 60 * 1000)
-    }, env.AUTH_SECRET);
+    }, resolveSessionSecret(env));
 
     return jsonResponse({
       isOk: true,

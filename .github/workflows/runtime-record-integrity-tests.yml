@@ -6,6 +6,7 @@ on:
       - 'functions/_middleware.js'
       - 'functions/api/**'
       - 'public/index.html'
+      - 'public/login/index.html'
       - 'public/css/military-glass-terminal.css'
       - 'public/js/**'
       - 'tests/runtime/**'
@@ -15,6 +16,7 @@ on:
       - 'functions/_middleware.js'
       - 'functions/api/**'
       - 'public/index.html'
+      - 'public/login/index.html'
       - 'public/css/military-glass-terminal.css'
       - 'public/js/**'
       - 'tests/runtime/**'
@@ -44,6 +46,9 @@ jobs:
 
       - name: Parse middleware
         run: node --input-type=module --check < functions/_middleware.js
+
+      - name: Login session integrity
+        run: node --test tests/runtime/login-session-integrity.test.mjs
 
       - name: Full system integrity
         run: node --test tests/runtime/full-system-integrity.test.mjs

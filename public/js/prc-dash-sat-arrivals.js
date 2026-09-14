@@ -336,8 +336,6 @@
   }
 
   function patchStatusBoardHeader() {
-    ensureHeaderStylesheet();
-
     const header = document.querySelector('#page-board .board-header');
     const metricArrived = document.getElementById('metric-arrived');
     const metricAirport = document.getElementById('metric-airport');
@@ -347,6 +345,8 @@
       syncHeaderValues();
       return;
     }
+
+    ensureHeaderStylesheet();
 
     if (!headerPatched && !header.classList.contains('prc-header-v3')) {
       const arrivedBlock = metricArrived.closest('.metric-block');

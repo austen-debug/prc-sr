@@ -88,6 +88,20 @@ test('Processing Space Force marker is bound to the canonical persistent card cl
   assert.match(css, /#page-processing \.proc-card\.border-space-force \.gate-dorm-flags\s*\{[\s\S]*?display:\s*none\s*!important/);
 });
 
+test('Processing emits combined designation classes without a post-render repair flash', async () => {
+  const processing = await source('public/js/gate-processing-controller.js');
+  const cardStart = processing.indexOf('function processingCard(dorm)');
+  const cardEnd = processing.indexOf('function renderProcessingPageCanonical', cardStart);
+  const card = processing.slice(cardStart, cardEnd);
+
+  assert.match(card, /const borderClasses\s*=\s*\[/);
+  assert.match(card, /female \? 'border-female' : ''/);
+  assert.match(card, /spaceForce \? 'border-space-force' : ''/);
+  assert.match(card, /!spaceForce && band \? 'border-band' : ''/);
+  assert.match(card, /proc-card \$\{borderClasses\} \$\{closedClass\}/);
+  assert.doesNotMatch(card, /const borderClass = female \? 'border-female' : \(spaceForce/);
+});
+
 test('Processing female highlight is pronounced and scoped to the Processing grid', async () => {
   const css = await source('public/css/prc-dash-dorm-cards.css');
   const match = css.match(/#page-processing #proc-dorm-grid \.proc-card\.border-female\s*\{([\s\S]*?)\}/);
@@ -145,6 +159,36 @@ test('Status Board uses one canonical timer and direct-surface integrity owner',
   assert.doesNotMatch(status, /activeBusObserver|bodyObserver|boardObserver/);
   assert.doesNotMatch(middleware, /gate-status-board-timer-visual-stability\.js/);
   assert.match(middleware, /gate-status-board-controller\.js\?v=dorm-timer-record-lifecycle-20260722/);
+});
+
+test('shared overtime controller only paints Squadron timers', async () => {
+  const overtime = await source('public/js/prc-dash-overtime-audit.js');
+  const displayStart = overtime.indexOf('function updateTimerDisplays()');
+  const displayEnd = overtime.indexOf('async function markDormOvertimeSent', displayStart);
+  const display = overtime.slice(displayStart, displayEnd);
+  const styleStart = overtime.indexOf('function ensureTimerStyles()');
+  const styleEnd = overtime.indexOf('function elapsedTimer', styleStart);
+  const styles = overtime.slice(styleStart, styleEnd);
+
+  assert.match(display, /#page-squadron \.timer-display\[data-opened\]/);
+  assert.doesNotMatch(display, /querySelectorAll\('\.timer-display\[data-opened\]'\)/);
+  assert.doesNotMatch(display, /#page-board|#page-processing/);
+  assert.match(styles, /#page-squadron \.timer-display/);
+  assert.doesNotMatch(styles, /#page-board|#page-processing/);
+  assert.match(overtime, /auditOpenDormsForOvertime/);
+  assert.match(overtime, /processSoundEventsDeduped/);
+});
+
+test('inactive legacy Status header does not request its compatibility stylesheet', async () => {
+  const sat = await source('public/js/prc-dash-sat-arrivals.js');
+  const patchStart = sat.indexOf('function patchStatusBoardHeader()');
+  const patchEnd = sat.indexOf('function registerHooksOnce()', patchStart);
+  const patch = sat.slice(patchStart, patchEnd);
+  const missingLegacyGuard = patch.indexOf('if (!header || !metricArrived || !metricAirport || !activeBuses)');
+  const stylesheetLoad = patch.indexOf('ensureHeaderStylesheet();');
+
+  assert.ok(missingLegacyGuard >= 0, 'legacy Status header presence guard must exist');
+  assert.ok(stylesheetLoad > missingLegacyGuard, 'compatibility stylesheet must load only after legacy header elements are confirmed');
 });
 
 test('airport bus persistence refreshes Status Board before auxiliary sound persistence', async () => {

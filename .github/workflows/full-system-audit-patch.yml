@@ -21,9 +21,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Align mobile shell presentation with application breakpoint
-        run: python3 tools/mobile_shell_alignment_patch.py
-      - name: Validate full-system repairs
+      - name: Restore accepted pre-consolidation responsive contracts
+        run: python3 tools/premerge_contract_restoration.py
+      - name: Validate reconstructed system contracts
         run: |
           node --test tests/runtime/full-system-integrity.test.mjs
           node --test tests/runtime/active-runtime-budget.test.mjs
@@ -32,10 +32,10 @@ jobs:
           node --test tests/runtime/processing-modal-record-persistence.test.mjs
           node --test tests/runtime/status-board-visual-stability.test.mjs
           if grep -RE '!important\s*;' public/css/military-glass-terminal.css; then exit 1; fi
-      - name: Commit audited mobile alignment
+      - name: Commit reconstructed canonical CSS
         run: |
           git config user.name ORION_Dev
           git config user.email austentube@gmail.com
           git add public/css/military-glass-terminal.css
-          git commit -m "Align mobile shell breakpoint and interaction state"
+          git commit -m "Restore pre-consolidation responsive contracts"
           git push origin HEAD:audit/full-system-integrity-20260914

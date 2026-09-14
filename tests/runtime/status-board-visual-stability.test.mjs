@@ -52,25 +52,23 @@ test('Status Board renders dorm states incrementally and exposes diagnostics', a
 });
 
 test('Status Board timer geometry is fixed-width and non-animated', async () => {
-  const utilities = await source('public/css/gate-utilities-access.css');
+  const css = await source('public/css/military-glass-terminal.css');
   const controller = await source('public/js/gate-status-board-controller.js');
 
-  assert.match(utilities, /#page-board \.gate-dorm-timer[\s\S]*inline-size:\s*7ch\s*!important/);
-  assert.match(utilities, /font-family:[\s\S]*ui-monospace/);
-  assert.match(utilities, /font-feature-settings:\s*"tnum" 1/);
-  assert.match(utilities, /letter-spacing:\s*0\s*!important/);
-  assert.match(utilities, /contain:\s*layout paint\s*!important/);
+  assert.match(css, /\.gate-dorm-timer\s*\{[\s\S]*width:\s*6\.35ch[\s\S]*min-width:\s*6\.35ch/);
+  assert.match(css, /\.gate-dorm-timer\s*\{[\s\S]*font-family:\s*"SFMono-Regular",\s*Consolas/);
+  assert.match(css, /\.font-tabular,[\s\S]*font-feature-settings:\s*"tnum" 1/);
+  assert.match(css, /\.timer-display,[\s\S]*animation:\s*none/);
   assert.match(controller, /timer\.classList\.remove\('timer-flash'\)/);
 });
 
-test('Status Board metrics scale to their own card containers', async () => {
-  const metricsCss = await source('public/css/gate-premium-metrics.css');
+test('Status Board metrics use fluid bounded typography inside the canonical grid', async () => {
+  const css = await source('public/css/military-glass-terminal.css');
 
-  assert.match(metricsCss, /container-type:\s*inline-size/);
-  assert.match(metricsCss, /container-name:\s*gate-status-metric/);
-  assert.match(metricsCss, /font-size:\s*clamp\(2rem, 13cqi, 5rem\)/);
-  assert.match(metricsCss, /font-size:\s*clamp\(1\.55rem, 14cqi, 2\.7rem\)/);
-  assert.match(metricsCss, /font-variant-numeric:\s*tabular-nums/);
+  assert.match(css, /#page-board \.gate-metrics-container\s*\{[\s\S]*grid-template-columns:\s*repeat\(4,\s*minmax\(0,\s*1fr\)\)/);
+  assert.match(css, /#page-board \.metric-value,[\s\S]*font-size:\s*clamp\(1\.8rem,\s*2\.4vw,\s*3rem\)/);
+  assert.match(css, /font-variant-numeric:\s*tabular-nums/);
+  assert.match(css, /@media \(max-width:\s*767px\)[\s\S]*metric-value[\s\S]*font-size:\s*clamp\(1\.65rem,\s*8vw,\s*2\.35rem\)/);
 });
 
 test('Metric synchronization is change-only and the Local clock is second-aligned', async () => {
@@ -131,11 +129,11 @@ test('Active timer ownership disables the legacy flashing interval', async () =>
 
 test('Runtime compositing guard no longer owns Status Board layers', async () => {
   const renderGuard = await source('public/js/gate-render-stability-fix.js');
-  const utilities = await source('public/css/gate-utilities-access.css');
+  const css = await source('public/css/military-glass-terminal.css');
 
   assert.doesNotMatch(renderGuard, /#page-board\.active/);
   assert.doesNotMatch(renderGuard, /#page-board[^`]*translateZ\(0\)/);
   assert.match(renderGuard, /statusBoardExcluded:\s*true/);
-  assert.match(utilities, /#page-board \.metric-card[\s\S]*backdrop-filter:\s*none\s*!important/);
-  assert.match(utilities, /#page-board \.gate-active-buses-block[\s\S]*backdrop-filter:\s*none\s*!important/);
+  assert.match(css, /#page-board \.metric-card\s*\{[\s\S]*overflow:\s*hidden/);
+  assert.match(css, /#page-board \.gate-active-buses-block\s*\{[\s\S]*display:\s*grid/);
 });

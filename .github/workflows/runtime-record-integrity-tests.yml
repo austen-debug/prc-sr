@@ -68,6 +68,9 @@ jobs:
       - name: Operational UI audit remediation
         run: node --test tests/runtime/operational-ui-audit-remediation.test.mjs
 
+      - name: MGT color hierarchy
+        run: node --test tests/runtime/mgt-color-hierarchy.test.mjs
+
       - name: Direct surface observer contract
         run: node --test --test-name-pattern='observer is limited' tests/runtime/status-board-visual-stability.test.mjs
 

@@ -7,6 +7,8 @@ import { fileURLToPath } from 'node:url';
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, '../..');
 const css = await readFile(resolve(root, 'public/css/military-glass-terminal.css'), 'utf8');
+const indexHtml = await readFile(resolve(root, 'public/index.html'), 'utf8');
+const processing = await readFile(resolve(root, 'public/js/gate-processing-controller.js'), 'utf8');
 
 function block(startNeedle, endNeedle) {
   const start = css.indexOf(startNeedle);
@@ -59,6 +61,15 @@ test('primary telemetry typography is white while status indicators remain green
   const openStatus = block('.gate-dorm-state-open .gate-dorm-status,', 'body.theme-light .gate-dorm-state-open .gate-dorm-status,');
   assert.match(openStatus, /var\(--mg-ok-rgb\)/);
   assert.match(openStatus, /color:\s*var\(--mg-ok\)/);
+});
+
+test('committed workflow actions use blue while semantic status badges remain green', () => {
+  assert.match(indexHtml, /onclick="saveAssignedAirman\(\)"[\s\S]*?style="background:var\(--blue\);"/);
+  assert.match(indexHtml, /onclick="saveLoad\(\)"[\s\S]*?style="background:var\(--blue\);"/);
+  assert.match(processing, /data-processing-action="open-dorm"[\s\S]*?style="background:var\(--blue\);">OPEN DORM/);
+
+  assert.match(processing, />OPEN<\/span>/);
+  assert.match(processing, /style="background:var\(--green\);">OPEN<\/span>/);
 });
 
 test('dorm progress uses nominal green, while female and service identity contracts remain intact', () => {

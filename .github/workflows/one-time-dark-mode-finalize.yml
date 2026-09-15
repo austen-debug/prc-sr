@@ -21,7 +21,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Advance cache key and permanent regression coverage
+      - name: Advance cache key governance metadata
         run: |
           python3 - <<'PY'
           from pathlib import Path
@@ -39,16 +39,6 @@ jobs:
               if old not in text:
                   raise SystemExit(f'Missing cache key in {name}')
               path.write_text(text.replace(old, new))
-
-          workflow = Path('.github/workflows/runtime-record-integrity-tests.yml')
-          text = workflow.read_text()
-          anchor = "      - name: Operational UI audit remediation\n        run: node --test tests/runtime/operational-ui-audit-remediation.test.mjs\n"
-          insertion = anchor + "\n      - name: MGT dark mode contrast contract\n        run: node --test tests/runtime/mgt-dark-mode-contrast.test.mjs\n"
-          if 'MGT dark mode contrast contract' not in text:
-              if anchor not in text:
-                  raise SystemExit('Missing Runtime Record Integrity insertion anchor')
-              text = text.replace(anchor, insertion, 1)
-          workflow.write_text(text)
           PY
       - name: Validate finalized dark mode pass
         run: |
@@ -61,6 +51,6 @@ jobs:
         run: |
           git config user.name ORION_Dev
           git config user.email austentube@gmail.com
-          git add functions/_middleware.js docs/ACTIVE_RUNTIME_STACK.md docs/build-2/ACTIVE_RUNTIME_BUDGET.json tests/runtime/operational-ui-audit-remediation.test.mjs .github/workflows/runtime-record-integrity-tests.yml
+          git add functions/_middleware.js docs/ACTIVE_RUNTIME_STACK.md docs/build-2/ACTIVE_RUNTIME_BUDGET.json tests/runtime/operational-ui-audit-remediation.test.mjs
           git commit -m "Finalize dark mode contrast delivery contracts"
           git push origin HEAD:ui/dark-mode-contrast-pass

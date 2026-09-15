@@ -1,0 +1,66 @@
+name: One-time finalize MGT dark mode contrast pass
+
+on:
+  push:
+    branches:
+      - ui/dark-mode-contrast-pass
+    paths:
+      - '.github/workflows/one-time-dark-mode-finalize.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ui/dark-mode-contrast-pass
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Advance cache key and permanent regression coverage
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          for name in [
+              'functions/_middleware.js',
+              'docs/ACTIVE_RUNTIME_STACK.md',
+              'docs/build-2/ACTIVE_RUNTIME_BUDGET.json',
+              'tests/runtime/operational-ui-audit-remediation.test.mjs',
+          ]:
+              path = Path(name)
+              text = path.read_text()
+              old = 'military-glass-terminal-20260915-bluewhite1'
+              new = 'military-glass-terminal-20260915-darkcontrast1'
+              if old not in text:
+                  raise SystemExit(f'Missing cache key in {name}')
+              path.write_text(text.replace(old, new))
+
+          workflow = Path('.github/workflows/runtime-record-integrity-tests.yml')
+          text = workflow.read_text()
+          anchor = "      - name: Operational UI audit remediation\n        run: node --test tests/runtime/operational-ui-audit-remediation.test.mjs\n"
+          insertion = anchor + "\n      - name: MGT dark mode contrast contract\n        run: node --test tests/runtime/mgt-dark-mode-contrast.test.mjs\n"
+          if 'MGT dark mode contrast contract' not in text:
+              if anchor not in text:
+                  raise SystemExit('Missing Runtime Record Integrity insertion anchor')
+              text = text.replace(anchor, insertion, 1)
+          workflow.write_text(text)
+          PY
+      - name: Validate finalized dark mode pass
+        run: |
+          node --test tests/runtime/mgt-dark-mode-contrast.test.mjs
+          node --test tests/runtime/mgt-color-hierarchy.test.mjs
+          node --test tests/runtime/operational-ui-audit-remediation.test.mjs
+          node --test tests/runtime/record-display-integrity.test.mjs
+          node --test tests/runtime/login-session-integrity.test.mjs
+      - name: Commit finalized delivery contracts
+        run: |
+          git config user.name ORION_Dev
+          git config user.email austentube@gmail.com
+          git add functions/_middleware.js docs/ACTIVE_RUNTIME_STACK.md docs/build-2/ACTIVE_RUNTIME_BUDGET.json tests/runtime/operational-ui-audit-remediation.test.mjs .github/workflows/runtime-record-integrity-tests.yml
+          git commit -m "Finalize dark mode contrast delivery contracts"
+          git push origin HEAD:ui/dark-mode-contrast-pass

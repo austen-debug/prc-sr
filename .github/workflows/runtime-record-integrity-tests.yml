@@ -71,6 +71,9 @@ jobs:
       - name: MGT color hierarchy
         run: node --test tests/runtime/mgt-color-hierarchy.test.mjs
 
+      - name: MGT dark mode contrast contract
+        run: node --test tests/runtime/mgt-dark-mode-contrast.test.mjs
+
       - name: Direct surface observer contract
         run: node --test --test-name-pattern='observer is limited' tests/runtime/status-board-visual-stability.test.mjs
 

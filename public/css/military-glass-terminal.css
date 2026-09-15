@@ -11,16 +11,16 @@
 :root {
   color-scheme: dark;
 
-  --mg-bg: #0a0d09;
-  --mg-bg-elevated: #101510;
-  --mg-surface: rgba(18, 25, 18, 0.78);
-  --mg-surface-strong: rgba(14, 20, 14, 0.94);
-  --mg-surface-soft: rgba(39, 51, 38, 0.42);
-  --mg-surface-muted: rgba(73, 88, 70, 0.18);
-  --mg-text: #edf4eb;
-  --mg-text-soft: #bec9ba;
-  --mg-text-muted: #83907f;
-  --mg-carbon: #121812;
+  --mg-bg: #121712;
+  --mg-bg-elevated: #1b221c;
+  --mg-surface: rgba(35, 44, 36, 0.86);
+  --mg-surface-strong: rgba(28, 36, 29, 0.96);
+  --mg-surface-soft: rgba(72, 88, 73, 0.52);
+  --mg-surface-muted: rgba(112, 132, 113, 0.24);
+  --mg-text: #f5f8f4;
+  --mg-text-soft: #d8e0d5;
+  --mg-text-muted: #a7b2a3;
+  --mg-carbon: #161c17;
   --mg-accent: #58b9dd;
   --mg-accent-rgb: 88, 185, 221;
   --mg-accent-deep: #2d7490;
@@ -31,16 +31,16 @@
   --mg-red: #ff5a54;
   --mg-yellow: #e7c34c;
   --mg-olive: #75835c;
-  --mg-border-glass: rgba(209, 229, 202, 0.17);
-  --mg-border-soft: rgba(209, 229, 202, 0.10);
-  --mg-border-strong: rgba(209, 229, 202, 0.30);
-  --mg-line: rgba(88, 185, 221, 0.12);
-  --mg-field: rgba(5, 9, 5, 0.54);
-  --mg-overlay: rgba(2, 5, 2, 0.72);
-  --mg-focus: rgba(88, 185, 221, 0.30);
-  --mg-shadow-soft: 0 12px 34px rgba(0, 0, 0, 0.28);
-  --mg-shadow-strong: 0 28px 72px rgba(0, 0, 0, 0.48);
-  --mg-inset-edge: inset 0 1px 0 rgba(255, 255, 255, 0.075);
+  --mg-border-glass: rgba(216, 232, 211, 0.26);
+  --mg-border-soft: rgba(216, 232, 211, 0.16);
+  --mg-border-strong: rgba(216, 232, 211, 0.42);
+  --mg-line: rgba(88, 185, 221, 0.18);
+  --mg-field: rgba(14, 19, 15, 0.72);
+  --mg-overlay: rgba(4, 7, 5, 0.68);
+  --mg-focus: rgba(88, 185, 221, 0.32);
+  --mg-shadow-soft: 0 12px 34px rgba(0, 0, 0, 0.22);
+  --mg-shadow-strong: 0 28px 72px rgba(0, 0, 0, 0.40);
+  --mg-inset-edge: inset 0 1px 0 rgba(255, 255, 255, 0.11);
 
   --mg-glass-blur: 14px;
   --mg-glass-saturate: 135%;
@@ -847,6 +847,22 @@ body.theme-light #page-board #active-buses .prc-bus-card-title {
   font-weight: 900;
   letter-spacing: .075em;
   text-transform: uppercase;
+}
+
+body:not(.theme-light) #page-board .metric-card,
+body:not(.theme-light) #page-board .gate-active-buses-block,
+body:not(.theme-light) #page-board .gate-dorm-card,
+body:not(.theme-light) #page-board .dorm-card {
+  background: rgba(40, 50, 42, .93);
+  border-color: rgba(216, 232, 211, .29);
+}
+
+body:not(.theme-light) #page-board #active-buses .bus-badge,
+body:not(.theme-light) #page-board #active-buses .prc-bus-card,
+body:not(.theme-light) #page-board #active-buses .gate-component-active-bus-card {
+  background: rgba(50, 63, 52, .98);
+  border-color: rgba(216, 232, 211, .36);
+  color: var(--mg-text);
 }
 
 /* --------------------------------------------------------------------------

@@ -21,48 +21,47 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Apply semantic color hierarchy
+      - name: Convert remaining committed actions to blue and bust CSS cache
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          path = Path('public/css/military-glass-terminal.css')
-          css = path.read_text()
 
+          index = Path('public/index.html')
+          text = index.read_text()
           replacements = {
-            '  --mg-accent: #39ff14;\n  --mg-accent-rgb: 57, 255, 20;\n  --mg-accent-deep: #1ba308;\n  --mg-blue: #58b9dd;':
-            '  --mg-accent: #58b9dd;\n  --mg-accent-rgb: 88, 185, 221;\n  --mg-accent-deep: #2d7490;\n  --mg-ok: #3fd08c;\n  --mg-ok-rgb: 63, 208, 140;\n  --mg-ok-deep: #21845c;\n  --mg-blue: #58b9dd;',
-            '  --mg-line: rgba(57, 255, 20, 0.13);': '  --mg-line: rgba(88, 185, 221, 0.12);',
-            '  --mg-focus: rgba(57, 255, 20, 0.34);': '  --mg-focus: rgba(88, 185, 221, 0.30);',
-            '  --green: var(--mg-accent-deep);\n  --green-bright: var(--mg-accent);': '  --green: var(--mg-ok-deep);\n  --green-bright: var(--mg-ok);',
-            '  --mg-accent: #4f603d;\n  --mg-accent-rgb: 79, 96, 61;\n  --mg-accent-deep: #465837;\n  --mg-blue: #3f6f80;':
-            '  --mg-accent: #2f6f8a;\n  --mg-accent-rgb: 47, 111, 138;\n  --mg-accent-deep: #245b73;\n  --mg-ok: #12805a;\n  --mg-ok-rgb: 18, 128, 90;\n  --mg-ok-deep: #0f6247;\n  --mg-blue: #3f6f80;',
-            '  --mg-line: rgba(79, 96, 61, 0.12);': '  --mg-line: rgba(47, 111, 138, 0.12);',
-            '  --mg-focus: rgba(79, 96, 61, 0.20);': '  --mg-focus: rgba(47, 111, 138, 0.20);',
-            '  background: rgba(79, 96, 61, .12);\n  color: #33402a;': '  background: rgba(47, 111, 138, .12);\n  color: var(--mg-text);',
-            '  color: var(--mg-accent);\n  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;': '  color: var(--mg-text);\n  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;',
-            '  color: #34452d;\n  text-shadow: none;': '  color: var(--mg-text);\n  text-shadow: none;',
-            '  background: var(--mg-accent);\n  box-shadow: 0 0 10px rgba(var(--mg-accent-rgb), .44);': '  background: var(--mg-ok);\n  box-shadow: 0 0 10px rgba(var(--mg-ok-rgb), .38);',
-            '  color: var(--mg-accent);\n  font-size: .94rem;': '  color: var(--mg-text);\n  font-size: .94rem;',
-            '  color: #34452d;\n}': '  color: var(--mg-text);\n}',
-            '  border-color: rgba(var(--mg-accent-rgb), .28);\n  color: var(--mg-accent);': '  border-color: rgba(var(--mg-ok-rgb), .30);\n  color: var(--mg-ok);',
-            '  color: #405237;\n}': '  color: var(--mg-ok-deep);\n}',
-            '  background: var(--mg-accent-deep);\n  transition: width 180ms ease;': '  background: var(--mg-ok-deep);\n  transition: width 180ms ease;',
-            '  background: var(--mg-accent);\n}\n\n.gate-dorm-card.is-over .gate-dorm-progress-fill,': '  background: var(--mg-ok);\n}\n\n.gate-dorm-card.is-over .gate-dorm-progress-fill,'
+            'onclick="saveAssignedAirman()"\n      class="px-4 py-2 rounded font-bold text-white text-xs"\n      style="background:var(--green);"':
+            'onclick="saveAssignedAirman()"\n      class="px-4 py-2 rounded font-bold text-white text-xs"\n      style="background:var(--blue);"',
+            '<button onclick="saveLoad()" class="px-4 py-2 rounded font-bold text-white" style="background:var(--green);">SAVE LOAD</button>':
+            '<button onclick="saveLoad()" class="px-4 py-2 rounded font-bold text-white" style="background:var(--blue);">SAVE LOAD</button>'
           }
-
           for old, new in replacements.items():
-            if old not in css:
-              raise SystemExit(f'Missing expected CSS contract:\n{old}')
-            css = css.replace(old, new, 1)
+            if old not in text:
+              raise SystemExit(f'Missing expected index action contract: {old[:80]}')
+            text = text.replace(old, new, 1)
+          index.write_text(text)
 
-          # Active route selection should use blue structure with readable white/off-white text.
-          old = '''  border-color: color-mix(in srgb, var(--mg-accent) 62%, var(--mg-border-glass));\n  background: color-mix(in srgb, var(--mg-accent) 13%, var(--mg-surface));\n  color: var(--mg-accent);\n}'''
-          new = '''  border-color: color-mix(in srgb, var(--mg-accent) 62%, var(--mg-border-glass));\n  background: color-mix(in srgb, var(--mg-accent) 15%, var(--mg-surface));\n  color: var(--mg-text);\n}'''
-          if old not in css:
-            raise SystemExit('Missing active navigation contract')
-          css = css.replace(old, new, 1)
+          controller = Path('public/js/gate-processing-controller.js')
+          text = controller.read_text()
+          old = 'style="background:var(--green);">OPEN DORM</button>'
+          new = 'style="background:var(--blue);">OPEN DORM</button>'
+          if old not in text:
+            raise SystemExit('Missing OPEN DORM action contract')
+          text = text.replace(old, new, 1)
+          controller.write_text(text)
 
-          path.write_text(css)
+          old_key = 'military-glass-terminal-20260914-mobile-nav1'
+          new_key = 'military-glass-terminal-20260915-bluewhite1'
+          cache_files = [
+            Path('functions/_middleware.js'),
+            Path('docs/ACTIVE_RUNTIME_STACK.md'),
+            Path('docs/build-2/ACTIVE_RUNTIME_BUDGET.json'),
+            Path('tests/runtime/operational-ui-audit-remediation.test.mjs')
+          ]
+          for path in cache_files:
+            body = path.read_text()
+            if old_key not in body:
+              raise SystemExit(f'Missing cache key in {path}')
+            path.write_text(body.replace(old_key, new_key))
           PY
       - name: Validate color hierarchy and runtime regressions
         run: |
@@ -71,10 +70,11 @@ jobs:
           node --test tests/runtime/record-display-integrity.test.mjs
           node --test tests/runtime/processing-modal-record-persistence.test.mjs
           node --test tests/runtime/login-session-integrity.test.mjs
-      - name: Commit canonical color hierarchy
+          node --test tests/runtime/full-system-integrity.test.mjs
+      - name: Commit interaction hierarchy and cache key
         run: |
           git config user.name ORION_Dev
           git config user.email austentube@gmail.com
-          git add public/css/military-glass-terminal.css
-          git commit -m "Restore soft blue and white MGT hierarchy"
+          git add public/index.html public/js/gate-processing-controller.js functions/_middleware.js docs/ACTIVE_RUNTIME_STACK.md docs/build-2/ACTIVE_RUNTIME_BUDGET.json tests/runtime/operational-ui-audit-remediation.test.mjs
+          git commit -m "Finish blue interaction hierarchy and bust CSS cache"
           git push origin HEAD:ui/mgt-blue-white-hierarchy

@@ -93,6 +93,8 @@
     if (saveButton) {
       saveButton.textContent = 'SAVE';
       saveButton.dataset.processingAssignmentSave = 'true';
+      saveButton.style.paddingInline = '0.5rem';
+      saveButton.style.whiteSpace = 'nowrap';
     }
 
     return input;

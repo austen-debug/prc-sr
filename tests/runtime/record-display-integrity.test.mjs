@@ -149,7 +149,7 @@ test('middleware loads the record display contract before all dorm consumers', a
   assert.ok(recordContract < processing);
   assert.ok(recordContract < input);
   assert.match(middleware, /gate-record-display-contract\.js\?v=record-display-integrity-20260714b/);
-  assert.match(middleware, /prc-dash-dorm-flag-validation\.js\?v=record-display-integrity-20260714b/);
+  assert.match(middleware, /prc-dash-dorm-flag-validation\.js\?v=processing-band-designator-20260915/);
 });
 
 test('Status Board uses one canonical timer and direct-surface integrity owner', async () => {

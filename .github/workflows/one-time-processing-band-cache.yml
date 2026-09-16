@@ -32,13 +32,20 @@ jobs:
               'functions/_middleware.js',
               'docs/ACTIVE_RUNTIME_STACK.md',
               'docs/build-2/ACTIVE_RUNTIME_BUDGET.json',
-              'tests/runtime/record-display-integrity.test.mjs',
           ]:
               path = Path(name)
               text = path.read_text()
               if old not in text:
                   raise SystemExit(f'Missing expected cache key in {name}')
               path.write_text(text.replace(old, new))
+
+          test_path = Path('tests/runtime/record-display-integrity.test.mjs')
+          test_text = test_path.read_text()
+          old_test = r'prc-dash-dorm-flag-validation\.js\?v=record-display-integrity-20260714b'
+          new_test = r'prc-dash-dorm-flag-validation\.js\?v=processing-band-designator-20260915'
+          if old_test not in test_text:
+              raise SystemExit('Missing escaped cache key in record-display-integrity test')
+          test_path.write_text(test_text.replace(old_test, new_test))
           PY
       - name: Validate Processing designator integrity
         run: |

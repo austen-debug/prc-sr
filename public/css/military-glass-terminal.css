@@ -811,7 +811,6 @@ body.theme-light .led-green {
   border-radius: var(--mg-radius-sm);
   -webkit-appearance: none;
   appearance: none;
-  text-align: left;
   background: color-mix(in srgb, var(--mg-surface-strong) 88%, transparent);
   color: var(--mg-text);
   text-align: left;

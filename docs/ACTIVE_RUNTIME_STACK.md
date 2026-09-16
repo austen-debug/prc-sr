@@ -44,7 +44,7 @@ Injected by middleware in current order:
 9. `/js/prc-dash-final-audit.js?v=record-display-integrity-20260714`
 10. `/js/gate-status-board-controller.js?v=dorm-timer-record-lifecycle-20260722`
 11. `/js/gate-processing-controller.js?v=record-display-integrity-20260714`
-12. `/js/prc-dash-dorm-flag-validation.js?v=record-display-integrity-20260714b`
+12. `/js/prc-dash-dorm-flag-validation.js?v=processing-band-designator-20260915`
 13. `/js/prc-dash-auditorium-location.js?v=processing-modal-record-binding-20260721`
 14. `/js/gate-bus-workflow-controller.js?v=phase-3-bus-workflow-20260709`
 15. `/js/gate-airport-bus-delete-controller.js?v=airport-bus-delete-20260714`

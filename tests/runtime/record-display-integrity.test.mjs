@@ -113,8 +113,11 @@ test('Processing female highlight is pronounced and scoped to the Processing gri
   assert.doesNotMatch(match[0], /#page-board|#page-squadron/);
 });
 
-test('dorm designation validation is identity-bound, card-scoped, and non-observing', async () => {
+test('dorm designation validation is identity-bound, card-scoped, non-observing, and does not duplicate Processing designators', async () => {
   const flags = await source('public/js/prc-dash-dorm-flag-validation.js');
+  const setFlagsStart = flags.indexOf('function setFlags(card, dorm)');
+  const setFlagsEnd = flags.indexOf('function validateCards()', setFlagsStart);
+  const setFlagsSource = flags.slice(setFlagsStart, setFlagsEnd);
 
   assert.match(flags, /cardDormId/);
   assert.match(flags, /dormById/);
@@ -124,6 +127,12 @@ test('dorm designation validation is identity-bound, card-scoped, and non-observ
   assert.doesNotMatch(flags, /dorms\[index\]/);
   assert.doesNotMatch(flags, /MutationObserver/);
   assert.doesNotMatch(flags, /getDormFromCard/);
+  assert.match(setFlagsSource, /const isProcessingCard = Boolean\(card\.closest\('#page-processing, #proc-dorm-grid'\)\)/);
+  assert.match(setFlagsSource, /const indicatorMode = isBoardCard \? 'banner' : \(isProcessingCard \? 'class' : 'chip'\)/);
+  const processingGuard = setFlagsSource.indexOf('if (!shouldShowIndicator || isProcessingCard) return;');
+  const chipInjection = setFlagsSource.indexOf('const html = flagHtml(flags);');
+  assert.ok(processingGuard >= 0, 'Processing cards must stop before validator chip injection');
+  assert.ok(chipInjection > processingGuard, 'Processing guard must run before generic chip injection');
 });
 
 test('middleware loads the record display contract before all dorm consumers', async () => {
@@ -140,7 +149,7 @@ test('middleware loads the record display contract before all dorm consumers', a
   assert.ok(recordContract < processing);
   assert.ok(recordContract < input);
   assert.match(middleware, /gate-record-display-contract\.js\?v=record-display-integrity-20260714b/);
-  assert.match(middleware, /prc-dash-dorm-flag-validation\.js\?v=record-display-integrity-20260714b/);
+  assert.match(middleware, /prc-dash-dorm-flag-validation\.js\?v=processing-band-designator-20260915/);
 });
 
 test('Status Board uses one canonical timer and direct-surface integrity owner', async () => {

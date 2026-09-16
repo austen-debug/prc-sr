@@ -91,21 +91,24 @@
     applyCardClasses(card, flags);
 
     const isBoardCard = Boolean(card.closest('#page-board, #page-squadron'));
-    const signature = `${dorm.__backendId || ''}|${isBoardCard ? 'banner' : 'chip'}|${flags.female}|${flags.band}|${flags.spaceForce}`;
+    const isProcessingCard = Boolean(card.closest('#page-processing, #proc-dorm-grid'));
+    const indicatorMode = isBoardCard ? 'banner' : (isProcessingCard ? 'class' : 'chip');
+    const signature = `${dorm.__backendId || ''}|${indicatorMode}|${flags.female}|${flags.band}|${flags.spaceForce}`;
     const shouldShowIndicator = flags.band || flags.spaceForce;
     const existingFlags = card.querySelector('.gate-dorm-flags');
     const existingBanner = card.querySelector('.gate-dorm-top-banner');
 
     if (card.dataset.dormFlagSig === signature) {
       if (isBoardCard && (existingBanner || !shouldShowIndicator)) return;
-      if (!isBoardCard && (existingFlags || !shouldShowIndicator)) return;
+      if (isProcessingCard && !existingFlags && !existingBanner) return;
+      if (!isBoardCard && !isProcessingCard && (existingFlags || !shouldShowIndicator)) return;
     }
 
     card.dataset.dormFlagSig = signature;
     existingFlags?.remove();
     existingBanner?.remove();
 
-    if (!shouldShowIndicator) return;
+    if (!shouldShowIndicator || isProcessingCard) return;
     if (isBoardCard) {
       const banner = bannerHtml(flags);
       if (banner) card.insertAdjacentHTML('afterbegin', banner);

@@ -118,10 +118,19 @@ test('fullscreen Active Bus cards remain bounded non-stretching tiles', async ()
   assert.match(css, /gate-component-active-bus-card[\s\S]*max-width:\s*clamp\(280px,\s*17vw,\s*320px\)/);
 });
 
+test('Processing BAND designator uses rounded-rectangle geometry', async () => {
+  const css = await source('public/css/military-glass-terminal.css');
+  const marker = css.match(/#page-processing \.proc-card\.border-band > \.text-xl\.font-black\.font-tabular::before\s*\{([\s\S]*?)\}/);
+  assert.ok(marker, 'Processing BAND marker selector must exist');
+  assert.match(marker[1], /content:\s*\"BAND\"/);
+  assert.match(marker[1], /border-radius:\s*var\(--mg-radius-sm\)/);
+  assert.doesNotMatch(marker[1], /border-radius:\s*var\(--mg-radius-pill\)/);
+});
+
 test('middleware delivers one canonical stylesheet and no retired CSS assets', async () => {
   const middleware = await source('functions/_middleware.js');
 
-  assert.match(middleware, /military-glass-terminal\.css\?v=military-glass-terminal-20260915-darkcontrast1/);
+  assert.match(middleware, /military-glass-terminal\.css\?v=military-glass-terminal-20260915-bandshape1/);
   assert.equal((middleware.match(/<link rel="stylesheet"/g) || []).length, 1);
   assert.doesNotMatch(middleware, /gate-ui-ownership-correction\.css|gate-fullscreen-board-contract\.css|gate-tablet-shell\.css|gate-mobile-corrective\.css/);
 });

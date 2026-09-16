@@ -1225,7 +1225,7 @@ body.theme-light #page-processing #proc-dorm-grid .proc-card.border-female {
   margin-right: .4rem;
   padding: .22rem .4rem;
   border: 1px solid color-mix(in srgb, var(--gate-flag-band-green) 44%, transparent);
-  border-radius: var(--mg-radius-pill);
+  border-radius: var(--mg-radius-sm);
   color: var(--gate-flag-band-green);
   font-size: .58rem;
   font-weight: 900;

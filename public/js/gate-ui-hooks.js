@@ -149,21 +149,20 @@
   }, 250);
 })();
 
-// PORT CLEAR owns its event, instructor action, individual acknowledgements, and board cue.
-// It uses the existing shared record refresh and lifecycle bus; no second polling loop or asset.
+// PORT CLEAR: shared instructor event, per-session acknowledgement, and per-day board cue.
+// Reuse the existing data SDK's shared refresh and lifecycle hooks; do not add another poller.
 (function () {
   'use strict';
 
   const OWNER = 'gate-port-clear';
   const EVENT_TYPE = 'port_clear';
   const ACK_PREFIX = 'gate_port_clear_ack_';
-  const TIME_ZONE = 'America/Chicago';
-  const fmt = new Intl.DateTimeFormat('en-US', {
-    timeZone: TIME_ZONE, year: 'numeric', month: '2-digit', day: '2-digit',
+  const WINDOW_FIELDS = ['receiving_day_one_start', 'receiving_day_one_end', 'receiving_day_two_start', 'receiving_day_two_end'];
+  const clock = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Chicago', year: 'numeric', month: '2-digit', day: '2-digit',
     hour: '2-digit', minute: '2-digit', hourCycle: 'h23'
   });
   let installed = false;
-  let hooksRegistered = false;
   let sending = false;
   let expirationTimer = null;
   let scheduledExpiration = 0;
@@ -183,13 +182,11 @@
   }
 
   function offsetAt(instant) {
-    const parts = Object.fromEntries(fmt.formatToParts(new Date(instant)).map(part => [part.type, part.value]));
-    const wallTime = Date.UTC(+parts.year, +parts.month - 1, +parts.day, +parts.hour, +parts.minute);
-    return wallTime - instant;
+    const parts = Object.fromEntries(clock.formatToParts(new Date(instant)).map(part => [part.type, part.value]));
+    return Date.UTC(+parts.year, +parts.month - 1, +parts.day, +parts.hour, +parts.minute) - instant;
   }
 
-  // datetime-local values are entered in the receiving center's Central timezone,
-  // independent of the viewing device's timezone and daylight-saving offset.
+  // Receiving windows use the reception center's Central time, regardless of device timezone.
   function toEpoch(value) {
     const text = String(value || '').trim();
     if (!text) return NaN;
@@ -202,15 +199,31 @@
     return instant;
   }
 
-  function dayTwoValue(group = weekGroup()) {
-    if (!group) return '';
-    const scoped = records().find(record => record?.type === 'config' && record.key === `receiving_day_two_start:${group}`);
-    if (scoped) return String(scoped.value || '');
-    const dorm = records().find(record => record?.type === 'dorm' && record.week_group === group && record.receiving_day_two_start);
-    return String(dorm?.receiving_day_two_start || '');
+  function windowValue(field, group = weekGroup()) {
+    if (!group || !WINDOW_FIELDS.includes(field)) return '';
+    const config = records().find(record => record?.type === 'config' && record.key === `${field}:${group}`);
+    if (config) return String(config.value || '');
+    const dorm = records().find(record => record?.type === 'dorm' && record.week_group === group && record[field]);
+    return String(dorm?.[field] || '');
+  }
+
+  function receivingWindows(group = weekGroup()) {
+    return [
+      { day: 'one', startField: 'receiving_day_one_start', endField: 'receiving_day_one_end' },
+      { day: 'two', startField: 'receiving_day_two_start', endField: 'receiving_day_two_end' }
+    ].map(definition => {
+      const startValue = windowValue(definition.startField, group);
+      const endValue = windowValue(definition.endField, group);
+      return { day: definition.day, startValue, endValue, start: toEpoch(startValue), end: toEpoch(endValue) };
+    }).filter(window => Number.isFinite(window.start) && Number.isFinite(window.end) && window.end > window.start);
+  }
+
+  function windowAt(time = Date.now(), group = weekGroup()) {
+    return receivingWindows(group).find(window => time >= window.start && time < window.end) || null;
   }
 
   function latestEvent(group = weekGroup()) {
+    if (!group) return null;
     return records()
       .filter(record => record?.type === 'audit_event' && record.event_type === EVENT_TYPE &&
         record.week_group === group && record.entity_id === group &&
@@ -220,11 +233,14 @@
 
   function activeEvent() {
     const event = latestEvent();
-    if (!event) return null;
-    const cutoff = toEpoch(dayTwoValue() || event.metadata?.receiving_day_two_start);
+    const window = windowAt();
+    if (!event || !window) return null;
     const sent = Date.parse(event.created_at || '');
-    if (!Number.isFinite(cutoff) || !Number.isFinite(sent) || sent >= cutoff || Date.now() >= cutoff) return null;
-    return { event, cutoff };
+    if (!Number.isFinite(sent) || sent < window.start || sent >= window.end) return null;
+    // Older Day 1 records without a day marker are assigned by their send timestamp.
+    const eventDay = event.metadata?.receiving_day || windowAt(sent)?.day;
+    if (eventDay !== window.day) return null;
+    return { event, cutoff: window.end, day: window.day };
   }
 
   function ackKey(id) { return `${ACK_PREFIX}${id}`; }
@@ -249,8 +265,7 @@
   }
 
   function ensureAirportControl() {
-    const page = document.getElementById('page-airport');
-    const content = page?.querySelector('.max-w-3xl');
+    const content = document.querySelector('#page-airport .max-w-3xl');
     if (!content) return;
     let section = document.getElementById('gate-port-clear-action');
     if (!section) {
@@ -366,25 +381,20 @@
   }
 
   function sync() {
-    ensureAirportControl();
     const active = activeEvent();
+    ensureAirportControl();
     renderBoard(Boolean(active));
     scheduleExpiry(active?.cutoff || 0);
-    if (active && !isAcknowledged(active.event.__backendId)) {
-      showDialog('alert', active.event.__backendId);
-    }
-    if (!active && document.getElementById('gate-port-clear-dialog')?.dataset.mode === 'confirm' &&
-        (!Number.isFinite(toEpoch(dayTwoValue())) || Date.now() >= toEpoch(dayTwoValue()))) hideDialog();
+    if (active && !isAcknowledged(active.event.__backendId)) showDialog('alert', active.event.__backendId);
+    // If a receiving period ends while the confirmation is open, require a new send attempt.
+    if (!windowAt() && document.getElementById('gate-port-clear-dialog')?.dataset.mode === 'confirm') hideDialog();
   }
 
   function requestSend() {
     if (!isInstructor() || sending) return;
-    const value = dayTwoValue();
-    const cutoff = toEpoch(value);
     if (!weekGroup()) { message('Initialize a Week Group before sending PORT CLEAR.', true); return; }
-    if (!Number.isFinite(cutoff)) { message('Set Receiving Day Two Start on the Input page before sending PORT CLEAR.', true); return; }
-    if (Date.now() >= cutoff) { message('Receiving Day Two has already started; PORT CLEAR was not sent.', true); return; }
-    if (activeEvent()) { message('PORT CLEAR is already active.', false); return; }
+    if (!windowAt()) { message('PORT CLEAR can only be sent within a configured Receiving Day One or Day Two window.', true); return; }
+    if (activeEvent()) { message('PORT CLEAR is already active for this receiving day.', false); return; }
     showDialog('confirm');
   }
 
@@ -392,10 +402,9 @@
     if (!isInstructor() || sending) return;
     hideDialog();
     const group = weekGroup();
-    const value = dayTwoValue(group);
-    const cutoff = toEpoch(value);
-    if (!group || !Number.isFinite(cutoff) || Date.now() >= cutoff || activeEvent()) {
-      message('PORT CLEAR was not sent. Check the active Week Group and Receiving Day Two Start.', true);
+    const window = windowAt();
+    if (!group || !window || activeEvent()) {
+      message('PORT CLEAR was not sent. Check the active Week Group and current receiving day.', true);
       return;
     }
     sending = true;
@@ -404,7 +413,7 @@
       const result = await window.dataSdk.create({
         type: 'audit_event', event_type: EVENT_TYPE, entity_type: 'week_group', entity_id: group,
         week_group: group, prior_version: 0, resulting_version: 0,
-        metadata: { receiving_day_two_start: value }
+        metadata: { receiving_day: window.day, receiving_day_end: window.endValue }
       });
       if (!result?.isOk || result.data?.created_by_role !== 'instructor') {
         throw new Error(result?.error || 'PORT CLEAR could not be sent.');
@@ -418,23 +427,24 @@
     }
   }
 
-  async function updateSharedDayTwo(event) {
-    if (event.target?.id !== 'receiving_day_two_start' || !isInstructor()) return;
+  async function updateSharedWindow(event) {
+    const field = event.target?.id;
+    if (!WINDOW_FIELDS.includes(field) || !isInstructor()) return;
     const group = String(document.getElementById('wg-batch-input')?.value || '').trim().toUpperCase();
     if (!group || group !== weekGroup()) return;
-    const key = `receiving_day_two_start:${group}`;
+    const key = `${field}:${group}`;
     const value = String(event.target.value || '');
     const existing = records().find(record => record?.type === 'config' && record.key === key);
     try {
       const result = existing
         ? await window.dataSdk.update({ ...existing, value })
         : await window.dataSdk.create({ type: 'config', key, value, week_group: group });
-      if (!result?.isOk) throw new Error(result?.error || 'Unable to save Receiving Day Two time.');
+      if (!result?.isOk) throw new Error(result?.error || 'Unable to save receiving window.');
       sync();
     } catch (error) {
       const status = document.getElementById('init-status-msg');
       if (status) {
-        status.textContent = error?.message || 'Unable to share Receiving Day Two time.';
+        status.textContent = error?.message || 'Unable to share receiving window.';
         status.className = 'text-sm text-red-500';
       }
     }
@@ -443,19 +453,18 @@
   function install() {
     if (installed) return;
     installed = true;
-    document.addEventListener('change', event => { void updateSharedDayTwo(event); });
+    document.addEventListener('change', event => { void updateSharedWindow(event); });
     document.addEventListener('visibilitychange', () => { if (!document.hidden) sync(); });
     window.addEventListener('focus', sync);
     window.addEventListener('pageshow', sync);
-    if (!hooksRegistered && typeof window.registerGateHook === 'function') {
-      window.registerGateHook('afterRenderAll', sync);
-      window.registerGateHook('afterDataChanged', sync);
-      window.registerGateHook('afterPageChange', sync);
-      window.registerGateHook('afterCloseout', sync);
-      hooksRegistered = true;
+    if (typeof window.registerGateHook === 'function') {
+      ['afterRenderAll', 'afterDataChanged', 'afterPageChange', 'afterCloseout'].forEach(name => window.registerGateHook(name, sync));
     }
     sync();
-    window.GatePortClear = Object.freeze({ refresh: sync, activeEvent, dayTwoValue, toEpoch });
+    window.GatePortClear = Object.freeze({
+      refresh: sync, activeEvent, windowAt, receivingWindows, toEpoch,
+      dayTwoValue: () => windowValue('receiving_day_two_start')
+    });
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', install, { once: true });

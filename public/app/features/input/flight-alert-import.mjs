@@ -16,9 +16,10 @@ function allowed() { return window.GatePermissionGuard?.isInstructor?.() === tru
 function initialized() {
   const wg = weekGroup();
   if (!wg) return false;
-  const records = typeof window.allData !== 'undefined' ? window.allData : null;
-  // A missing record cache cannot authorize an import; the base initializer owns authoritative write checks.
-  return !Array.isArray(records) || records.some(item => item?.type === 'dorm' && String(item.week_group || '').trim().toUpperCase() === wg);
+  const records = typeof allData !== 'undefined' ? allData : window.allData;
+  // An unavailable record cache cannot authorize an import; initialization remains the existing owner's responsibility.
+  if (!Array.isArray(records)) return true;
+  return String(window.getActiveWG?.() || '').trim().toUpperCase() === wg || records.some(item => item?.type === 'dorm' && String(item.week_group || '').trim().toUpperCase() === wg);
 }
 function activeRows() { return rows().filter(r => Object.values(r).some((v,i) => i && v !== '' && v !== false && v !== 'male' && v != null) && (r.sdq || r.dorm_name || r.load)); }
 function validation() { return validateFlightAlertRows(rows().filter(r => r.sdq || r.sec || r.dorm_name || r.load), state.published); }
@@ -26,6 +27,7 @@ function disabledReason() {
   if (!allowed()) return 'Instructor access is required.';
   if (!weekGroup()) return 'Enter a Week Group ID before importing.';
   if (initialized()) return 'This Week Group is already initialized. Flight Alert import is unavailable.';
+  if ($('init-wg-btn')?.disabled) return 'Initialization is in progress; Flight Alert import is unavailable.';
   return '';
 }
 function element(tag, className='', text='') {
@@ -37,10 +39,6 @@ function element(tag, className='', text='') {
 function notice(text, danger=false) {
   const target = $('gate-import-message');
   if (target) { target.textContent = text; target.hidden = !text; target.style.color = danger ? 'var(--red)' : 'var(--text)'; }
-}
-function currentFlags() {
-  const result = validation();
-  return result.issues.filter(i=>i.code !== 'inter_sec');
 }
 function toolbar() {
   const page = $('page-input');
@@ -67,6 +65,7 @@ function toolbar() {
 function renderSummary() {
   const el = $('gate-import-summary');
   if (!el) return;
+  if (document.activeElement?.id === 'gate-import-total') return;
   if (!state.imported) { el.innerHTML = ''; return; }
   const current = validation();
   const missing = current.issues.filter(i=>i.code === 'inter_sec').length;

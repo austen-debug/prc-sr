@@ -41,8 +41,10 @@ test('all active middleware assets exist and every active JavaScript file parses
   const middleware = await source('functions/_middleware.js');
   const styles = attrs(arrayBlock(middleware, 'UI_STYLESHEETS'), 'href').map(pathOnly);
   const scripts = attrs(arrayBlock(middleware, 'UI_HEAD_SCRIPTS'), 'src').map(pathOnly);
+  const budget = JSON.parse(await source('docs/build-2/ACTIVE_RUNTIME_BUDGET.json'));
   assert.deepEqual(styles, ['/css/military-glass-terminal.css']);
-  assert.equal(scripts.length, 27);
+  assert.deepEqual(scripts, budget.currentDirectScripts.map(pathOnly));
+  assert.ok(scripts.length <= budget.maximums.directScripts, 'Active scripts exceed the governed ceiling.');
   for (const asset of [...styles, ...scripts]) await exists(`public${asset}`);
   for (const asset of scripts) {
     const result = spawnSync(process.execPath, ['--check', resolve(root, `public${asset}`)], { encoding: 'utf8' });

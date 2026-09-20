@@ -9,6 +9,7 @@ on:
       - 'public/login/index.html'
       - 'public/css/military-glass-terminal.css'
       - 'public/js/**'
+      - 'public/app/features/input/flight-alert-*.mjs'
       - 'tests/runtime/**'
       - '.github/workflows/runtime-record-integrity-tests.yml'
   pull_request:
@@ -19,6 +20,7 @@ on:
       - 'public/login/index.html'
       - 'public/css/military-glass-terminal.css'
       - 'public/js/**'
+      - 'public/app/features/input/flight-alert-*.mjs'
       - 'tests/runtime/**'
       - '.github/workflows/runtime-record-integrity-tests.yml'
 
@@ -52,6 +54,9 @@ jobs:
 
       - name: Full system integrity
         run: node --test tests/runtime/full-system-integrity.test.mjs
+
+      - name: Flight Alert parser and extraction
+        run: node --test tests/runtime/flight-alert-import.test.mjs
 
       - name: Record display integrity
         run: node --test tests/runtime/record-display-integrity.test.mjs

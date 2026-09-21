@@ -59,7 +59,7 @@ function middlewareFixture() {
       async all() { return { results: native.prepare(sql).all(...values) }; }
     };
   }};
-  const env = { DB, GATE_PERSISTENCE_ENABLED:'true', AUTH_SECRET:'fixture-only' };
+  const env = { DB, GATE_PERSISTENCE_ENABLED:'true', AUTH_SECRET:'test-only-signer-for-persistence-contract-123456789' };
   function signedRequest(method, path, payload) {
     const body = Buffer.from(JSON.stringify({ role:'instructor', exp:Date.now()+60000 })).toString('base64url');
     const signature = createHmac('sha256', env.AUTH_SECRET).update(body).digest('base64url');

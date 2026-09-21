@@ -70,7 +70,7 @@ function middlewareFixture() {
   }
   async function call(method, path, payload, next) {
     const request = signedRequest(method,path,payload);
-    const context = { request, env, data:{}, next: next || (() => new Response('passed')) };
+    const context = { request, env, data:{}, next: () => next ? next(request,context.data) : new Response('passed') };
     return apiMiddleware(context);
   }
   return { native, env, call };
@@ -80,10 +80,8 @@ test('completed closeout is verified by its endpoint, not duplicated middleware 
   const f = middlewareFixture();
   f.native.prepare("INSERT INTO gate_week_groups(cycle_id,week_group,state,archive_id,closed_at) VALUES('cycle','WG26050','closed','missing-archive','2026-09-21T01:00:00Z')").run();
   f.native.prepare("INSERT INTO gate_workflow_operations(operation_id,idempotency_key,action,status,cycle_id,request_fingerprint,archive_id) VALUES('op','closeout:cycle','closeout','completed','cycle','cycle:1','missing-archive')").run();
-  const response = await f.call('POST','/api/persistence',{action:'closeout',cycle_id:'cycle'}, function () {
-    return onRequestPost({request:this?.request, env:f.env, data:{session:{role:'instructor'}}});
-  }.bind({ request: f.call.request }));
-  // Use a fresh correctly signed request for an end-to-end handler invocation.
+  const response = await f.call('POST','/api/persistence',{action:'closeout',cycle_id:'cycle'},
+    (request,data) => onRequestPost({request,env:f.env,data}));
   assert.equal(response.status,503);
   const body = await response.json();
   assert.equal(body.code,'persistence_unavailable');

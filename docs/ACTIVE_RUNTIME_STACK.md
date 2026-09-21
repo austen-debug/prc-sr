@@ -12,7 +12,7 @@ The active GATE application is not defined only by `public/index.html`. Cloudfla
 ```text
 Direct stylesheets: 1
 Imported stylesheets: 0
-Direct scripts: 27
+Direct scripts: 28 (Flight Alert feature branch; not deployed)
 Visible Build 2 routes: 0
 Hidden Build 2 runtime observers: 1
 ```
@@ -31,7 +31,7 @@ The former multi-file CSS stack and its corrective/import cascade are retired fr
 
 ## Active JavaScript load path
 
-Injected by middleware in current order:
+Injected by middleware in current order on the Flight Alert feature branch:
 
 1. `/js/gate-record-display-contract.js?v=record-display-integrity-20260714b`
 2. `/js/gate-component-contracts.js`
@@ -51,15 +51,16 @@ Injected by middleware in current order:
 16. `/js/gate-input-page-controller.js?v=record-display-integrity-20260714`
 17. `/js/gate-archive-controller.js?v=phase-8c-report-wording-20260709`
 18. `/js/gate-permission-guard.js?v=phase-1a-permission-guard-20260709`
-19. `/js/gate-tablet-shell-classifier.js?v=tablet-shell-20260714`
-20. `/js/gate-app-shell-controller.js?v=phase-7g-viewport-watermark-20260709`
-21. `/js/gate-fullscreen-board-layout-controller.js?v=fullscreen-board-containment-20260714b`
-22. `/js/prc-dash-modal-mobile-validation.js?v=phase-7e-ui-ownership-20260709`
-23. `/js/gate-render-stability-fix.js?v=status-board-compositing-retired-20260721`
-24. `/js/prc-dash-processing-loaded-summary.js`
-25. `/js/gate-premium-metrics-controller.js?v=metric-live-clock-20260722`
-26. `/js/prc-dash-overtime-audit.js`
-27. `/js/gate-status-board-shadow-controller.js?v=phase-3a-status-board-shadow-20260715`
+19. `/app/features/input/flight-alert-import.mjs?v=flight-alert-import-20260920` (new draft-only Input enhancement)
+20. `/js/gate-tablet-shell-classifier.js?v=tablet-shell-20260714`
+21. `/js/gate-app-shell-controller.js?v=phase-7g-viewport-watermark-20260709`
+22. `/js/gate-fullscreen-board-layout-controller.js?v=fullscreen-board-containment-20260714b`
+23. `/js/prc-dash-modal-mobile-validation.js?v=phase-7e-ui-ownership-20260709`
+24. `/js/gate-render-stability-fix.js?v=status-board-compositing-retired-20260721`
+25. `/js/prc-dash-processing-loaded-summary.js`
+26. `/js/gate-premium-metrics-controller.js?v=metric-live-clock-20260722`
+27. `/js/prc-dash-overtime-audit.js`
+28. `/js/gate-status-board-shadow-controller.js?v=phase-3a-status-board-shadow-20260715`
 
 ## Operational owners
 
@@ -72,6 +73,7 @@ Injected by middleware in current order:
 - `GateAuditoriumLocationController` owns field hydration and card augmentation for Auditorium Location. It binds the modal field to the active dorm ID and delegates persistence through `GateProcessingController.updateDorm`; it does not call the Data SDK directly.
 - `GateBusWorkflowController` owns airport and local-arrival bus workflows.
 - `GateInputPageController` owns Input and Week Group initialization presentation.
+- `flight-alert-import.mjs` enhances the existing Input controller's in-memory draft grid only. It consumes the controller's public row and render interface; it does not own routes, server writes, initialization, operational records, or new stylesheet authority. PDF extraction and parsing are pure/local adapters. This feature-branch candidate is not accepted for production until real-document and live UI testing pass.
 - `GateArchiveController` owns Archives, reporting, print/PDF, and closeout presentation.
 
 `prc-dash-modal-mobile-validation.js` and the legacy Status-header compatibility path no longer create stylesheet requests. They reuse the canonical CSS asset while retaining their existing lifecycle and interaction behavior.
@@ -105,7 +107,7 @@ It may not:
 
 ## Build 2 runtime boundary
 
-Only the narrow Phase 3A bridge is injected. Build 2 shell/routes, write workflows, synchronization ownership, service worker, and fixture/evidence tooling remain staged and are not directly loaded as visible application owners by middleware.
+The Flight Alert import is a candidate enhancement to the existing Build 1 Input owner, not a visible Build 2 route or production Build 2 write workflow. The Phase 3A observer remains the only active Build 2 shadow bridge. Build 2 shell/routes, write workflows, synchronization ownership, service worker, and fixture/evidence tooling remain staged and are not loaded as application owners by middleware.
 
 ## Runtime-bloat controls
 
@@ -144,6 +146,7 @@ PENDING — sustained live shadow evidence
 PENDING — manual route accessibility, responsive, and fullscreen evidence
 PENDING — external deployment and rollback verification
 PENDING — Status Board legacy owner retirement
+PENDING — Flight Alert real-document and browser acceptance; draft PR only
 NOT AUTHORIZED — Phase 3B controlled test surface
 NOT AUTHORIZED — Build 1 Status Board retirement
 ```

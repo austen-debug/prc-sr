@@ -61,7 +61,8 @@ function middlewareFixture() {
   }};
   const env = { DB, GATE_PERSISTENCE_ENABLED:'true', AUTH_SECRET:'fixture-only' };
   function signedRequest(method, path, payload) {
-    const body = Buffer.from(JSON.stringify({ role:'instructor', exp:Date.now()+60000 })).toString('base64url');
+    const now = Date.now();
+    const body = Buffer.from(JSON.stringify({ username:'fixture-instructor', role:'instructor', iat:now, exp:now+60000 })).toString('base64url');
     const signature = createHmac('sha256', env.AUTH_SECRET).update(body).digest('base64url');
     return new Request(`https://gate.example${path}`, {
       method, headers:{ Cookie:`prc_sr_session=${body}.${signature}`, 'Content-Type':'application/json' },

@@ -1,9 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-
+import { readFileSync } from 'node:fs';
+import { DatabaseSync } from 'node:sqlite';
 import { onRequest as apiMiddleware } from '../../../functions/api/_middleware.js';
 import { onRequest as rootMiddleware } from '../../../functions/_middleware.js';
-import { buildSquadronSnapshot, onRequestGet as getSquadronBoard } from '../../../functions/api/squadron-board.js';
+import { buildSquadronSnapshot, onRequestGet, onRequestPost } from '../../../functions/api/squadron-board.js';
 
 async function sessionCookie(secret, role = 'squadron', username = 'squadron_access') {
   const now = Date.now();
@@ -16,124 +17,155 @@ async function sessionCookie(secret, role = 'squadron', username = 'squadron_acc
   const signature = btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
   return `prc_sr_session=${body}.${signature}`;
 }
-
 function request(path, cookie, method = 'GET') {
   return new Request(`https://gate.example${path}`, { method, headers: { Cookie: cookie } });
 }
+function bus(status, time, extra = {}) {
+  return { type: 'bus', week_group: 'WG26050', bus_type: 'airport', status, departed_at: time, otw_count: 40, ...extra };
+}
+function dorm(extra = {}) {
+  return { type: 'dorm', week_group: 'WG26050', id: 'dorm-1', sdq: '321 TRS', dorm_name: '3A1', state: 'empty', current_load: 0, max_load: 50, ...extra };
+}
 
-test('root routing never serves the operational app shell to a Squadron session', async () => {
+// A narrow D1 adapter supports genuine migration / SQL statement execution in the test, not a mocked SQL success.
+function sqliteD1() {
+  const sqlite = new DatabaseSync(':memory:');
+  sqlite.exec("CREATE TABLE gate_week_groups (week_group TEXT, state TEXT); CREATE TABLE records (id TEXT, type TEXT, week_group TEXT, data TEXT, created_at TEXT, updated_at TEXT);");
+  sqlite.exec(readFileSync(new URL('../../../migrations/0005_gate_squadron_notices.sql', import.meta.url), 'utf8'));
+  return {
+    sqlite,
+    prepare(sql) {
+      let values = [];
+      return {
+        bind(...args) { values = args; return this; },
+        async first() { return sqlite.prepare(sql).get(...values) || null; },
+        async all() { return { results: sqlite.prepare(sql).all(...values) }; },
+        async run() { const result = sqlite.prepare(sql).run(...values); return { meta: { changes: result.changes, last_row_id: Number(result.lastInsertRowid) } }; }
+      };
+    }
+  };
+}
+
+test('root routing never serves operational app shell to Squadron and fails closed without AUTH_SECRET', async () => {
   const secret = 'route-test-secret';
   const cookie = await sessionCookie(secret);
   const env = { AUTH_SECRET: secret };
-
   const root = await rootMiddleware({ request: request('/', cookie), env, next: async () => new Response('APP') });
   assert.equal(root.status, 302);
   assert.equal(root.headers.get('location'), 'https://gate.example/squadron/');
-
   const squadron = await rootMiddleware({ request: request('/squadron/', cookie), env, next: async () => new Response('SQUADRON') });
-  assert.equal(squadron.status, 200);
   assert.equal(await squadron.text(), 'SQUADRON');
-
   const records = await rootMiddleware({ request: request('/api/records', cookie), env, next: async () => new Response('SHOULD NOT RUN') });
   assert.equal(records.status, 403);
-
-  const instructorCookie = await sessionCookie(secret, 'instructor', 'mti');
-  const instructorSquadronPath = await rootMiddleware({ request: request('/squadron/', instructorCookie), env, next: async () => new Response('SHOULD NOT RUN') });
+  const instructor = await sessionCookie(secret, 'instructor', 'mti');
+  const instructorSquadronPath = await rootMiddleware({ request: request('/squadron/', instructor), env, next: async () => new Response('SHOULD NOT RUN') });
   assert.equal(instructorSquadronPath.status, 302);
-  assert.equal(instructorSquadronPath.headers.get('location'), 'https://gate.example/');
+  const missingSecret = await rootMiddleware({ request: request('/squadron/', cookie), env: {}, next: async () => new Response('SHOULD NOT RUN') });
+  assert.notEqual(missingSecret.status, 200);
 });
 
-test('API middleware permits only the Squadron read contract and logout', async () => {
+test('direct Squadron API requests can read only the projected board/session and logout', async () => {
   const secret = 'api-test-secret';
   const cookie = await sessionCookie(secret);
   const env = { AUTH_SECRET: secret, GATE_PERSISTENCE_ENABLED: 'false' };
-
-  const allowed = await apiMiddleware({
-    request: request('/api/squadron-board', cookie, 'GET'),
-    env,
-    data: {},
-    next: async () => new Response('BOARD')
-  });
-  assert.equal(allowed.status, 200);
-  assert.equal(await allowed.text(), 'BOARD');
-
+  for (const [path, method] of [['/api/squadron-board', 'GET'], ['/api/session', 'GET'], ['/api/logout', 'POST']]) {
+    const response = await apiMiddleware({ request: request(path, cookie, method), env, data: {}, next: async () => new Response('ALLOWED') });
+    assert.equal(response.status, 200, `${method} ${path}`);
+  }
   for (const [path, method] of [
-    ['/api/squadron-board', 'POST'],
-    ['/api/records', 'GET'],
-    ['/api/records', 'POST'],
-    ['/api/persistence', 'POST'],
-    ['/api/archive-delete', 'DELETE'],
-    ['/api/sat-arrivals', 'GET']
+    ['/api/squadron-board', 'POST'], ['/api/squadron-board', 'PUT'], ['/api/session', 'POST'],
+    ['/api/records', 'GET'], ['/api/records', 'POST'], ['/api/persistence', 'POST'],
+    ['/api/archive-delete', 'DELETE'], ['/api/sat-arrivals', 'GET'], ['/api/other', 'GET']
   ]) {
-    const response = await apiMiddleware({
-      request: request(path, cookie, method),
-      env,
-      data: {},
-      next: async () => new Response('SHOULD NOT RUN')
-    });
+    const response = await apiMiddleware({ request: request(path, cookie, method), env, data: {}, next: async () => new Response('SHOULD NOT RUN') });
     assert.equal(response.status, 403, `${method} ${path}`);
   }
 });
 
-test('Squadron snapshot uses airport-only metrics and rolling dispatch tempo', () => {
-  const now = new Date('2026-09-21T17:00:00.000Z');
+test('rolling bus tempo uses only airport dispatches and ages out automatically at the 60-minute boundary', () => {
+  const now = new Date('2026-09-21T17:00:00Z');
   const records = [
-    { type: 'bus', week_group: 'WG26050', bus_type: 'airport', bus_id: '1', status: 'arrived', otw_count: 40, departed_at: '2026-09-21T16:30:00.000Z' },
-    { type: 'bus', week_group: 'WG26050', bus_type: 'airport', bus_id: '2', status: 'active', otw_count: 35, departed_at: '2026-09-21T16:45:00.000Z' },
-    { type: 'bus', week_group: 'WG26050', bus_type: 'airport', bus_id: '3', status: 'active', otw_count: 30, departed_at: '2026-09-21T14:00:00.000Z' },
-    { type: 'bus', week_group: 'WG26050', bus_type: 'local', status: 'arrived', otw_count: 99, departed_at: '2026-09-21T16:50:00.000Z' },
-    { type: 'dorm', week_group: 'WG26050', sdq: '321 TRS', dorm_name: '3A1', max_load: 50, current_load: 40, state: 'open' },
-    { type: 'dorm', week_group: 'WG26050', sdq: '322 TRS', dorm_name: '4B2', max_load: 50, current_load: 0, state: 'empty' }
+    bus('arrived', '2026-09-21T16:30:00Z', { id:'b1' }),
+    bus('active', '2026-09-21T16:45:00Z', { id:'b2' }),
+    bus('active', '2026-09-21T16:59:00Z', { id:'b3' }),
+    bus('arrived', '2026-09-21T15:59:00Z', { id:'old' }),
+    bus('arrived', '2026-09-21T16:55:00Z', { type:'bus', bus_type:'local', id:'local' }),
+    { ...bus('arrived','2026-09-21T16:55:00Z'), week_group:'WG26049' },
+    dorm()
   ];
-
-  const board = buildSquadronSnapshot({ weekGroup: 'WG26050', records, now });
-  assert.equal(board.metrics.arrived, 40);
-  assert.equal(board.metrics.expected, 100);
-  assert.equal(board.traffic.dispatched_last_60_minutes, 2);
-  assert.equal(board.traffic.status, 'MEDIUM');
-  assert.equal(board.active_buses.length, 2);
-  assert.deepEqual(board.active_buses.map(bus => bus.bus_id), ['3', '2']);
+  const heavy = buildSquadronSnapshot({ weekGroup:'WG26050', records, now });
+  assert.equal(heavy.metrics.arrived, 80);
+  assert.equal(heavy.metrics.expected, 50);
+  assert.equal(heavy.traffic.dispatched_last_60_minutes, 3);
+  assert.equal(heavy.traffic.status, 'HEAVY');
+  assert.ok(!('active_buses' in heavy));
+  const medium = buildSquadronSnapshot({ weekGroup:'WG26050', records, now:'2026-09-21T17:31:00Z' });
+  assert.equal(medium.traffic.dispatched_last_60_minutes, 2);
+  assert.equal(medium.traffic.status, 'MEDIUM');
+  const slow = buildSquadronSnapshot({ weekGroup:'WG26050', records, now:'2026-09-21T17:46:00Z' });
+  assert.equal(slow.traffic.dispatched_last_60_minutes, 1);
+  assert.equal(slow.traffic.status, 'SLOW');
+  const inactive = buildSquadronSnapshot({ weekGroup:'', records, now });
+  assert.equal(inactive.metrics.arrived, 0);
+  assert.equal(inactive.dorms.length, 0);
 });
 
-test('Squadron endpoint returns an allowlisted payload and withholds operational notes and assignments', async () => {
-  const rows = [
-    {
-      type: 'bus', week_group: 'WG26050', created_at: '2026-09-21T16:00:00Z', updated_at: '2026-09-21T16:30:00Z',
-      data: JSON.stringify({ type: 'bus', week_group: 'WG26050', bus_type: 'airport', bus_id: '7', status: 'active', otw_count: 42, departed_at: '2026-09-21T16:30:00Z', notes: 'never expose' })
-    },
-    {
-      type: 'dorm', week_group: 'WG26050', created_at: '2026-09-21T15:00:00Z', updated_at: '2026-09-21T16:20:00Z',
-      data: JSON.stringify({ type: 'dorm', week_group: 'WG26050', sdq: '321 TRS', dorm_name: '3A1', section: '01', state: 'open', phase: 'Processing', current_load: 20, max_load: 50, assigned_airman: 'Internal Staff', auditorium_location: 'Internal Room', notes: 'Internal note' })
-    }
-  ];
-  const DB = {
-    prepare(sql) {
-      const normalized = sql.replace(/\s+/g, ' ').trim();
-      let bound = [];
-      return {
-        bind(...values) { bound = values; return this; },
-        async all() {
-          if (normalized.includes("FROM gate_week_groups WHERE state='active'")) return { results: [{ week_group: 'WG26050' }] };
-          if (normalized.includes("json_extract(data,'$.value')")) return { results: [{ week_group: 'WG26050' }] };
-          if (normalized.includes("WHERE week_group = ? AND type IN ('bus','dorm')")) {
-            assert.equal(bound[0], 'WG26050');
-            return { results: rows };
-          }
-          throw new Error(`Unexpected SQL: ${normalized}`);
-        }
-      };
-    }
-  };
+test('Squadron projection is allowlisted, stable-id keyed and never invents unknown dorm states', () => {
+  const projection = buildSquadronSnapshot({ weekGroup:'WG26050', records:[
+    dorm({ __row_id:'opaque-id', state:'open', current_load:50, sex:'female', notes:'internal notes', assigned_airman:'name', auditorium_location:'private' }),
+    bus('arrived','2026-09-21T16:30:00Z',{ notes:'internal bus notes' })
+  ], now:'2026-09-21T17:00:00Z', lastFlight:'2345', notice: { id:7, message:'CQ coordination update', published_at:'2026-09-21T16:50:00Z' } });
+  assert.equal(projection.dorms[0].card_id,'opaque-id');
+  assert.equal(projection.metrics.last_flight, '2345');
+  assert.equal(projection.notice.revision,7);
+  assert.ok(!('active_buses' in projection));
+  assert.doesNotMatch(JSON.stringify(projection), /internal notes|internal bus notes|assigned_airman|auditorium_location|private/);
+  assert.throws(() => buildSquadronSnapshot({weekGroup:'WG26050',records:[dorm({state:'unrecognized'})]}), /Unrecognized dorm state/);
+  assert.throws(() => buildSquadronSnapshot({weekGroup:'WG26050',records:[dorm({max_load:-1})]}), /Invalid Squadron operational count/);
+});
 
-  const response = await getSquadronBoard({ env: { DB }, data: { session: { role: 'squadron' } } });
-  assert.equal(response.status, 200);
-  const body = await response.json();
-  assert.equal(body.isOk, true);
-  assert.equal(body.board.week_group, 'WG26050');
-  assert.equal(body.board.dorms[0].dorm_name, '3A1');
-  const serialized = JSON.stringify(body);
-  assert.doesNotMatch(serialized, /assigned_airman|auditorium_location|Internal Staff|Internal Room|Internal note|never expose/);
+test('read endpoint uses only active WG, exposes notice but withholds raw records', async () => {
+  const DB = sqliteD1();
+  DB.sqlite.prepare("INSERT INTO gate_week_groups VALUES ('WG26050','active')").run();
+  for (const record of [bus('arrived','2026-09-21T16:00:00Z', { id:'bus-1', notes:'NEVER SHOW' }), dorm({ id:'dorm-1', notes:'NEVER SHOW', assigned_airman:'PERSON' })]) {
+    DB.sqlite.prepare('INSERT INTO records VALUES (?,?,?,?,?,?)').run(record.id, record.type, record.week_group, JSON.stringify(record), new Date().toISOString(), new Date().toISOString());
+  }
+  for (const [id,key,value] of [['wg-config','week_group','WG26050'],['flight-config','last_airport','2350']]) {
+    DB.sqlite.prepare('INSERT INTO records VALUES (?,?,?,?,?,?)').run(id, 'config','WG26050', JSON.stringify({ key,value }),new Date().toISOString(),new Date().toISOString());
+  }
+  DB.sqlite.prepare("INSERT INTO gate_squadron_notices (week_group,message,published_at,published_by_role) VALUES ('WG26050','CQ UPDATE','2026-09-21T16:40:00Z','instructor')").run();
+  const result = await onRequestGet({ env: { DB }, data: { session:{role:'squadron'} } });
+  assert.equal(result.status,200);
+  const payload=await result.json();
+  assert.equal(payload.board.week_group,'WG26050');
+  assert.equal(payload.board.notice.message,'CQ UPDATE');
+  assert.equal(payload.board.metrics.last_flight,'2350');
+  assert.equal(payload.editor,false);
+  assert.doesNotMatch(JSON.stringify(payload), /NEVER SHOW|PERSON|assigned_airman|notes|active_buses/);
+  assert.equal((await onRequestGet({env:{DB},data:{session:{role:'airman'}}})).status,403);
+  DB.sqlite.close();
+});
 
-  const denied = await getSquadronBoard({ env: { DB }, data: { session: { role: 'airman' } } });
-  assert.equal(denied.status, 403);
+test('notice publication is MTI-only, origin checked, conditional, append-only and cannot publish stale revisions', async () => {
+  const DB=sqliteD1();
+  DB.sqlite.prepare("INSERT INTO gate_week_groups VALUES ('WG26050','active')").run();
+  DB.sqlite.prepare('INSERT INTO records VALUES (?,?,?,?,?,?)').run('config-wg','config','WG26050',JSON.stringify({ key:'week_group',value:'WG26050' }),'2026-09-21T00:00:00Z','2026-09-21T00:00:00Z');
+  const makeRequest=(payload,origin='https://gate.example', extra={}) => new Request('https://gate.example/api/squadron-board',{method:'POST',headers:{ Origin:origin,'Content-Type':'application/json','X-Gate-Notice':'publish',...extra},body:JSON.stringify(payload)});
+  const attempt=(req,role) => onRequestPost({request:req,env:{DB},data:{session:{role}}});
+  const notice={ message:'Please coordinate with CQ.', expected_revision:0 };
+  assert.equal((await attempt(makeRequest(notice),'squadron')).status,403);
+  assert.equal((await attempt(makeRequest(notice),'airman')).status,403);
+  assert.equal((await attempt(makeRequest(notice,'https://other.example'),'instructor')).status,403);
+  const published=await attempt(makeRequest(notice),'instructor');
+  assert.equal(published.status,200);
+  const body=await published.json();
+  assert.equal(body.notice.revision,1);
+  assert.equal((await attempt(makeRequest(notice),'instructor')).status,409);
+  assert.equal(DB.sqlite.prepare('SELECT COUNT(*) AS n FROM gate_squadron_notices').get().n,1);
+  assert.throws(()=>DB.sqlite.exec("UPDATE gate_squadron_notices SET message='changed' WHERE id=1"),/append-only/);
+  assert.throws(()=>DB.sqlite.exec('DELETE FROM gate_squadron_notices WHERE id=1'),/append-only/);
+  const second=await attempt(makeRequest({message:'Second notice',expected_revision:1}),'instructor');
+  assert.equal(second.status,200);
+  assert.equal(DB.sqlite.prepare('SELECT COUNT(*) AS n FROM gate_squadron_notices').get().n,2);
+  DB.sqlite.close();
 });

@@ -91,10 +91,8 @@ jobs:
           grep -Eq 'Gate C — Backend versioning and append-only audit events[[:space:]]+COMPLETE' docs/build-2/PROGRAM_INTENT_BASELINE.md
           grep -Eq 'Foundation Alignment Gate C[[:space:]]+COMPLETE' docs/build-2/INDEX.md
           grep -Eq 'Production Build 2 route activation[[:space:]]+NOT AUTHORIZED|Phase 3A — Status Board Shadow Migration' docs/build-2/INDEX.md
-          if grep -q 'SQUADRON_USERNAME' functions/api/login.js; then
-            echo 'Gate C must not activate Squadron login.'
-            exit 1
-          fi
+          # Gate C invariants remain; Squadron authentication is explicitly authorized by later Packages 04–05.
+          node --test tests/build-2/server/squadron-security.test.mjs
 
       - name: Validate Build 2 feature isolation
         run: |

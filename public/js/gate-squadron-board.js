@@ -1,11 +1,13 @@
-// Dedicated Squadron display: this is the sole renderer and data-fetch owner.
-// All data comes from /api/squadron-board, never /api/records or browser storage.
+// Dedicated Squadron display: sole renderer and owner of its restricted data endpoint.
 (() => {
   'use strict';
   const byId = id => document.getElementById(id);
   const setText = (id,value) => { const el=byId(id); const text=String(value); if(el && el.textContent!==text) el.textContent=text; };
   const node = (tag,className,text) => { const el=document.createElement(tag); if(className) el.className=className; if(text!==undefined) el.textContent=String(text); return el; };
-  const clock = value => value ? new Intl.DateTimeFormat('en-US',{timeZone:'America/Chicago',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(value)) : '—';
+  const clock = value => {
+    const at=Date.parse(value||'');
+    return Number.isFinite(at) ? new Intl.DateTimeFormat('en-US',{timeZone:'America/Chicago',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(at)) : '—';
+  };
   const elapsed = value => {
     const at=Date.parse(value||'');
     if(!Number.isFinite(at)) return '—';
@@ -13,7 +15,6 @@
     return `${String(Math.floor(seconds/60)).padStart(2,'0')}:${String(seconds%60).padStart(2,'0')}`;
   };
   let pending=false, lastBuses='', lastColumns=new Map(), previous=null;
-
   function connection(text,state='live') {
     const el=byId('sq-connection');
     setText('sq-connection',text);
@@ -93,7 +94,7 @@
     }
   }
   function render(data) {
-    // No full-page HTML replacement: unchanged rows, tooltips and focus remain intact.
+    // Unchanged rows, tooltips and focus remain intact between refreshes.
     previous=data;
     metrics(data);traffic(data);buses(data);dorms(data);
     connection(data.week_group?'Data confirmed · read only':'No active Week Group · read only');

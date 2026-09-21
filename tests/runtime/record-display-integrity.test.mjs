@@ -109,7 +109,8 @@ test('Processing female highlight is pronounced and scoped to the Processing gri
   assert.ok(match, 'Processing female-card selector must exist');
   assert.match(match[1], /border-width:\s*3px/);
   assert.match(match[1], /border-color:\s*var\(--gate-flag-female-red\)/);
-  assert.match(match[1], /0 0 20px rgba\(255, 77, 71, \.22\)/);
+  assert.match(match[1], /box-shadow:\s*var\(--mg-inset-edge\),\s*var\(--gate-female-halo\),\s*var\(--mg-shadow-soft\)/);
+  assert.match(css, /--gate-female-halo:\s*0 0 20px rgba\(255,\s*77,\s*71,\s*0\.22\)/);
   assert.doesNotMatch(match[0], /#page-board|#page-squadron/);
 });
 

@@ -16,21 +16,21 @@ function sliceBetween(startNeedle, endNeedle) {
   return css.slice(start, end);
 }
 
-test('dark theme raises the tonal floor and text contrast without changing semantic accent colors', () => {
+test('dark theme preserves the current cool-slate contrast ladder and semantic accent colors', () => {
   const dark = sliceBetween(':root {', 'body.theme-light,');
 
-  assert.match(dark, /--mg-bg:\s*#121712\s*;/i);
-  assert.match(dark, /--mg-bg-elevated:\s*#1b221c\s*;/i);
-  assert.match(dark, /--mg-surface:\s*rgba\(35,\s*44,\s*36,\s*0\.86\)\s*;/i);
-  assert.match(dark, /--mg-surface-strong:\s*rgba\(28,\s*36,\s*29,\s*0\.96\)\s*;/i);
-  assert.match(dark, /--mg-surface-soft:\s*rgba\(72,\s*88,\s*73,\s*0\.52\)\s*;/i);
-  assert.match(dark, /--mg-surface-muted:\s*rgba\(112,\s*132,\s*113,\s*0\.24\)\s*;/i);
-  assert.match(dark, /--mg-text:\s*#f5f8f4\s*;/i);
-  assert.match(dark, /--mg-text-soft:\s*#d8e0d5\s*;/i);
-  assert.match(dark, /--mg-text-muted:\s*#a7b2a3\s*;/i);
-  assert.match(dark, /--mg-border-glass:\s*rgba\(216,\s*232,\s*211,\s*0\.26\)\s*;/i);
-  assert.match(dark, /--mg-border-soft:\s*rgba\(216,\s*232,\s*211,\s*0\.16\)\s*;/i);
-  assert.match(dark, /--mg-border-strong:\s*rgba\(216,\s*232,\s*211,\s*0\.42\)\s*;/i);
+  assert.match(dark, /--mg-bg:\s*#10141a\s*;/i);
+  assert.match(dark, /--mg-bg-elevated:\s*#181e26\s*;/i);
+  assert.match(dark, /--mg-surface:\s*rgba\(30,\s*38,\s*49,\s*0\.86\)\s*;/i);
+  assert.match(dark, /--mg-surface-strong:\s*rgba\(21,\s*28,\s*37,\s*0\.96\)\s*;/i);
+  assert.match(dark, /--mg-surface-soft:\s*rgba\(66,\s*81,\s*100,\s*0\.50\)\s*;/i);
+  assert.match(dark, /--mg-surface-muted:\s*rgba\(112,\s*133,\s*160,\s*0\.20\)\s*;/i);
+  assert.match(dark, /--mg-text:\s*#f2f6fa\s*;/i);
+  assert.match(dark, /--mg-text-soft:\s*#d3dce6\s*;/i);
+  assert.match(dark, /--mg-text-muted:\s*#9eacbc\s*;/i);
+  assert.match(dark, /--mg-border-glass:\s*rgba\(200,\s*216,\s*236,\s*0\.22\)\s*;/i);
+  assert.match(dark, /--mg-border-soft:\s*rgba\(200,\s*216,\s*236,\s*0\.13\)\s*;/i);
+  assert.match(dark, /--mg-border-strong:\s*rgba\(200,\s*216,\s*236,\s*0\.38\)\s*;/i);
 
   assert.match(dark, /--mg-accent:\s*#58b9dd\s*;/i);
   assert.match(dark, /--mg-ok:\s*#3fd08c\s*;/i);
@@ -38,22 +38,23 @@ test('dark theme raises the tonal floor and text contrast without changing seman
   assert.match(dark, /--mg-yellow:\s*#e7c34c\s*;/i);
 });
 
-test('light theme palette remains unchanged by the dark-mode pass', () => {
+test('light theme retains its separate neutral palette and blue interaction', () => {
   const light = sliceBetween('body.theme-light,', '/* --------------------------------------------------------------------------\n   2. BASE');
-  assert.match(light, /--mg-bg:\s*#f1f4f0\s*;/i);
+  assert.match(light, /--mg-bg:\s*#eef2f6\s*;/i);
   assert.match(light, /--mg-surface:\s*rgba\(255,\s*255,\s*255,\s*0\.86\)\s*;/i);
-  assert.match(light, /--mg-text:\s*#182016\s*;/i);
+  assert.match(light, /--mg-text:\s*#131b25\s*;/i);
   assert.match(light, /--mg-accent:\s*#2f6f8a\s*;/i);
 });
 
-test('Status Board dark surfaces receive dedicated contrast without geometry changes', () => {
-  const board = sliceBetween('body:not(.theme-light) #page-board .metric-card,', '/* --------------------------------------------------------------------------\n   6. DORM BOARDS');
-
-  assert.match(board, /background:\s*rgba\(40,\s*50,\s*42,\s*\.93\)\s*;/i);
-  assert.match(board, /border-color:\s*rgba\(216,\s*232,\s*211,\s*\.29\)\s*;/i);
-  assert.match(board, /background:\s*rgba\(50,\s*63,\s*52,\s*\.98\)\s*;/i);
-  assert.match(board, /border-color:\s*rgba\(216,\s*232,\s*211,\s*\.36\)\s*;/i);
-
+test('Status Board contrasts derive from dedicated board tokens without changing its geometry', () => {
+  const dark = sliceBetween(':root {', 'body.theme-light,');
+  assert.match(dark, /--mg-board-plane:\s*rgba\(34,\s*43,\s*55,\s*0\.94\)\s*;/i);
+  assert.match(dark, /--mg-board-edge:\s*rgba\(200,\s*216,\s*236,\s*0\.29\)\s*;/i);
+  assert.match(dark, /--mg-board-card:\s*rgba\(44,\s*56,\s*71,\s*0\.98\)\s*;/i);
+  assert.match(dark, /--mg-board-card-edge:\s*rgba\(200,\s*216,\s*236,\s*0\.36\)\s*;/i);
+  const board = sliceBetween('/* Board planes: raised opacity for wall-display legibility.', '/* --------------------------------------------------------------------------\n   6. DORM BOARDS');
+  assert.match(board, /border-color:\s*var\(--mg-board-edge\)/);
+  assert.match(board, /background:\s*var\(--mg-board-plane\)/);
   assert.doesNotMatch(board, /\b(?:width|height|min-width|max-width|min-height|max-height|padding|margin|gap|border-radius|display|position|grid-template|transform)\s*:/i);
 });
 

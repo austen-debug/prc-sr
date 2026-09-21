@@ -49,7 +49,7 @@ test('unsupported PDF fails closed',async()=>{
  await assert.rejects(extractFlightAlertPdf({name:'other.txt',size:100,arrayBuffer:async()=>new ArrayBuffer(100)}),/PDF/);
 });
 
-// DOM contract test: relocation must preserve the same two live button objects and handlers.
+// Simulate native DOM reparenting: the original live node and its onclick survive the move.
 class ElementStub {
  constructor(tag, id = '') { this.tagName = tag.toUpperCase(); this.id = id; this.className = ''; this.dataset = {}; this.style = {}; this.attributes = {}; this.parentElement = null; this.nodes = []; this.ownText = ''; }
  get children() { return this.nodes; }
@@ -91,24 +91,32 @@ function actionFixture() {
  const doc = { getElementById(id) { const visit = node => node.id === id ? node : node.nodes.map(visit).find(Boolean); return visit(body); }, createElement(tag) { return new ElementStub(tag); } };
  return {doc, page, processingHeader, footer, initialize, closeout, localBus, initStatus, archiveStatus};
 }
-test('Week Group actions move without cloning handlers, archive status or Processing controls', () => {
+test('Week Group actions are safely separated while original handlers and feedback are retained', () => {
  const {doc, page, processingHeader, footer, initialize, closeout, localBus, initStatus, archiveStatus} = actionFixture();
  const originalInitialize = initialize.onclick;
  const originalCloseout = closeout.onclick;
  assert.equal(relocateWeekGroupActions(doc), true);
- const buttons = doc.getElementById('gate-week-group-action-buttons');
- const messages = doc.getElementById('gate-week-group-action-messages');
- assert.deepEqual(buttons.children, [initialize, closeout]);
+ const startPanel = doc.getElementById('gate-week-group-initialize-panel');
+ const finishPanel = doc.getElementById('gate-week-group-closeout-panel');
+ assert.deepEqual(startPanel.children.slice(-2), [initialize, initStatus]);
+ assert.deepEqual(finishPanel.children.slice(-2), [closeout, archiveStatus]);
  assert.equal(initialize.onclick, originalInitialize);
  assert.equal(closeout.onclick, originalCloseout);
  assert.equal(closeout.onclick(), 'canonical archive');
- assert.deepEqual(messages.children, [initStatus, archiveStatus]);
+ assert.equal(initialize.attributes['aria-describedby'], 'gate-week-group-initialize-panel-description');
+ assert.equal(closeout.attributes['aria-describedby'], 'gate-week-group-closeout-panel-description');
+ assert.equal(initialize.style.minHeight, '48px');
+ assert.equal(closeout.style.minHeight, '44px');
+ assert.match(finishPanel.style.borderColor, /mg-red/);
+ assert.equal(initStatus.attributes.role, 'status');
+ assert.equal(archiveStatus.attributes.role, 'status');
  assert.deepEqual(processingHeader.children.filter(node => node.tagName === 'BUTTON'), [localBus]);
  assert.equal(page.contains(footer), false);
  assert.equal(relocateWeekGroupActions(doc), true);
- assert.deepEqual(buttons.children, [initialize, closeout]);
+ assert.deepEqual(startPanel.children.slice(-2), [initialize, initStatus]);
+ assert.deepEqual(finishPanel.children.slice(-2), [closeout, archiveStatus]);
  assert.equal(page.children.filter(node => node.id === 'gate-week-group-actions').length, 0); // Panel lives in header.
- assert.equal(doc.getElementById('gate-week-group-actions').children.length, 3);
+ assert.equal(doc.getElementById('gate-week-group-actions').children.length, 2);
 });
 test('Week Group action relocation does nothing if either original button is missing', () => {
  const {doc, closeout} = actionFixture(); closeout.remove();

@@ -25,12 +25,14 @@ test('login creation and all verification paths share the same fallback session 
   assert.match(middleware, /secret\s*\|\|\s*'missing-secret'/);
 });
 
-test('login client persists same-origin credentials and verifies the session before entering GATE', async () => {
+test('login client sends same-origin credentials on both requests and verifies the session before entering GATE', async () => {
   const loginHtml = await source('public/login/index.html');
 
-  assert.match(loginHtml, /fetch\('\/api\/login'[\s\S]*credentials:\s*'same-origin'/);
-  assert.match(loginHtml, /fetch\('\/api\/session'[\s\S]*credentials:\s*'same-origin'/);
-  assert.match(loginHtml, /if \(!sessionResponse\.ok\)/);
-  assert.match(loginHtml, /window\.location\.assign\('\/'\)/);
+  assert.match(loginHtml, /async function request\(url, options\)/);
+  assert.match(loginHtml, /return await fetch\(url,\s*\{\s*credentials:\s*'same-origin',\s*\.\.\.options,\s*signal:\s*controller\.signal\s*\}\)/);
+  assert.match(loginHtml, /await request\('\/api\/login'/);
+  assert.match(loginHtml, /await request\('\/api\/session'/);
+  assert.match(loginHtml, /if \(!session\.ok\)/);
+  assert.match(loginHtml, /window\.location\.replace\('\/'\)/);
   assert.match(loginHtml, /catch \(error\)[\s\S]*Unable to reach the authentication service/);
 });

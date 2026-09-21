@@ -14,6 +14,40 @@ test('extract Week Group and preserve dorm leading zeros', () => {
  assert.equal(result.variance,0);
  assert.equal(result.issues.filter(i=>i.code==='inter_sec').length,3);
 });
+
+test('current PRC six-column Flight Alert parses INTER/SECT and AAFES total', () => {
+ const alert = [
+  'SQD SEC INTER/SECT DORM SEX LOAD',
+  '322 1 1 A03 M 56',
+  '322 1 2 B03 M 56',
+  '323 4 3 3D2 M 56',
+  '323 4 4 3D1 M 56',
+  '323 2 5 4C2 M 56',
+  '323 2 6 4C1 F 49',
+  '324 2 7 A04 M 56',
+  '324 2 8 A05 M 49',
+  '331 3 9 3C1 M 55',
+  '331 3 10 3C2 M 55',
+  '320 2 11 4B2 M 55',
+  '320 2 12 4B1 F 49',
+  '321 2 13 3B2 M 55',
+  '321 4 14 3D2 M 55',
+  '321 4 15 3D1 F 49',
+  'AAFES: 807'
+ ].join('\\n');
+ const result = parseFlightAlertText(alert);
+ assert.equal(result.ok, true);
+ assert.equal(result.rows.length, 15);
+ assert.equal(result.rows[0].inter_sec, '1');
+ assert.equal(result.rows[14].inter_sec, '15');
+ assert.equal(result.rows[5].sex, 'female');
+ assert.equal(result.publishedTotal, 807);
+ assert.equal(result.calculatedTotal, 807);
+ assert.equal(result.variance, 0);
+ assert.equal(result.format, 'six-column-prc-v2');
+ assert.equal(result.issues.filter(i => i.code === 'inter_sec').length, 0);
+});
+
 test('variance is advisory rather than a parser failure',()=>{
  const result=parseFlightAlertText(sample.replace('135','140'));
  assert.equal(result.ok,true);assert.equal(result.variance,-5);

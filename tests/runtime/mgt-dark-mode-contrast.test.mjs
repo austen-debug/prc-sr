@@ -38,12 +38,12 @@ test('dark theme preserves the current cool-slate contrast ladder and semantic a
   assert.match(dark, /--mg-yellow:\s*#e7c34c\s*;/i);
 });
 
-test('light theme retains its separate neutral palette and blue interaction', () => {
+test('light theme retains a separate high-contrast blue-gray palette and blue interaction', () => {
   const light = sliceBetween('body.theme-light,', '/* --------------------------------------------------------------------------\n   2. BASE');
-  assert.match(light, /--mg-bg:\s*#eef2f6\s*;/i);
-  assert.match(light, /--mg-surface:\s*rgba\(255,\s*255,\s*255,\s*0\.86\)\s*;/i);
-  assert.match(light, /--mg-text:\s*#131b25\s*;/i);
-  assert.match(light, /--mg-accent:\s*#2f6f8a\s*;/i);
+  assert.match(light, /--mg-bg:\s*#e7eef7\s*;/i);
+  assert.match(light, /--mg-surface:\s*rgba\(255,\s*255,\s*255,\s*0\.97\)\s*;/i);
+  assert.match(light, /--mg-text:\s*#10243a\s*;/i);
+  assert.match(light, /--mg-accent:\s*#175c92\s*;/i);
 });
 
 test('Status Board contrasts derive from dedicated board tokens without changing its geometry', () => {

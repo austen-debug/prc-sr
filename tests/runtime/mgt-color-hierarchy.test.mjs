@@ -31,13 +31,13 @@ test('interaction accent is soft blue while nominal status remains green', () =>
   assert.match(css, /--green-bright:\s*var\(--mg-ok\)\s*;/);
 });
 
-test('light theme keeps blue interaction and separate green nominal state', () => {
+test('light theme keeps accessible blue interaction and separate green nominal state', () => {
   const start = css.indexOf('body.theme-light,');
   const end = css.indexOf('/* --------------------------------------------------------------------------\n   2. BASE', start);
   assert.ok(start >= 0 && end > start);
   const light = css.slice(start, end);
-  assert.match(light, /--mg-accent:\s*#2f6f8a\s*;/i);
-  assert.match(light, /--mg-accent-rgb:\s*47,\s*111,\s*138\s*;/i);
+  assert.match(light, /--mg-accent:\s*#175c92\s*;/i);
+  assert.match(light, /--mg-accent-rgb:\s*23,\s*92,\s*146\s*;/i);
   assert.match(light, /--mg-ok:\s*#12805a\s*;/i);
   assert.match(light, /--mg-ok-deep:\s*#0f6247\s*;/i);
 });

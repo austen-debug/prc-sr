@@ -121,3 +121,9 @@ if (typeof document !== 'undefined') {
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, { once: true });
   else start();
 }
+
+// The existing Input feature is the single bootstrap point for the feature-gated persistence adapter.
+// Never load the browser runtime in Node-based module tests.
+if (typeof window !== 'undefined') {
+  import('../../../js/gate-persistence-runtime.js').catch(error => console.error('GATE persistence runtime unavailable:', error));
+}

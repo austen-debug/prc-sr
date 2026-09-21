@@ -22,15 +22,20 @@ function diagnostic(code, message, line = null, level = 'error') {
   return Object.freeze({ code, message, line, level });
 }
 function parseLine(line, sourceLine) {
-  const match = line.toUpperCase().match(ROW);
+  const upper = line.toUpperCase();
+  const six = upper.match(ROW6);
+  const five = six ? null : upper.match(ROW5);
+  const match = six || five;
   if (!match) return null;
-  const [, rawSq, rawSec, rawDorm, rawSex, rawLoad] = match;
+  const [, rawSq, rawSec, rawInter, rawDorm, rawSex, rawLoad] = six
+    ? match
+    : [match[0], match[1], match[2], '', match[3], match[4], match[5]];
   const load = Number(rawLoad);
   return {
     sourceLine,
     sdq: `${rawSq} TRS`, sec: rawSec, dorm_name: rawDorm,
     sex: rawSex === 'FEMALE' || rawSex === 'F' ? 'female' : 'male',
-    load: String(load), inter_sec: '',
+    load: String(load), inter_sec: rawInter,
     band: false, space_force: rawSq === '535',
     capacity: load
   };
@@ -102,6 +107,6 @@ export function parseFlightAlertText(text) {
     issues: Object.freeze([...issues, ...audit.issues]),
     calculatedTotal: audit.calculated,
     variance: audit.variance,
-    format: 'five-column-v1'
+    format: rows.some(row => row.inter_sec) ? 'six-column-prc-v2' : 'five-column-v1'
   });
 }

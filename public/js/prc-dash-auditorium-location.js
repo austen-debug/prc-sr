@@ -93,7 +93,22 @@
     if (saveButton) {
       saveButton.textContent = 'SAVE';
       saveButton.dataset.processingAssignmentSave = 'true';
-      saveButton.style.paddingInline = '0.5rem';
+      // Presentation only: keep both SAVE and the existing SAVING... state inside
+      // the canonical 78px assignment-grid button track, including on tablets.
+      // Do not replace the original node, onclick, or modal save behavior.
+      saveButton.style.boxSizing = 'border-box';
+      saveButton.style.display = 'inline-flex';
+      saveButton.style.alignItems = 'center';
+      saveButton.style.justifyContent = 'center';
+      saveButton.style.width = '100%';
+      saveButton.style.minWidth = '0';
+      saveButton.style.maxWidth = '100%';
+      saveButton.style.minHeight = '44px';
+      saveButton.style.padding = '.55rem .2rem';
+      saveButton.style.fontSize = '.69rem';
+      saveButton.style.letterSpacing = '0';
+      saveButton.style.lineHeight = '1.1';
+      saveButton.style.textAlign = 'center';
       saveButton.style.whiteSpace = 'nowrap';
     }
 

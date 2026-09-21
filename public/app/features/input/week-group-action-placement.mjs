@@ -1,11 +1,12 @@
-/** Presentation-only relocation: retain the original buttons, IDs and canonical listeners. */
+/** Presentation-only placement: retain original action nodes, IDs and canonical handlers. */
 const byId = (doc, id) => doc.getElementById(id);
 
 function actionPanel(doc, id, heading, description, destructive = false) {
   const panel = doc.createElement('div');
   panel.id = id;
-  panel.className = 'rounded-lg border p-3 grid gap-2';
+  panel.className = 'rounded-lg border p-3 flex flex-col gap-2';
   panel.style.minWidth = '0';
+  panel.style.minHeight = '220px';
   panel.style.borderColor = destructive ? 'var(--mg-red, #dc2626)' : 'var(--mg-border-glass, var(--border))';
   panel.style.background = destructive
     ? 'color-mix(in srgb, var(--mg-red, #dc2626) 6%, var(--mg-surface, transparent))'
@@ -20,8 +21,39 @@ function actionPanel(doc, id, heading, description, destructive = false) {
   help.id = `${id}-description`;
   help.className = 'text-xs text-muted';
   help.textContent = description;
-  panel.append(title, help);
+
+  // Both cards always reserve the same feedback area ABOVE their button.
+  // A warning may appear or disappear without pushing the button upward.
+  const feedback = doc.createElement('div');
+  feedback.id = `${id}-feedback`;
+  feedback.className = 'text-xs';
+  feedback.style.minWidth = '0';
+  feedback.style.minHeight = '48px';
+  feedback.style.display = 'flex';
+  feedback.style.alignItems = 'center';
+  feedback.style.overflowWrap = 'anywhere';
+
+  panel.append(title, help, feedback);
   return panel;
+}
+
+function styleActionButton(button, descriptionId) {
+  button.type = 'button';
+  button.style.boxSizing = 'border-box';
+  button.style.display = 'inline-flex';
+  button.style.alignItems = 'center';
+  button.style.justifyContent = 'center';
+  button.style.width = '100%';
+  button.style.maxWidth = '100%';
+  button.style.minWidth = '0';
+  button.style.minHeight = '48px';
+  button.style.padding = '.65rem 1rem';
+  button.style.marginTop = 'auto';
+  button.style.fontSize = '.82rem';
+  button.style.fontWeight = '700';
+  button.style.lineHeight = '1.2';
+  button.style.textAlign = 'center';
+  button.setAttribute('aria-describedby', descriptionId);
 }
 
 export function relocateWeekGroupActions(doc = globalThis.document) {
@@ -53,6 +85,7 @@ export function relocateWeekGroupActions(doc = globalThis.document) {
     controls.id = 'gate-week-group-action-buttons';
     controls.className = 'grid gap-3';
     controls.style.minWidth = '0';
+    controls.style.alignItems = 'stretch';
     controls.style.gridTemplateColumns = 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))';
     controls.append(
       actionPanel(doc, 'gate-week-group-initialize-panel', 'Start a new Week Group',
@@ -66,29 +99,22 @@ export function relocateWeekGroupActions(doc = globalThis.document) {
 
   const initializePanel = byId(doc, 'gate-week-group-initialize-panel');
   const closeoutPanel = byId(doc, 'gate-week-group-closeout-panel');
-  if (!initializePanel || !closeoutPanel) return false;
+  const initializeFeedback = byId(doc, 'gate-week-group-initialize-panel-feedback');
+  const closeoutFeedback = byId(doc, 'gate-week-group-closeout-panel-feedback');
+  if (!initializePanel || !closeoutPanel || !initializeFeedback || !closeoutFeedback) return false;
 
   const oldFooter = initialize.parentElement;
-  initialize.type = 'button';
-  initialize.style.width = '100%';
-  initialize.style.minHeight = '48px';
+  styleActionButton(initialize, 'gate-week-group-initialize-panel-description');
   initialize.style.background = 'var(--mg-yellow, #e0a62c)';
   initialize.style.color = 'var(--mg-bg-elevated, #181e26)';
-  initialize.setAttribute('aria-describedby', 'gate-week-group-initialize-panel-description');
-  if (initialize.parentElement !== initializePanel) initializePanel.appendChild(initialize);
 
-  closeout.type = 'button';
-  closeout.style.width = '100%';
-  closeout.style.minHeight = '44px';
-  closeout.style.fontSize = '.85rem';
-  closeout.setAttribute('aria-describedby', 'gate-week-group-closeout-panel-description');
-  if (closeout.parentElement !== closeoutPanel) closeoutPanel.appendChild(closeout);
+  styleActionButton(closeout, 'gate-week-group-closeout-panel-description');
 
   const initStatus = byId(doc, 'init-status-msg');
   if (initStatus) {
     initStatus.setAttribute('role', 'status');
     initStatus.setAttribute('aria-live', 'polite');
-    if (initStatus.parentElement !== initializePanel) initializePanel.appendChild(initStatus);
+    if (initStatus.parentElement !== initializeFeedback) initializeFeedback.appendChild(initStatus);
   }
 
   let archiveStatus = byId(doc, 'closeout-safety-msg');
@@ -100,7 +126,12 @@ export function relocateWeekGroupActions(doc = globalThis.document) {
   }
   archiveStatus.setAttribute('role', 'status');
   archiveStatus.setAttribute('aria-live', 'polite');
-  if (archiveStatus.parentElement !== closeoutPanel) closeoutPanel.appendChild(archiveStatus);
+  if (archiveStatus.parentElement !== closeoutFeedback) closeoutFeedback.appendChild(archiveStatus);
+
+  // Identical structural order: heading, description, reserved feedback, live button.
+  // Move the existing button rather than cloning it or changing its onclick handler.
+  if (initialize.parentElement !== initializePanel) initializePanel.appendChild(initialize);
+  if (closeout.parentElement !== closeoutPanel) closeoutPanel.appendChild(closeout);
 
   // Remove only the now-empty original Input footer, never another surface.
   if (oldFooter && oldFooter !== initializePanel && oldFooter.parentElement === page &&

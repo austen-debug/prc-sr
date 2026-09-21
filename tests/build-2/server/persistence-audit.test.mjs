@@ -20,11 +20,14 @@ test('record-level events persist atomically with mirrored CRUD and retain no op
   assert.deepEqual(audit.map(record => record.event_type), ['record_created','record_updated','record_deleted']);
   assert.equal(audit[0].actor_role,'instructor');
   assert.equal(audit[1].actor_role,'airman');
+  assert.equal(audit[2].actor_role,'system');
+  assert.deepEqual(JSON.parse(audit[2].metadata_json), {actor_attribution:'unverified',recorded_by:'database_trigger'});
   assert.equal(audit[0].resulting_version,1);
   assert.equal(audit[1].prior_version,1);
   assert.equal(audit[1].resulting_version,2);
   assert.equal(audit[2].resulting_version,2);
-  assert.ok(audit.every(record => record.metadata_json === '{}'));
+  assert.ok(audit.slice(0,2).every(record => record.metadata_json === '{}'));
+  assert.ok(audit.every(record => !record.metadata_json.includes('notes')));
   assert.equal(db.prepare('SELECT COUNT(*) AS n FROM gate_v2_buses').get().n,0);
   assert.throws(() => db.prepare('DELETE FROM gate_audit_events').run(),/append-only/);
 });

@@ -20,6 +20,14 @@ const number = value => { const n = Number(value); return Number.isFinite(n) ? n
 function noUnknownKeys(object, allowed, context) {
   for (const key of Object.keys(object)) if (!allowed.has(key)) throw new PersistenceValidationError(`Unsupported ${context} field: ${key}. Nothing was silently discarded.`);
 }
+function validateReceivingWindows(windows) {
+  for (const [startKey,endKey] of [[WINDOWS[0],WINDOWS[1]],[WINDOWS[2],WINDOWS[3]]]) {
+    const start = windows[startKey], end = windows[endKey];
+    if (Boolean(start) !== Boolean(end)) throw new PersistenceValidationError('Both start and end of each receiving window are required.');
+    if (start && (!Number.isFinite(Date.parse(start)) || !Number.isFinite(Date.parse(end)) || Date.parse(start) >= Date.parse(end))) throw new PersistenceValidationError('Receiving window end must be later than start.');
+  }
+  if (windows[WINDOWS[1]] && windows[WINDOWS[2]] && Date.parse(windows[WINDOWS[2]]) < Date.parse(windows[WINDOWS[1]])) throw new PersistenceValidationError('Receiving Day Two cannot precede Day One.');
+}
 export function normalizeDraft(payload = {}) {
   if (!payload || typeof payload !== 'object' || Array.isArray(payload)) throw new PersistenceValidationError('Draft must be an object.');
   const proposedWeekGroup = bounded(payload.proposed_week_group, 24, 'Week Group ID').toUpperCase();
@@ -44,13 +52,9 @@ export function normalizeDraft(payload = {}) {
   const supplied = payload.receiving_windows ?? {};
   if (!supplied || typeof supplied !== 'object' || Array.isArray(supplied)) throw new PersistenceValidationError('Receiving windows must be an object.');
   noUnknownKeys(supplied, new Set(WINDOWS), 'receiving window');
+  // Drafts are snapshots of work in progress: a single entered boundary must persist.
+  // Pairing and chronological ordering are checked when initializing, not while autosaving.
   const windows = Object.fromEntries(WINDOWS.map(key => [key, bounded(supplied[key], 40, key)]));
-  for (const [startKey,endKey] of [[WINDOWS[0],WINDOWS[1]],[WINDOWS[2],WINDOWS[3]]]) {
-    const start = windows[startKey], end = windows[endKey];
-    if (Boolean(start) !== Boolean(end)) throw new PersistenceValidationError('Both start and end of each receiving window are required.');
-    if (start && (!Number.isFinite(Date.parse(start)) || !Number.isFinite(Date.parse(end)) || Date.parse(start) >= Date.parse(end))) throw new PersistenceValidationError('Receiving window end must be later than start.');
-  }
-  if (windows[WINDOWS[1]] && windows[WINDOWS[2]] && Date.parse(windows[WINDOWS[2]]) < Date.parse(windows[WINDOWS[1]])) throw new PersistenceValidationError('Receiving Day Two cannot precede Day One.');
   const review = payload.import_review ?? {};
   if (!review || typeof review !== 'object' || Array.isArray(review)) throw new PersistenceValidationError('Import review must be an object.');
   noUnknownKeys(review, REVIEW_FIELDS, 'import review');
@@ -63,6 +67,7 @@ export function normalizeDraft(payload = {}) {
 }
 export function validateInitialization(draft) {
   if (!draft.proposed_week_group) throw new PersistenceValidationError('Week Group ID is required.');
+  validateReceivingWindows(draft.receiving_windows);
   const populated = draft.rows.filter(row => row.sdq || row.sec || row.inter_sec || row.dorm_name || row.load !== '');
   if (!populated.length) throw new PersistenceValidationError('At least one dorm must be configured.');
   const seen = new Set();

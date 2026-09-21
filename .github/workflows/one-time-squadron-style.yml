@@ -25,11 +25,11 @@ jobs:
           node --check public/js/prc-dash-final-audit.js
           node --experimental-default-type=module --check functions/_middleware.js
           ! grep -q '/css/squadron-board.css' functions/_middleware.js
-      - name: Commit and push only final source edits
+      - name: Commit and push only non-workflow source edits
         run: |
           git config user.name 'GATE CI'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add public/css/military-glass-terminal.css functions/_middleware.js .github/workflows/build-2-gate-c-tests.yml
+          git add public/css/military-glass-terminal.css functions/_middleware.js
           git diff --cached --check
-          git commit -m 'fix: unify Squadron CSS, scripts and post-Gate-C security checks [gate-squadron-style]'
+          git commit -m 'fix: unify Squadron CSS and scripts [gate-squadron-style]'
           git push origin HEAD:feat/squadron-sitrep-notices-20260921

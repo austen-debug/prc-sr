@@ -52,7 +52,7 @@ function toolbar() {
     panel.style.borderColor = COLORS.border;
     panel.style.background = COLORS.raised;
     panel.setAttribute('aria-label', 'Flight Alert import and configuration review');
-    panel.innerHTML = `<div class="flex flex-wrap items-center justify-between gap-2"><div><strong class="text-sm">FLIGHT ALERT</strong><p class="text-xs text-muted">Prepare the Input table; initialize separately.</p></div><div class="flex flex-wrap gap-2"><button id="gate-import-open" type="button" class="${BTN}" style="border-color:var(--border);background:var(--surface);color:var(--text)">Import Flight Alert</button><button id="gate-import-inter" type="button" class="${BTN}" style="border-color:var(--border);background:var(--surface);color:var(--text)" hidden>Complete INTER/SEC</button></div></div><div id="gate-import-summary" aria-live="polite"></div><p id="gate-import-message" class="text-sm" role="status" hidden></p>`;
+    panel.innerHTML = `<div class="flex flex-wrap items-center justify-between gap-2"><div><strong class="text-sm">FLIGHT ALERT</strong><p class="text-xs text-muted">Prepare the Input table; initialize separately.</p></div><div class="flex flex-wrap gap-2"><button id="gate-import-open" type="button" class="${BTN}" style="border-color:var(--border);background:var(--surface);color:var(--text)">Import Flight Alert</button><button id="gate-import-inter" type="button" class="${BTN}" style="border-color:var(--border);background:var(--surface);color:var(--text)" hidden>Review INTER/SEC</button></div></div><div id="gate-import-summary" aria-live="polite"></div><p id="gate-import-message" class="text-sm" role="status" hidden></p>`;
     header.insertBefore(panel, $('receiving-windows-panel') || null);
     $('gate-import-open').addEventListener('click', ()=>openModal('import'));
     $('gate-import-inter').addEventListener('click', ()=>openModal('inter'));
@@ -122,7 +122,7 @@ function decorateRows() {
       const missing = !!(row.sdq || row.dorm_name || row.load) && !String(row.inter_sec||'').trim();
       inter.toggleAttribute('aria-invalid',missing);
       inter.style.borderColor = missing ? 'var(--yellow)' : COLORS.border;
-      if (missing) inter.title='INTER/SEC is required from the separate system.';
+      if (missing) inter.title='INTER/SEC is required from the Flight Alert or separate source.';
       else inter.removeAttribute('title');
     }
     if (i>=25) {
@@ -142,7 +142,7 @@ function candidateDiff(candidate) {
     incoming.add(key);
     const old = previous.get(key);
     if (!old) added++;
-    else if (['sec','sex','load'].some(field=>String(old[field])!==String(row[field]))) changed++;
+    else if (['sec','sex','load'].some(field=>String(old[field])!==String(row[field])) || (row.inter_sec && String(old.inter_sec)!==String(row.inter_sec))) changed++;
   }
   const removed=[...previous.keys()].filter(key=>!incoming.has(key)).length;
   return {added,changed,removed};
@@ -152,7 +152,7 @@ function applyCandidate(candidate) {
   const previous = new Map(activeRows().map(row=>[`${normalizeSquadron(row.sdq)}::${String(row.dorm_name).toUpperCase()}::${row.sec}`,row]));
   const draft = candidate.rows.map((item,index)=>{
     const prior = previous.get(`${normalizeSquadron(item.sdq)}::${item.dorm_name}::${item.sec}`);
-    return { rowIndex:index, sdq:item.sdq, sec:item.sec, inter_sec:prior?.inter_sec||'', dorm_name:item.dorm_name, sex:item.sex, band:false, space_force:item.space_force, load:item.load };
+    return { rowIndex:index, sdq:item.sdq, sec:item.sec, inter_sec:item.inter_sec || prior?.inter_sec || '', dorm_name:item.dorm_name, sex:item.sex, band:false, space_force:item.space_force, load:item.load };
   });
   const count = Math.max(25,draft.length);
   const empty = index=>({rowIndex:index,sdq:'',sec:'',inter_sec:'',dorm_name:'',sex:'male',band:false,space_force:false,load:''});
@@ -167,7 +167,8 @@ function applyCandidate(candidate) {
   state.candidate=null;
   owner().renderBatchGrid();
   closeModal(); renderState();
-  notice(`${candidate.rows.length} dorms added to the Input draft. Complete INTER/SEC and review warnings before INITIALIZE WEEK GROUP.`);
+  const missing = candidate.rows.filter(row=>!String(row.inter_sec||'').trim()).length;
+  notice(`${candidate.rows.length} dorms added to the Input draft. ${missing ? `Complete ${missing} missing INTER/SEC entries and ` : ''}Review warnings before INITIALIZE WEEK GROUP.`);
 }
 function modalError(message) { const el=$('gate-import-modal-error'); if(el) { el.textContent=message; el.hidden=false; } }
 function clearError() { const el=$('gate-import-modal-error'); if(el) {el.textContent='';el.hidden=true;} }
@@ -192,7 +193,7 @@ function openModal(mode) {
   const reason=disabledReason(); if(reason){notice(reason,true);return;}
   state.lastInvoker=document.activeElement;
   const dialog=ensureModal(); clearError();
-  $('gate-import-dialog-title').textContent=mode==='inter'?'Complete INTER/SEC':'Import Flight Alert';
+  $('gate-import-dialog-title').textContent=mode==='inter'?'Review INTER/SEC':'Import Flight Alert';
   if(mode==='inter') drawInterForm(); else drawImportForm();
   if(!dialog.open)dialog.showModal();
   dialog.querySelector('input,textarea,button')?.focus();
@@ -220,7 +221,7 @@ function drawImportForm() {
     } else {
       const label=element('label','grid gap-2 text-sm font-semibold','Flight Alert text');
       const textarea=element('textarea','w-full rounded-lg border p-3 text-sm');textarea.rows=9;textarea.maxLength=250000;
-      textarea.placeholder='Squadron Section Dorm Sex Load\n535 TRS 1 4A1 MALE 48\nTOTAL EXPECTED LOAD: 48';
+      textarea.placeholder='SQD SEC INTER/SECT DORM SEX LOAD\n322 1 1 A03 M 56\n2 B03 M 56\nAAFES: 112';
       textarea.style.cssText='border-color:var(--border);background:var(--surface-alt);color:var(--text);min-height:180px;';
       label.append(textarea);
       const button=element('button',BTN,'Process pasted text');button.type='button'; button.style.borderColor=COLORS.border;
@@ -242,7 +243,7 @@ function processText(text) {
   const summary=candidateDiff(parsed);
   const main=$('gate-import-dialog-main');main.replaceChildren();
   const title=element('h3','text-base font-bold','Review replacement draft');
-  const desc=element('p','text-sm',`${parsed.rows.length} incoming dorms. ${summary.added} added, ${summary.changed} changed, ${summary.removed} removed. Existing draft records will be replaced; matching dorm INTER/SEC entries are retained.`);
+  const desc=element('p','text-sm',`${parsed.rows.length} incoming dorms. ${summary.added} added, ${summary.changed} changed, ${summary.removed} removed. Existing draft records will be replaced; manual INTER/SEC entries are retained when the source omits them.`);
   const warning=element('p','text-sm','Nothing has been changed yet. Review the replacement Flight Alert before proceeding.');
   const list=element('div','rounded-lg border p-3 grid gap-2 text-sm');list.style.borderColor=COLORS.border;
   const previous=new Map(existing.map(r=>[`${normalizeSquadron(r.sdq)}::${String(r.dorm_name).toUpperCase()}`,r]));
@@ -255,7 +256,7 @@ function processText(text) {
 function drawInterForm() {
   const main=$('gate-import-dialog-main');main.replaceChildren();
   const active=rows().map((row,index)=>({row,index})).filter(({row})=>row.sdq||row.dorm_name||row.load);
-  const intro=element('p','text-sm text-muted','Enter INTER/SEC from the separate source. Values remain in the Input draft until you initialize.');
+  const intro=element('p','text-sm text-muted','Review INTER/SEC values extracted from the Flight Alert, or complete missing values from a separate source. Values remain in the Input draft until initialization.');
   const form=element('form','grid gap-3');
   active.forEach(({row,index})=>{
     const label=element('label','grid sm:grid-cols-[1fr_1fr] gap-2 items-center text-sm');

@@ -56,7 +56,8 @@ test('Status Board timer geometry is fixed-width and non-animated', async () => 
   const controller = await source('public/js/gate-status-board-controller.js');
 
   assert.match(css, /\.gate-dorm-timer\s*\{[\s\S]*width:\s*6\.35ch[\s\S]*min-width:\s*6\.35ch/);
-  assert.match(css, /\.gate-dorm-timer\s*\{[\s\S]*font-family:\s*"SFMono-Regular",\s*Consolas/);
+  assert.match(css, /\.gate-dorm-timer\s*\{[\s\S]*font-family:\s*var\(--mg-font-mono\)/);
+  assert.match(css, /--mg-font-mono:\s*"IBM Plex Mono",\s*"JetBrains Mono",\s*"SFMono-Regular",\s*Consolas/);
   assert.match(css, /\.font-tabular,[\s\S]*font-feature-settings:\s*"tnum" 1/);
   assert.match(css, /\.timer-display,[\s\S]*animation:\s*none/);
   assert.match(controller, /timer\.classList\.remove\('timer-flash'\)/);

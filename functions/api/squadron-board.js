@@ -1,164 +1,161 @@
-const SQUADRON_READ_ROLES = new Set(['squadron', 'instructor']);
+// Single Squadron read contract. Only an authenticated instructor can publish a notice.
+const READ_ROLES = new Set(['squadron', 'instructor']);
+const DORM_STATES = new Set(['empty', 'open', 'closed']);
 
-function jsonResponse(data, status = 200) {
+function reply(data, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
-    headers: {
-      'Content-Type': 'application/json',
-      'Cache-Control': 'no-store, private',
-      'X-Content-Type-Options': 'nosniff'
-    }
+    headers: { 'Content-Type': 'application/json', 'Cache-Control': 'private, no-store', 'X-Content-Type-Options': 'nosniff' }
   });
 }
 
-function n(value) {
-  const parsed = Number(value || 0);
-  return Number.isFinite(parsed) ? parsed : 0;
+function number(value) {
+  const parsed = Number(value ?? 0);
+  if (!Number.isFinite(parsed) || parsed < 0) throw Object.assign(new Error('Invalid Squadron operational count.'), { code: 'integrity_error' });
+  return parsed;
 }
 
-function bool(value) {
-  return value === true || value === 'true' || value === 1 || value === '1';
-}
-
-function safeParse(row) {
-  try {
-    return { ...JSON.parse(row?.data || '{}'), __rowCreatedAt: row?.created_at || '', __rowUpdatedAt: row?.updated_at || '' };
-  } catch {
-    return null;
-  }
-}
-
-function safeIso(value) {
+function bool(value) { return value === true || value === 'true' || value === 1 || value === '1'; }
+function iso(value) {
   const ms = new Date(value || '').getTime();
   return Number.isFinite(ms) ? new Date(ms).toISOString() : null;
 }
-
-function compareDorms(left, right) {
-  const lOrder = n(left.display_order || left.input_order || left.source_row_index);
-  const rOrder = n(right.display_order || right.input_order || right.source_row_index);
-  if (lOrder !== rOrder) return lOrder - rOrder;
-  return String(left.dorm_name || '').localeCompare(String(right.dorm_name || ''));
+function parseRow(row) {
+  try {
+    const payload = JSON.parse(row.data);
+    if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return null;
+    return { ...payload, type: String(row.type).toLowerCase(), week_group: String(row.week_group).toUpperCase(), __row_id: String(row.id || '') };
+  } catch { return null; }
+}
+function orderDorms(a, b) {
+  const rank = dorm => number(dorm.display_order || dorm.input_order || dorm.source_row_index || 0);
+  return rank(a) - rank(b) || String(a.dorm_name || '').localeCompare(String(b.dorm_name || ''));
 }
 
-export function buildSquadronSnapshot({ weekGroup = '', records = [], now = new Date() } = {}) {
-  const normalizedWeekGroup = String(weekGroup || '').trim().toUpperCase();
-  const nowMs = now instanceof Date ? now.getTime() : new Date(now).getTime();
-  const hourAgo = nowMs - (60 * 60 * 1000);
-
-  const buses = records
-    .filter(record => record && record.type === 'bus' && String(record.week_group || '').toUpperCase() === normalizedWeekGroup)
-    .filter(record => String(record.bus_type || '').toLowerCase() === 'airport');
-  const dorms = records
-    .filter(record => record && record.type === 'dorm' && String(record.week_group || '').toUpperCase() === normalizedWeekGroup)
-    .sort(compareDorms);
-
-  const arrived = buses
-    .filter(bus => String(bus.status || '').toLowerCase() === 'arrived')
-    .reduce((sum, bus) => sum + n(bus.otw_count), 0);
-  const expected = dorms.reduce((sum, dorm) => sum + n(dorm.max_load), 0);
-
-  const dispatchedLastHour = buses.filter(bus => {
-    const departedMs = new Date(bus.departed_at || '').getTime();
-    return Number.isFinite(departedMs) && departedMs >= hourAgo && departedMs <= nowMs;
+// Pure projection: never send raw D1 rows, notes, personnel, auditorium fields, or archives.
+export function buildSquadronSnapshot({ weekGroup = '', records = [], now = new Date(), notice = null, lastFlight = '' } = {}) {
+  const week = String(weekGroup || '').trim().toUpperCase();
+  const instant = new Date(now).getTime();
+  if (!Number.isFinite(instant)) throw new Error('Invalid snapshot time.');
+  const airport = week ? records.filter(r => r?.type === 'bus' && String(r.week_group).toUpperCase() === week && String(r.bus_type || '').toLowerCase() === 'airport') : [];
+  const dorms = week ? records.filter(r => r?.type === 'dorm' && String(r.week_group).toUpperCase() === week).sort(orderDorms) : [];
+  const arrived = airport.filter(bus => String(bus.status || '').toLowerCase() === 'arrived').reduce((sum, bus) => sum + number(bus.otw_count), 0);
+  const expected = dorms.reduce((sum, dorm) => sum + number(dorm.max_load), 0);
+  const since = instant - 60 * 60 * 1000;
+  const dispatches = airport.filter(bus => {
+    const at = new Date(bus.departed_at || '').getTime();
+    return Number.isFinite(at) && at > since && at <= instant;
   }).length;
-  const tempo = dispatchedLastHour >= 3 ? 'HEAVY' : (dispatchedLastHour === 2 ? 'MEDIUM' : 'SLOW');
-
-  const activeBuses = buses
-    .filter(bus => ['active', 'otw'].includes(String(bus.status || '').toLowerCase()))
-    .sort((a, b) => new Date(a.departed_at || 0) - new Date(b.departed_at || 0))
-    .map(bus => ({
-      bus_id: String(bus.bus_id || ''),
-      count: n(bus.otw_count),
-      departed_at: safeIso(bus.departed_at || bus.created_at)
-    }));
-
-  const safeDorms = dorms.map(dorm => ({
-    squadron: String(dorm.sdq || ''),
-    dorm_name: String(dorm.dorm_name || ''),
-    section: String(dorm.section || ''),
-    state: ['open', 'closed'].includes(String(dorm.state || '').toLowerCase()) ? String(dorm.state).toLowerCase() : 'empty',
-    phase: String(dorm.phase || ''),
-    current_load: n(dorm.current_load),
-    max_load: n(dorm.max_load),
-    sex: String(dorm.sex || '').toLowerCase() === 'female' ? 'female' : 'male',
-    band: bool(dorm.band),
-    space_force: bool(dorm.space_force) || bool(dorm.is_space_force)
-  }));
-
+  const traffic = { status: dispatches >= 3 ? 'HEAVY' : dispatches === 2 ? 'MEDIUM' : 'SLOW', dispatched_last_60_minutes: dispatches };
+  const safeDorms = dorms.map(dorm => {
+    const state = String(dorm.state || 'empty').toLowerCase();
+    if (!DORM_STATES.has(state)) throw Object.assign(new Error('Unrecognized dorm state; Squadron Board withheld.'), { code: 'integrity_error' });
+    const current = number(dorm.current_load);
+    const maximum = number(dorm.max_load);
+    const cardId = String(dorm.__row_id || dorm.id || `${dorm.sdq || ''}:${dorm.dorm_name || ''}:${dorm.section || ''}:${dorm.input_order || ''}`);
+    if (!cardId.trim()) throw Object.assign(new Error('Dorm identity is missing.'), { code: 'integrity_error' });
+    return {
+      card_id: cardId,
+      squadron: String(dorm.sdq || ''),
+      dorm_name: String(dorm.dorm_name || ''),
+      section: String(dorm.section || ''),
+      state,
+      phase: String(dorm.phase || ''),
+      current_load: current,
+      max_load: maximum,
+      load_discrepancy: state === 'open' && maximum > 0 && current < maximum,
+      sex: String(dorm.sex || '').toLowerCase() === 'female' ? 'female' : 'male',
+      band: bool(dorm.band),
+      space_force: bool(dorm.space_force) || bool(dorm.is_space_force)
+    };
+  });
+  if (new Set(safeDorms.map(d => d.card_id)).size !== safeDorms.length) {
+    throw Object.assign(new Error('Duplicate dorm identifiers; Squadron Board withheld.'), { code: 'integrity_error' });
+  }
+  const safeNotice = notice ? {
+    revision: number(notice.id),
+    message: String(notice.message || ''),
+    published_at: iso(notice.published_at)
+  } : null;
+  if (lastFlight && (typeof lastFlight !== 'string' || lastFlight.length > 64)) {
+    throw Object.assign(new Error('Invalid last-flight configuration.'), { code: 'integrity_error' });
+  }
   return Object.freeze({
-    week_group: normalizedWeekGroup,
-    metrics: Object.freeze({ arrived, expected }),
-    traffic: Object.freeze({ status: tempo, dispatched_last_60_minutes: dispatchedLastHour }),
-    active_buses: Object.freeze(activeBuses),
+    week_group: week,
+    metrics: Object.freeze({ arrived, expected, last_flight: lastFlight || null }),
+    traffic: Object.freeze(traffic),
     dorms: Object.freeze(safeDorms),
-    generated_at: new Date(nowMs).toISOString()
+    notice: safeNotice ? Object.freeze(safeNotice) : null,
+    generated_at: new Date(instant).toISOString()
   });
 }
 
 async function activeWeekGroup(env) {
-  const lifecycle = await env.DB.prepare(
-    "SELECT week_group FROM gate_week_groups WHERE state='active' LIMIT 2"
-  ).all();
+  const lifecycle = await env.DB.prepare("SELECT week_group FROM gate_week_groups WHERE state='active' LIMIT 2").all();
   const live = lifecycle.results || [];
-  if (live.length > 1) throw Object.assign(new Error('Multiple active Week Groups detected.'), { code: 'integrity_error' });
+  if (live.length > 1) throw Object.assign(new Error('Multiple active Week Groups.'), { code: 'integrity_error' });
+  const configured = await env.DB.prepare("SELECT json_extract(data,'$.value') AS week_group FROM records WHERE type='config' AND json_extract(data,'$.key')='week_group' LIMIT 2").all();
+  const configs = configured.results || [];
+  if (configs.length > 1) throw Object.assign(new Error('Multiple Week Group configurations.'), { code: 'integrity_error' });
+  const cycle = String(live[0]?.week_group || '').trim().toUpperCase();
+  const config = String(configs[0]?.week_group || '').trim().toUpperCase();
+  if (cycle && config && cycle !== config) throw Object.assign(new Error('Week Group lifecycle/config mismatch.'), { code: 'integrity_error' });
+  return cycle || config;
+}
 
-  const config = await env.DB.prepare(
-    "SELECT json_extract(data,'$.value') AS week_group FROM records WHERE type='config' AND json_extract(data,'$.key')='week_group' LIMIT 2"
-  ).all();
-  const configured = config.results || [];
-  if (configured.length > 1) throw Object.assign(new Error('Multiple active Week Group configuration records detected.'), { code: 'integrity_error' });
-
-  const lifecycleWeek = String(live[0]?.week_group || '').trim().toUpperCase();
-  const configWeek = String(configured[0]?.week_group || '').trim().toUpperCase();
-  if (lifecycleWeek && configWeek && lifecycleWeek !== configWeek) {
-    throw Object.assign(new Error('Lifecycle and active Week Group configuration do not agree.'), { code: 'integrity_error' });
-  }
-  return lifecycleWeek || configWeek;
+async function readBoard(env) {
+  const weekGroup = await activeWeekGroup(env);
+  if (!weekGroup) return buildSquadronSnapshot({ now: new Date() });
+  const source = await env.DB.prepare("SELECT id,type,week_group,data FROM records WHERE week_group=? AND type IN ('bus','dorm') ORDER BY created_at ASC").bind(weekGroup).all();
+  const records = (source.results || []).map(parseRow);
+  if (records.some(record => !record)) throw Object.assign(new Error('Malformed operational record; Squadron Board withheld.'), { code: 'integrity_error' });
+  const flight = await env.DB.prepare("SELECT json_extract(data,'$.value') AS last_flight FROM records WHERE type='config' AND json_extract(data,'$.key')='last_airport' ORDER BY updated_at DESC LIMIT 1").first();
+  const notice = await env.DB.prepare('SELECT id,message,published_at FROM gate_squadron_notices WHERE week_group=? ORDER BY id DESC LIMIT 1').bind(weekGroup).first();
+  return buildSquadronSnapshot({ weekGroup, records, now: new Date(), notice, lastFlight: flight?.last_flight || '' });
 }
 
 export async function onRequestGet({ env, data }) {
   const role = String(data?.session?.role || '').toLowerCase();
-  if (!SQUADRON_READ_ROLES.has(role)) {
-    return jsonResponse({ isOk: false, code: 'forbidden', error: 'Forbidden.' }, 403);
+  if (!READ_ROLES.has(role)) return reply({ isOk: false, code: 'forbidden', error: 'Forbidden.' }, 403);
+  try {
+    return reply({ isOk: true, editor: role === 'instructor', board: await readBoard(env) });
+  } catch (error) {
+    return reply({ isOk: false, code: error?.code || 'squadron_board_failed', error: error?.message || 'Board unavailable.' }, error?.code === 'integrity_error' ? 503 : 500);
   }
+}
 
+export async function onRequestPost({ request, env, data }) {
+  if (data?.session?.role !== 'instructor') return reply({ isOk: false, code: 'forbidden', error: 'Instructor access required.' }, 403);
+  const origin = request.headers.get('Origin');
+  if (origin !== new URL(request.url).origin || request.headers.get('X-Gate-Notice') !== 'publish' || !/^application\/json(?:\s*;|$)/i.test(request.headers.get('Content-Type') || '')) {
+    return reply({ isOk: false, code: 'forbidden', error: 'Invalid publication request.' }, 403);
+  }
+  let payload;
+  try {
+    const text = await request.text();
+    if (text.length > 4096) return reply({ isOk: false, code: 'validation', error: 'Notice request exceeds the allowed size.' }, 400);
+    payload = JSON.parse(text);
+  } catch { return reply({ isOk: false, code: 'validation', error: 'Invalid JSON notice.' }, 400); }
+  const message = String(payload?.message ?? '').trim();
+  const expectedRevision = payload?.expected_revision;
+  if (!message || message.length > 1000 || !Number.isSafeInteger(expectedRevision) || expectedRevision < 0) {
+    return reply({ isOk: false, code: 'validation', error: 'A notice (1–1000 characters) and current revision are required.' }, 400);
+  }
   try {
     const weekGroup = await activeWeekGroup(env);
-    if (!weekGroup) {
-      return jsonResponse({
-        isOk: true,
-        board: buildSquadronSnapshot({ weekGroup: '', records: [], now: new Date() })
-      });
-    }
-
-    const result = await env.DB.prepare(
-      `SELECT type, week_group, data, created_at, updated_at
-       FROM records
-       WHERE week_group = ? AND type IN ('bus','dorm')
-       ORDER BY created_at ASC`
-    ).bind(weekGroup).all();
-
-    const records = (result.results || [])
-      .map(row => {
-        const parsed = safeParse(row);
-        if (!parsed) return null;
-        return {
-          ...parsed,
-          type: String(parsed.type || row.type || '').toLowerCase(),
-          week_group: String(parsed.week_group || row.week_group || '').toUpperCase()
-        };
-      })
-      .filter(Boolean);
-
-    return jsonResponse({
-      isOk: true,
-      board: buildSquadronSnapshot({ weekGroup, records, now: new Date() })
-    });
+    if (!weekGroup) return reply({ isOk: false, code: 'lifecycle_required', error: 'No active Week Group.' }, 409);
+    const publishedAt = new Date().toISOString();
+    // One atomic conditional insert: no overwrites, orphan notices, or two successful stale publishers.
+    const result = await env.DB.prepare(`INSERT INTO gate_squadron_notices (week_group,message,published_at,published_by_role)
+      SELECT wg.week_group, ?, ?, 'instructor' FROM gate_week_groups wg
+      WHERE wg.state='active' AND wg.week_group=?
+        AND COALESCE((SELECT MAX(id) FROM gate_squadron_notices WHERE week_group=?),0)=?`)
+      .bind(message, publishedAt, weekGroup, weekGroup, expectedRevision).run();
+    if (result.meta?.changes !== 1) return reply({ isOk: false, code: 'conflict', error: 'The active group or notice changed. Refresh before publishing.' }, 409);
+    const revision = result.meta?.last_row_id;
+    if (!Number.isSafeInteger(revision) || revision < 1) return reply({ isOk: false, code: 'publication_unconfirmed', error: 'Check the published notice before retrying.' }, 503);
+    return reply({ isOk: true, notice: { revision, message, published_at: publishedAt } });
   } catch (error) {
-    return jsonResponse({
-      isOk: false,
-      code: error?.code || 'squadron_board_failed',
-      error: error?.message || 'Unable to load Squadron Board.'
-    }, error?.code === 'integrity_error' ? 503 : 500);
+    return reply({ isOk: false, code: error?.code || 'publication_failed', error: error?.message || 'Unable to publish notice.' }, error?.code === 'integrity_error' ? 503 : 500);
   }
 }

@@ -6,7 +6,13 @@ const restricted = (message, code = 'lifecycle_required', status = 409) => new R
 
 const OPERATIONAL_TYPES = new Set(['bus', 'dorm', 'sound_event']);
 const RECORD_TYPES = new Set(['bus', 'dorm', 'archive', 'config', 'sound_event', 'audit_event']);
-const SQUADRON_API_ALLOWLIST = new Set(['/api/session', '/api/logout', '/api/squadron-board']);
+
+function squadronApiAllowed(pathname, method) {
+  if (pathname === '/api/session') return method === 'GET';
+  if (pathname === '/api/logout') return method === 'POST';
+  if (pathname === '/api/squadron-board') return method === 'GET';
+  return false;
+}
 
 async function guardPersistence(context) {
   const { request, env } = context;
@@ -71,8 +77,8 @@ export async function onRequest(context) {
   const session = await verifyRequestSession(context.request, context.env);
   if (session) context.data.session = session;
 
-  const pathname = new URL(context.request.url).pathname;
-  if (session?.role === 'squadron' && !SQUADRON_API_ALLOWLIST.has(pathname)) {
+  const url = new URL(context.request.url);
+  if (session?.role === 'squadron' && !squadronApiAllowed(url.pathname, context.request.method)) {
     return restricted('Squadron access is limited to the read-only Squadron Board endpoint.', 'forbidden', 403);
   }
 

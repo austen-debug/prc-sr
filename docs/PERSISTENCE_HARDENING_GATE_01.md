@@ -1,0 +1,20 @@
+# GATE persistence hardening — Package 01
+
+## Decision boundary
+This package hardens the dormant, feature-gated persistence implementation. It does not apply SQL to production D1, create backups, turn on a feature flag, register an active cycle, or replace `records` as the operational write authority. Production data counts are not inferred from CI fixtures.
+
+## Data integrity contract
+- The original `records` rows are retained during deployment. The five typed tables are transactional mirrors once the three mirror triggers in migration `0003` have been installed. The five distinct feature tables are not duplicate bus/dorm storage.
+- Migration `0003` is additive (`IF NOT EXISTS`); the existing manually created production table definitions must be compared with the migration definitions before applying them. `IF NOT EXISTS` alone does **not** prove schema equivalence, and manual Console execution does not mark migration history as applied.
+- Migration `0004` creates forward-looking record-audit triggers. Deletion is recorded as system-observed with `actor_attribution: unverified`: a trigger cannot infer the actual deleter from the previous updater. The authenticated initiator must be captured explicitly in a future write-path enhancement if per-request deletion attribution is required. Do not misrepresent system observation as an identified person.
+- A new closeout archive retains existing `dorm_data`, `bus_data`, totals and reporting schema, plus `source_records_json`: a JSON array of the *exact original* `id`, `type`, `week_group`, `data`, `created_at` and `updated_at` values for every live dorm, bus and current-group sound event. `source_record_count` and `source_snapshot_format` describe that backup. Historical archives are not changed.
+- In one database batch, closeout compares the current source count, IDs, JSON and timestamps against the snapshot; writes the archive; verifies the exact persisted archive and source snapshot; deletes only active-cycle dorm/bus/sound rows; verifies clearance; clears cycle-specific configuration; closes the lifecycle row; and records the operation and audit event. Any failing statement must roll back the entire transaction.
+- Complete snapshots above the conservative 1,800,000-byte archive payload threshold are refused **without clearing sources**. Never reduce the snapshot to selected report fields to fit the limit; investigate separate lossless archive-item storage if actual size requires it.
+- Closeout is addressed by the requested cycle ID and idempotency key, not a currently selected Input value. A retry after completion returns its original archive, even if a new group has subsequently started. Any mismatch or unverifiable existing archive fails closed.
+- Input draft values exceeding schema limits, unknown row/review keys, invalid flags and unrecognized sex values are rejected with errors; nothing is silently sliced or replaced. Successful draft writes use revision compare-and-swap. A new draft is refused while a cycle is active.
+
+## SQLite verification
+`node --experimental-default-type=module --test tests/build-2/server/*.test.mjs` runs migration, parity, audit, draft, initialization, closeout, byte-exact snapshot, retry, failure rollback and archive-size tests. CI also exercises the existing Build 2 and runtime suites. These tests validate *local SQLite fixtures*, not the live Cloudflare database or a deployed application.
+
+## Remaining operational gates (separate packages)
+Before enabling `GATE_PERSISTENCE_ENABLED`: verify a recovery-capable production backup, reconcile exact live schema and migration history, install and verify the missing production triggers, rerun full source/mirror parity under a no-write window, validate the `DB` binding and `AUTH_SECRET`, register the active legacy cycle without modifying its records, test end-to-end Input/draft/Flight Alert/closeout UI on an isolated D1 deployment, and confirm the production flag starts disabled. Do not enable persistence merely because this pull request merges or CI is green.

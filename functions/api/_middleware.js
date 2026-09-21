@@ -74,7 +74,9 @@ async function guardPersistence(context) {
 }
 
 export async function onRequest(context) {
-  const session = await verifyRequestSession(context.request, context.env);
+  // `context.data.session` may be populated by a verified upstream middleware.
+  // It is server-owned request context, not client input. Re-verify only when absent.
+  const session = context.data?.session || await verifyRequestSession(context.request, context.env);
   if (session) context.data.session = session;
 
   const url = new URL(context.request.url);

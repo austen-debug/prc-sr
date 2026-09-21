@@ -263,19 +263,12 @@ test('audit events are server-attributed, PII-restricted, and append-only', asyn
   assert.equal(prohibited.status, 400);
 });
 
-test('Squadron role is read-only and receives a limited record set', async () => {
+test('Squadron role cannot read or mutate the generic records API', async () => {
   const db = createD1([
-    { __backendId: 'dorm-1', type: 'dorm', assigned_airman: 'Staff', auditorium_location: 'Room', notes: 'internal' },
-    { __backendId: 'archive-1', type: 'archive', total_arrived: 10 },
-    { __backendId: 'audit-1', type: 'audit_event', event_type: 'test', entity_type: 'bus', entity_id: 'B1' }
+    { __backendId: 'dorm-1', type: 'dorm', assigned_airman: 'Staff', auditorium_location: 'Room', notes: 'internal' }
   ]);
   const read = await onRequestGet({ env: { DB: db }, data: roleData('squadron') });
-  const body = await json(read);
-  assert.equal(body.records.length, 1);
-  assert.equal(body.records[0].type, 'dorm');
-  assert.equal('assigned_airman' in body.records[0], false);
-  assert.equal('auditorium_location' in body.records[0], false);
-  assert.equal('notes' in body.records[0], false);
+  assert.equal(read.status, 403);
 
   const write = await onRequestPost({
     env: { DB: db },
@@ -287,7 +280,8 @@ test('Squadron role is read-only and receives a limited record set', async () =>
 
 test('route-local session verifier accepts a valid signed role cookie', async () => {
   const secret = 'test-secret';
-  const payload = { role: 'instructor', exp: Date.now() + 60_000 };
+  const now = Date.now();
+  const payload = { username: 'tester', role: 'instructor', iat: now, exp: now + 60_000 };
   const body = btoa(JSON.stringify(payload)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
   const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
   const bytes = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(body));
@@ -297,7 +291,8 @@ test('route-local session verifier accepts a valid signed role cookie', async ()
   const session = await verifyRequestSession(new Request('https://gate.example/api/records', {
     headers: { Cookie: `prc_sr_session=${body}.${signature}` }
   }), { AUTH_SECRET: secret });
-  assert.deepEqual(session, { role: 'instructor' });
+  assert.equal(session.role, 'instructor');
+  assert.equal(session.username, 'tester');
 });
 
 test('schema and migration enforce audit append-only triggers', async () => {

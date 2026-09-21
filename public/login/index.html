@@ -114,19 +114,20 @@
             return;
           }
 
-          const session = await request('/api/session', {
+          const sessionResponse = await request('/api/session', {
             method: 'GET',
             headers: { 'Accept': 'application/json' },
             cache: 'no-store'
           });
+          const session = await sessionResponse.json().catch(() => null);
 
-          if (!session.ok) {
+          if (!sessionResponse.ok || !session?.isOk) {
             show('Login succeeded, but the session could not be verified. Please try again.');
             return;
           }
 
           navigating = true;
-          window.location.replace('/');
+          window.location.replace(session.role === 'squadron' ? '/squadron/' : '/');
         } catch (error) {
           show(error && error.name === 'AbortError'
             ? 'The authentication service timed out. Please retry.'
@@ -136,7 +137,6 @@
         }
       });
 
-      // Restored from back/forward cache mid-navigation: return to a usable state.
       window.addEventListener('pageshow', (event) => {
         if (event.persisted) setBusy(false);
       });

@@ -17,7 +17,10 @@ export function normalizeServerRole(value) {
 }
 
 export function mayReadRecords(role) {
-  return ROLE_SET.has(normalizeServerRole(role));
+  // Squadron must use /api/squadron-board. Filtering an unrestricted payload
+  // after querying it is not a sufficient authorization boundary.
+  const normalized = normalizeServerRole(role);
+  return ROLE_SET.has(normalized) && normalized !== 'squadron';
 }
 
 export function mayWriteRecords(role) {
@@ -114,6 +117,8 @@ export function conflictResponseBody({ expectedRecordVersion, currentRecordVersi
   });
 }
 
+// Retained solely for historical compatibility and offline contract fixtures.
+// The live records API refuses Squadron reads before any query is made.
 export function sanitizeRecordForRole(record = {}, role = '') {
   if (normalizeServerRole(role) !== 'squadron') return record;
   const type = String(record.type || '').toLowerCase();

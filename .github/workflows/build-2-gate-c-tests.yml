@@ -4,9 +4,14 @@ on:
   push:
     paths:
       - 'functions/api/**'
+      - 'functions/_middleware.js'
+      - 'functions/gate-shell-legacy.mjs'
       - 'schema.sql'
       - 'migrations/**'
       - 'public/app/data/**'
+      - 'public/squadron/**'
+      - 'public/js/gate-squadron-board.js'
+      - 'public/css/gate-squadron-board.css'
       - 'tests/build-2/server/**'
       - 'tests/build-2/data/**'
       - 'docs/build-2/PROGRAM_INTENT_BASELINE.md'
@@ -19,9 +24,14 @@ on:
   pull_request:
     paths:
       - 'functions/api/**'
+      - 'functions/_middleware.js'
+      - 'functions/gate-shell-legacy.mjs'
       - 'schema.sql'
       - 'migrations/**'
       - 'public/app/data/**'
+      - 'public/squadron/**'
+      - 'public/js/gate-squadron-board.js'
+      - 'public/css/gate-squadron-board.css'
       - 'tests/build-2/server/**'
       - 'tests/build-2/data/**'
       - 'docs/build-2/PROGRAM_INTENT_BASELINE.md'
@@ -44,32 +54,29 @@ jobs:
     name: Versioning, audit, authorization, and full regression
     runs-on: ubuntu-latest
     timeout-minutes: 12
-
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
-
       - name: Use Node.js 22
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-
-      - name: Validate records API syntax
+      - name: Validate records and authorization API syntax
         run: |
           node --experimental-default-type=module --check functions/api/records.js
           node --experimental-default-type=module --check functions/api/_middleware.js
-
-      - name: Validate server versioning and append-only audit
+          node --experimental-default-type=module --check functions/_middleware.js
+          node --experimental-default-type=module --check functions/api/login.js
+          node --experimental-default-type=module --check functions/api/squadron-board.js
+          node --check public/js/gate-squadron-board.js
+      - name: Validate server authorization, versioning, persistence and audit
         run: node --experimental-default-type=module --test tests/build-2/server/*.test.mjs
-
       - name: Validate repositories and canonical data
         run: node --test tests/build-2/data/*.test.mjs
-
       - name: Validate domain and historical parity
         run: |
           node --test tests/build-2/domain/*.test.mjs
           node --test tests/build-2/parity/*.test.mjs
-
       - name: Validate Phase 2 application foundation
         run: |
           node --test tests/build-2/design/*.test.mjs
@@ -77,8 +84,7 @@ jobs:
           node --test tests/build-2/shell/*.test.mjs
           node --test tests/build-2/responsive/*.test.mjs
           node --test tests/build-2/accessibility/*.test.mjs
-
-      - name: Validate Gate C source and governance boundaries
+      - name: Validate Gate C governance and Squadron security contract
         run: |
           grep -q 'recordVersioning: true' functions/api/records-contract.mjs
           grep -q "headers.get('If-Match')" functions/api/records.js
@@ -91,14 +97,13 @@ jobs:
           grep -Eq 'Gate C — Backend versioning and append-only audit events[[:space:]]+COMPLETE' docs/build-2/PROGRAM_INTENT_BASELINE.md
           grep -Eq 'Foundation Alignment Gate C[[:space:]]+COMPLETE' docs/build-2/INDEX.md
           grep -Eq 'Production Build 2 route activation[[:space:]]+NOT AUTHORIZED|Phase 3A — Status Board Shadow Migration' docs/build-2/INDEX.md
-          if grep -q 'SQUADRON_USERNAME' functions/api/login.js; then
-            echo 'Gate C must not activate Squadron login.'
-            exit 1
-          fi
-
+          grep -q 'SQUADRON_USERNAME' functions/api/login.js
+          grep -q 'verifyRequestSession' functions/_middleware.js
+          grep -q 'projectSquadronBoard' functions/api/squadron-board.js
+          grep -q 'hasSessionSecret' functions/api/session-contract.mjs
       - name: Validate Build 2 feature isolation
         run: |
-          if grep -Eq '/app/(domain|data|design|components|shell|responsive|accessibility)/' functions/_middleware.js; then
+          if grep -Eq '/app/(domain|data|design|components|shell|responsive|accessibility)/' functions/gate-shell-legacy.mjs; then
             echo 'Build 2 application assets must not be loaded by active middleware.'
             exit 1
           fi

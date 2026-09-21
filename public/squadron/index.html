@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#07111f">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Squadron Board · GATE</title>
+  <link rel="icon" href="/assets/gate_emblem_blue.png" type="image/png">
+  <link rel="stylesheet" href="/css/gate-squadron-board.css">
+  <script src="/js/gate-squadron-board.js" defer></script>
+</head>
+<body>
+  <div class="classification" role="note">UNCLASSIFIED <span aria-hidden="true">/</span> NO PII <span aria-hidden="true">/</span> OPERATIONAL STATUS ONLY</div>
+  <header class="command-header">
+    <div class="identity"><img src="/assets/gate_emblem_blue.png" alt="" width="42" height="42"><div><span class="eyebrow">PFINGSTON RECEPTION CENTER · GATE</span><h1>Squadron Board</h1></div></div>
+    <div class="header-actions"><span class="read-only">READ ONLY</span><a id="return-to-gate" href="/" hidden>Return to GATE</a><button id="squadron-fullscreen" type="button" aria-label="Enter fullscreen display">Fullscreen</button><button id="squadron-logout" type="button">Sign out</button></div>
+  </header>
+  <main id="squadron-main">
+    <section class="context" aria-label="Operational context"><div><span class="eyebrow">ACTIVE WEEK GROUP</span><strong id="sq-week-group">Checking…</strong></div><div class="freshness"><span id="sq-connection" role="status" aria-live="polite">Verifying operational data…</span><span id="sq-updated">Last confirmed: —</span></div></section>
+    <section class="metrics" aria-label="Receiving metrics">
+      <article class="metric"><div class="metric-heading"><span>ARRIVED</span><span class="info"><button type="button" class="info-button" aria-label="About arrived trainees" aria-describedby="tip-arrived" aria-expanded="false">i</button><span id="tip-arrived" class="tip" role="tooltip">Trainees that have arrived to the Pfingston Reception Center from the Airport.</span></span></div><strong id="sq-arrived" class="metric-value">—</strong><span class="metric-sub">Confirmed airport arrivals</span></article>
+      <article class="metric"><div class="metric-heading"><span>EXPECTED</span><span class="info"><button type="button" class="info-button" aria-label="About expected trainees" aria-describedby="tip-expected" aria-expanded="false">i</button><span id="tip-expected" class="tip" role="tooltip">Total expected strength from the current Week Group's configured dorm capacity.</span></span></div><strong id="sq-expected" class="metric-value">—</strong><span class="metric-sub">Current Week Group capacity</span></article>
+      <article class="metric"><div class="metric-heading"><span>LATEST CONFIRMED</span><span class="info"><button type="button" class="info-button" aria-label="About latest confirmed arrival" aria-describedby="tip-confirmed" aria-expanded="false">i</button><span id="tip-confirmed" class="tip" role="tooltip">Most recent airport bus arrival confirmed in GATE; derived from a recorded arrival timestamp.</span></span></div><strong id="sq-latest" class="metric-value metric-time">—</strong><span class="metric-sub">Arrival record · Central time</span></article>
+      <article class="metric"><div class="metric-heading"><span>FINAL AIRPORT</span><span class="info"><button type="button" class="info-button" aria-label="About final airport arrival" aria-describedby="tip-final" aria-expanded="false">i</button><span id="tip-final" class="tip" role="tooltip">The separately configured final airport-arrival planning time. This is not a confirmed arrival.</span></span></div><strong id="sq-final" class="metric-value metric-time">—</strong><span class="metric-sub">Planning value · Central time</span></article>
+    </section>
+    <section class="traffic-panel" aria-labelledby="traffic-heading"><div class="panel-heading"><div><span class="eyebrow">AIRPORT DISPATCH RATE</span><h2 id="traffic-heading">Inbound traffic <span class="info"><button class="info-button" type="button" aria-label="About inbound traffic" aria-describedby="tip-traffic" aria-expanded="false">i</button><span id="tip-traffic" class="tip" role="tooltip">Distinct airport buses dispatched in the rolling last 60 minutes. Slow: 0–1; Medium: 2; Heavy: 3 or more. Local movements are excluded.</span></span></h2></div><div class="traffic-reading"><strong id="sq-traffic-count">—</strong><span id="sq-traffic-description">Checking dispatch times</span></div></div><div class="tempo" role="group" aria-label="Inbound traffic tempo"><span data-tempo="slow">SLOW</span><span data-tempo="medium">MEDIUM</span><span data-tempo="heavy">HEAVY</span></div><p id="sq-traffic-warning" class="notice" hidden></p></section>
+    <section class="bus-panel" aria-labelledby="buses-heading"><div class="panel-heading"><div><span class="eyebrow">MOVEMENT PICTURE</span><h2 id="buses-heading">Active buses</h2></div><span id="sq-active-count" class="count">0 en route</span></div><div id="sq-buses" class="bus-strip" aria-live="off"><p class="empty">Awaiting data…</p></div></section>
+    <section class="dorms" aria-label="Dormitory processing status"><section class="dorm-column" aria-labelledby="empty-heading"><div class="column-heading"><h2 id="empty-heading">Empty dorms</h2><span id="sq-empty-count" class="count">0</span></div><div id="sq-empty" class="column-content"><p class="empty">Awaiting data…</p></div></section><section class="dorm-column" aria-labelledby="open-heading"><div class="column-heading"><h2 id="open-heading">Open dorms</h2><span id="sq-open-count" class="count">0</span></div><div id="sq-open" class="column-content"><p class="empty">Awaiting data…</p></div></section><section class="dorm-column" aria-labelledby="closed-heading"><div class="column-heading"><h2 id="closed-heading">Closed dorms</h2><span id="sq-closed-count" class="count">0</span></div><div id="sq-closed" class="column-content"><p class="empty">Awaiting data…</p></div></section></section>
+  </main>
+  <footer class="footer"><span>GATE · Gateway Arrival Tracking Environment</span><span>Read-only operational picture · No editing controls</span></footer>
+  <noscript>This board requires JavaScript to request its authorized, read-only operational data.</noscript>
+</body>
+</html>

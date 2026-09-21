@@ -10,6 +10,7 @@ on:
       - 'public/css/military-glass-terminal.css'
       - 'public/js/**'
       - 'public/app/features/input/flight-alert-*.mjs'
+      - 'public/app/features/input/week-group-action-placement.mjs'
       - 'tests/runtime/**'
       - '.github/workflows/runtime-record-integrity-tests.yml'
   pull_request:
@@ -21,6 +22,7 @@ on:
       - 'public/css/military-glass-terminal.css'
       - 'public/js/**'
       - 'public/app/features/input/flight-alert-*.mjs'
+      - 'public/app/features/input/week-group-action-placement.mjs'
       - 'tests/runtime/**'
       - '.github/workflows/runtime-record-integrity-tests.yml'
 
@@ -66,6 +68,9 @@ jobs:
 
       - name: Processing modal record persistence
         run: node --test tests/runtime/processing-modal-record-persistence.test.mjs
+
+      - name: Processing assignment Save button containment
+        run: node --test tests/runtime/processing-save-button-layout.test.mjs
 
       - name: Fullscreen command-board readability
         run: node --test tests/runtime/fullscreen-command-board-readability.test.mjs

@@ -1,0 +1,32 @@
+name: One-time GATE light contrast refinement
+on:
+  push:
+    branches:
+      - feat/flight-alert-light-contrast-20260921
+    paths:
+      - .github/workflows/one-time-light-contrast.yml
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Apply source-anchored light-mode corrections
+        run: node tools/one-time-light-contrast.cjs
+      - name: Verify new contrast contract
+        run: node --test tests/runtime/light-mode-contrast.test.mjs
+      - name: Push only the canonical stylesheet change
+        run: |
+          git config user.name 'GATE CI'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add public/css/military-glass-terminal.css
+          git diff --cached --check
+          git commit -m 'fix: improve GATE light theme and native select readability [gate-auto-fix]'
+          git push origin HEAD:feat/flight-alert-light-contrast-20260921

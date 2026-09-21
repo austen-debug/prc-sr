@@ -42,7 +42,7 @@ test('all active middleware assets exist and every active JavaScript file parses
   const styles = attrs(arrayBlock(middleware, 'UI_STYLESHEETS'), 'href').map(pathOnly);
   const scripts = attrs(arrayBlock(middleware, 'UI_HEAD_SCRIPTS'), 'src').map(pathOnly);
   const budget = JSON.parse(await source('docs/build-2/ACTIVE_RUNTIME_BUDGET.json'));
-  assert.deepEqual(styles, ['/css/military-glass-terminal.css']);
+  assert.deepEqual(styles, ['/css/military-glass-terminal.css', '/css/squadron-board.css']);
   assert.deepEqual(scripts, budget.currentDirectScripts.map(pathOnly));
   assert.ok(scripts.length <= budget.maximums.directScripts, 'Active scripts exceed the governed ceiling.');
   for (const asset of [...styles, ...scripts]) await exists(`public${asset}`);
@@ -68,6 +68,7 @@ test('all six operational routes and their critical DOM surfaces remain present'
   const squadron = await source('public/js/prc-dash-final-audit.js');
   assert.match(squadron, /page-squadron/);
   assert.match(squadron, /gate-squadron-page/);
+  await exists('public/squadron/index.html');
 });
 
 test('canonical workflow owners retain the required operational function contracts', async () => {
@@ -135,19 +136,21 @@ test('login, session, and authentication surfaces remain reachable', async () =>
   assert.match(login, /fetch\(url,\s*\{\s*credentials:\s*'same-origin'/);
   assert.match(login, /await request\('\/api\/login'/);
   assert.match(login, /await request\('\/api\/session'/);
-  assert.match(login, /if \(!session\.ok\)/);
+  assert.match(login, /if \(!sessionResponse\.ok \|\| !session\?\.isOk\)/);
+  assert.match(login, /session\.role === 'squadron' \? '\/squadron\/' : '\/'/);
   assert.match(login, /\/css\/military-glass-terminal\.css/);
   await exists('functions/api/login.js');
   await exists('functions/api/logout.js');
   await exists('functions/api/session.js');
 });
 
-test('backend CRUD, session, SAT, and archive endpoints remain present without changing persistence', async () => {
+test('backend CRUD, session, SAT, archive, and Squadron endpoints remain present without changing persistence', async () => {
   for (const path of [
     'functions/api/records.js', 'functions/api/records-contract.mjs',
     'functions/api/session.js', 'functions/api/session-contract.mjs',
     'functions/api/login.js', 'functions/api/logout.js', 'functions/api/ping.js',
-    'functions/api/sat-arrivals.js', 'functions/api/archive-delete.js'
+    'functions/api/sat-arrivals.js', 'functions/api/archive-delete.js',
+    'functions/api/squadron-board.js'
   ]) await exists(path);
   const records = await source('functions/api/records.js');
   for (const method of ['Get', 'Post', 'Put', 'Delete']) {

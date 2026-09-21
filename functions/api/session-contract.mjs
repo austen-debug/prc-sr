@@ -1,4 +1,5 @@
 const COOKIE_NAME = 'prc_sr_session';
+const SESSION_ROLES = new Set(['instructor', 'airman', 'squadron']);
 
 function getCookie(request, name) {
   const cookieHeader = request.headers.get('Cookie') || '';
@@ -33,7 +34,7 @@ async function sign(value, secret) {
   const encoder = new TextEncoder();
   const key = await crypto.subtle.importKey(
     'raw',
-    encoder.encode(secret || 'missing-secret'),
+    encoder.encode(secret),
     { name: 'HMAC', hash: 'SHA-256' },
     false,
     ['sign']
@@ -44,15 +45,29 @@ async function sign(value, secret) {
 
 export async function verifyRequestSession(request, env) {
   try {
+    const secret = String(env?.AUTH_SECRET || '').trim();
+    if (!secret) return null;
+
     const token = getCookie(request, COOKIE_NAME);
     if (!token) return null;
     const [body, signature] = token.split('.');
     if (!body || !signature) return null;
-    const expected = await sign(body, env.AUTH_SECRET);
+
+    const expected = await sign(body, secret);
     if (!safeEqual(signature, expected)) return null;
+
     const payload = JSON.parse(base64urlDecodeString(body));
+    const role = String(payload.role || '').trim().toLowerCase();
+    if (!SESSION_ROLES.has(role)) return null;
     if (!payload.exp || payload.exp < Date.now()) return null;
-    return Object.freeze({ role: String(payload.role || '').toLowerCase() });
+    if (!payload.iat || payload.iat > Date.now() + 60000) return null;
+
+    return Object.freeze({
+      username: String(payload.username || ''),
+      role,
+      iat: Number(payload.iat),
+      exp: Number(payload.exp)
+    });
   } catch {
     return null;
   }

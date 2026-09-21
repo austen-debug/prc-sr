@@ -1,4 +1,5 @@
 const ROLE_SET = new Set(['instructor', 'airman', 'squadron', 'system']);
+const RECORD_READ_ROLE_SET = new Set(['instructor', 'airman', 'system']);
 const WRITE_ROLE_SET = new Set(['instructor', 'airman', 'system']);
 const PROHIBITED_METADATA_KEY = /^(?:trainee_name|first_name|last_name|ssn|social_security|dod_id|edipi|orders?)$/i;
 
@@ -17,7 +18,7 @@ export function normalizeServerRole(value) {
 }
 
 export function mayReadRecords(role) {
-  return ROLE_SET.has(normalizeServerRole(role));
+  return RECORD_READ_ROLE_SET.has(normalizeServerRole(role));
 }
 
 export function mayWriteRecords(role) {
@@ -116,12 +117,5 @@ export function conflictResponseBody({ expectedRecordVersion, currentRecordVersi
 
 export function sanitizeRecordForRole(record = {}, role = '') {
   if (normalizeServerRole(role) !== 'squadron') return record;
-  const type = String(record.type || '').toLowerCase();
-  if (!['bus', 'dorm', 'config'].includes(type)) return null;
-  const sanitized = { ...record };
-  delete sanitized.assigned_airman;
-  delete sanitized.assigned_staff;
-  delete sanitized.auditorium_location;
-  delete sanitized.notes;
-  return sanitized;
+  return null;
 }

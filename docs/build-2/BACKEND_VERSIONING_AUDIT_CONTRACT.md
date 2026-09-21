@@ -1,11 +1,11 @@
 # GATE Build 2 — Backend Versioning and Audit Contract
 
-Status: Foundation Alignment Gate C  
-Runtime boundary: shared records API, backward-compatible with Build 1 clients
+Status: Foundation Alignment Gate C, amended by Packages 04–05  
+Runtime boundary: shared records API for Instructor/Airman continuity; isolated Squadron read endpoint
 
 ## Purpose
 
-This contract establishes server-owned concurrency protection, trusted role provenance, and append-only operational audit records before write-heavy Build 2 workflows migrate.
+This contract establishes server-owned concurrency protection, trusted role provenance, append-only operational audit records, and the current Squadron authorization boundary.
 
 ## Record-version contract
 
@@ -38,35 +38,50 @@ The client maps HTTP `409` or `412` to repository error `conflict`.
 
 ### Build 1 compatibility
 
-Current Build 1 controllers do not send `If-Match`. Their existing writes remain accepted so operational continuity is preserved. Those writes still increment `record_version`, allowing later Build 2 reads to detect that authoritative state changed.
+Current Instructor/Airman Build 1 controllers do not send `If-Match`. Their existing writes remain accepted so operational continuity is preserved. Those writes still increment `record_version`, allowing later Build 2 reads to detect that authoritative state changed.
 
 Build 2 typed repositories require conflict detection by default. An explicit `requireConflictDetection: false` is reserved for documented compatibility work and may not be used by migrated critical workflows.
 
 ## Server role provenance
 
-The records API derives role from the signed `prc_sr_session` cookie through a route-local server session bridge. Request-body role fields are not authoritative.
+The server derives role from the signed `prc_sr_session` cookie. `AUTH_SECRET` is mandatory; there is no fallback signing secret. Request-body role fields are not authoritative.
 
-On create, the server sets:
+On create, the records API sets:
 
 ```text
 created_by_role
 updated_by_role
 ```
 
-On update, the server preserves `created_by_role` and replaces `updated_by_role` with the current verified session role.
+On update, the records API preserves `created_by_role` and replaces `updated_by_role` with the current verified session role.
 
-Recognized server roles are:
+Recognized session roles are:
 
 ```text
 instructor
 airman
 squadron
-system
 ```
 
-Unknown or unverifiable roles cannot read or write the records API. Squadron is read-only and receives only limited bus, dorm, and safe configuration records with staff assignment, auditorium location, notes, archives, and audit events withheld.
+`system` remains a trusted server-side audit/provenance role, not an interactive login role.
 
-Squadron login is not activated by Gate C.
+Unknown or unverifiable roles cannot read or write the records API. Squadron sessions cannot access `/api/records` at all. They are routed to the dedicated read-only `/squadron/` document and may retrieve only the positive-allowlisted `/api/squadron-board` projection. Direct requests to operational APIs, archives, persistence actions, SAT arrivals, or mutation routes are denied by server middleware.
+
+## Squadron read contract
+
+The dedicated Squadron endpoint may expose only approved operational status fields required to render the board, including:
+
+```text
+active Week Group label
+airport-arrived aggregate
+expected aggregate
+rolling airport-dispatch tempo
+approved active-airport-bus identifier/count/time fields
+approved dorm squadron/name/section/state/phase/load/designator fields
+board generation timestamp
+```
+
+It must not send complete raw records and must not expose internal notes, assigned personnel, auditorium locations, archive payloads, configuration objects, audit payloads, or mutation metadata. The browser does not receive a broad record set and then hide fields client-side.
 
 ## Audit-event contract
 
@@ -128,38 +143,43 @@ No existing record backfill is required. Unversioned records remain version `0` 
 - resulting version not lower than prior version;
 - prohibited metadata fields.
 
-Gate C establishes storage and immutability. Gate D will decide which critical multi-step workflows require audit success before the workflow may report completion.
+Gate C establishes storage and immutability. Later workflow orchestration decides which critical multi-step workflows require audit success before the workflow may report completion.
 
 ## Authorization boundary
 
-- Instructor and Airman sessions retain the current authenticated records access required for Build 1 continuity.
-- Squadron sessions are read-only and receive a reduced record projection.
+- Instructor and Airman sessions retain authenticated `/api/records` access required for operational continuity.
+- Squadron sessions do not receive the operational app shell and do not receive generic records access.
+- Squadron access is limited to `GET /api/session`, `GET /api/squadron-board`, and `POST /api/logout`; other API paths or methods are denied.
 - Request-body provenance is never trusted.
-- Command-specific Instructor/Airman authorization remains the responsibility of the named workflow orchestration introduced in Gate D and route migration packages.
+- Command-specific Instructor/Airman authorization remains the responsibility of the named workflow orchestration and route-specific guards.
 
 ## Failure behavior
 
+- Missing `AUTH_SECRET`: authentication fails closed with service configuration error.
 - Invalid or missing record identity: `400`.
 - Unknown record: `404`.
 - Stale expected version: `409`.
 - Invalid `If-Match`: `400`.
-- Unauthorized role: `403` after the global authentication gate.
+- Unauthorized role or Squadron request outside its allowlist: `403` after the authentication gate.
 - Audit mutation: `405`.
 - Persistence failure: `500` without a false success response.
 
 ## Exit evidence
 
-Gate C must prove:
+The current contract must prove:
 
 ```text
 PASS — server assigns initial record version
 PASS — successful writes increment one version
 PASS — stale conditional update is rejected
 PASS — stale conditional delete is rejected
-PASS — Build 1 no-header writes remain compatible
+PASS — compatible Instructor/Airman no-header writes remain accepted
 PASS — server role overrides request-body provenance
-PASS — Squadron write is rejected
-PASS — Squadron read projection excludes restricted fields
+PASS — missing AUTH_SECRET fails closed
+PASS — Squadron generic records read/write is rejected
+PASS — Squadron operational app-shell access is redirected before content delivery
+PASS — Squadron endpoint exposes only its positive allowlist
+PASS — Squadron direct mutation and non-board API requests are rejected
 PASS — audit append normalizes canonically
 PASS — audit update/delete fail at repository and API
 PASS — D1 append-only triggers are present

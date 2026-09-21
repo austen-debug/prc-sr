@@ -1,6 +1,5 @@
 import { PersistenceValidationError, normalizeDraft, validateInitialization, buildDormRows, parseOperationalRow, buildArchivePayload } from './persistence-core.mjs';
 
-const TYPES = ['bus','dorm','archive','config','sound_event'];
 const WINDOWS = ['receiving_day_one_start','receiving_day_one_end','receiving_day_two_start','receiving_day_two_end'];
 const nowIso = () => new Date().toISOString();
 const uuid = () => crypto.randomUUID();
@@ -263,11 +262,12 @@ export async function onRequestPost({request,env,data}) {
     if (raw.length>180000) return error('validation','Request exceeds persistence payload limit.',413);
     const payload=JSON.parse(raw);
     if (!payload||typeof payload!=='object'||Array.isArray(payload)) return error('validation','Invalid request body.',400);
-    if (payload.action==='save_draft') return saveDraft(env,payload);
-    if (payload.action==='adopt') return adopt(env);
-    if (payload.action==='initialize') return initialize(env,payload);
-    if (payload.action==='closeout') return closeout(env,payload);
-    if (payload.action==='amend_archive') return amendArchive(env,payload);
+    // Await dispatch inside the catch boundary: asynchronous validation failures must return 400, not an uncaught 500.
+    if (payload.action==='save_draft') return await saveDraft(env,payload);
+    if (payload.action==='adopt') return await adopt(env);
+    if (payload.action==='initialize') return await initialize(env,payload);
+    if (payload.action==='closeout') return await closeout(env,payload);
+    if (payload.action==='amend_archive') return await amendArchive(env,payload);
     return error('validation','Unsupported persistence action.',400);
   } catch(e) {
     if (e instanceof PersistenceValidationError || e instanceof SyntaxError) return error('validation',e.message,400);

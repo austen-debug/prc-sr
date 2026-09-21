@@ -178,7 +178,7 @@ test('shared overtime controller only paints Squadron timers and delegates styli
   const displayEnd = overtime.indexOf('async function markDormOvertimeSent', displayStart);
   const display = overtime.slice(displayStart, displayEnd);
 
-  assert.match(display, /#page-squadron \.timer-display\.timer-yellow/);
+  assert.match(display, /#page-squadron \.timer-display\[data-opened\]/);
   assert.doesNotMatch(display, /querySelectorAll\('\.timer-display\[data-opened\]'\)/);
   assert.doesNotMatch(display, /#page-board|#page-processing/);
   assert.match(css, /#page-squadron \.timer-display\.timer-yellow/);

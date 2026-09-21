@@ -1,303 +1,317 @@
-// GATE Dorm Board Compatibility Controller
-// Status Board is owned by gate-status-board-controller.js. This file owns the instructor-visible
-// Squadron Board, document identity, and close-dorm final-time safety.
+// Squadron Board controller + existing close-dorm timing compatibility. Status Board has its own owner.
 (function () {
   'use strict';
-
   let installed = false;
-  let passScheduled = false;
   let closeDormPatched = false;
-  let squadronSignature = '';
-  let clockTimer = null;
-
-  function n(value) {
-    const parsed = Number(value || 0);
-    return Number.isFinite(parsed) ? parsed : 0;
-  }
-
-  function bool(value) {
-    return value === true || value === 'true' || value === 1 || value === '1';
-  }
-
-  function esc(value) {
-    if (typeof window.GateComponents?.esc === 'function') return window.GateComponents.esc(value);
-    if (typeof escapeHtml === 'function') return escapeHtml(value);
-    return String(value ?? '')
-      .replaceAll('&', '&amp;')
-      .replaceAll('<', '&lt;')
-      .replaceAll('>', '&gt;')
-      .replaceAll('"', '&quot;')
-      .replaceAll("'", '&#039;');
-  }
+  let polling = false;
+  let lastPoll = 0;
+  let lastNoticeKey = null;
+  let currentNotice = null;
+  let activeWeek = '';
+  let editor = false;
+  let soundEnabled = false;
+  let alertSound = null;
+  const nodes = new Map();
+  const POLL_MS = 15000;
+  const byId = id => document.getElementById(id);
+  const standalone = () => document.body.classList.contains('gate-squadron-standalone');
+  const esc = value => String(value ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#039;');
+  function setText(element, value) { if (element && element.textContent !== String(value)) element.textContent = String(value); }
+  const tooltip = (label, description) => `<button type="button" class="gate-info" data-squadron-tip="${esc(description)}" aria-label="About ${esc(label)}">i</button>`;
+  const instructions = [
+    'Dormitories are "open" when they are full.',
+    'The PRC will contact CQ when dormitories are open, closed, or there are updates pertaining to that Dorm.',
+    'PRC Staff cannot edit or select Flight assignment, only assign initial dormitories.'
+  ];
 
   function ensureDocumentIdentity() {
-    document.title = 'GATE — Gateway Arrival Tracking Environment | Pfingston Reception Center';
-    document.documentElement.setAttribute('lang', 'en');
+    document.title = standalone() ? 'Squadron Board · GATE' : 'GATE — Gateway Arrival Tracking Environment | Pfingston Reception Center';
+    document.documentElement.lang = 'en';
     const viewport = document.querySelector('meta[name="viewport"]');
     if (viewport) viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, viewport-fit=cover');
-    if (!document.querySelector('meta[name="description"]')) {
-      const meta = document.createElement('meta');
-      meta.name = 'description';
-      meta.content = 'U.S. Air Force Basic Military Training — Arrival Tracking Command Shell';
-      document.head.appendChild(meta);
-    }
   }
 
-  function activeWeekGroup() {
-    try { return typeof getActiveWG === 'function' ? getActiveWG() : ''; } catch (_) { return ''; }
-  }
-
-  function recordsByType(type) {
-    try {
-      if (typeof getRecords === 'function') return getRecords(type);
-      if (Array.isArray(allData)) return allData.filter(record => record.type === type);
-    } catch (_) {}
-    return [];
-  }
-
-  function dormsForActiveWeek() {
-    const wg = activeWeekGroup();
-    const dorms = recordsByType('dorm').filter(dorm => !wg || dorm.week_group === wg);
-    if (window.GateRecordDisplay?.sortDorms) return window.GateRecordDisplay.sortDorms(dorms);
-    return dorms;
-  }
-
-  function airportBusesForActiveWeek() {
-    const wg = activeWeekGroup();
-    return recordsByType('bus')
-      .filter(bus => (!wg || bus.week_group === wg) && String(bus.bus_type || '').toLowerCase() === 'airport');
-  }
-
-  function tempoFor(buses) {
-    const now = Date.now();
-    const hourAgo = now - (60 * 60 * 1000);
-    const count = buses.filter(bus => {
-      const departed = new Date(bus.departed_at || '').getTime();
-      return Number.isFinite(departed) && departed >= hourAgo && departed <= now;
-    }).length;
-    return { count, status: count >= 3 ? 'HEAVY' : (count === 2 ? 'MEDIUM' : 'SLOW') };
-  }
-
-  function time(value, seconds = false) {
-    const date = value ? new Date(value) : new Date();
-    if (Number.isNaN(date.getTime())) return '—';
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', ...(seconds ? { second: '2-digit' } : {}), hour12: false });
-  }
-
-  function info(label, text) {
-    return `<button type="button" class="gate-info" aria-label="About ${esc(label)}" data-tooltip="${esc(text)}">i</button>`;
+  function markup() {
+    return `<div class="gate-squadron-view">
+      <header class="gate-squadron-topbar" aria-label="Squadron Board header">
+        <div class="gate-squadron-top-left"><button id="squadron-information" type="button" class="gate-squadron-information" aria-label="Open Squadron information"><span aria-hidden="true">i</span><span class="gate-squadron-new" id="squadron-new" hidden>NEW</span></button></div>
+        <div class="gate-squadron-heading"><div class="gate-squadron-eyebrow">PFINGSTON RECEPTION CENTER · GATE</div><h1 id="squadron-title" class="gate-squadron-title">SQUADRON BOARD</h1><div id="squadron-week-label" class="gate-squadron-week">NO ACTIVE WEEK GROUP</div></div>
+        <div class="gate-squadron-actions"><span class="gate-squadron-tag">READ ONLY</span>${standalone() ? '<button id="squadron-enable-sound" type="button" class="gate-squadron-utility">ENABLE ALERTS</button><button id="squadron-logout" type="button" class="gate-squadron-utility">LOG OUT</button>' : ''}</div>
+        <div id="squadron-traffic" class="gate-squadron-traffic" data-tempo="UNAVAILABLE" aria-label="Inbound traffic tempo">
+          <div class="gate-squadron-traffic-title">INBOUND TRAFFIC ${tooltip('Inbound Traffic', 'Trainees on their way from the Airport to the PRC.')}</div>
+          <div class="gate-squadron-tempo-options" role="group" aria-label="Rolling 60-minute bus tempo">
+            <div class="gate-squadron-tempo-option" data-rate="SLOW"><span aria-hidden="true">🚐</span><strong>SLOW</strong></div>
+            <div class="gate-squadron-tempo-option" data-rate="MEDIUM"><span aria-hidden="true">🚐🚐</span><strong>MEDIUM</strong></div>
+            <div class="gate-squadron-tempo-option" data-rate="HEAVY"><span aria-hidden="true">🚐🚐🚐</span><strong>HEAVY</strong></div>
+          </div><div id="squadron-traffic-detail" class="gate-squadron-traffic-detail">Awaiting current traffic</div>
+        </div>
+      </header>
+      <section class="gate-squadron-metrics" aria-label="Receiving metrics">
+        <article class="gate-squadron-metric"><div class="gate-squadron-metric-head">ARRIVED ${tooltip('Arrived', 'Trainees that have arrived to the PRC.')}</div><div id="squadron-metric-arrived" class="gate-squadron-value">—</div></article>
+        <article class="gate-squadron-metric"><div class="gate-squadron-metric-head">EXPECTED ${tooltip('Expected', 'Number of Trainees expected to arrive this week.')}</div><div id="squadron-metric-expected" class="gate-squadron-value">—</div></article>
+        <article class="gate-squadron-metric"><div class="gate-squadron-metric-head">LOCAL TIME</div><div id="squadron-metric-local" class="gate-squadron-value is-time">--:--:--</div></article>
+        <article class="gate-squadron-metric"><div class="gate-squadron-metric-head">LAST CONFIRMED ${tooltip('Last Confirmed', 'The last flight into San Antonio tonight.')}</div><div id="squadron-metric-confirmed" class="gate-squadron-value is-time">—</div></article>
+      </section>
+      <section class="gate-squadron-columns" aria-label="Dorm receiving status">
+        ${[['empty','EMPTY','These dorms have not been opened yet.'],['open','OPEN','These dorms have all required trainees and are currently processing at the PRC.'],['closed','CLOSED','These dorms have completed PRC processing.']].map(([state,label,tip]) => `<article class="gate-squadron-column"><header class="gate-squadron-column-head"><span>${label} ${tooltip(label,tip)}</span><span id="squadron-count-${state}" class="gate-squadron-column-count">0</span></header><div id="squadron-col-${state}" class="gate-squadron-column-list"></div></article>`).join('')}
+      </section>
+      <div id="squadron-status" class="gate-squadron-status" role="status" aria-live="polite">Connecting to GATE…</div>
+      <dialog id="squadron-info-dialog" class="gate-squadron-dialog" aria-labelledby="squadron-dialog-title">
+        <div class="gate-squadron-dialog-heading"><h2 id="squadron-dialog-title">Squadron Information</h2><button id="squadron-info-close" type="button" class="gate-squadron-utility" aria-label="Close Squadron information">CLOSE</button></div>
+        <div class="gate-squadron-instructions">${instructions.map(item => `<p>${esc(item)}</p>`).join('')}<p>For Questions, please contact PRC front desk at <a href="tel:+12106713042">210-671-3042</a>.</p></div>
+        <section class="gate-squadron-notice" aria-label="Published operational notice"><h3>LIVE UPDATE</h3><div id="squadron-notice-message">No additional updates published.</div><div id="squadron-notice-time" class="gate-squadron-notice-time"></div></section>
+        <form id="squadron-publish-form" class="gate-squadron-editor" hidden><label for="squadron-notice-draft">Publish an operational update (no trainee PII)</label><textarea id="squadron-notice-draft" maxlength="1000" rows="4" placeholder="Enter a short update for Squadron personnel"></textarea><button id="squadron-publish" type="submit" class="gate-squadron-publish">PUBLISH UPDATE</button><div id="squadron-publish-status" role="status" aria-live="polite"></div></form>
+      </dialog>
+      <div id="squadron-tooltip" class="gate-squadron-tooltip" role="tooltip" hidden></div>
+    </div>`;
   }
 
   function ensureSquadronPage() {
-    const boardPage = document.getElementById('page-board');
-    if (!boardPage) return;
-
-    let page = document.getElementById('page-squadron');
-    if (!page) {
-      boardPage.insertAdjacentHTML('afterend', `
-        <main id="page-squadron" class="page gate-squadron-page" role="main" aria-label="Squadron Board" data-component="squadron-board" data-owner="gate-squadron-board-controller">
-          <div class="gate-squadron-view gate-squadron-embedded">
-            <header class="gate-squadron-topbar">
-              <div>
-                <div class="gate-squadron-eyebrow">Pfingston Reception Center · Gateway Arrival Tracking Environment</div>
-                <h2 class="gate-squadron-title">Squadron Board</h2>
-                <div id="squadron-week-label" class="gate-squadron-week">NO ACTIVE WEEK GROUP</div>
-              </div>
-              <span class="gate-squadron-tag">READ ONLY VIEW</span>
-            </header>
-
-            <section class="gate-squadron-metrics" aria-label="Squadron Board metrics">
-              <article class="gate-squadron-metric"><div class="gate-squadron-metric-head"><span class="gate-squadron-label">ARRIVED</span>${info('Arrived', 'Trainees that have arrived to the Pfingston Reception Center from the Airport')}</div><div id="squadron-metric-arrived" class="gate-squadron-value">0</div></article>
-              <article class="gate-squadron-metric"><div class="gate-squadron-metric-head"><span class="gate-squadron-label">EXPECTED</span>${info('Expected', 'Total trainees expected for the active Week Group based on initialized dorm loads')}</div><div id="squadron-metric-expected" class="gate-squadron-value">0</div></article>
-              <article class="gate-squadron-metric"><div class="gate-squadron-metric-head"><span class="gate-squadron-label">LOCAL TIME</span></div><div id="squadron-metric-local" class="gate-squadron-value is-time">--:--:--</div></article>
-              <article class="gate-squadron-metric"><div class="gate-squadron-metric-head"><span class="gate-squadron-label">LAST UPDATE</span>${info('Last Update', 'Most recent operational update represented on this Squadron Board')}</div><div id="squadron-metric-confirmed" class="gate-squadron-value is-time">--:--</div></article>
-            </section>
-
-            <section id="squadron-traffic" class="gate-squadron-traffic" data-tempo="SLOW" aria-label="Inbound airport bus traffic">
-              <div><div class="gate-squadron-traffic-title"><span>INBOUND TRAFFIC</span>${info('Inbound Traffic', 'Airport bus dispatch tempo during the rolling previous 60 minutes')}</div><div id="squadron-traffic-detail" class="gate-squadron-traffic-detail">0 airport buses dispatched in the last 60 minutes</div></div>
-              <div class="gate-squadron-traffic-track" aria-hidden="true"><div class="gate-squadron-traffic-fill"></div></div>
-              <div id="squadron-traffic-state" class="gate-squadron-traffic-state">SLOW</div>
-            </section>
-
-            <section class="gate-squadron-active" aria-label="Active airport buses">
-              <div class="gate-squadron-section-head"><div class="gate-squadron-traffic-title"><span>ACTIVE BUSES</span>${info('Active Buses', 'Airport buses currently en route to the Pfingston Reception Center')}</div></div>
-              <div id="squadron-active-buses" class="gate-squadron-active-strip"></div>
-            </section>
-
-            <section class="gate-squadron-columns" aria-label="Dorm receiving status">
-              <article class="gate-squadron-column"><header class="gate-squadron-column-head"><span class="gate-squadron-column-title">EMPTY</span><span id="squadron-count-empty" class="gate-squadron-column-count">0</span></header><div id="squadron-col-empty" class="gate-squadron-column-list"></div></article>
-              <article class="gate-squadron-column"><header class="gate-squadron-column-head"><span class="gate-squadron-column-title">OPEN</span><span id="squadron-count-open" class="gate-squadron-column-count">0</span></header><div id="squadron-col-open" class="gate-squadron-column-list"></div></article>
-              <article class="gate-squadron-column"><header class="gate-squadron-column-head"><span class="gate-squadron-column-title">CLOSED</span><span id="squadron-count-closed" class="gate-squadron-column-count">0</span></header><div id="squadron-col-closed" class="gate-squadron-column-list"></div></article>
-            </section>
-          </div>
-        </main>
-      `);
-      page = document.getElementById('page-squadron');
+    let page = byId('page-squadron');
+    if (!page && !standalone()) {
+      const board = byId('page-board');
+      if (!board) return null;
+      board.insertAdjacentHTML('afterend', '<main id="page-squadron" class="page gate-squadron-page" role="main" aria-label="Squadron Board"></main>');
+      page = byId('page-squadron');
     }
-
-    if (page) {
+    if (!page) return null;
+    if (page.dataset.squadronReady !== 'true') {
+      page.classList.add('gate-squadron-page');
       page.dataset.component = 'squadron-board';
       page.dataset.owner = 'gate-squadron-board-controller';
+      page.innerHTML = markup();
+      page.dataset.squadronReady = 'true';
+      bindSquadronControls(page);
     }
+    return page;
   }
 
-  function renderDormCard(dorm) {
-    const tags = [
-      dorm.phase ? `<span class="gate-squadron-tag">${esc(dorm.phase)}</span>` : '',
-      bool(dorm.band) ? '<span class="gate-squadron-tag">BAND</span>' : '',
-      (bool(dorm.space_force) || bool(dorm.is_space_force)) ? '<span class="gate-squadron-tag">SPACE FORCE</span>' : ''
-    ].filter(Boolean).join('');
-    return `<article class="gate-squadron-dorm" data-owner="gate-squadron-board-controller">
-      <div class="gate-squadron-dorm-top"><div class="gate-squadron-dorm-name">${esc(dorm.dorm_name || 'Dorm')}</div><div class="gate-squadron-dorm-load">${n(dorm.current_load)}/${n(dorm.max_load)}</div></div>
-      <div class="gate-squadron-dorm-meta">${esc(dorm.sdq || 'Squadron not listed')}${dorm.section ? ` · Sec ${esc(dorm.section)}` : ''}</div>
-      ${tags ? `<div class="gate-squadron-dorm-tags">${tags}</div>` : ''}
-    </article>`;
+  function visible(page) {
+    if (standalone()) return true;
+    return Boolean(page && (typeof window.getComputedStyle !== 'function' || window.getComputedStyle(page).display !== 'none'));
   }
-
-  function renderDormColumns(dorms) {
-    ['empty', 'open', 'closed'].forEach(state => {
-      const matches = dorms.filter(dorm => {
-        const current = String(dorm.state || 'empty').toLowerCase();
-        return (['open', 'closed'].includes(current) ? current : 'empty') === state;
-      });
-      const col = document.getElementById(`squadron-col-${state}`);
-      const count = document.getElementById(`squadron-count-${state}`);
-      if (count) count.textContent = String(matches.length);
-      if (col) col.innerHTML = matches.length ? matches.map(renderDormCard).join('') : '<div class="gate-squadron-empty-message">None</div>';
-    });
-  }
-
-  function latestUpdate(records) {
-    const latest = records.reduce((max, record) => {
-      const stamp = new Date(record.updated_at || record.created_at || 0).getTime();
-      return Number.isFinite(stamp) ? Math.max(max, stamp) : max;
-    }, 0);
-    return latest ? new Date(latest).toISOString() : '';
-  }
-
-  function renderSquadronBoard(options = {}) {
-    ensureSquadronPage();
-    if (!document.getElementById('page-squadron')) return;
-
-    const weekGroup = activeWeekGroup();
-    const dorms = dormsForActiveWeek();
-    const buses = airportBusesForActiveWeek();
-    const expected = dorms.reduce((sum, dorm) => sum + n(dorm.max_load), 0);
-    const arrived = buses.filter(bus => String(bus.status || '').toLowerCase() === 'arrived').reduce((sum, bus) => sum + n(bus.otw_count), 0);
-    const traffic = tempoFor(buses);
-    const activeBuses = buses.filter(bus => ['active', 'otw'].includes(String(bus.status || '').toLowerCase()));
-    const latest = latestUpdate([...dorms, ...buses]);
-    const signature = JSON.stringify({ weekGroup, expected, arrived, traffic, activeBuses: activeBuses.map(bus => [bus.bus_id, bus.otw_count, bus.departed_at, bus.status]), dorms: dorms.map(dorm => [dorm.__backendId, dorm.sdq, dorm.dorm_name, dorm.section, dorm.state, dorm.phase, dorm.current_load, dorm.max_load, dorm.band, dorm.space_force, dorm.is_space_force]), latest });
-
-    updateSquadronClock();
-    if (!options.force && signature === squadronSignature) return;
-    squadronSignature = signature;
-
-    const week = document.getElementById('squadron-week-label');
-    const arrivedEl = document.getElementById('squadron-metric-arrived');
-    const expectedEl = document.getElementById('squadron-metric-expected');
-    const confirmedEl = document.getElementById('squadron-metric-confirmed');
-    if (week) week.textContent = weekGroup ? `ACTIVE · ${weekGroup}` : 'NO ACTIVE WEEK GROUP';
-    if (arrivedEl) arrivedEl.textContent = String(arrived);
-    if (expectedEl) expectedEl.textContent = String(expected);
-    if (confirmedEl) confirmedEl.textContent = latest ? time(latest) : '--:--';
-
-    const trafficEl = document.getElementById('squadron-traffic');
-    const trafficState = document.getElementById('squadron-traffic-state');
-    const trafficDetail = document.getElementById('squadron-traffic-detail');
-    if (trafficEl) trafficEl.dataset.tempo = traffic.status;
-    if (trafficState) trafficState.textContent = traffic.status;
-    if (trafficDetail) trafficDetail.textContent = `${traffic.count} airport ${traffic.count === 1 ? 'bus' : 'buses'} dispatched in the last 60 minutes`;
-
-    const strip = document.getElementById('squadron-active-buses');
-    if (strip) {
-      strip.innerHTML = activeBuses.length
-        ? activeBuses.map(bus => `<div class="gate-squadron-bus"><strong>AIRPORT · BUS #${esc(bus.bus_id || '—')}</strong><span>${n(bus.otw_count)} trainees inbound</span><span>Dispatched ${esc(time(bus.departed_at || bus.created_at))}</span></div>`).join('')
-        : '<div class="gate-squadron-empty-message">No airport buses currently en route.</div>';
-    }
-    renderDormColumns(dorms);
-  }
-
+  const time = value => {
+    const date = new Date(value || '');
+    return Number.isFinite(date.getTime()) ? date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—';
+  };
   function updateSquadronClock() {
-    const local = document.getElementById('squadron-metric-local');
-    if (local) local.textContent = time(null, true);
+    const page = byId('page-squadron');
+    if (visible(page)) setText(byId('squadron-metric-local'), new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }));
+  }
+
+  function noticeKey(board) { return `${board.week_group}:${board.notice?.revision || 0}`; }
+  function stored(key) { try { return window.sessionStorage?.getItem(key) || ''; } catch { return ''; } }
+  function store(key, value) { try { window.sessionStorage?.setItem(key, value); } catch (_) {} }
+  function displayNotice(board) {
+    const key = noticeKey(board);
+    const notice = board.notice;
+    const unread = standalone() && Boolean(notice) && stored('gate-squadron-viewed') !== key;
+    const button = byId('squadron-information');
+    if (button) button.classList.toggle('has-notice', unread);
+    if (byId('squadron-new')) byId('squadron-new').hidden = !unread;
+    if (standalone() && lastNoticeKey !== null && key !== lastNoticeKey && unread && soundEnabled && !stored(`gate-squadron-alerted:${key}`)) {
+      store(`gate-squadron-alerted:${key}`, '1');
+      alertSound?.play().catch(() => setText(byId('squadron-status'), 'New update available. Audio blocked; enable alerts in your browser.'));
+    }
+    lastNoticeKey = key;
+    currentNotice = notice;
+    setText(byId('squadron-notice-message'), notice?.message || 'No additional updates published.');
+    setText(byId('squadron-notice-time'), notice?.published_at ? `Published ${time(notice.published_at)}` : '');
+  }
+
+  function createCard(id) {
+    const card = document.createElement('article');
+    card.className = 'gate-squadron-dorm';
+    card.dataset.cardId = id;
+    card.innerHTML = '<div class="gate-squadron-dorm-top"><strong data-field="name"></strong><span data-field="load"></span></div><div class="gate-squadron-dorm-meta" data-field="meta"></div><div class="gate-squadron-dorm-tags" data-field="tags"></div>';
+    return card;
+  }
+  function updateCard(card, dorm) {
+    setText(card.querySelector('[data-field="name"]'), dorm.dorm_name || 'Dorm');
+    setText(card.querySelector('[data-field="load"]'), `${dorm.current_load}/${dorm.max_load}`);
+    setText(card.querySelector('[data-field="meta"]'), `${dorm.squadron || 'Squadron not listed'}${dorm.section ? ` · Sec ${dorm.section}` : ''}`);
+    card.classList.toggle('is-female', dorm.sex === 'female');
+    const tags = [dorm.phase, dorm.band && 'BAND', dorm.space_force && 'SPACE FORCE', dorm.load_discrepancy && 'LOAD REVIEW'].filter(Boolean);
+    const signature = JSON.stringify(tags);
+    const holder = card.querySelector('[data-field="tags"]');
+    if (holder.dataset.signature !== signature) {
+      holder.replaceChildren(...tags.map(value => { const tag = document.createElement('span'); tag.className = 'gate-squadron-tag'; tag.textContent = value; return tag; }));
+      holder.dataset.signature = signature;
+    }
+  }
+  function renderDormCards(board) {
+    if (activeWeek !== board.week_group) {
+      activeWeek = board.week_group;
+      nodes.clear();
+      for (const state of ['empty','open','closed']) byId(`squadron-col-${state}`)?.replaceChildren();
+    }
+    const dorms = Array.isArray(board.dorms) ? board.dorms : [];
+    const wanted = new Set(dorms.map(dorm => String(dorm.card_id)));
+    for (const [key,node] of nodes) if (!wanted.has(key)) { node.remove(); nodes.delete(key); }
+    for (const state of ['empty','open','closed']) {
+      const column = byId(`squadron-col-${state}`);
+      const members = dorms.filter(dorm => dorm.state === state);
+      setText(byId(`squadron-count-${state}`), members.length);
+      if (!column) continue;
+      for (let index = 0; index < members.length; index += 1) {
+        const dorm = members[index];
+        const key = String(dorm.card_id);
+        let node = nodes.get(key);
+        if (!node) { node = createCard(key); nodes.set(key, node); }
+        updateCard(node, dorm);
+        if (column.children[index] !== node) column.insertBefore(node, column.children[index] || null);
+      }
+    }
+    for (const state of ['empty','open','closed']) {
+      const column = byId(`squadron-col-${state}`);
+      const count = dorms.filter(dorm => dorm.state === state).length;
+      if (!column) continue;
+      column.querySelectorAll('[data-empty-state]').forEach(node => node.remove());
+      if (!count) {
+        const blank = document.createElement('div');
+        blank.className = 'gate-squadron-empty-message';
+        blank.dataset.emptyState = 'true';
+        blank.textContent = 'None';
+        column.appendChild(blank);
+      }
+    }
+  }
+
+  function renderBoard(board, canEdit) {
+    editor = Boolean(canEdit && !standalone());
+    if (byId('squadron-publish-form')) byId('squadron-publish-form').hidden = !editor;
+    setText(byId('squadron-week-label'), board.week_group ? `ACTIVE · ${board.week_group}` : 'NO ACTIVE WEEK GROUP');
+    setText(byId('squadron-metric-arrived'), board.week_group ? board.metrics.arrived : '—');
+    setText(byId('squadron-metric-expected'), board.week_group ? board.metrics.expected : '—');
+    setText(byId('squadron-metric-confirmed'), board.metrics.last_flight || '—');
+    const tempo = byId('squadron-traffic');
+    if (tempo) tempo.dataset.tempo = board.week_group ? board.traffic.status : 'UNAVAILABLE';
+    const count = Number(board.traffic?.dispatched_last_60_minutes || 0);
+    setText(byId('squadron-traffic-detail'), board.week_group ? `${count} airport ${count === 1 ? 'bus' : 'buses'} dispatched in the rolling last 60 minutes` : 'No active Week Group');
+    renderDormCards(board);
+    displayNotice(board);
+    setText(byId('squadron-status'), `Read-only SITREP · last refresh ${time(board.generated_at)}${board.week_group ? '' : ' · no active group'}`);
+    byId('squadron-status')?.classList.remove('is-error');
+  }
+
+  async function renderSquadronBoard() {
+    const page = ensureSquadronPage();
+    if (!visible(page) || polling) return;
+    polling = true;
+    lastPoll = Date.now();
+    try {
+      const response = await fetch('/api/squadron-board', { credentials: 'same-origin', cache: 'no-store', headers: { Accept: 'application/json' } });
+      if ((response.status === 401 || response.status === 403) && standalone()) {
+        window.location.replace('/login/');
+        return;
+      }
+      const data = await response.json();
+      if (!response.ok || !data.isOk || !data.board) throw new Error(data.error || 'Squadron data unavailable.');
+      renderBoard(data.board, data.editor);
+    } catch (error) {
+      const status = byId('squadron-status');
+      setText(status, `Data unavailable · ${error.message || 'Unable to refresh.'} · showing last confirmed snapshot`);
+      status?.classList.add('is-error');
+    } finally { polling = false; }
+  }
+
+  function bindSquadronControls(page) {
+    const dialog = byId('squadron-info-dialog');
+    const opener = byId('squadron-information');
+    opener?.addEventListener('click', () => {
+      if (currentNotice && standalone()) {
+        store('gate-squadron-viewed', `${activeWeek}:${currentNotice.revision}`);
+        opener.classList.remove('has-notice');
+        if (byId('squadron-new')) byId('squadron-new').hidden = true;
+      }
+      if (!dialog.open) dialog.showModal();
+    });
+    byId('squadron-info-close')?.addEventListener('click', () => dialog.close());
+    dialog?.addEventListener('close', () => opener?.focus());
+    const tip = byId('squadron-tooltip');
+    const showTip = button => {
+      if (!tip) return;
+      tip.textContent = button.dataset.squadronTip || '';
+      tip.hidden = false;
+      const bounds = button.getBoundingClientRect();
+      const width = tip.getBoundingClientRect().width;
+      const height = tip.getBoundingClientRect().height;
+      tip.style.left = `${Math.max(12, Math.min(bounds.left, window.innerWidth - width - 12))}px`;
+      tip.style.top = `${bounds.bottom + height + 12 < window.innerHeight ? bounds.bottom + 8 : Math.max(8, bounds.top - height - 8)}px`;
+      button.setAttribute('aria-describedby', 'squadron-tooltip');
+    };
+    const hideTip = button => { if (tip) tip.hidden = true; button?.removeAttribute('aria-describedby'); };
+    page.querySelectorAll('[data-squadron-tip]').forEach(button => {
+      button.addEventListener('mouseenter', () => showTip(button));
+      button.addEventListener('mouseleave', () => hideTip(button));
+      button.addEventListener('focus', () => showTip(button));
+      button.addEventListener('blur', () => hideTip(button));
+      button.addEventListener('click', () => tip.hidden ? showTip(button) : hideTip(button));
+      button.addEventListener('keydown', event => { if (event.key === 'Escape') { hideTip(button); event.stopPropagation(); } });
+    });
+    page.addEventListener('keydown', event => { if (event.key === 'Escape') page.querySelectorAll('[data-squadron-tip]').forEach(hideTip); });
+    byId('squadron-enable-sound')?.addEventListener('click', () => {
+      alertSound = alertSound || new Audio('/assets/sr_bus_sound.mp3');
+      alertSound.preload = 'auto';
+      // An explicit user gesture is required. A blocked playback never suppresses the visual notice.
+      alertSound.muted = true;
+      alertSound.play().then(() => { alertSound.pause(); alertSound.currentTime = 0; alertSound.muted = false; soundEnabled = true; setText(byId('squadron-enable-sound'), 'ALERTS ENABLED'); }).catch(() => {
+        soundEnabled = false;
+        setText(byId('squadron-status'), 'Audio blocked. Browser permission is required for sound.');
+      });
+    });
+    byId('squadron-logout')?.addEventListener('click', async () => {
+      try { await fetch('/api/logout', { method: 'POST', credentials: 'same-origin' }); } catch (_) {}
+      window.location.replace('/login/');
+    });
+    byId('squadron-publish-form')?.addEventListener('submit', async event => {
+      event.preventDefault();
+      if (!editor) return;
+      const draft = String(byId('squadron-notice-draft')?.value || '').trim();
+      const status = byId('squadron-publish-status');
+      if (!draft || draft.length > 1000) { setText(status, 'Enter 1–1000 characters.'); return; }
+      const button = byId('squadron-publish');
+      button.disabled = true;
+      try {
+        const response = await fetch('/api/squadron-board', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json', 'X-Gate-Notice': 'publish' }, body: JSON.stringify({ message: draft, expected_revision: currentNotice?.revision || 0 }) });
+        const data = await response.json();
+        if (!response.ok || !data.isOk) throw new Error(data.error || 'Publish failed.');
+        byId('squadron-notice-draft').value = '';
+        setText(status, 'Update published to Squadron Board.');
+        await renderSquadronBoard();
+      } catch (error) { setText(status, `${error.message || 'Unable to publish.'} Refresh before retrying.`); }
+      finally { button.disabled = false; }
+    });
   }
 
   function computeDormElapsedTimer(dorm) {
     if (!dorm || !dorm.opened_at) return dorm?.closed_timer || '00:00';
     if (typeof getElapsedTimer === 'function') {
-      try {
-        const timer = getElapsedTimer(dorm.opened_at);
-        if (timer?.text) return timer.text;
-      } catch (_) {}
+      try { const timer = getElapsedTimer(dorm.opened_at); if (timer?.text) return timer.text; } catch (_) {}
     }
-
     const opened = new Date(dorm.opened_at);
     if (Number.isNaN(opened.getTime())) return dorm.closed_timer || '00:00';
-    const totalSeconds = Math.max(0, Math.floor((Date.now() - opened.getTime()) / 1000));
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = totalSeconds % 60;
-    return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    const seconds = Math.max(0, Math.floor((Date.now() - opened.getTime()) / 1000));
+    return `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
   }
 
   function patchCloseDormTiming() {
     try {
       if (closeDormPatched || typeof closeDorm !== 'function') return;
-
       const gateCloseDorm = async function gateCloseDorm(id) {
         if (typeof currentRole !== 'undefined' && currentRole !== 'instructor') return;
         const dorm = Array.isArray(allData) ? allData.find(record => record.__backendId === id) : null;
         if (!dorm) return;
-
         const finalTime = computeDormElapsedTimer(dorm);
-        const result = await window.dataSdk.update({
-          ...dorm,
-          state: 'closed',
-          phase: 'Closed',
-          closed_timer: finalTime,
-          closed_at: new Date().toISOString()
-        });
-
-        if (result?.isOk && typeof createSoundEvent === 'function') {
-          await createSoundEvent('dorm_closed', {
-            dorm_id: id,
-            dorm_name: dorm.dorm_name || '',
-            final_time: finalTime,
-            action: 'close_dorm'
-          });
-        }
-
+        const result = await window.dataSdk.update({ ...dorm, state: 'closed', phase: 'Closed', closed_timer: finalTime, closed_at: new Date().toISOString() });
+        if (result?.isOk && typeof createSoundEvent === 'function') await createSoundEvent('dorm_closed', { dorm_id: id, dorm_name: dorm.dorm_name || '', final_time: finalTime, action: 'close_dorm' });
         if (typeof closeDormModal === 'function') closeDormModal();
       };
-
       gateCloseDorm.__gateDormBoardController = true;
       window.closeDorm = gateCloseDorm;
       try { closeDorm = gateCloseDorm; } catch (_) {}
       closeDormPatched = true;
-    } catch (error) {
-      console.warn('GATE close dorm timing patch failed:', error);
-    }
-  }
-
-  function runPass(options = {}) {
-    passScheduled = false;
-    ensureDocumentIdentity();
-    ensureSquadronPage();
-    patchCloseDormTiming();
-    window.GateComponents?.processingDormModalContract?.();
-    renderSquadronBoard({ force: Boolean(options.force) });
-  }
-
-  function schedulePass(options = {}) {
-    if (passScheduled) return;
-    passScheduled = true;
-    requestAnimationFrame(() => runPass(options));
-  }
-
-  function registerHooks() {
-    window.registerGateHook?.('afterRenderAll', () => schedulePass({ force: true }));
-    window.registerGateHook?.('afterDataChanged', () => schedulePass({ force: true }));
-    window.registerGateHook?.('afterPageChange', () => schedulePass());
+    } catch (error) { console.warn('GATE close dorm timing patch failed:', error); }
   }
 
   function start() {
@@ -306,18 +320,14 @@
     ensureDocumentIdentity();
     ensureSquadronPage();
     patchCloseDormTiming();
-    registerHooks();
-    if (!clockTimer) clockTimer = window.setInterval(updateSquadronClock, 1000);
-    window.GateDormBoardController = Object.freeze({
-      isCanonicalOwner: false,
-      handoffOwner: 'gate-status-board-controller',
-      refresh: () => schedulePass({ force: true }),
-      renderSquadronBoard,
-      computeDormElapsedTimer
-    });
-    schedulePass({ force: true });
+    window.GateComponents?.processingDormModalContract?.();
+    window.registerGateHook?.('afterPageChange', () => { if (Date.now() - lastPoll > 500) renderSquadronBoard(); });
+    window.GateDormBoardController = Object.freeze({ isCanonicalOwner: false, handoffOwner: 'gate-status-board-controller', refresh: renderSquadronBoard, renderSquadronBoard, computeDormElapsedTimer });
+    window.setInterval(updateSquadronClock, 1000);
+    window.setInterval(renderSquadronBoard, POLL_MS);
+    updateSquadronClock();
+    renderSquadronBoard();
   }
-
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, { once: true });
   else start();
   window.addEventListener('load', start, { once: true });

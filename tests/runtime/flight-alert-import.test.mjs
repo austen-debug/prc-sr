@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { parseFlightAlertText, validateFlightAlertRows, normalizeDorm, normalizeSection, normalizeSquadron } from '../../public/app/features/input/flight-alert-parser.mjs';
 import { extractFlightAlertPdf } from '../../public/app/features/input/flight-alert-pdf.mjs';
+import { relocateWeekGroupActions } from '../../public/app/features/input/week-group-action-placement.mjs';
 const sample = 'SQUADRON SECTION DORM SEX LOAD\n535 TRS 1 4A1 MALE 48\n321 TRS 2 A01 FEMALE 42\n324 TRS 3 4B2 M 45\nTOTAL EXPECTED LOAD: 135';
 test('extract Week Group and preserve dorm leading zeros', () => {
  const result = parseFlightAlertText(sample);
@@ -46,4 +47,71 @@ test('local text PDF extraction feeds structured parser',async()=>{
 test('unsupported PDF fails closed',async()=>{
  await assert.rejects(extractFlightAlertPdf(fixture('%PDF-1.4\n%%EOF')),/extract/);
  await assert.rejects(extractFlightAlertPdf({name:'other.txt',size:100,arrayBuffer:async()=>new ArrayBuffer(100)}),/PDF/);
+});
+
+// DOM contract test: relocation must preserve the same two live button objects and handlers.
+class ElementStub {
+ constructor(tag, id = '') { this.tagName = tag.toUpperCase(); this.id = id; this.className = ''; this.dataset = {}; this.style = {}; this.attributes = {}; this.parentElement = null; this.nodes = []; this.ownText = ''; }
+ get children() { return this.nodes; }
+ get firstElementChild() { return this.nodes[0] || null; }
+ get nextSibling() { if (!this.parentElement) return null; return this.parentElement.nodes[this.parentElement.nodes.indexOf(this) + 1] || null; }
+ get textContent() { return this.ownText + this.nodes.map(node => node.textContent).join(''); }
+ set textContent(value) { this.ownText = String(value); this.nodes.forEach(node => { node.parentElement = null; }); this.nodes = []; }
+ get classList() { return { contains: value => this.className.split(/\s+/).includes(value) }; }
+ append(...nodes) { nodes.forEach(node => this.appendChild(node)); }
+ appendChild(node) { node.remove(); node.parentElement = this; this.nodes.push(node); return node; }
+ insertBefore(node, reference) { node.remove(); const index = reference ? this.nodes.indexOf(reference) : -1; node.parentElement = this; this.nodes.splice(index < 0 ? this.nodes.length : index, 0, node); return node; }
+ remove() { if (this.parentElement) { const nodes = this.parentElement.nodes; nodes.splice(nodes.indexOf(this), 1); this.parentElement = null; } }
+ contains(node) { return node === this || this.nodes.some(child => child.contains(node)); }
+ closest(selector) { let node = this; while (node) { if (selector.startsWith('.') && node.classList.contains(selector.slice(1))) return node; node = node.parentElement; } return null; }
+ setAttribute(name, value) { this.attributes[name] = value; }
+}
+function actionFixture() {
+ const body = new ElementStub('body');
+ const page = new ElementStub('div', 'page-input');
+ const processing = new ElementStub('div', 'page-processing');
+ const header = new ElementStub('div'); header.className = 'flex-shrink-0 border-b';
+ const summary = new ElementStub('div');
+ const wg = new ElementStub('input', 'wg-batch-input');
+ header.append(summary, wg);
+ const grid = new ElementStub('div', 'batch-grid-wrapper');
+ const footer = new ElementStub('div'); footer.className = 'flex-shrink-0 border-t';
+ const initStatus = new ElementStub('div', 'init-status-msg');
+ const initialize = new ElementStub('button', 'init-wg-btn'); initialize.onclick = () => 'canonical initialize';
+ footer.append(initStatus, initialize);
+ page.append(header, grid, footer);
+ const processingHeader = new ElementStub('div');
+ const localBus = new ElementStub('button', 'local-bus-action');
+ const closeout = new ElementStub('button', 'closeout-btn'); closeout.onclick = () => 'canonical archive';
+ const archiveStatus = new ElementStub('div', 'closeout-safety-msg');
+ const hint = new ElementStub('div', 'processing-edit-hint');
+ processingHeader.append(localBus, closeout, archiveStatus, hint);
+ processing.append(processingHeader);
+ body.append(page, processing);
+ const doc = { getElementById(id) { const visit = node => node.id === id ? node : node.nodes.map(visit).find(Boolean); return visit(body); }, createElement(tag) { return new ElementStub(tag); } };
+ return {doc, page, processingHeader, footer, initialize, closeout, localBus, initStatus, archiveStatus};
+}
+test('Week Group actions move without cloning handlers, archive status or Processing controls', () => {
+ const {doc, page, processingHeader, footer, initialize, closeout, localBus, initStatus, archiveStatus} = actionFixture();
+ const originalInitialize = initialize.onclick;
+ const originalCloseout = closeout.onclick;
+ assert.equal(relocateWeekGroupActions(doc), true);
+ const buttons = doc.getElementById('gate-week-group-action-buttons');
+ const messages = doc.getElementById('gate-week-group-action-messages');
+ assert.deepEqual(buttons.children, [initialize, closeout]);
+ assert.equal(initialize.onclick, originalInitialize);
+ assert.equal(closeout.onclick, originalCloseout);
+ assert.equal(closeout.onclick(), 'canonical archive');
+ assert.deepEqual(messages.children, [initStatus, archiveStatus]);
+ assert.deepEqual(processingHeader.children.filter(node => node.tagName === 'BUTTON'), [localBus]);
+ assert.equal(page.contains(footer), false);
+ assert.equal(relocateWeekGroupActions(doc), true);
+ assert.deepEqual(buttons.children, [initialize, closeout]);
+ assert.equal(page.children.filter(node => node.id === 'gate-week-group-actions').length, 0); // Panel lives in header.
+ assert.equal(doc.getElementById('gate-week-group-actions').children.length, 3);
+});
+test('Week Group action relocation does nothing if either original button is missing', () => {
+ const {doc, closeout} = actionFixture(); closeout.remove();
+ assert.equal(relocateWeekGroupActions(doc), false);
+ assert.equal(doc.getElementById('gate-week-group-actions'), undefined);
 });

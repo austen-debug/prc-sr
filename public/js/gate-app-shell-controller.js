@@ -517,7 +517,15 @@
   }
 
   function handleKeydown(event) {
-    if (event.key === 'Escape') setDrawer(false);
+    if (event.key !== 'Escape') return;
+    const confirmDialog = document.getElementById('confirm-dialog');
+    const confirmNo = document.getElementById('confirm-no');
+    if (confirmDialog && !confirmDialog.classList.contains('hidden') && confirmNo) {
+      event.preventDefault();
+      confirmNo.click();
+      return;
+    }
+    setDrawer(false);
   }
 
   function handlePopState() {

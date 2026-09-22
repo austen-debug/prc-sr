@@ -9,6 +9,9 @@
   let renderQueued = false;
   let contextMenu = null;
   let editSubmitBound = false;
+  let longPressTimer = null;
+  let longPressPoint = null;
+  let suppressTouchClickUntil = 0;
 
   function n(value) {
     const parsed = Number(value || 0);
@@ -369,7 +372,9 @@
     const input = document.getElementById('modal-load-input');
     if (!dorm || !input) return;
     const currentLoad = constrainModalLoad();
-    await updateDorm({ ...dorm, current_load: currentLoad, updated_at: new Date().toISOString() }, { source: 'processing-load-update' });
+    const result = await updateDorm({ ...dorm, current_load: currentLoad, updated_at: new Date().toISOString() }, { source: 'processing-load-update' });
+    if (result?.isOk) closeDormModalCanonical();
+    return result;
   }
 
   async function saveAssignedAirmanCanonical() {
@@ -538,6 +543,7 @@
       modal.classList.remove('hidden');
       modal.setAttribute('aria-hidden', 'false');
     }
+    document.body.classList.add('gate-modal-open');
 
     window.runGateHooks?.('afterModalOpen', { modal: 'dorm-edit', dormId: id, source: 'gate-processing-controller' });
   }
@@ -555,6 +561,7 @@
       reopenButton.dataset.dormId = '';
     }
     setActiveEditDorm('');
+    document.body.classList.remove('gate-modal-open');
   }
 
   function readEditPayload(dorm) {
@@ -689,6 +696,14 @@
   }
 
   function handleProcessingClick(event) {
+    const touchCard = event.target?.closest?.('#page-processing .proc-card[data-dorm-id]');
+    if (touchCard && Date.now() < suppressTouchClickUntil) {
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation?.();
+      return;
+    }
+
     const phaseButton = event.target?.closest?.('[data-processing-phase]');
     if (phaseButton) {
       event.preventDefault();
@@ -751,6 +766,33 @@
     showContextMenu(event, dorm);
   }
 
+  function isTouchDevice() {
+    return window.matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
+  }
+
+  function clearLongPress() {
+    if (longPressTimer) window.clearTimeout(longPressTimer);
+    longPressTimer = null;
+    longPressPoint = null;
+  }
+
+  function handleTouchStart(event) {
+    if (!isTouchDevice() || !isInstructor()) return;
+    const card = event.target?.closest?.('#page-processing .proc-card[data-dorm-id]');
+    const touch = event.touches?.[0];
+    if (!card || !touch) return;
+    clearLongPress();
+    longPressPoint = { x: touch.clientX, y: touch.clientY };
+    longPressTimer = window.setTimeout(() => {
+      longPressTimer = null;
+      const dorm = dormById(card.dataset.dormId);
+      if (!dorm || !longPressPoint) return;
+      suppressTouchClickUntil = Date.now() + 700;
+      showContextMenu({ clientX: longPressPoint.x, clientY: longPressPoint.y }, dorm);
+      longPressPoint = null;
+    }, 560);
+  }
+
   function handleKeydown(event) {
     if (event.key === 'Escape') {
       hideContextMenu();
@@ -765,6 +807,13 @@
       return;
     }
     if (event.key === 'Enter') {
+      if (event.target?.id === 'modal-load-input') {
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation?.();
+        void saveLoadCanonical();
+        return;
+      }
       if (event.target?.id === 'modal-airman-input') {
         event.preventDefault();
         saveAssignedAirmanCanonical();
@@ -834,6 +883,10 @@
     document.addEventListener('contextmenu', handleProcessingContext, true);
     document.addEventListener('auxclick', handleProcessingContext, true);
     document.addEventListener('keydown', handleKeydown, true);
+    document.addEventListener('touchstart', handleTouchStart, { capture: true, passive: true });
+    document.addEventListener('touchend', clearLongPress, true);
+    document.addEventListener('touchcancel', clearLongPress, true);
+    document.addEventListener('touchmove', clearLongPress, true);
     document.addEventListener('input', event => {
       if (event.target?.id === 'modal-load-input') constrainModalLoad();
     }, true);

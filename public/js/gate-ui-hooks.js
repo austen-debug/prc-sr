@@ -29,7 +29,7 @@
 
   function hookPayload(extra) {
     return Object.assign({
-      allData: Array.isArray(window.allData) ? window.allData : [],
+      allData: (() => { try { return Array.isArray(allData) ? allData : []; } catch (_) { return []; } })(),
       activePage: activePageId(),
       role: window.currentRole || '',
       weekGroup: activeWeekGroup(),

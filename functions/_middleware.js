@@ -1,5 +1,22 @@
 import { verifyRequestSession } from './api/session-contract.mjs';
 
+const APP_ROUTES = Object.freeze({
+  '/board/': Object.freeze({ page: 'board', roles: Object.freeze(['instructor', 'airman']) }),
+  '/airport/': Object.freeze({ page: 'airport', roles: Object.freeze(['instructor']) }),
+  '/input/': Object.freeze({ page: 'input', roles: Object.freeze(['instructor']) }),
+  '/processing/': Object.freeze({ page: 'processing', roles: Object.freeze(['instructor', 'airman']) }),
+  '/archives/': Object.freeze({ page: 'archives', roles: Object.freeze(['instructor']) }),
+  '/squadron-board/': Object.freeze({ page: 'squadron', roles: Object.freeze(['instructor']) })
+});
+const APP_ROUTE_ALIASES = Object.freeze(Object.fromEntries(
+  Object.keys(APP_ROUTES).map(path => [path.slice(0, -1), path])
+));
+const ROLE_HOME = Object.freeze({
+  instructor: '/board/',
+  airman: '/board/',
+  squadron: '/squadron/'
+});
+
 const UI_STYLESHEETS = [
   '<link rel="stylesheet" href="/css/military-glass-terminal.css?v=military-glass-terminal-20260922-squadron-actions1">'
 ];
@@ -24,10 +41,10 @@ const UI_HEAD_SCRIPTS = [
   '<script src="/js/gate-airport-bus-delete-controller.js?v=airport-bus-delete-20260714" defer></script>',
   '<script src="/js/gate-input-page-controller.js?v=record-display-integrity-20260714" defer></script>',
   '<script src="/js/gate-archive-controller.js?v=phase-8c-report-wording-20260709" defer></script>',
-  '<script src="/js/gate-permission-guard.js?v=phase-1a-permission-guard-20260709" defer></script>',
+  '<script src="/js/gate-permission-guard.js?v=permission-server-role-20260922" defer></script>',
   '<script type="module" src="/app/features/input/flight-alert-import.mjs?v=flight-alert-import-20260920"></script>',
   '<script src="/js/gate-tablet-shell-classifier.js?v=tablet-shell-20260714" defer></script>',
-  '<script src="/js/gate-app-shell-controller.js?v=phase-7g-viewport-watermark-20260709" defer></script>',
+  '<script src="/js/gate-app-shell-controller.js?v=gate-route-state-20260922" defer></script>',
   '<script src="/js/gate-fullscreen-board-layout-controller.js?v=fullscreen-board-containment-20260714b" defer></script>',
   '<script src="/js/prc-dash-modal-mobile-validation.js?v=phase-7e-ui-ownership-20260709" defer></script>',
   '<script src="/js/gate-render-stability-fix.js?v=status-board-compositing-retired-20260721" defer></script>',
@@ -224,13 +241,38 @@ function applyUiAssets(html) {
   return updatedHtml.replace(/<\/head>/i, `  ${assetsToAdd.join('\n  ')}\n </head>`);
 }
 
-async function maybeApplyUiAssets(response) {
+function applyInitialAppRoute(html, page, role) {
+  let output = html.replace(
+    /<body\b([^>]*)>/i,
+    (match, attrs) => `<body${attrs} data-gate-initial-route="${page}" data-gate-session-role="${role}">`
+  );
+
+  output = output.replace(
+    /<(main|div)([^>]*\bid="page-([^"]+)"[^>]*)>/gi,
+    (match, tag, attrs, routePage) => {
+      const classMatch = attrs.match(/\bclass="([^"]*)"/i);
+      if (!classMatch) return match;
+      const classes = classMatch[1].split(/\s+/).filter(Boolean).filter(token => token !== 'active');
+      if (routePage === page) classes.push('active');
+      return `<${tag}${attrs.replace(classMatch[0], `class="${classes.join(' ')}"`)}>`;
+    }
+  );
+
+  return output;
+}
+
+async function maybeApplyUiAssets(response, routeContext = null) {
   const contentType = response.headers.get('content-type') || '';
   if (!contentType.includes('text/html')) return response;
 
-  const html = applyUiAssets(await response.text());
+  let html = applyUiAssets(await response.text());
+  if (routeContext?.page && routeContext?.role) {
+    html = applyInitialAppRoute(html, routeContext.page, routeContext.role);
+  }
+
   const headers = new Headers(response.headers);
   headers.set('content-type', 'text/html; charset=UTF-8');
+  if (routeContext) headers.set('cache-control', 'no-store');
   headers.delete('content-length');
 
   return new Response(html, {
@@ -238,6 +280,42 @@ async function maybeApplyUiAssets(response) {
     statusText: response.statusText,
     headers
   });
+}
+
+function redirectTo(url, pathname, status = 302) {
+  const target = new URL(url);
+  target.pathname = pathname;
+  target.search = '';
+  target.hash = '';
+  return Response.redirect(target.toString(), status);
+}
+
+function redirectToLogin(url, returnTo = '') {
+  const target = new URL(url);
+  target.pathname = '/login/';
+  target.search = '';
+  target.hash = '';
+  if (returnTo) target.searchParams.set('returnTo', returnTo);
+  return Response.redirect(target.toString(), 302);
+}
+
+function homeForRole(role) {
+  return ROLE_HOME[role] || '/board/';
+}
+
+async function serveMainApp(context, route, session) {
+  const rootUrl = new URL(context.request.url);
+  rootUrl.pathname = '/';
+  rootUrl.search = '';
+  rootUrl.hash = '';
+  const rootRequest = new Request(rootUrl.toString(), {
+    method: context.request.method === 'HEAD' ? 'HEAD' : 'GET',
+    headers: context.request.headers
+  });
+  const response = context.env?.ASSETS?.fetch
+    ? await context.env.ASSETS.fetch(rootRequest)
+    : await context.next(rootRequest);
+  return maybeApplyUiAssets(response, { page: route.page, role: session.role });
 }
 
 async function bindSquadronAcknowledgmentToSession(response, session) {
@@ -283,24 +361,37 @@ export async function onRequest(context) {
     return context.next();
   }
 
+  const canonicalAppPath = APP_ROUTE_ALIASES[pathname];
+  if (canonicalAppPath) return redirectTo(url, canonicalAppPath);
+  if (pathname === '/squadron') return redirectTo(url, '/squadron/');
+
   const session = await verifyRequestSession(context.request, context.env);
   if (!session) {
     if (pathname.startsWith('/api/')) return jsonResponse({ isOk: false, code: 'unauthorized', error: 'Unauthorized.' }, 401);
-    return Response.redirect(`${url.origin}/login/`, 302);
+    if (APP_ROUTES[pathname] || pathname === '/squadron/') return redirectToLogin(url, pathname);
+    return redirectToLogin(url);
   }
 
   if (session.role === 'squadron') {
-    if (pathname === '/squadron') return Response.redirect(`${url.origin}/squadron/`, 302);
     if (pathname === '/squadron/') return bindSquadronAcknowledgmentToSession(await context.next(), session);
     if (pathname.startsWith('/api/')) {
       if (pathname === '/api/session' || pathname === '/api/squadron-board') return context.next();
       return jsonResponse({ isOk: false, code: 'forbidden', error: 'Squadron access is limited to the read-only Squadron Board.' }, 403);
     }
-    return Response.redirect(`${url.origin}/squadron/`, 302);
+    return redirectTo(url, '/squadron/');
   }
 
-  if (pathname === '/squadron' || pathname === '/squadron/') {
-    return Response.redirect(`${url.origin}/`, 302);
+  if (pathname.startsWith('/api/')) return context.next();
+  if (pathname === '/') return redirectTo(url, homeForRole(session.role));
+
+  if (pathname === '/squadron/') {
+    return redirectTo(url, session.role === 'instructor' ? '/squadron-board/' : homeForRole(session.role));
+  }
+
+  const route = APP_ROUTES[pathname];
+  if (route) {
+    if (!route.roles.includes(session.role)) return redirectTo(url, homeForRole(session.role));
+    return serveMainApp(context, route, session);
   }
 
   return maybeApplyUiAssets(await context.next());

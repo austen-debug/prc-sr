@@ -62,6 +62,21 @@
       const submit = document.getElementById('login-submit');
       const msg = document.getElementById('login-message');
       const idleLabel = submit.textContent.trim();
+      const RETURN_ROUTES = Object.freeze({
+        '/board/': Object.freeze(['instructor', 'airman']),
+        '/airport/': Object.freeze(['instructor']),
+        '/input/': Object.freeze(['instructor']),
+        '/processing/': Object.freeze(['instructor', 'airman']),
+        '/archives/': Object.freeze(['instructor']),
+        '/squadron-board/': Object.freeze(['instructor']),
+        '/squadron/': Object.freeze(['squadron'])
+      });
+
+      function destinationForRole(role) {
+        const fallback = role === 'squadron' ? '/squadron/' : '/board/';
+        const requested = new URLSearchParams(window.location.search).get('returnTo') || '';
+        return RETURN_ROUTES[requested]?.includes(role) ? requested : fallback;
+      }
 
       function setBusy(busy) {
         submit.disabled = busy;
@@ -127,7 +142,7 @@
           }
 
           navigating = true;
-          window.location.replace(session.role === 'squadron' ? '/squadron/' : '/');
+          window.location.replace(destinationForRole(session.role));
         } catch (error) {
           show(error && error.name === 'AbortError'
             ? 'The authentication service timed out. Please retry.'

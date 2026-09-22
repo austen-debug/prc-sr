@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 
 import { onRequestPost as login } from '../../functions/api/login.js';
 import { verifyRequestSession } from '../../functions/api/session-contract.mjs';
+import { onRequest as middleware } from '../../functions/_middleware.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, '../..');
@@ -77,16 +78,112 @@ test('unconfigured role credentials cannot authenticate by matching undefined va
   assert.equal(response.status, 401);
 });
 
-test('login client verifies the session and routes Squadron users only to the dedicated board', async () => {
+test('login client validates deep-link destinations by authenticated role', async () => {
   const loginHtml = await source('public/login/index.html');
 
   assert.match(loginHtml, /async function request\(url, options\)/);
   assert.match(loginHtml, /credentials:\s*'same-origin'/);
   assert.match(loginHtml, /await request\('\/api\/login'/);
   assert.match(loginHtml, /await request\('\/api\/session'/);
-  assert.match(loginHtml, /session\.role === 'squadron' \? '\/squadron\/' : '\/'/);
+  assert.match(loginHtml, /const RETURN_ROUTES = Object\.freeze/);
+  assert.match(loginHtml, /'\/processing\/': Object\.freeze\(\['instructor', 'airman'\]\)/);
+  assert.match(loginHtml, /'\/squadron\/': Object\.freeze\(\['squadron'\]\)/);
+  assert.match(loginHtml, /const requested = new URLSearchParams\(window\.location\.search\)\.get\('returnTo'\)/);
+  assert.match(loginHtml, /RETURN_ROUTES\[requested\]\?\.includes\(role\) \? requested : fallback/);
+  assert.match(loginHtml, /window\.location\.replace\(destinationForRole\(session\.role\)\)/);
+  assert.match(loginHtml, /role === 'squadron' \? '\/squadron\/' : '\/board\/'/);
   assert.match(loginHtml, /Unable to reach the authentication service/);
 });
+
+test('middleware preserves durable app routes across refresh and enforces role boundaries', async () => {
+  const index = await source('public/index.html');
+  const env = {
+    AUTH_SECRET:'route-contract-secret',
+    MTI_USERNAME:'mti-route',
+    MTI_PASSWORD:'mti-password',
+    AIRMAN_USERNAME:'airman-route',
+    AIRMAN_PASSWORD:'airman-password',
+    SQUADRON_USERNAME:'squadron-route',
+    SQUADRON_PASSWORD:'squadron-password'
+  };
+
+  async function cookie(username, password) {
+    const response = await login({
+      env,
+      request:new Request('https://gate.example/api/login', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({username,password})
+      })
+    });
+    assert.equal(response.status,200);
+    return response.headers.get('set-cookie').split(';')[0];
+  }
+
+  const instructorCookie = await cookie(env.MTI_USERNAME, env.MTI_PASSWORD);
+  const airmanCookie = await cookie(env.AIRMAN_USERNAME, env.AIRMAN_PASSWORD);
+  const squadronCookie = await cookie(env.SQUADRON_USERNAME, env.SQUADRON_PASSWORD);
+
+  async function request(path, authCookie = '', assetBody = index) {
+    let assetPath = null;
+    const response = await middleware({
+      env,
+      request:new Request(`https://gate.example${path}`, {
+        headers: authCookie ? { Cookie:authCookie } : {}
+      }),
+      next:async input => {
+        assetPath = input ? new URL(input.url).pathname : path;
+        return new Response(assetBody, {headers:{'Content-Type':'text/html; charset=UTF-8'}});
+      }
+    });
+    return { response, assetPath };
+  }
+
+  const processing = await request('/processing/', instructorCookie);
+  assert.equal(processing.response.status,200);
+  assert.equal(processing.assetPath,'/', 'deep route must rewrite to the existing root app asset rather than duplicate HTML');
+  assert.equal(processing.response.headers.get('cache-control'),'no-store');
+  const processingHtml = await processing.response.text();
+  assert.match(processingHtml, /data-gate-initial-route="processing"/);
+  assert.match(processingHtml, /data-gate-session-role="instructor"/);
+  assert.match(processingHtml, /id="page-processing" class="[^"]*\bactive\b/);
+  assert.doesNotMatch(processingHtml, /id="page-board" class="[^"]*\bactive\b/);
+
+  const airmanProcessing = await request('/processing/', airmanCookie);
+  assert.equal(airmanProcessing.response.status,200);
+  assert.match(await airmanProcessing.response.text(), /data-gate-session-role="airman"/);
+
+  const blockedAirman = await request('/airport/', airmanCookie);
+  assert.equal(blockedAirman.response.status,302);
+  assert.equal(blockedAirman.response.headers.get('location'),'https://gate.example/board/');
+
+  const blockedSquadron = await request('/processing/', squadronCookie);
+  assert.equal(blockedSquadron.response.status,302);
+  assert.equal(blockedSquadron.response.headers.get('location'),'https://gate.example/squadron/');
+
+  const unauthenticated = await request('/processing/');
+  assert.equal(unauthenticated.response.status,302);
+  assert.equal(unauthenticated.response.headers.get('location'),'https://gate.example/login/?returnTo=%2Fprocessing%2F');
+
+  const canonical = await request('/processing', instructorCookie);
+  assert.equal(canonical.response.status,302);
+  assert.equal(canonical.response.headers.get('location'),'https://gate.example/processing/');
+
+  const rootEntry = await request('/', instructorCookie);
+  assert.equal(rootEntry.response.status,302);
+  assert.equal(rootEntry.response.headers.get('location'),'https://gate.example/board/');
+
+  const instructorStandaloneSquadron = await request('/squadron/', instructorCookie);
+  assert.equal(instructorStandaloneSquadron.response.status,302);
+  assert.equal(instructorStandaloneSquadron.response.headers.get('location'),'https://gate.example/squadron-board/');
+
+  const instructorSquadronBoard = await request('/squadron-board/', instructorCookie);
+  assert.equal(instructorSquadronBoard.response.status,200);
+  const instructorSquadronHtml = await instructorSquadronBoard.response.text();
+  assert.match(instructorSquadronHtml, /data-gate-initial-route="squadron"/);
+  assert.doesNotMatch(instructorSquadronHtml, /id="page-board" class="[^"]*\bactive\b/);
+});
+
 
 
 test('ambiguous shared credentials fail closed without changing the shared role model', async () => {

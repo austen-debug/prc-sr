@@ -220,7 +220,8 @@ export async function onRequestGet({ request, env, data }) {
       scope: liveOnly ? 'live' : 'all'
     });
   } catch (error) {
-    return jsonResponse({ isOk: false, error: error.message || 'Failed to load records.' }, 500);
+    console.error('Records read failed:', error);
+    return jsonResponse({ isOk: false, code: 'records_read_failed', error: 'Failed to load records.' }, 500);
   }
 }
 
@@ -260,7 +261,8 @@ export async function onRequestPost({ request, env, data }) {
 
     return jsonResponse({ isOk: true, data: storedRecord }, 201, { ETag: `"${storedRecord.record_version}"` });
   } catch (error) {
-    return jsonResponse({ isOk: false, error: error.message || 'Failed to create record.' }, 500);
+    console.error('Record create failed:', error);
+    return jsonResponse({ isOk: false, code: 'record_create_failed', error: 'Failed to create record.' }, 500);
   }
 }
 
@@ -338,7 +340,8 @@ export async function onRequestPut({ request, env, data }) {
 
     return jsonResponse({ isOk: true, data: storedRecord }, 200, { ETag: `"${storedRecord.record_version}"` });
   } catch (error) {
-    return jsonResponse({ isOk: false, error: error.message || 'Failed to update record.' }, 500);
+    console.error('Record update failed:', error);
+    return jsonResponse({ isOk: false, code: 'record_update_failed', error: 'Failed to update record.' }, 500);
   }
 }
 
@@ -389,6 +392,7 @@ export async function onRequestDelete({ request, env, data }) {
 
     return jsonResponse({ isOk: true, id, deletedRecordVersion: currentVersion });
   } catch (error) {
-    return jsonResponse({ isOk: false, error: error.message || 'Failed to delete record.' }, 500);
+    console.error('Record delete failed:', error);
+    return jsonResponse({ isOk: false, code: 'record_delete_failed', error: 'Failed to delete record.' }, 500);
   }
 }

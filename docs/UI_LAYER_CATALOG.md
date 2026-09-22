@@ -11,7 +11,7 @@ Use these files for the live UI/runtime contract:
 - `docs/build-2/ACTIVE_RUNTIME_BUDGET.json` — machine-readable asset ceiling.
 - `docs/FULL_REPO_AUDIT_2026-09-22.md` — repository-wide disposition and consolidation ledger.
 
-The current production UI uses one canonical stylesheet, `public/css/military-glass-terminal.css`, and 23 direct scripts/modules. Older multi-stylesheet and patch-controller lists below were retired and must not be restored merely because they appear in historical phase documentation.
+The current production UI uses one canonical stylesheet, `public/css/military-glass-terminal.css`, and 22 direct scripts/modules. Older multi-stylesheet and patch-controller lists below were retired and must not be restored merely because they appear in historical phase documentation.
 
 ## Current ownership summary
 
@@ -38,6 +38,7 @@ The repository audit folded the following active compatibility layers into their
 - `gate-tablet-shell-classifier.js`
 - `gate-render-stability-fix.js`
 - `prc-dash-processing-loaded-summary.js`
+- `prc-dash-modal-mobile-validation.js`
 
 Earlier Phase 14 and Phase 7 reports document additional retired patch files. Git history preserves those implementations; they are not runtime authorities.
 

@@ -160,7 +160,7 @@
   }
 
   function processingSummaryCounts(dorms) {
-    const group = activeWg();
+    const group = activeWeekGroup();
     const source = Array.isArray(dorms) ? dorms : processingDorms();
     const arrivedBuses = records().filter(record => (
       record?.type === 'bus' &&
@@ -173,40 +173,7 @@
   }
 
   function ensureProcessingSummary() {
-    const page = document.getElementById('page-processing');
-    if (!page) return null;
-    let summary = document.getElementById('processing-loaded-arrived-summary');
-    if (summary) return summary;
-
-    summary = document.createElement('div');
-    summary.id = 'processing-loaded-arrived-summary';
-    summary.className = 'px-4 pb-3 flex-shrink-0';
-    summary.dataset.owner = 'gate-processing-controller';
-    summary.innerHTML = `
-      <div class="surface border rounded-lg p-4 grid gap-3 md:grid-cols-3" style="border-color:var(--border);">
-        <div>
-          <div class="text-xs uppercase tracking-wider font-bold text-muted">Arrived</div>
-          <div id="processing-arrived-count" class="text-2xl font-black font-tabular">0</div>
-        </div>
-        <div>
-          <div class="text-xs uppercase tracking-wider font-bold text-muted">Loaded</div>
-          <div id="processing-loaded-count" class="text-2xl font-black font-tabular">0 / 0</div>
-        </div>
-        <div>
-          <div class="text-xs uppercase tracking-wider font-bold text-muted">Awaiting Dorm Assignment</div>
-          <div id="processing-remaining-count" class="text-2xl font-black font-tabular">0</div>
-        </div>
-        <div class="md:col-span-3 text-xs text-muted">
-          Compares bus-arrived trainees against trainees assigned to dorms through Processing page dorm load modals.
-        </div>
-      </div>
-    `;
-
-    const header = page.querySelector('.px-4.py-3.flex-shrink-0');
-    if (header?.nextSibling) page.insertBefore(summary, header.nextSibling);
-    else if (header) page.appendChild(summary);
-    else page.prepend(summary);
-    return summary;
+    return document.getElementById('processing-loaded-arrived-summary');
   }
 
   function renderProcessingSummary(dorms) {

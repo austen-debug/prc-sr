@@ -53,7 +53,7 @@ Injected by middleware in current order on the Flight Alert feature branch:
 18. `/js/gate-permission-guard.js?v=phase-1a-permission-guard-20260709`
 19. `/app/features/input/flight-alert-import.mjs?v=flight-alert-import-20260920` (new draft-only Input enhancement)
 20. `/js/gate-tablet-shell-classifier.js?v=tablet-shell-20260714`
-21. `/js/gate-app-shell-controller.js?v=phase-7g-viewport-watermark-20260709`
+21. `/js/gate-app-shell-controller.js?v=gate-route-state-20260922`
 22. `/js/gate-fullscreen-board-layout-controller.js?v=fullscreen-board-containment-20260714b`
 23. `/js/prc-dash-modal-mobile-validation.js?v=phase-7e-ui-ownership-20260709`
 24. `/js/gate-render-stability-fix.js?v=status-board-compositing-retired-20260721`
@@ -65,7 +65,7 @@ Injected by middleware in current order on the Flight Alert feature branch:
 ## Operational owners
 
 - `GateHooks` owns lifecycle hook registration and the `renderAll()` / `showPage()` wrappers.
-- `GateAppShell` owns visible route state, role-aware navigation, drawer/sheet behavior, and Week Group shell context.
+- `GateAppShell` owns visible route state, role-aware navigation, drawer/sheet behavior, and Week Group shell context. It also owns the canonical `/board/`, `/airport/`, `/input/`, `/processing/`, `/archives/`, and instructor `/squadron-board/` browser routes, including History API Back/Forward behavior; standalone Squadron Access remains `/squadron/`.
 - `GatePermissionGuard` owns client-side action protection; server authorization remains authoritative.
 - `GateStatusBoardController` owns the visible Status Board dorm columns, dorm cards, active-bus panel, elapsed-time calculation, record-bound timer text, warning/critical timer state, direct-surface integrity repair, and per-column incremental rendering. It rebinds every open timer to the current dorm record before each second-aligned tick and publishes the same elapsed-time function to the Processing open/close workflow.
 - `GatePremiumMetricsController` owns change-only synchronization of Arrived, Expected, Last, and Local values. The Local clock is second-aligned, displays `HH:MM:SS`, resumes immediately after visibility/focus/fullscreen transitions, and updates only the `#stat-local` text node.

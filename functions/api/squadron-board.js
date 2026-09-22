@@ -233,7 +233,10 @@ async function readBoard(env) {
   const source = await env.DB.prepare("SELECT id,type,week_group,data FROM records WHERE week_group=? AND type IN ('bus','dorm') ORDER BY created_at ASC").bind(weekGroup).all();
   const records = (source.results || []).map(parseRow);
   if (records.some(record => !record)) throw Object.assign(new Error('Malformed operational record; Squadron Board withheld.'), { code: 'integrity_error' });
-  const flight = await env.DB.prepare("SELECT json_extract(data,'$.value') AS last_flight FROM records WHERE type='config' AND week_group=? AND json_extract(data,'$.key')='last_airport' ORDER BY updated_at DESC LIMIT 1").bind(weekGroup).first();
+  // last_airport is a global presentation config written by the Airport page. Legacy/current writes
+  // may have a blank week_group, so scoping this lookup to the active Week Group breaks Squadron parity
+  // while the Status Board (which reads the same config globally) continues to update.
+  const flight = await env.DB.prepare("SELECT json_extract(data,'$.value') AS last_flight FROM records WHERE type='config' AND json_extract(data,'$.key')='last_airport' ORDER BY updated_at DESC LIMIT 1").first();
   let notice = null;
   try {
     notice = await env.DB.prepare('SELECT id,message,published_at FROM gate_squadron_notices WHERE week_group=? ORDER BY id DESC LIMIT 1').bind(weekGroup).first();

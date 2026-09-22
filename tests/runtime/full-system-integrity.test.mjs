@@ -161,6 +161,7 @@ test('backend CRUD, session, SAT, and archive endpoints remain present without c
 test('authoritative records refresh contract remains live and mutation-confirmed', async () => {
   const html = await source('public/index.html');
   assert.match(html, /const API_URL = ['"]\/api\/records['"]/);
+  assert.match(html, /const LIVE_API_URL = ['"]\/api\/records\?scope=live['"]/);
   assert.match(html, /await refresh\(true\);[\s\S]*setInterval\(\(\) => \{[\s\S]*refresh\(\)/);
   assert.match(html, /\}, 3000\);/);
   assert.ok((html.match(/if \(result\.isOk\) \{\s*await refresh\(true\);\s*\}/g) || []).length >= 3);

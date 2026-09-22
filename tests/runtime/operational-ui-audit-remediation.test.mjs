@@ -207,7 +207,7 @@ test('Squadron SITREP ships current canonical assets and preserves lightweight c
 });
 
 
-test('Squadron Access requires a non-dismissible per-session USG acknowledgment before board interaction', async () => {
+test('Squadron Access requires a non-dismissible acknowledgment once per authenticated Squadron login', async () => {
   const [standalone, gate, css, login] = await Promise.all([
     source('public/squadron/index.html'),
     source('public/js/gate-squadron-access-gate.js'),
@@ -215,12 +215,14 @@ test('Squadron Access requires a non-dismissible per-session USG acknowledgment 
     source('public/login/index.html')
   ]);
 
-  assert.match(standalone, /gate-squadron-access-gate\.js\?v=squadron-access-gate-20260922/);
+  assert.match(standalone, /gate-squadron-access-gate\.js\?v=squadron-access-gate-20260922-authsession1/);
   assert.match(login, /session\.role === 'squadron' \? '\/squadron\/' : '\/'/);
 
   assert.match(gate, /gate-squadron-standalone/);
   assert.match(gate, /sessionStorage/);
   assert.match(gate, /gate-squadron-access-acknowledged/);
+  assert.match(gate, /meta\[name="gate-auth-session"\]/);
+  assert.match(gate, /stored\(ACK_KEY\) === SESSION_MARKER/);
   assert.match(gate, /page\.inert = true/);
   assert.match(gate, /page\.setAttribute\('aria-hidden', 'true'\)/);
   assert.match(gate, /event\.key === 'Escape'/);
@@ -238,7 +240,7 @@ test('Squadron Access requires a non-dismissible per-session USG acknowledgment 
 
   assert.match(gate, /Agree &amp; Continue/);
   assert.match(gate, />Cancel</);
-  assert.match(gate, /store\(ACK_KEY, '1'\)/);
+  assert.match(gate, /store\(ACK_KEY, SESSION_MARKER\)/);
   assert.match(gate, /page\.inert = false/);
   assert.match(gate, /overlay\.remove\(\)/);
   assert.match(gate, /fetch\('\/api\/logout', \{ method: 'POST', credentials: 'same-origin' \}\)/);
@@ -247,4 +249,46 @@ test('Squadron Access requires a non-dismissible per-session USG acknowledgment 
   assert.match(css, /gate-squadron-access-pending #page-squadron[\s\S]*filter:blur\(8px\)[\s\S]*pointer-events:none/);
   assert.match(css, /\.gate-squadron-access-gate[\s\S]*position:fixed[\s\S]*inset:0[\s\S]*z-index:var\(--mg-z-critical\)/);
   assert.match(css, /backdrop-filter:blur\(4px\)/);
+
+  const { onRequest } = await import('../../functions/_middleware.js');
+  const { onRequestPost: authenticate } = await import('../../functions/api/login.js');
+  const env = {
+    AUTH_SECRET:'squadron-ack-session-test',
+    SQUADRON_USERNAME:'sq-test',
+    SQUADRON_PASSWORD:'sq-password'
+  };
+  const loginOnce = async () => {
+    const response = await authenticate({
+      env,
+      request:new Request('https://gate.example/api/login', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({username:env.SQUADRON_USERNAME,password:env.SQUADRON_PASSWORD})
+      })
+    });
+    assert.equal(response.status,200);
+    return response.headers.get('set-cookie').split(';')[0];
+  };
+  const serveSquadron = async cookie => onRequest({
+    env,
+    request:new Request('https://gate.example/squadron/', {headers:{Cookie:cookie}}),
+    next:async () => new Response(standalone, {headers:{'Content-Type':'text/html; charset=UTF-8'}})
+  });
+
+  const firstCookie = await loginOnce();
+  const firstPage = await serveSquadron(firstCookie);
+  assert.equal(firstPage.headers.get('cache-control'),'no-store');
+  const firstHtml = await firstPage.text();
+  const firstMarker = firstHtml.match(/<meta name="gate-auth-session" content="([^"]+)">/)?.[1];
+  assert.ok(firstMarker, 'authenticated Squadron HTML must include an auth-session marker');
+
+  const sameSessionPage = await serveSquadron(firstCookie);
+  const sameSessionMarker = (await sameSessionPage.text()).match(/<meta name="gate-auth-session" content="([^"]+)">/)?.[1];
+  assert.equal(sameSessionMarker, firstMarker, 'refresh/navigation in the same authenticated login keeps the same acknowledgment marker');
+
+  await new Promise(resolve => setTimeout(resolve, 2));
+  const secondCookie = await loginOnce();
+  const secondPage = await serveSquadron(secondCookie);
+  const secondMarker = (await secondPage.text()).match(/<meta name="gate-auth-session" content="([^"]+)">/)?.[1];
+  assert.ok(secondMarker && secondMarker !== firstMarker, 'a new authenticated login must receive a new acknowledgment marker');
 });

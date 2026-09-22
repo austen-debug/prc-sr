@@ -240,6 +240,27 @@ async function maybeApplyUiAssets(response) {
   });
 }
 
+async function bindSquadronAcknowledgmentToSession(response, session) {
+  const contentType = response.headers.get('content-type') || '';
+  if (!contentType.includes('text/html')) return response;
+
+  const marker = [session.role, session.iat, session.exp].join(':');
+  const html = (await response.text()).replace(
+    /<\/head>/i,
+    `  <meta name="gate-auth-session" content="${marker}">\n</head>`
+  );
+  const headers = new Headers(response.headers);
+  headers.set('content-type', 'text/html; charset=UTF-8');
+  headers.set('cache-control', 'no-store');
+  headers.delete('content-length');
+
+  return new Response(html, {
+    status: response.status,
+    statusText: response.statusText,
+    headers
+  });
+}
+
 export async function onRequest(context) {
   const url = new URL(context.request.url);
   const pathname = url.pathname;
@@ -270,7 +291,7 @@ export async function onRequest(context) {
 
   if (session.role === 'squadron') {
     if (pathname === '/squadron') return Response.redirect(`${url.origin}/squadron/`, 302);
-    if (pathname === '/squadron/') return context.next();
+    if (pathname === '/squadron/') return bindSquadronAcknowledgmentToSession(await context.next(), session);
     if (pathname.startsWith('/api/')) {
       if (pathname === '/api/session' || pathname === '/api/squadron-board') return context.next();
       return jsonResponse({ isOk: false, code: 'forbidden', error: 'Squadron access is limited to the read-only Squadron Board.' }, 403);

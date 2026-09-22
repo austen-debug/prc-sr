@@ -354,37 +354,15 @@ body > * {
 </div>
    <div id="proc-dorm-grid" class="flex-1 px-4 pb-4 grid gap-4" style="grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); align-content: start;"></div>
   </div><!-- PAGE: ARCHIVES -->
-  <div id="page-archives" class="page px-4 pb-4 overflow-y-auto">
-   <div class="max-w-3xl mx-auto">
-    <h2 data-template-id="archives-title" class="canva-text text-xl font-bold mb-4"></h2>
-    <h3 class="font-bold text-sm mb-2">Arrivals Log</h3>
-    <div class="surface border rounded-lg overflow-hidden mb-6" style="border-color:var(--border);">
-     <table class="w-full text-sm">
-      <thead>
-       <tr class="border-b" style="border-color:var(--border);">
-        <th class="px-3 py-2 text-left">Bus</th>
-        <th class="px-3 py-2 text-left">Departed</th>
-        <th class="px-3 py-2 text-left">Arrived</th>
-        <th class="px-3 py-2 text-left">OTW</th>
-        <th class="px-3 py-2 text-left">F</th>
-        <th class="px-3 py-2 text-left">NAT</th>
-       </tr>
-      </thead>
-      <tbody id="arrivals-body"></tbody>
-      <tfoot>
-       <tr class="border-t font-bold" style="border-color:var(--border);">
-        <td class="px-3 py-2" colspan="3">TOTAL</td>
-        <td class="px-3 py-2 font-tabular" id="total-otw">0</td>
-        <td class="px-3 py-2 font-tabular" id="total-f">0</td>
-        <td class="px-3 py-2 font-tabular" id="total-nat">0</td>
-       </tr>
-      </tfoot>
-     </table>
+  <div id="page-archives" class="page overflow-y-auto">
+   <main id="gate-archive-workspace" class="gate-archive-workspace" aria-label="Receiving archives">
+    <div id="archive-history" class="gate-archive-manager" data-owner="gate-archive-controller">
+     <div class="gate-archive-loading" role="status">Loading receiving archives…</div>
     </div>
-    <h3 class="font-bold text-sm mb-2">Archives (Previous Week Groups)</h3>
-    <div id="archive-history" class="space-y-2 text-muted text-sm">
-     No archived week groups.
-    </div>
+   </main>
+   <div class="hidden" aria-hidden="true" data-gate-legacy-arrivals-compat="true">
+    <table><tbody id="arrivals-body"></tbody></table>
+    <span id="total-otw">0</span><span id="total-f">0</span><span id="total-nat">0</span>
    </div>
   </div><!-- Dorm Processing Modal -->
   <div id="dorm-modal" class="confirm-overlay hidden">
@@ -717,11 +695,12 @@ body > * {
   // This mimics Canva's dataSdk so the existing PRC-SR app can keep working.
   (function () {
     const API_URL = '/api/records';
+    const LIVE_API_URL = '/api/records?scope=live';
     let handlerRef = null;
     let lastPayload = '';
 
     async function fetchRecords() {
-      const response = await fetch(API_URL, {
+      const response = await fetch(LIVE_API_URL, {
         method: 'GET',
         headers: {
           'Accept': 'application/json'

@@ -3485,19 +3485,6 @@ body.gate-fullscreen-board-active #page-board #active-buses .gate-component-acti
     padding: .75rem;
   }
 
-  .gate-archive-toolbar,
-  .gate-archive-record-card {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .gate-archive-record-stats {
-    justify-content: flex-start;
-  }
-
-  .gate-archive-clear-search {
-    width: 100%;
-  }
-
   .confirm-overlay,
   #confirm-dialog,
   #dorm-modal,
@@ -3986,25 +3973,6 @@ body.gate-fullscreen-board-active #page-board #active-buses .gate-component-acti
     min-height: 48px;
   }
 
-  #page-archives .max-w-3xl {
-    width: 100%;
-    max-width: none;
-  }
-
-  .gate-archive-toolbar,
-  .gate-archive-record-card {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .gate-archive-search-wrap,
-  #gate-archive-search,
-  .gate-archive-clear-search {
-    width: 100%;
-  }
-
-  .gate-archive-record-stats {
-    justify-content: flex-start;
-  }
 }
 
 @media (hover: hover) and (pointer: fine) and (min-width: 768px) and (max-width: 1279px) {

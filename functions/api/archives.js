@@ -201,13 +201,16 @@ export async function onRequestGet({ request, env, data }) {
 
     if (!id) {
       const [rows, rawAmendments] = await Promise.all([archiveRows(env), allAmendmentRows(env)]);
-      const amendmentsByArchive = new Map();
-      presentAmendments(rawAmendments).forEach(amendment => {
-        const archiveId = String(rawAmendments.find(row => row.amendment_id === amendment.amendment_id)?.archive_id || '');
+      const rawByArchive = new Map();
+      rawAmendments.forEach(row => {
+        const archiveId = String(row.archive_id || '');
         if (!archiveId) return;
-        if (!amendmentsByArchive.has(archiveId)) amendmentsByArchive.set(archiveId, []);
-        amendmentsByArchive.get(archiveId).push(amendment);
+        if (!rawByArchive.has(archiveId)) rawByArchive.set(archiveId, []);
+        rawByArchive.get(archiveId).push(row);
       });
+      const amendmentsByArchive = new Map(
+        [...rawByArchive.entries()].map(([archiveId, rowsForArchive]) => [archiveId, presentAmendments(rowsForArchive)])
+      );
       const archives = rows
         .map(row => archiveSummary(row, amendmentsByArchive.get(String(row.id || '')) || []))
         .sort((a, b) => timestamp(b.archived_at) - timestamp(a.archived_at) || b.id.localeCompare(a.id));

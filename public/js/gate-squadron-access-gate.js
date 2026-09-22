@@ -2,6 +2,7 @@
   'use strict';
 
   const ACK_KEY = 'gate-squadron-access-acknowledged';
+  const SESSION_MARKER = document.querySelector('meta[name="gate-auth-session"]')?.content || '';
   const page = document.getElementById('page-squadron');
   if (!document.body.classList.contains('gate-squadron-standalone') || !page) return;
 
@@ -12,7 +13,7 @@
     try { window.sessionStorage?.setItem(key, value); } catch (_) {}
   };
 
-  if (stored(ACK_KEY) === '1') return;
+  if (SESSION_MARKER && stored(ACK_KEY) === SESSION_MARKER) return;
 
   document.body.classList.add('gate-squadron-access-pending');
   page.setAttribute('aria-hidden', 'true');
@@ -55,7 +56,7 @@
   });
 
   document.getElementById('squadron-access-agree')?.addEventListener('click', () => {
-    store(ACK_KEY, '1');
+    if (SESSION_MARKER) store(ACK_KEY, SESSION_MARKER);
     page.inert = false;
     page.removeAttribute('aria-hidden');
     document.body.classList.remove('gate-squadron-access-pending');

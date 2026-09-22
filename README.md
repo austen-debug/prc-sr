@@ -87,10 +87,12 @@ Build 1 remains the only visible operational application.
 
 Cloudflare middleware currently serves:
 
-- 13 directly injected stylesheets;
-- 3 imported stylesheets;
-- 28 directly injected scripts;
+- 1 canonical directly injected stylesheet;
+- 0 imported stylesheets;
+- 24 directly injected scripts/modules;
 - one hidden, read-only Phase 3A Status Board shadow observer.
+
+The 24-entry direct manifest is the permanent runtime ceiling after the 22 Sep 2026 repository audit. Transitive ES-module imports are audited separately and may not be used to hide runtime growth outside that ceiling.
 
 The current order and ownership are documented in [`docs/ACTIVE_RUNTIME_STACK.md`](./docs/ACTIVE_RUNTIME_STACK.md). The machine-readable ceiling is [`docs/build-2/ACTIVE_RUNTIME_BUDGET.json`](./docs/build-2/ACTIVE_RUNTIME_BUDGET.json).
 
@@ -119,7 +121,7 @@ Not authorized:
 - Build 2 production critical writes;
 - Build 1 Status Board retirement;
 - operational Build 2 service-worker registration;
-- Squadron login activation.
+- Build 2 migration/replacement of the currently operational standalone Squadron login.
 
 The current program position is maintained in [`docs/build-2/INDEX.md`](./docs/build-2/INDEX.md). The governing mission and constraints are maintained in [`docs/build-2/PROGRAM_INTENT_BASELINE.md`](./docs/build-2/PROGRAM_INTENT_BASELINE.md).
 

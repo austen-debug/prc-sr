@@ -5,7 +5,7 @@
   "maximums": {
     "directStyles": 1,
     "importedStyles": 0,
-    "directScripts": 28
+    "directScripts": 24
   },
   "phase3BExitTargets": {
     "directStylesMaximum": 1,
@@ -22,43 +22,39 @@
   "currentDirectScripts": [
     "/js/gate-record-display-contract.js?v=record-display-integrity-20260714b",
     "/js/gate-component-contracts.js",
-    "/js/gate-ui-hooks.js?v=phase-6-hooks-20260709",
+    "/js/gate-ui-hooks.js?v=repo-audit-20260922",
     "/js/gate-branding-controller.js",
     "/js/prc-dash-runtime-fixes.js?v=phase-8e-runtime-safeguards-20260709",
     "/js/prc-dash-sat-arrivals.js",
-    "/js/prc-dash-space-force.js",
     "/js/prc-dash-dorm-reopen.js",
     "/js/prc-dash-final-audit.js?v=squadron-sitrep-20260922-live-sync1",
     "/js/gate-status-board-controller.js?v=dorm-timer-record-lifecycle-20260722",
-    "/js/gate-processing-controller.js?v=record-display-integrity-20260714",
+    "/js/gate-processing-controller.js?v=repo-audit-20260922",
     "/js/prc-dash-dorm-flag-validation.js?v=processing-band-designator-20260915",
     "/js/prc-dash-auditorium-location.js?v=processing-modal-record-binding-20260721",
-    "/js/gate-bus-workflow-controller.js?v=phase-3-bus-workflow-20260709",
-    "/js/gate-airport-bus-delete-controller.js?v=airport-bus-delete-20260714",
+    "/js/gate-bus-workflow-controller.js?v=repo-audit-20260922",
+    "/js/gate-airport-bus-delete-controller.js?v=repo-audit-20260922",
     "/js/gate-input-page-controller.js?v=record-display-integrity-20260714",
     "/js/gate-archive-controller.js?v=gate-archive-workspace-20260922",
     "/js/gate-permission-guard.js?v=permission-server-role-20260922",
     "/app/features/input/flight-alert-import.mjs?v=flight-alert-import-20260920",
-    "/js/gate-tablet-shell-classifier.js?v=tablet-shell-20260714",
-    "/js/gate-app-shell-controller.js?v=gate-route-state-20260922",
+    "/js/gate-app-shell-controller.js?v=repo-audit-20260922",
     "/js/gate-fullscreen-board-layout-controller.js?v=fullscreen-board-containment-20260714b",
     "/js/prc-dash-modal-mobile-validation.js?v=phase-7e-ui-ownership-20260709",
-    "/js/gate-render-stability-fix.js?v=status-board-compositing-retired-20260721",
-    "/js/prc-dash-processing-loaded-summary.js",
     "/js/gate-premium-metrics-controller.js?v=metric-live-clock-20260722",
-    "/js/prc-dash-overtime-audit.js",
+    "/js/prc-dash-overtime-audit.js?v=repo-audit-20260922",
     "/js/gate-status-board-shadow-controller.js?v=phase-3a-status-board-shadow-20260715"
   ],
   "grandfatheredCorrectiveAssets": [
     "/js/prc-dash-runtime-fixes.js",
-    "/js/prc-dash-modal-mobile-validation.js",
-    "/js/gate-render-stability-fix.js"
+    "/js/prc-dash-modal-mobile-validation.js"
   ],
   "rules": [
     "The active middleware stack may not exceed the recorded maximums.",
     "The production CSS runtime is one canonical direct stylesheet and zero imported stylesheets.",
     "No new asset named as a fix, patch, corrective layer, restore layer, finalizer, cleanup, or stability layer may be activated.",
     "Any active-asset change must update this inventory and the active runtime register in the same pull request.",
-    "The hidden Phase 3A shadow observer remains the only Build 2 runtime asset until a separate authorization decision."
+    "The hidden Phase 3A shadow observer remains the only Build 2 runtime asset until a separate authorization decision.",
+    "Runtime ownership consolidation completed 2026-09-22; the direct-script ceiling is now 24 and may not regress upward."
   ]
 }

@@ -111,6 +111,11 @@ async function activeWeekGroup(env) {
   const cycle = String(live[0]?.week_group || '').trim().toUpperCase();
   const config = String(configs[0]?.week_group || '').trim().toUpperCase();
   if (cycle && config && cycle !== config) throw Object.assign(new Error('Week Group lifecycle/config mismatch.'), { code: 'integrity_error' });
+  if (!cycle && config) {
+    // Legacy unregistered active weeks remain readable; a known closed cycle never reappears as active.
+    const known = await env.DB.prepare('SELECT state FROM gate_week_groups WHERE week_group=? LIMIT 1').bind(config).first();
+    if (known) return '';
+  }
   return cycle || config;
 }
 
@@ -120,8 +125,15 @@ async function readBoard(env) {
   const source = await env.DB.prepare("SELECT id,type,week_group,data FROM records WHERE week_group=? AND type IN ('bus','dorm') ORDER BY created_at ASC").bind(weekGroup).all();
   const records = (source.results || []).map(parseRow);
   if (records.some(record => !record)) throw Object.assign(new Error('Malformed operational record; Squadron Board withheld.'), { code: 'integrity_error' });
-  const flight = await env.DB.prepare("SELECT json_extract(data,'$.value') AS last_flight FROM records WHERE type='config' AND json_extract(data,'$.key')='last_airport' ORDER BY updated_at DESC LIMIT 1").first();
-  const notice = await env.DB.prepare('SELECT id,message,published_at FROM gate_squadron_notices WHERE week_group=? ORDER BY id DESC LIMIT 1').bind(weekGroup).first();
+  const flight = await env.DB.prepare("SELECT json_extract(data,'$.value') AS last_flight FROM records WHERE type='config' AND week_group=? AND json_extract(data,'$.key')='last_airport' ORDER BY updated_at DESC LIMIT 1").bind(weekGroup).first();
+  let notice = null;
+  try {
+    notice = await env.DB.prepare('SELECT id,message,published_at FROM gate_squadron_notices WHERE week_group=? ORDER BY id DESC LIMIT 1').bind(weekGroup).first();
+  } catch (error) {
+    // During a staged deployment, keep the read-only SITREP available until migration 0005 is installed.
+    // Never swallow unrelated database failures.
+    if (!/no such table:\s*gate_squadron_notices\b/i.test(String(error?.message || ''))) throw error;
+  }
   return buildSquadronSnapshot({ weekGroup, records, now: new Date(), notice, lastFlight: flight?.last_flight || '' });
 }
 
@@ -131,7 +143,7 @@ export async function onRequestGet({ env, data }) {
   try {
     return reply({ isOk: true, editor: role === 'instructor', board: await readBoard(env) });
   } catch (error) {
-    return reply({ isOk: false, code: error?.code || 'squadron_board_failed', error: error?.message || 'Board unavailable.' }, error?.code === 'integrity_error' ? 503 : 500);
+    return reply({ isOk: false, code: error?.code || 'squadron_board_failed', error: error?.code === 'integrity_error' ? error.message : 'Squadron data unavailable.' }, error?.code === 'integrity_error' ? 503 : 500);
   }
 }
 
@@ -167,6 +179,7 @@ export async function onRequestPost({ request, env, data }) {
     if (!Number.isSafeInteger(revision) || revision < 1) return reply({ isOk: false, code: 'publication_unconfirmed', error: 'Check the published notice before retrying.' }, 503);
     return reply({ isOk: true, notice: { revision, message, published_at: publishedAt } });
   } catch (error) {
-    return reply({ isOk: false, code: error?.code || 'publication_failed', error: error?.message || 'Unable to publish notice.' }, error?.code === 'integrity_error' ? 503 : 500);
+    if (/no such table:\s*gate_squadron_notices\b/i.test(String(error?.message || ''))) return reply({ isOk: false, code: 'migration_required', error: 'Notice publishing is unavailable until the additive notice migration is installed.' }, 503);
+    return reply({ isOk: false, code: error?.code || 'publication_failed', error: error?.code === 'integrity_error' ? error.message : 'Unable to publish notice.' }, error?.code === 'integrity_error' ? 503 : 500);
   }
 }

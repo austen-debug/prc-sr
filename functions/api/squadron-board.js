@@ -73,11 +73,24 @@ function instructionList(value, code = 'integrity_error') {
   return instructions;
 }
 
-async function ensureSquadronWriteSchema(env) {
-  if (!env?.DB || typeof env.DB.exec !== 'function') {
+async function ensureSquadronWriteSchema(env, target) {
+  if (!env?.DB || typeof env.DB.prepare !== 'function') {
     throw Object.assign(new Error('Squadron write storage is unavailable.'), { code: 'configuration_required' });
   }
-  await env.DB.exec(SQUADRON_WRITE_SCHEMA_SQL);
+  const sql = target === 'notice'
+    ? SQUADRON_WRITE_SCHEMA_SQL.slice(0, SQUADRON_WRITE_SCHEMA_SQL.indexOf('CREATE TABLE IF NOT EXISTS gate_squadron_information_revisions'))
+    : SQUADRON_WRITE_SCHEMA_SQL.slice(SQUADRON_WRITE_SCHEMA_SQL.indexOf('CREATE TABLE IF NOT EXISTS gate_squadron_information_revisions'));
+  try {
+    // D1 prepared writes keep the bootstrap on the same execution path as normal API writes.
+    // Split only at complete DDL boundaries; trigger bodies remain intact.
+    const statements = sql.match(/CREATE TABLE[\s\S]*?;(?=\s*CREATE)|CREATE INDEX[\s\S]*?;(?=\s*CREATE)|CREATE TRIGGER[\s\S]*?END;/g) || [];
+    for (const statement of statements) await env.DB.prepare(statement).run();
+  } catch (error) {
+    throw Object.assign(new Error(`Squadron ${target} storage could not be initialized.`), {
+      code: 'configuration_required',
+      cause: error
+    });
+  }
 }
 
 function bool(value) { return value === true || value === 'true' || value === 1 || value === '1'; }
@@ -267,15 +280,14 @@ export async function onRequestPost({ request, env, data }) {
       return reply({ isOk: false, code: 'validation', error: 'A notice (1–1000 characters) and current revision are required.' }, 400);
     }
     try {
-      await ensureSquadronWriteSchema(env);
+      await ensureSquadronWriteSchema(env, 'notice');
       const weekGroup = await activeWeekGroup(env);
       if (!weekGroup) return reply({ isOk: false, code: 'lifecycle_required', error: 'No active Week Group.' }, 409);
       const publishedAt = new Date().toISOString();
       const result = await env.DB.prepare(`INSERT INTO gate_squadron_notices (week_group,message,published_at,published_by_role)
-        SELECT wg.week_group, ?, ?, 'instructor' FROM gate_week_groups wg
-        WHERE wg.state='active' AND wg.week_group=?
-          AND COALESCE((SELECT MAX(id) FROM gate_squadron_notices WHERE week_group=?),0)=?`)
-        .bind(message, publishedAt, weekGroup, weekGroup, expectedRevision).run();
+        SELECT ?, ?, ?, 'instructor'
+        WHERE COALESCE((SELECT MAX(id) FROM gate_squadron_notices WHERE week_group=?),0)=?`)
+        .bind(weekGroup, message, publishedAt, weekGroup, expectedRevision).run();
       if (result.meta?.changes !== 1) return reply({ isOk: false, code: 'conflict', error: 'The active group or notice changed. Refresh before publishing.' }, 409);
       const revision = result.meta?.last_row_id;
       if (!Number.isSafeInteger(revision) || revision < 1) return reply({ isOk: false, code: 'publication_unconfirmed', error: 'Check the published notice before retrying.' }, 503);
@@ -296,7 +308,7 @@ export async function onRequestPost({ request, env, data }) {
     return reply({ isOk: false, code: 'validation', error: 'The current Squadron information revision is required.' }, 400);
   }
   try {
-    await ensureSquadronWriteSchema(env);
+    await ensureSquadronWriteSchema(env, 'information');
     const publishedAt = new Date().toISOString();
     const serialized = JSON.stringify(instructions);
     const result = await env.DB.prepare(`INSERT INTO gate_squadron_information_revisions (instructions_json,published_at,published_by_role)

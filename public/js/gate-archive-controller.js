@@ -521,9 +521,81 @@
   }
 
   function archiveSpaceForceTotal(archive) {
-    const explicit = n(archive?.space_force_total) || n(archive?.arrived_space_force_total);
-    if (explicit) return explicit;
-    return parseJson(archive?.bus_data, []).reduce((sum, bus) => sum + n(bus.space_force_count), 0);
+    return n(archive?.space_force_total || archive?.arrived_space_force_total);
+  }
+
+  function integrityLabel(value) {
+    if (value === 'lossless') return 'Lossless Snapshot';
+    if (value === 'canonical') return 'Canonical Archive';
+    return 'Legacy Archive';
+  }
+
+  function integrityTone(value) {
+    if (value === 'lossless') return 'is-lossless';
+    if (value === 'canonical') return 'is-canonical';
+    return 'is-legacy';
+  }
+
+  async function archiveApi(url = '/api/archives') {
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: { Accept: 'application/json' },
+      cache: 'no-store',
+      credentials: 'same-origin'
+    });
+    const payload = await response.json();
+    if (!response.ok || !payload?.isOk) throw new Error(payload?.error || 'Unable to load archive records.');
+    return payload;
+  }
+
+  async function refreshArchiveIndex(force = false) {
+    if (!isInstructor()) return [];
+    if (archiveIndexPromise && !force) return archiveIndexPromise;
+    archiveIndexPromise = archiveApi('/api/archives')
+      .then(payload => {
+        archiveIndex = Array.isArray(payload.archives) ? payload.archives : [];
+        archiveIndexLoaded = true;
+        if (selectedArchiveId && !archiveIndex.some(item => item.id === selectedArchiveId)) {
+          selectedArchiveId = '';
+        }
+        if (!selectedArchiveId && archiveIndex.length) selectedArchiveId = archiveIndex[0].id;
+        renderArchiveManagementView();
+        if (selectedArchiveId) void loadArchiveDetail(selectedArchiveId);
+        return archiveIndex;
+      })
+      .catch(error => {
+        archiveIndexLoaded = true;
+        const container = document.getElementById('archive-history');
+        if (container) {
+          container.innerHTML = `<div class="gate-archive-empty is-error"><span><span class="gate-archive-empty-title">Archive Read Unavailable</span><span class="gate-archive-empty-copy">${esc(error.message)}</span></span></div>`;
+        }
+        return [];
+      })
+      .finally(() => {
+        archiveIndexPromise = null;
+      });
+    return archiveIndexPromise;
+  }
+
+  async function loadArchiveDetail(id, force = false) {
+    const key = String(id || '');
+    if (!key) return null;
+    if (!force && archiveDetailCache.has(key)) return archiveDetailCache.get(key);
+    if (!force && archiveDetailPromises.has(key)) return archiveDetailPromises.get(key);
+    const promise = archiveApi(`/api/archives?id=${encodeURIComponent(key)}`)
+      .then(payload => {
+        archiveDetailCache.set(key, payload);
+        if (selectedArchiveId === key) renderArchiveManagementView();
+        return payload;
+      })
+      .catch(error => {
+        archiveDetailCache.set(key, { isOk: false, error: error.message || 'Unable to load archive.' });
+        if (selectedArchiveId === key) renderArchiveManagementView();
+        return null;
+      })
+      .finally(() => archiveDetailPromises.delete(key));
+    archiveDetailPromises.set(key, promise);
+    return promise;
   }
 
   function archiveTotals(items) {
@@ -532,47 +604,185 @@
       totals.dorms += n(archive.dorm_count);
       totals.buses += n(archive.bus_count);
       totals.arrived += n(archive.total_arrived);
-      totals.female += n(archive.female_total);
-      totals.nat += n(archive.nat_total);
+      totals.expected += n(archive.total_expected);
       totals.sf += archiveSpaceForceTotal(archive);
       return totals;
-    }, { records: 0, dorms: 0, buses: 0, arrived: 0, female: 0, nat: 0, sf: 0 });
+    }, { records: 0, dorms: 0, buses: 0, arrived: 0, expected: 0, sf: 0 });
+  }
+
+  function archiveYear(archive) {
+    const date = archiveTime(archive);
+    return date.getTime() ? String(date.getFullYear()) : 'Unknown';
+  }
+
+  function archiveMonth(archive) {
+    const date = archiveTime(archive);
+    return date.getTime()
+      ? date.toLocaleString([], { month: 'long' })
+      : 'Unknown Date';
   }
 
   function filteredArchives() {
     const term = String(archiveSearchTerm || '').trim().toLowerCase();
-    const list = archiveRecords();
-    return term ? list.filter(record => String(record.week_group || '').toLowerCase().includes(term)) : list;
+    return archiveIndex.filter(record => {
+      const matchesTerm = !term || String(record.week_group || '').toLowerCase().includes(term);
+      const matchesYear = archiveYearFilter === 'all' || archiveYear(record) === archiveYearFilter;
+      return matchesTerm && matchesYear;
+    });
   }
 
   function archiveCard(archive) {
-    const time = archiveTime(archive).getTime() ? archiveTime(archive).toLocaleString([], { month: 'short', day: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'No archive timestamp';
-    return `<button type="button" class="gate-archive-record-card" data-archive-id="${esc(archive.__backendId)}" data-owner="gate-archive-controller"><span><span class="gate-archive-record-title">${esc(archive.week_group || 'Archived Week Group')}</span><span class="gate-archive-record-meta">Archived ${esc(time)}</span></span><span class="gate-archive-record-stats"><span class="gate-archive-stat-pill">${n(archive.dorm_count)} Dorms</span><span class="gate-archive-stat-pill">${n(archive.bus_count)} Buses</span><span class="gate-archive-stat-pill">${n(archive.total_arrived)} Arrived</span><span class="gate-archive-stat-pill">${n(archive.female_total)} Female</span><span class="gate-archive-stat-pill">${n(archive.nat_total)} NAT</span><span class="gate-archive-stat-pill">${archiveSpaceForceTotal(archive)} Space Force</span></span></button>`;
+    const selected = archive.id === selectedArchiveId;
+    const time = archiveTime(archive).getTime()
+      ? archiveTime(archive).toLocaleString([], { month: 'short', day: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+      : 'No archive timestamp';
+    return `<button type="button" class="gate-archive-record-card${selected ? ' is-selected' : ''}" data-archive-id="${esc(archive.id)}" aria-pressed="${selected ? 'true' : 'false'}"><span class="gate-archive-record-primary"><span class="gate-archive-record-title">${esc(archive.week_group || 'Archived Week Group')}</span><span class="gate-archive-record-meta">Archived ${esc(time)}</span></span><span class="gate-archive-record-numbers"><span><strong>${n(archive.total_arrived)}</strong><small>Arrived</small></span><span><strong>${n(archive.total_expected)}</strong><small>Expected</small></span><span><strong>${n(archive.dorm_count)}</strong><small>Dorms</small></span></span><span class="gate-archive-integrity ${integrityTone(archive.integrity)}">${esc(integrityLabel(archive.integrity))}</span></button>`;
+  }
+
+  function groupedArchiveHtml(items) {
+    const groups = new Map();
+    items.forEach(archive => {
+      const year = archiveYear(archive);
+      const month = archiveMonth(archive);
+      if (!groups.has(year)) groups.set(year, new Map());
+      const months = groups.get(year);
+      if (!months.has(month)) months.set(month, []);
+      months.get(month).push(archive);
+    });
+    return [...groups.entries()].map(([year, months], yearIndex) => {
+      const yearCount = [...months.values()].reduce((sum, list) => sum + list.length, 0);
+      const monthHtml = [...months.entries()].map(([month, list], monthIndex) => `<details class="gate-archive-month" ${yearIndex === 0 && monthIndex === 0 ? 'open' : ''}><summary><span class="gate-archive-month-title-row"><span class="gate-archive-disclosure">›</span><span class="gate-archive-month-title">${esc(month)}</span></span><span class="gate-archive-month-count">${list.length} record${list.length === 1 ? '' : 's'}</span></summary><div class="gate-archive-record-list">${list.map(archiveCard).join('')}</div></details>`).join('');
+      return `<details class="gate-archive-year" ${yearIndex === 0 ? 'open' : ''}><summary><span class="gate-archive-year-title-row"><span class="gate-archive-disclosure">›</span><span class="gate-archive-year-title">${esc(year)}</span></span><span class="gate-archive-year-count">${yearCount} record${yearCount === 1 ? '' : 's'}</span></summary><div class="gate-archive-year-body">${monthHtml}</div></details>`;
+    }).join('');
+  }
+
+  function archiveMetric(label, value) {
+    return `<div class="gate-archive-metric"><span>${esc(label)}</span><strong>${n(value)}</strong></div>`;
+  }
+
+  function archiveWindowCard(label, start, end) {
+    const configured = Boolean(timestamp(start) && timestamp(end));
+    return `<div class="gate-archive-window"><span class="gate-archive-window-label">${esc(label)}</span><strong>${configured ? esc(formatDateTime(start)) : 'Not configured'}</strong><span>${configured ? `through ${esc(formatDateTime(end))}` : 'No receiving window retained.'}</span></div>`;
+  }
+
+  function archiveDormRows(dorms) {
+    if (!dorms.length) return '<tr><td colspan="6" class="gate-archive-table-empty">No dorm snapshot retained.</td></tr>';
+    return [...dorms]
+      .sort((a, b) => clean(a.dorm_name || a.name).localeCompare(clean(b.dorm_name || b.name), undefined, { numeric: true }))
+      .map(dorm => `<tr><td><strong>${esc(clean(dorm.dorm_name || dorm.name))}</strong></td><td>${esc([dorm.sdq, dorm.section, dorm.inter_sec].filter(Boolean).join(' / ') || '—')}</td><td>${esc([isSpaceForceDorm(dorm) ? 'Space Force' : 'Air Force', dorm.sex || '', isBandDorm(dorm) ? 'Band' : ''].filter(Boolean).join(' · '))}</td><td class="num">${dormLoad(dorm)} / ${n(dorm.max_load)}</td><td>${esc(clean(dorm.phase || dorm.state))}</td><td class="num">${esc(clean(dorm.closed_timer || dorm.elapsed || ''))}</td></tr>`)
+      .join('');
+  }
+
+  function archiveBusRows(buses) {
+    if (!buses.length) return '<tr><td colspan="9" class="gate-archive-table-empty">No bus snapshot retained.</td></tr>';
+    return [...buses]
+      .sort((a, b) => (timestamp(busTime(a))?.getTime() || 0) - (timestamp(busTime(b))?.getTime() || 0))
+      .map(bus => `<tr><td><strong>${esc(bus.bus_type === 'local' ? clean(bus.destination || bus.originating_destination, 'Local Arrival') : `Bus #${clean(bus.bus_id)}`)}</strong></td><td>${esc(clean(bus.bus_type))}</td><td>${esc(formatTime(bus.departed_at || bus.created_at))}</td><td>${esc(formatTime(bus.arrived_at))}</td><td>${esc(clean(bus.status))}</td><td class="num">${n(bus.otw_count)}</td><td class="num">${n(bus.female_count)}</td><td class="num">${n(bus.nat_count)}</td><td class="num">${n(bus.space_force_count)}</td></tr>`)
+      .join('');
+  }
+
+  function archiveAmendments(amendments) {
+    if (!amendments.length) return '<div class="gate-archive-amendment-empty">No corrections or amendments recorded.</div>';
+    return `<ol class="gate-archive-amendment-list">${amendments.map(amendment => {
+      const fields = Object.keys(amendment.changes || {});
+      return `<li><div><strong>Amendment #${n(amendment.amendment_number)}</strong><span>${esc(formatDateTime(amendment.created_at))}</span></div><p>${esc(amendment.reason || 'Correction recorded.')}</p><small>${fields.length ? `Fields: ${esc(fields.join(', '))}` : 'No display fields listed.'}</small></li>`;
+    }).join('')}</ol>`;
+  }
+
+  function archiveInspectorHtml() {
+    if (!selectedArchiveId) {
+      return '<section class="gate-archive-inspector gate-archive-inspector-empty"><div><span class="gate-archive-empty-title">Select an Archived Week Group</span><span class="gate-archive-empty-copy">Choose a historical record to review its receiving summary, dorm snapshot, bus history, and correction history.</span></div></section>';
+    }
+    const detail = archiveDetailCache.get(selectedArchiveId);
+    if (!detail) {
+      return '<section class="gate-archive-inspector"><div class="gate-archive-loading" role="status">Loading archive detail…</div></section>';
+    }
+    if (detail.isOk === false) {
+      return `<section class="gate-archive-inspector"><div class="gate-archive-empty is-error"><span><span class="gate-archive-empty-title">Archive Detail Unavailable</span><span class="gate-archive-empty-copy">${esc(detail.error || 'Unable to load archive.')}</span></span></div></section>`;
+    }
+
+    const archive = detail.archive || {};
+    const dorms = Array.isArray(detail.dorms) ? detail.dorms : [];
+    const buses = Array.isArray(detail.buses) ? detail.buses : [];
+    const amendments = Array.isArray(detail.amendments) ? detail.amendments : [];
+    const lifecycle = detail.lifecycle || null;
+    return `<section class="gate-archive-inspector">
+      <header class="gate-archive-inspector-head">
+        <div><span class="gate-archive-kicker">Historical Receiving Record</span><h2>${esc(archive.week_group || 'Archived Week Group')}</h2><div class="gate-archive-inspector-meta">Archived ${esc(formatDateTime(archive.archived_at))} · ${esc(integrityLabel(archive.integrity))}${archive.source_record_count ? ` · ${n(archive.source_record_count)} source rows retained` : ''}</div></div>
+        <div class="gate-archive-inspector-actions"><button type="button" class="gate-archive-print-action" data-archive-print-id="${esc(selectedArchiveId)}">PRINT / PDF</button></div>
+      </header>
+      <div class="gate-archive-readonly-note">Read-only presentation. The stored D1 archive and any lossless source snapshot are not rewritten by this view.</div>
+      <section class="gate-archive-metrics">
+        ${archiveMetric('Arrived', archive.total_arrived)}
+        ${archiveMetric('Loaded', archive.total_loaded)}
+        ${archiveMetric('Expected', archive.total_expected)}
+        ${archiveMetric('Female', archive.female_total)}
+        ${archiveMetric('NAT', archive.nat_total)}
+        ${archiveMetric('Space Force', archive.space_force_total)}
+      </section>
+      <section class="gate-archive-section">
+        <div class="gate-archive-section-head"><div><span class="gate-archive-kicker">Receiving Windows</span><h3>Operational Timeline</h3></div></div>
+        <div class="gate-archive-window-grid">
+          ${archiveWindowCard('Receiving Night One', archive.receiving_day_one_start, archive.receiving_day_one_end)}
+          ${archiveWindowCard('Receiving Night Two', archive.receiving_day_two_start, archive.receiving_day_two_end)}
+        </div>
+      </section>
+      <section class="gate-archive-section">
+        <div class="gate-archive-section-head"><div><span class="gate-archive-kicker">Dormitories</span><h3>Dorm Snapshot</h3></div><span>${dorms.length} records</span></div>
+        <div class="gate-archive-table-wrap"><table class="gate-archive-table"><thead><tr><th>Dorm</th><th>Sq / Sec / Int</th><th>Population</th><th>Load</th><th>Final Status</th><th>Timer</th></tr></thead><tbody>${archiveDormRows(dorms)}</tbody></table></div>
+      </section>
+      <section class="gate-archive-section">
+        <div class="gate-archive-section-head"><div><span class="gate-archive-kicker">Movement History</span><h3>Bus / Arrival Snapshot</h3></div><span>${buses.length} records</span></div>
+        <div class="gate-archive-table-wrap"><table class="gate-archive-table"><thead><tr><th>Bus / Source</th><th>Type</th><th>Departed</th><th>Arrived</th><th>Status</th><th>Total</th><th>F</th><th>NAT</th><th>SF</th></tr></thead><tbody>${archiveBusRows(buses)}</tbody></table></div>
+      </section>
+      <section class="gate-archive-section gate-archive-amendments">
+        <div class="gate-archive-section-head"><div><span class="gate-archive-kicker">Record Integrity</span><h3>Correction History</h3></div><span>${amendments.length} amendment${amendments.length === 1 ? '' : 's'}</span></div>
+        ${archiveAmendments(amendments)}
+      </section>
+      <footer class="gate-archive-record-footer"><span>Schema: ${esc(archive.archive_schema_version || 'Legacy / unspecified')}</span><span>${lifecycle ? `Lifecycle: ${esc(lifecycle.state || 'closed')} · ${esc(lifecycle.cycle_id || '—')}` : 'Lifecycle metadata unavailable for this historical record.'}</span></footer>
+    </section>`;
   }
 
   function renderArchiveManagementView() {
     const container = document.getElementById('archive-history');
     if (!container) return;
     const search = document.getElementById('gate-archive-search');
+    const yearSelect = document.getElementById('gate-archive-year-filter');
     const focus = search === document.activeElement;
     const selectionStart = focus ? search.selectionStart : null;
     if (search) archiveSearchTerm = search.value;
+    if (yearSelect) archiveYearFilter = yearSelect.value || 'all';
 
-    const all = archiveRecords();
+    if (!archiveIndexLoaded) {
+      container.className = 'gate-archive-manager';
+      container.innerHTML = '<div class="gate-archive-loading" role="status">Loading receiving archives…</div>';
+      if (!archiveIndexPromise) void refreshArchiveIndex();
+      return;
+    }
+
     const visible = filteredArchives();
-    const totals = archiveTotals(visible.length ? visible : all);
+    const totals = archiveTotals(visible);
+    const years = [...new Set(archiveIndex.map(archiveYear))].sort((a, b) => b.localeCompare(a, undefined, { numeric: true }));
+    const activeGroup = activeWeekGroup();
+    const hero = `<section class="gate-archive-hero"><div><span class="gate-archive-kicker">Historical Operations Repository</span><h1>Receiving Archives</h1><p>Closed Week Groups are presented from retained D1 archive records. Historical source snapshots remain untouched.</p></div><div class="gate-archive-hero-actions"><button id="print-current-summary-btn" type="button" class="gate-archive-current-report" ${activeGroup ? '' : 'disabled'}>PRINT CURRENT SUMMARY</button><span class="gate-archive-current-context">${activeGroup ? `Active: ${esc(activeGroup)}` : 'No active Week Group'}</span></div></section>`;
+    const toolbar = `<section class="gate-archive-toolbar"><div class="gate-archive-toolbar-summary"><span class="gate-archive-toolbar-title">${visible.length} of ${archiveIndex.length} Archived Week Groups</span><span class="gate-archive-toolbar-copy">${totals.arrived} arrived · ${totals.expected} expected · ${totals.dorms} dorm snapshots · ${totals.buses} movement records</span></div><label class="gate-archive-search-wrap" for="gate-archive-search"><span class="gate-archive-search-label">Search Week Group</span><input id="gate-archive-search" type="search" value="${esc(archiveSearchTerm)}" placeholder="Search archives…"></label><label class="gate-archive-year-wrap" for="gate-archive-year-filter"><span class="gate-archive-search-label">Year</span><select id="gate-archive-year-filter"><option value="all">All years</option>${years.map(year => `<option value="${esc(year)}" ${archiveYearFilter === year ? 'selected' : ''}>${esc(year)}</option>`).join('')}</select></label><button id="gate-archive-clear-search" type="button" class="gate-archive-clear-search" ${archiveSearchTerm || archiveYearFilter !== 'all' ? '' : 'disabled'}>Clear</button></section>`;
+    let browser;
+    if (!archiveIndex.length) browser = '<div class="gate-archive-empty"><span><span class="gate-archive-empty-title">No Archived Week Groups</span><span class="gate-archive-empty-copy">Closed Week Groups will appear here without changing or rewriting their retained D1 data.</span></span></div>';
+    else if (!visible.length) browser = '<div class="gate-archive-empty"><span><span class="gate-archive-empty-title">No Matching Archives</span><span class="gate-archive-empty-copy">Clear the filters or search a different Week Group.</span></span></div>';
+    else browser = groupedArchiveHtml(visible);
+
     container.className = 'gate-archive-manager';
     container.dataset.owner = 'gate-archive-controller';
-    const toolbar = `<section class="gate-archive-toolbar"><div><span class="gate-archive-toolbar-title">Archive Management</span><span class="gate-archive-toolbar-copy">${visible.length} of ${all.length} Week Groups · ${totals.arrived} Arrived · ${totals.sf} Space Force</span></div><label class="gate-archive-search-wrap" for="gate-archive-search"><span class="gate-archive-search-label">Search Week Group</span><input id="gate-archive-search" type="search" value="${esc(archiveSearchTerm)}" placeholder="Type week group..."></label><button id="gate-archive-clear-search" type="button" class="gate-archive-clear-search" ${archiveSearchTerm ? '' : 'disabled'}>Clear</button></section>`;
-    if (!all.length) container.innerHTML = toolbar + '<div class="gate-archive-empty"><span><span class="gate-archive-empty-title">No Archived Week Groups</span><span class="gate-archive-empty-copy">Archives will appear here after a week group is closed and archived.</span></span></div>';
-    else if (!visible.length) container.innerHTML = toolbar + '<div class="gate-archive-empty"><span><span class="gate-archive-empty-title">No Matching Week Groups</span><span class="gate-archive-empty-copy">Clear the filter or search a different week group.</span></span></div>';
-    else container.innerHTML = toolbar + `<div class="gate-archive-record-list">${visible.map(archiveCard).join('')}</div>`;
-
+    container.innerHTML = hero + toolbar + `<div class="gate-archive-layout"><aside class="gate-archive-browser" aria-label="Archived Week Groups">${browser}</aside>${archiveInspectorHtml()}</div>`;
     bindArchiveSearchControls();
+
     if (focus) {
       const next = document.getElementById('gate-archive-search');
       next?.focus({ preventScroll: true });
       try { next?.setSelectionRange(selectionStart ?? next.value.length, selectionStart ?? next.value.length); } catch (_) {}
+    }
+    if (selectedArchiveId && !archiveDetailCache.has(selectedArchiveId) && !archiveDetailPromises.has(selectedArchiveId)) {
+      void loadArchiveDetail(selectedArchiveId);
     }
   }
 
@@ -580,7 +790,10 @@
     const input = document.getElementById('gate-archive-search');
     if (input && input.dataset.gateArchiveBound !== 'true') {
       input.dataset.gateArchiveBound = 'true';
-      input.addEventListener('input', () => { archiveSearchTerm = input.value; scheduleRender(); });
+      input.addEventListener('input', () => {
+        archiveSearchTerm = input.value;
+        scheduleRender();
+      });
       input.addEventListener('keydown', event => {
         if (event.key === 'Escape') {
           archiveSearchTerm = '';
@@ -589,15 +802,32 @@
         }
       });
     }
+    const year = document.getElementById('gate-archive-year-filter');
+    if (year && year.dataset.gateArchiveBound !== 'true') {
+      year.dataset.gateArchiveBound = 'true';
+      year.addEventListener('change', () => {
+        archiveYearFilter = year.value || 'all';
+        scheduleRender();
+      });
+    }
     const clear = document.getElementById('gate-archive-clear-search');
     if (clear && clear.dataset.gateArchiveBound !== 'true') {
       clear.dataset.gateArchiveBound = 'true';
       clear.addEventListener('click', event => {
         event.preventDefault();
         archiveSearchTerm = '';
+        archiveYearFilter = 'all';
         scheduleRender();
       });
     }
+  }
+
+  function selectArchive(id) {
+    const next = String(id || '');
+    if (!next) return;
+    selectedArchiveId = next;
+    renderArchiveManagementView();
+    void loadArchiveDetail(next);
   }
 
   function rows(items, mapper, colspan) {

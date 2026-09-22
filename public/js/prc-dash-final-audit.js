@@ -64,7 +64,7 @@
           <div id="squadron-information-status" role="status" aria-live="polite"></div>
         </form>
         <section class="gate-squadron-notice" aria-label="Published operational notice"><h3>LIVE UPDATE</h3><div id="squadron-notice-message">No additional updates published.</div><div id="squadron-notice-time" class="gate-squadron-notice-time"></div></section>
-        <form id="squadron-publish-form" class="gate-squadron-editor" hidden><label for="squadron-notice-draft">Publish an operational update (no trainee PII)</label><textarea id="squadron-notice-draft" maxlength="1000" rows="4" placeholder="Enter a short update for Squadron personnel"></textarea><div class="gate-squadron-publish-actions"><button id="squadron-publish" type="submit" class="gate-squadron-publish">PUBLISH UPDATE</button><button id="squadron-clear-notice" type="button" class="gate-squadron-utility" hidden>CLEAR LIVE UPDATE</button></div><div id="squadron-publish-status" role="status" aria-live="polite"></div></form>
+        <form id="squadron-publish-form" class="gate-squadron-editor" hidden><label for="squadron-notice-draft">Publish an operational update (no trainee PII)</label><textarea id="squadron-notice-draft" maxlength="1000" rows="4" placeholder="Enter a short update for Squadron personnel"></textarea><div class="gate-squadron-publish-actions"><button id="squadron-publish" type="submit" class="gate-squadron-publish">PUBLISH UPDATE</button><button id="squadron-clear-notice" type="button" class="gate-squadron-clear" hidden>CLEAR LIVE UPDATE</button></div><div id="squadron-publish-status" class="gate-squadron-publish-status" role="status" aria-live="polite"></div></form>
       </dialog>
       <div id="squadron-tooltip" class="gate-squadron-tooltip" role="tooltip" hidden></div>
     </div>`;
@@ -109,7 +109,9 @@
   function displayNotice(board) {
     const key = noticeKey(board);
     const notice = board.notice;
-    const unread = standalone() && Boolean(notice?.message) && stored('gate-squadron-viewed') !== key;
+    const cleared = Boolean(notice?.cleared);
+    const activeMessage = !cleared && Boolean(notice?.message);
+    const unread = standalone() && activeMessage && stored('gate-squadron-viewed') !== key;
     const button = byId('squadron-information');
     if (button) button.classList.toggle('has-notice', unread);
     if (byId('squadron-new')) byId('squadron-new').hidden = !unread;
@@ -120,9 +122,9 @@
     lastNoticeKey = key;
     currentNotice = notice;
     const clearButton = byId('squadron-clear-notice');
-    if (clearButton) clearButton.hidden = !editor || !notice?.message;
-    setText(byId('squadron-notice-message'), notice?.message || 'No additional updates published.');
-    setText(byId('squadron-notice-time'), notice?.published_at ? `Published ${time(notice.published_at)}` : '');
+    if (clearButton) clearButton.hidden = !editor || !activeMessage;
+    setText(byId('squadron-notice-message'), activeMessage ? notice.message : 'No additional updates published.');
+    setText(byId('squadron-notice-time'), activeMessage && notice?.published_at ? `Published ${time(notice.published_at)}` : '');
   }
 
   function createInstructionRow(value = '') {
@@ -389,7 +391,9 @@
           body: JSON.stringify({ expected_revision: currentNotice.revision })
         });
         const data = await response.json();
-        if (!response.ok || !data.isOk || !data.cleared) throw new Error(data.error || 'Clear failed.');
+        if (!response.ok || !data.isOk || !data.cleared || !data.notice?.cleared) throw new Error(data.error || 'Clear failed.');
+        currentNotice = data.notice;
+        displayNotice({ week_group: activeWeek, notice: data.notice });
         setText(status, 'Live Update cleared from Squadron Board.');
         await renderSquadronBoard();
       } catch (error) {
@@ -460,6 +464,11 @@
     window.GateDormBoardController = Object.freeze({ isCanonicalOwner: false, handoffOwner: 'gate-status-board-controller', refresh: renderSquadronBoard, renderSquadronBoard, computeDormElapsedTimer });
     window.setInterval(updateSquadronClock, 1000);
     window.setInterval(renderSquadronBoard, POLL_MS);
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) renderSquadronBoard();
+    });
+    window.addEventListener('focus', renderSquadronBoard);
+    window.addEventListener('pageshow', renderSquadronBoard);
     updateSquadronClock();
     renderSquadronBoard();
   }

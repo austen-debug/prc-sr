@@ -162,10 +162,13 @@ export function buildSquadronSnapshot({ weekGroup = '', records = [], now = new 
   if (new Set(safeDorms.map(d => d.card_id)).size !== safeDorms.length) {
     throw Object.assign(new Error('Duplicate dorm identifiers; Squadron Board withheld.'), { code: 'integrity_error' });
   }
+  const rawNoticeMessage = notice ? String(notice.message || '') : '';
+  const noticeCleared = rawNoticeMessage === CLEARED_NOTICE;
   const safeNotice = notice ? {
     revision: number(notice.id),
-    message: String(notice.message || '') === CLEARED_NOTICE ? '' : String(notice.message || ''),
-    published_at: iso(notice.published_at)
+    message: noticeCleared ? '' : rawNoticeMessage,
+    published_at: iso(notice.published_at),
+    cleared: noticeCleared
   } : null;
   let safeInformation = {
     revision: 0,
@@ -297,7 +300,7 @@ export async function onRequestPost({ request, env, data }) {
       if (result.meta?.changes !== 1) return reply({ isOk: false, code: 'conflict', error: 'The active group or notice changed. Refresh before publishing.' }, 409);
       const revision = result.meta?.last_row_id;
       if (!Number.isSafeInteger(revision) || revision < 1) return reply({ isOk: false, code: 'publication_unconfirmed', error: 'Check the published notice before retrying.' }, 503);
-      return reply({ isOk: true, notice: { revision, message: clearing ? '' : message, published_at: publishedAt }, cleared: clearing });
+      return reply({ isOk: true, notice: { revision, message: clearing ? '' : message, published_at: publishedAt, cleared: clearing }, cleared: clearing });
     } catch (error) {
       return reply({ isOk: false, code: error?.code || 'publication_failed', error: error?.code === 'integrity_error' || error?.code === 'configuration_required' ? error.message : 'Unable to publish notice.' }, error?.code === 'integrity_error' || error?.code === 'configuration_required' ? 503 : 500);
     }

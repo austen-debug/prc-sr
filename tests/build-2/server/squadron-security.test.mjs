@@ -187,11 +187,13 @@ test('notice publication is MTI-only, origin checked, conditional, append-only a
   assert.equal(clearedBody.cleared,true);
   assert.equal(clearedBody.notice.revision,2);
   assert.equal(clearedBody.notice.message,'');
+  assert.equal(clearedBody.notice.cleared,true, 'clear response must explicitly identify the durable cleared state');
   assert.equal(DB.sqlite.prepare('SELECT COUNT(*) AS n FROM gate_squadron_notices').get().n,2, 'clear is an append-only revision, never a delete');
   const readAfterClear=await onRequestGet({env:{DB},data:{session:{role:'squadron'}}});
   const readAfterClearBody=await readAfterClear.json();
   assert.equal(readAfterClearBody.board.notice.revision,2);
   assert.equal(readAfterClearBody.board.notice.message,'', 'cleared sentinel must never be projected to Squadron users');
+  assert.equal(readAfterClearBody.board.notice.cleared,true, 'Squadron reads must preserve the cleared revision as explicit state');
 
   const second=await attempt(makeRequest({message:'Second notice',expected_revision:2}),'instructor');
   assert.equal(second.status,200);

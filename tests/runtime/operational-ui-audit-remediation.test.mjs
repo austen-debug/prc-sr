@@ -239,7 +239,7 @@ test('Squadron SITREP ships current canonical assets and preserves lightweight c
   assert.equal(auth.status, 200);
   const cookie = auth.headers.get('set-cookie').split(';')[0];
   const response = await onRequest({ env,
-    request:new Request('https://gate.example/', {headers:{Cookie:cookie}}),
+    request:new Request('https://gate.example/board/', {headers:{Cookie:cookie}}),
     next:async () => new Response(index, {headers:{'Content-Type':'text/html; charset=UTF-8'}})
   });
   assert.equal(response.status,200);

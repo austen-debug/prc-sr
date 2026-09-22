@@ -144,13 +144,16 @@ test('login, session, and authentication surfaces remain reachable', async () =>
   await exists('functions/api/session.js');
 });
 
-test('backend CRUD, session, SAT, and archive endpoints remain present without changing persistence', async () => {
+test('backend CRUD, session, SAT, and immutable archive endpoints remain present', async () => {
   for (const path of [
     'functions/api/records.js', 'functions/api/records-contract.mjs',
     'functions/api/session.js', 'functions/api/session-contract.mjs',
     'functions/api/login.js', 'functions/api/logout.js', 'functions/api/ping.js',
-    'functions/api/sat-arrivals.js', 'functions/api/archive-delete.js', 'functions/api/archives.js'
+    'functions/api/sat-arrivals.js', 'functions/api/archives.js', 'functions/api/persistence.js'
   ]) await exists(path);
+  const middleware = await source('functions/api/_middleware.js');
+  assert.match(middleware, /url\.pathname === '\/api\/archive-delete'[\s\S]*Archived history is immutable/);
+  await assert.rejects(() => source('functions/api/archive-delete.js'), /ENOENT/);
   const records = await source('functions/api/records.js');
   for (const method of ['Get', 'Post', 'Put', 'Delete']) {
     assert.match(records, new RegExp(`export async function onRequest${method}`));

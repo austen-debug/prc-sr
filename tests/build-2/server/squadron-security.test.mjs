@@ -180,9 +180,10 @@ test('notice publication is MTI-only, origin checked, conditional, append-only a
   DB.sqlite.close();
 });
 
-test('instructor writes self-bootstrap missing notice storage and version standing information without granting Squadron mutations', async () => {
+test('instructor writes self-bootstrap missing storage for a legacy config-only active Week Group without granting Squadron mutations', async () => {
   const DB=sqliteD1({notices:false,information:false});
-  DB.sqlite.prepare("INSERT INTO gate_week_groups VALUES ('WG26050','active')").run();
+  // Production can still have a readable legacy active Week Group represented only by the config record.
+  // Notice publication must use the same activeWeekGroup resolution instead of requiring a lifecycle row.
   DB.sqlite.prepare('INSERT INTO records VALUES (?,?,?,?,?,?)').run('config-wg','config','WG26050',JSON.stringify({ key:'week_group',value:'WG26050' }),'2026-09-21T00:00:00Z','2026-09-21T00:00:00Z');
 
   const before=await onRequestGet({env:{DB},data:{session:{role:'squadron'}}});
@@ -199,7 +200,7 @@ test('instructor writes self-bootstrap missing notice storage and version standi
   const published=await onRequestPost({request:noticeRequest,env:{DB},data:{session:{role:'instructor'}}});
   assert.equal(published.status,200);
   assert.equal(DB.sqlite.prepare('SELECT COUNT(*) AS n FROM gate_squadron_notices').get().n,1);
-  assert.ok(DB.sqlite.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='gate_squadron_information_revisions'").get());
+  assert.equal(DB.sqlite.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='gate_squadron_information_revisions'").get(), undefined, 'notice bootstrap must not depend on unrelated information storage');
 
   const informationRequest=(instructions, expected_revision) => new Request('https://gate.example/api/squadron-board',{
     method:'POST',
@@ -211,6 +212,7 @@ test('instructor writes self-bootstrap missing notice storage and version standi
 
   const first=await onRequestPost({request:informationRequest(['First standing instruction','Second standing instruction'],0),env:{DB},data:{session:{role:'instructor'}}});
   assert.equal(first.status,200);
+  assert.ok(DB.sqlite.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='gate_squadron_information_revisions'").get());
   const firstBody=await first.json();
   assert.equal(firstBody.information.revision,1);
   assert.equal((await onRequestPost({request:informationRequest(['stale'],0),env:{DB},data:{session:{role:'instructor'}}})).status,409);

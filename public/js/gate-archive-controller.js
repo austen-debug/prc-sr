@@ -961,20 +961,40 @@
     printWindow.focus();
   }
 
-  function printArchiveReport(event) {
+  async function printArchiveReport(event) {
     event?.preventDefault?.();
     event?.stopPropagation?.();
     event?.stopImmediatePropagation?.();
-    const archive = archiveById();
-    if (!archive) return showArchiveMessage('Open an archived week group before printing.', true);
+    const triggerId = event?.target?.closest?.('[data-archive-print-id]')?.dataset.archivePrintId || '';
+    const id = triggerId || selectedArchiveId;
+    if (!id) return window.alert('Select an archived Week Group before printing.');
     try {
-      const dorms = parseFieldJson('archive-edit-dorm-data', []);
-      const buses = parseFieldJson('archive-edit-bus-data', []);
-      const windows = collectWindows({ weekGroup: archive.week_group, archive, dorms });
-      const weekGroup = document.getElementById('archive-edit-wg')?.value.trim() || archive.week_group || 'Week Group';
-      openPrintWindow(printableHtml({ title: 'GATE Receiving Archive Report', weekGroup, archivedAt: archive.archived_at, dorms, buses, windows }), `gate-archive-report/${encodeURIComponent(weekGroup)}`);
+      const detail = await loadArchiveDetail(id);
+      if (!detail?.archive) throw new Error('Archive detail is unavailable.');
+      const archive = detail.archive;
+      const dorms = Array.isArray(detail.dorms) ? detail.dorms : [];
+      const buses = Array.isArray(detail.buses) ? detail.buses : [];
+      const windows = {
+        receiving_day_one_start: archive.receiving_day_one_start || '',
+        receiving_day_one_end: archive.receiving_day_one_end || '',
+        receiving_day_two_start: archive.receiving_day_two_start || '',
+        receiving_day_two_end: archive.receiving_day_two_end || ''
+      };
+      const weekGroup = archive.week_group || 'Week Group';
+      openPrintWindow(
+        printableHtml({
+          title: 'GATE Receiving Archive Report',
+          weekGroup,
+          archivedAt: archive.archived_at,
+          dorms,
+          buses,
+          windows,
+          summary: archive
+        }),
+        `gate-archive-report/${encodeURIComponent(weekGroup)}`
+      );
     } catch (error) {
-      showArchiveMessage(`Print failed: ${error.message}`, true);
+      window.alert(`Archive print failed: ${error.message || 'Unable to build report.'}`);
     }
   }
 
@@ -987,51 +1007,48 @@
     const dorms = getRecordsOfType('dorm').filter(dorm => dorm.week_group === weekGroup);
     const buses = getRecordsOfType('bus').filter(bus => bus.week_group === weekGroup);
     const windows = collectWindows({ weekGroup, dorms });
-    openPrintWindow(printableHtml({ title: 'GATE Receiving Current Summary', weekGroup, archivedAt: '', dorms, buses, windows }), `gate-current-summary/${encodeURIComponent(weekGroup)}`);
+    openPrintWindow(
+      printableHtml({
+        title: 'GATE Receiving Current Summary',
+        weekGroup,
+        archivedAt: '',
+        dorms,
+        buses,
+        windows
+      }),
+      `gate-current-summary/${encodeURIComponent(weekGroup)}`
+    );
   }
 
   function ensureCurrentSummaryButton() {
-    const page = document.getElementById('page-archives');
-    if (!page) return;
-    let button = document.getElementById('print-current-summary-btn');
-    if (!button) {
-      const container = page.querySelector('.max-w-3xl') || page;
-      const title = container.querySelector('h2, h3');
-      button = document.createElement('button');
-      button.id = 'print-current-summary-btn';
-      button.type = 'button';
-      button.className = 'px-4 py-2 rounded-lg font-bold text-white text-sm mb-4';
-      button.style.background = 'var(--blue)';
-      if (title) title.insertAdjacentElement('afterend', button);
-      else container.insertAdjacentElement('afterbegin', button);
-    }
-    button.textContent = 'Print Current Summary';
+    const button = document.getElementById('print-current-summary-btn');
+    if (!button) return;
     button.dataset.owner = 'gate-archive-controller';
     button.onclick = printCurrentSummaryReport;
   }
 
   function bindArchivePrintButton() {
-    const button = document.querySelector('#archive-edit-modal button[onclick="printArchiveSpreadsheet()"], #archive-edit-modal button[data-archive-print="true"]');
-    if (!button) return;
-    button.textContent = 'PRINT / PDF';
-    button.dataset.archivePrint = 'true';
-    button.dataset.owner = 'gate-archive-controller';
-    button.onclick = printArchiveReport;
+    document.querySelectorAll('[data-archive-print-id]').forEach(button => {
+      button.dataset.owner = 'gate-archive-controller';
+    });
   }
 
   function handleClick(event) {
+    const current = event.target?.closest?.('#print-current-summary-btn');
+    if (current) {
+      printCurrentSummaryReport(event);
+      return;
+    }
+    const archivePrint = event.target?.closest?.('[data-archive-print-id]');
+    if (archivePrint) {
+      void printArchiveReport(event);
+      return;
+    }
     const card = event.target?.closest?.('#archive-history [data-archive-id]');
     if (card) {
-      openArchiveEditModalCanonical(event, card.dataset.archiveId);
-      return;
+      event.preventDefault();
+      selectArchive(card.dataset.archiveId);
     }
-    const archivePrint = event.target?.closest?.('#archive-edit-modal button[data-archive-print="true"], #archive-edit-modal button[onclick="printArchiveSpreadsheet()"]');
-    if (archivePrint) {
-      printArchiveReport(event);
-      return;
-    }
-    const current = event.target?.closest?.('#print-current-summary-btn');
-    if (current) printCurrentSummaryReport(event);
   }
 
   function patchGlobals() {
@@ -1057,13 +1074,19 @@
     });
   }
 
+  function refreshArchives() {
+    archiveIndexLoaded = false;
+    archiveDetailCache.clear();
+    archiveDetailPromises.clear();
+    return refreshArchiveIndex(true);
+  }
+
   function runPass() {
     patchGlobals();
     patchCloseoutButton();
-    ensureArchiveWindowPanel();
+    renderArchiveManagementView();
     ensureCurrentSummaryButton();
     bindArchivePrintButton();
-    renderArchiveManagementView();
     window.GateArchiveController = Object.freeze({
       isCanonicalOwner: true,
       buildArchivePayload,
@@ -1074,16 +1097,24 @@
       closeArchiveEditModal: closeArchiveEditModalCanonical,
       printArchiveReport,
       printCurrentSummaryReport,
-      refresh: scheduleRender
+      refresh: refreshArchives
     });
   }
 
   function registerHooksOnce() {
     if (hooksRegistered || typeof window.registerGateHook !== 'function') return;
-    window.registerGateHook('afterRenderAll', scheduleRender);
-    window.registerGateHook('afterPageChange', scheduleRender);
-    window.registerGateHook('afterDataChanged', scheduleRender);
-    window.registerGateHook('afterModalOpen', scheduleRender);
+    window.registerGateHook('afterPageChange', context => {
+      if (context?.page === 'archives') {
+        scheduleRender();
+        if (!archiveIndexLoaded) void refreshArchiveIndex();
+      }
+    });
+    window.registerGateHook('afterCloseout', () => {
+      archiveIndexLoaded = false;
+      archiveDetailCache.clear();
+      archiveDetailPromises.clear();
+      void refreshArchiveIndex(true);
+    });
     hooksRegistered = true;
   }
 

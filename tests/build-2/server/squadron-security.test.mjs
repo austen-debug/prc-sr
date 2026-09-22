@@ -174,9 +174,27 @@ test('notice publication is MTI-only, origin checked, conditional, append-only a
   assert.equal(DB.sqlite.prepare('SELECT COUNT(*) AS n FROM gate_squadron_notices').get().n,1);
   assert.throws(()=>DB.sqlite.exec("UPDATE gate_squadron_notices SET message='changed' WHERE id=1"),/append-only/);
   assert.throws(()=>DB.sqlite.exec('DELETE FROM gate_squadron_notices WHERE id=1'),/append-only/);
-  const second=await attempt(makeRequest({message:'Second notice',expected_revision:1}),'instructor');
+  const clearRequest=(expected_revision, role='instructor') => onRequestPost({
+    request:new Request('https://gate.example/api/squadron-board',{method:'POST',headers:{Origin:'https://gate.example','Content-Type':'application/json','X-Gate-Notice':'clear'},body:JSON.stringify({expected_revision})}),
+    env:{DB},data:{session:{role}}
+  });
+  assert.equal((await clearRequest(1,'squadron')).status,403);
+  assert.equal((await clearRequest(0)).status,409, 'clear must reject a stale notice revision');
+  const cleared=await clearRequest(1);
+  assert.equal(cleared.status,200);
+  const clearedBody=await cleared.json();
+  assert.equal(clearedBody.cleared,true);
+  assert.equal(clearedBody.notice.revision,2);
+  assert.equal(clearedBody.notice.message,'');
+  assert.equal(DB.sqlite.prepare('SELECT COUNT(*) AS n FROM gate_squadron_notices').get().n,2, 'clear is an append-only revision, never a delete');
+  const readAfterClear=await onRequestGet({env:{DB},data:{session:{role:'squadron'}}});
+  const readAfterClearBody=await readAfterClear.json();
+  assert.equal(readAfterClearBody.board.notice.revision,2);
+  assert.equal(readAfterClearBody.board.notice.message,'', 'cleared sentinel must never be projected to Squadron users');
+
+  const second=await attempt(makeRequest({message:'Second notice',expected_revision:2}),'instructor');
   assert.equal(second.status,200);
-  assert.equal(DB.sqlite.prepare('SELECT COUNT(*) AS n FROM gate_squadron_notices').get().n,2);
+  assert.equal(DB.sqlite.prepare('SELECT COUNT(*) AS n FROM gate_squadron_notices').get().n,3);
   DB.sqlite.close();
 });
 

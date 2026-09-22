@@ -109,6 +109,41 @@ test('narrow fine-pointer desktops keep a single fixed command shell and non-wra
   assert.match(css, /#main-nav-menu\.nav-group-left > \.nav-btn[\s\S]*flex:\s*0 0 auto/);
 });
 
+test('GateAppShell owns durable page URLs without adding a second routing runtime', async () => {
+  const [shell, middleware, budgetText] = await Promise.all([
+    source('public/js/gate-app-shell-controller.js'),
+    source('functions/_middleware.js'),
+    source('docs/build-2/ACTIVE_RUNTIME_BUDGET.json')
+  ]);
+  const budget = JSON.parse(budgetText);
+
+  for (const [page, path] of [
+    ['board','/board/'],
+    ['airport','/airport/'],
+    ['input','/input/'],
+    ['processing','/processing/'],
+    ['archives','/archives/'],
+    ['squadron','/squadron-board/']
+  ]) {
+    assert.ok(shell.includes(`${page}: '${path}'`), `${page} must have a canonical browser path`);
+    assert.ok(middleware.includes(`'${path}'`), `${path} must be recognized server-side`);
+  }
+
+  assert.match(shell, /window\.history\.pushState\(state, '', path\)/, 'normal page navigation must create browser history');
+  assert.match(shell, /window\.history\.replaceState\(state, '', path\)/, 'authorization/canonical fallback must replace browser history');
+  assert.match(shell, /window\.addEventListener\('popstate', handlePopState\)/, 'Back and Forward must be owned by GateAppShell');
+  assert.match(shell, /go\(requested, \{ silent: true, history: 'none' \}\)/, 'Back/Forward must not recursively create history entries');
+  assert.match(shell, /window\.location\.pathname === path/, 'reselecting the active route must not duplicate history entries');
+  assert.match(shell, /document\.body\?\.dataset\.gateInitialRoute/, 'server-selected refresh route must hydrate the client shell');
+  assert.match(shell, /document\.body\?\.dataset\.gateSessionRole/, 'server-verified role must be available before async session hydration');
+  assert.doesNotMatch(shell, /localStorage[\s\S]{0,120}(active|route)|sessionStorage[\s\S]{0,120}(active|route)/i, 'route continuity must come from the URL, not browser-storage state');
+
+  const routeScript = '/js/gate-app-shell-controller.js?v=gate-route-state-20260922';
+  assert.ok(middleware.includes(routeScript), 'middleware must ship the cache-busted canonical shell controller');
+  assert.ok(budget.currentDirectScripts.includes(routeScript), 'runtime inventory must match the shell route version');
+  assert.equal((budget.currentDirectScripts.filter(item => item.includes('gate-app-shell-controller.js')).length),1, 'routing must extend the one existing shell owner');
+});
+
 test('fullscreen Active Bus cards remain bounded non-stretching tiles', async () => {
   const css = await source('public/css/military-glass-terminal.css');
 
@@ -223,7 +258,7 @@ test('Squadron Access requires a non-dismissible acknowledgment once per authent
   ]);
 
   assert.match(standalone, /gate-squadron-access-gate\.js\?v=squadron-access-gate-20260922-authsession1/);
-  assert.match(login, /session\.role === 'squadron' \? '\/squadron\/' : '\/'/);
+  assert.match(login, /window\.location\.replace\(destinationForRole\(session\.role\)\)/);
 
   assert.match(gate, /gate-squadron-standalone/);
   assert.match(gate, /sessionStorage/);

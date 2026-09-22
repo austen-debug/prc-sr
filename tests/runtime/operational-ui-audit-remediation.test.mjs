@@ -350,6 +350,8 @@ test('Archives use a full-width read-only historical workspace and exact Letter 
   assert.match(index, /id="gate-archive-workspace" class="gate-archive-workspace"/);
   assert.match(index, /const LIVE_API_URL = '\/api\/records\?scope=live'/);
   assert.match(index, /data-gate-legacy-arrivals-compat="true"/);
+  assert.match(index, /function renderArchives\(\) \{\s*return window\.GateArchiveController\?\.renderArchives\?\.\(\);\s*\}/, 'legacy inline archive renderer must delegate to the canonical workspace');
+  assert.doesNotMatch(index, /function renderArchives\(\)[\s\S]{0,2200}Right-click to edit archived week group/, 'legacy raw archive cards must not remain active');
   assert.doesNotMatch(index, /id="page-archives"[\s\S]{0,180}max-w-3xl/);
 
   assert.match(controller, /archiveApi\('\/api\/archives'\)/);

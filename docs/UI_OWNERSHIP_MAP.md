@@ -1,5 +1,8 @@
 # GATE UI Ownership Map
 
+> **Historical architecture snapshot.** This document is retained for continuity and prior-decision evidence. It is not the current runtime authority after the 22 Sep 2026 full-repository audit. For current served assets and ownership, use `docs/ACTIVE_RUNTIME_STACK.md`, `docs/build-2/ACTIVE_RUNTIME_BUDGET.json`, and `docs/FULL_REPO_AUDIT_2026-09-22.md`.
+
+
 Status: Phase Zero baseline
 Scope: Documentation only. No runtime behavior changes.
 

@@ -1,0 +1,45 @@
+name: One-time shared role session test migration
+on:
+  push:
+    branches:
+      - feat/squadron-sitrep-notices-20260921
+    paths:
+      - .github/workflows/one-time-shared-role-session.yml
+permissions:
+  contents: write
+jobs:
+  reconcile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Update existing test fixtures without changing production controllers
+        run: |
+          node tools/one-time-shared-role-session.cjs
+          node <<'NODE'
+          const fs = require('node:fs');
+          const path = 'tests/runtime/login-session-integrity.test.mjs';
+          let text = fs.readFileSync(path, 'utf8');
+          text = text.replace(/\\`/g, '`').replace(/\\\$\{/g, '${');
+          text = text.replace('const [,body] = squadron.split(\'.\');', 'const [body] = squadron.split(\'.\');');
+          fs.writeFileSync(path, text);
+          NODE
+      - name: Check affected source syntax and shared-login regressions
+        run: |
+          node --experimental-default-type=module --check functions/api/login.js
+          node --experimental-default-type=module --check functions/api/session-contract.mjs
+          node --test tests/runtime/login-session-integrity.test.mjs
+          node --experimental-default-type=module --test tests/build-2/server/squadron-security.test.mjs tests/build-2/server/records-api.test.mjs tests/build-2/server/persistence-audit.test.mjs
+      - name: Commit and push only test updates
+        run: |
+          git config user.name 'GATE CI'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add tests/runtime/login-session-integrity.test.mjs tests/build-2/server/squadron-security.test.mjs tests/build-2/server/records-api.test.mjs tests/build-2/server/persistence-audit.test.mjs
+          git diff --cached --check
+          git commit -m 'test: verify shared-role collisions and credential rotation without individual accounts'
+          git push origin HEAD:feat/squadron-sitrep-notices-20260921

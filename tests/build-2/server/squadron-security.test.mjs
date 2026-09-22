@@ -30,12 +30,14 @@ function dorm(extra = {}) {
 }
 
 // A narrow D1 adapter supports genuine migration / SQL statement execution in the test, not a mocked SQL success.
-function sqliteD1() {
+function sqliteD1({ notices = true, information = true } = {}) {
   const sqlite = new DatabaseSync(':memory:');
   sqlite.exec("CREATE TABLE gate_week_groups (week_group TEXT, state TEXT); CREATE TABLE records (id TEXT, type TEXT, week_group TEXT, data TEXT, created_at TEXT, updated_at TEXT);");
-  sqlite.exec(readFileSync(new URL('../../../migrations/0005_gate_squadron_notices.sql', import.meta.url), 'utf8'));
+  if (notices) sqlite.exec(readFileSync(new URL('../../../migrations/0005_gate_squadron_notices.sql', import.meta.url), 'utf8'));
+  if (information) sqlite.exec(readFileSync(new URL('../../../migrations/0006_gate_squadron_information_revisions.sql', import.meta.url), 'utf8'));
   return {
     sqlite,
+    async exec(sql) { sqlite.exec(sql); return { count: 0, duration: 0 }; },
     prepare(sql) {
       let values = [];
       return {
@@ -120,6 +122,9 @@ test('Squadron projection is allowlisted, stable-id keyed and never invents unkn
   assert.equal(projection.dorms[0].card_id,'opaque-id');
   assert.equal(projection.metrics.last_flight, '2345');
   assert.equal(projection.notice.revision,7);
+  assert.equal(projection.information.revision,0);
+  assert.equal(projection.information.instructions.length,4);
+  assert.match(projection.information.instructions[3], /210-671-3042/);
   assert.ok(!('active_buses' in projection));
   assert.doesNotMatch(JSON.stringify(projection), /internal notes|internal bus notes|assigned_airman|auditorium_location|private/);
   assert.throws(() => buildSquadronSnapshot({weekGroup:'WG26050',records:[dorm({state:'unrecognized'})]}), /Unrecognized dorm state/);
@@ -136,12 +141,15 @@ test('read endpoint uses only active WG, exposes notice but withholds raw record
     DB.sqlite.prepare('INSERT INTO records VALUES (?,?,?,?,?,?)').run(id, 'config','WG26050', JSON.stringify({ key,value }),new Date().toISOString(),new Date().toISOString());
   }
   DB.sqlite.prepare("INSERT INTO gate_squadron_notices (week_group,message,published_at,published_by_role) VALUES ('WG26050','CQ UPDATE','2026-09-21T16:40:00Z','instructor')").run();
+  DB.sqlite.prepare("INSERT INTO gate_squadron_information_revisions (instructions_json,published_at,published_by_role) VALUES (?,?,?)")
+    .run(JSON.stringify(['Dorms open when full.','Call CQ with updates.']), '2026-09-21T16:35:00Z', 'instructor');
   const result = await onRequestGet({ env: { DB }, data: { session:{role:'squadron'} } });
   assert.equal(result.status,200);
   const payload=await result.json();
   assert.equal(payload.board.week_group,'WG26050');
   assert.equal(payload.board.notice.message,'CQ UPDATE');
   assert.equal(payload.board.metrics.last_flight,'2350');
+  assert.deepEqual(payload.board.information.instructions,['Dorms open when full.','Call CQ with updates.']);
   assert.equal(payload.editor,false);
   assert.doesNotMatch(JSON.stringify(payload), /NEVER SHOW|PERSON|assigned_airman|notes|active_buses/);
   assert.equal((await onRequestGet({env:{DB},data:{session:{role:'airman'}}})).status,403);
@@ -171,3 +179,53 @@ test('notice publication is MTI-only, origin checked, conditional, append-only a
   assert.equal(DB.sqlite.prepare('SELECT COUNT(*) AS n FROM gate_squadron_notices').get().n,2);
   DB.sqlite.close();
 });
+
+test('instructor writes self-bootstrap missing notice storage and version standing information without granting Squadron mutations', async () => {
+  const DB=sqliteD1({notices:false,information:false});
+  DB.sqlite.prepare("INSERT INTO gate_week_groups VALUES ('WG26050','active')").run();
+  DB.sqlite.prepare('INSERT INTO records VALUES (?,?,?,?,?,?)').run('config-wg','config','WG26050',JSON.stringify({ key:'week_group',value:'WG26050' }),'2026-09-21T00:00:00Z','2026-09-21T00:00:00Z');
+
+  const before=await onRequestGet({env:{DB},data:{session:{role:'squadron'}}});
+  assert.equal(before.status,200);
+  const beforeBody=await before.json();
+  assert.equal(beforeBody.board.information.revision,0);
+  assert.equal(beforeBody.board.information.instructions.length,4);
+
+  const noticeRequest=new Request('https://gate.example/api/squadron-board',{
+    method:'POST',
+    headers:{Origin:'https://gate.example','Content-Type':'application/json','X-Gate-Notice':'publish'},
+    body:JSON.stringify({message:'Test notification',expected_revision:0})
+  });
+  const published=await onRequestPost({request:noticeRequest,env:{DB},data:{session:{role:'instructor'}}});
+  assert.equal(published.status,200);
+  assert.equal(DB.sqlite.prepare('SELECT COUNT(*) AS n FROM gate_squadron_notices').get().n,1);
+  assert.ok(DB.sqlite.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='gate_squadron_information_revisions'").get());
+
+  const informationRequest=(instructions, expected_revision) => new Request('https://gate.example/api/squadron-board',{
+    method:'POST',
+    headers:{Origin:'https://gate.example','Content-Type':'application/json','X-Gate-Information':'save'},
+    body:JSON.stringify({instructions,expected_revision})
+  });
+  const blocked=await onRequestPost({request:informationRequest(['No access'],0),env:{DB},data:{session:{role:'squadron'}}});
+  assert.equal(blocked.status,403);
+
+  const first=await onRequestPost({request:informationRequest(['First standing instruction','Second standing instruction'],0),env:{DB},data:{session:{role:'instructor'}}});
+  assert.equal(first.status,200);
+  const firstBody=await first.json();
+  assert.equal(firstBody.information.revision,1);
+  assert.equal((await onRequestPost({request:informationRequest(['stale'],0),env:{DB},data:{session:{role:'instructor'}}})).status,409);
+
+  const second=await onRequestPost({request:informationRequest(['Second standing instruction'],1),env:{DB},data:{session:{role:'instructor'}}});
+  assert.equal(second.status,200);
+  assert.equal(DB.sqlite.prepare('SELECT COUNT(*) AS n FROM gate_squadron_information_revisions').get().n,2);
+  assert.throws(()=>DB.sqlite.exec("UPDATE gate_squadron_information_revisions SET instructions_json='[]' WHERE id=1"),/append-only/);
+  assert.throws(()=>DB.sqlite.exec('DELETE FROM gate_squadron_information_revisions WHERE id=1'),/append-only/);
+
+  const after=await onRequestGet({env:{DB},data:{session:{role:'squadron'}}});
+  assert.equal(after.status,200);
+  const afterBody=await after.json();
+  assert.deepEqual(afterBody.board.information.instructions,['Second standing instruction']);
+  assert.equal(afterBody.board.information.revision,2);
+  DB.sqlite.close();
+});
+

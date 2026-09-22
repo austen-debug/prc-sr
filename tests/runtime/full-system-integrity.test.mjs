@@ -149,7 +149,7 @@ test('backend CRUD, session, SAT, and archive endpoints remain present without c
     'functions/api/records.js', 'functions/api/records-contract.mjs',
     'functions/api/session.js', 'functions/api/session-contract.mjs',
     'functions/api/login.js', 'functions/api/logout.js', 'functions/api/ping.js',
-    'functions/api/sat-arrivals.js', 'functions/api/archive-delete.js'
+    'functions/api/sat-arrivals.js', 'functions/api/archive-delete.js', 'functions/api/archives.js'
   ]) await exists(path);
   const records = await source('functions/api/records.js');
   for (const method of ['Get', 'Post', 'Put', 'Delete']) {

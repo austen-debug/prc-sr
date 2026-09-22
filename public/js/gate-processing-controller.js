@@ -741,6 +741,12 @@
   function handleKeydown(event) {
     if (event.key === 'Escape') {
       hideContextMenu();
+      const editModal = document.getElementById('dorm-edit-modal');
+      if (editModal && !editModal.classList.contains('hidden')) {
+        event.preventDefault();
+        closeDormEditModalCanonical();
+        return;
+      }
       const dormModal = document.getElementById('dorm-modal');
       if (dormModal && !dormModal.classList.contains('hidden')) closeDormModalCanonical(event);
       return;

@@ -137,8 +137,9 @@ test('read endpoint uses only active WG, exposes notice but withholds raw record
   for (const record of [bus('arrived','2026-09-21T16:00:00Z', { id:'bus-1', notes:'NEVER SHOW' }), dorm({ id:'dorm-1', notes:'NEVER SHOW', assigned_airman:'PERSON' })]) {
     DB.sqlite.prepare('INSERT INTO records VALUES (?,?,?,?,?,?)').run(record.id, record.type, record.week_group, JSON.stringify(record), new Date().toISOString(), new Date().toISOString());
   }
-  for (const [id,key,value] of [['wg-config','week_group','WG26050'],['flight-config','last_airport','2350']]) {
-    DB.sqlite.prepare('INSERT INTO records VALUES (?,?,?,?,?,?)').run(id, 'config','WG26050', JSON.stringify({ key,value }),new Date().toISOString(),new Date().toISOString());
+  for (const [id,key,value,recordWeek] of [['wg-config','week_group','WG26050','WG26050'],['flight-config','last_airport','2350','']]) {
+    // Airport last_airport is global config and is not guaranteed to carry the active Week Group.
+    DB.sqlite.prepare('INSERT INTO records VALUES (?,?,?,?,?,?)').run(id, 'config',recordWeek, JSON.stringify({ key,value }),new Date().toISOString(),new Date().toISOString());
   }
   DB.sqlite.prepare("INSERT INTO gate_squadron_notices (week_group,message,published_at,published_by_role) VALUES ('WG26050','CQ UPDATE','2026-09-21T16:40:00Z','instructor')").run();
   DB.sqlite.prepare("INSERT INTO gate_squadron_information_revisions (instructions_json,published_at,published_by_role) VALUES (?,?,?)")

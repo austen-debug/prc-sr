@@ -1,7 +1,7 @@
 import { verifyRequestSession } from './api/session-contract.mjs';
 
 const UI_STYLESHEETS = [
-  '<link rel="stylesheet" href="/css/military-glass-terminal.css?v=military-glass-terminal-20260922-squadron-access1">'
+  '<link rel="stylesheet" href="/css/military-glass-terminal.css?v=military-glass-terminal-20260922-squadron-metrics1">'
 ];
 
 const UI_INLINE_ASSETS = [];

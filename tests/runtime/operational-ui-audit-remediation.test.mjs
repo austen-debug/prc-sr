@@ -130,14 +130,14 @@ test('Processing BAND designator uses rounded-rectangle geometry', async () => {
 test('middleware delivers one canonical stylesheet and no retired CSS assets', async () => {
   const middleware = await source('functions/_middleware.js');
 
-  assert.match(middleware, /military-glass-terminal\.css\?v=military-glass-terminal-20260922-squadron-access1/);
+  assert.match(middleware, /military-glass-terminal\.css\?v=military-glass-terminal-20260922-squadron-metrics1/);
   assert.equal((middleware.match(/<link rel="stylesheet"/g) || []).length, 1);
   assert.doesNotMatch(middleware, /gate-ui-ownership-correction\.css|gate-fullscreen-board-contract\.css|gate-tablet-shell\.css|gate-mobile-corrective\.css/);
 });
 
 
 test('Squadron SITREP ships current canonical assets and preserves lightweight communication UI', async () => {
-  const version = 'military-glass-terminal-20260922-squadron-access1';
+  const version = 'military-glass-terminal-20260922-squadron-metrics1';
   const url = `/css/military-glass-terminal.css?v=${version}`;
   const scriptUrl = '/js/prc-dash-final-audit.js?v=squadron-sitrep-20260922-clear1';
   const [middleware, standalone, budgetText, stack, css, controller, index] = await Promise.all([
@@ -169,6 +169,10 @@ test('Squadron SITREP ships current canonical assets and preserves lightweight c
   assert.ok(controller.includes('>ⓘ</button>'), 'tooltips use the requested information glyph');
   assert.ok(controller.includes('id="squadron-metric-local" class="gate-squadron-value">--:--:--</div>'));
   assert.ok(!controller.includes('id="squadron-metric-local" class="gate-squadron-value is-time"'));
+  assert.ok(squadronCss.includes('display:flex; flex-direction:column; align-items:center;'), 'metric cards share one vertical layout');
+  assert.ok(squadronCss.includes('margin-top:auto; padding-top:7px;'), 'metric values share bottom alignment');
+  assert.ok(squadronCss.includes('.gate-squadron-value.is-time { font-size:clamp(24px,3.2vw,40px); }'), 'time values use the same point size as numeric values');
+  assert.ok(!squadronCss.includes('.gate-squadron-value.is-time { font-size:17px; }'), 'mobile must not shrink time metrics independently');
   assert.ok(controller.includes('dispatched in the last 60 minutes'));
   assert.ok(!controller.includes('dispatched in the rolling last 60 minutes'));
   assert.ok(controller.includes('id="squadron-information-form"'));

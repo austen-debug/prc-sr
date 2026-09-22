@@ -43,7 +43,6 @@ const UI_HEAD_SCRIPTS = [
   '<script type="module" src="/app/features/input/flight-alert-import.mjs?v=flight-alert-import-20260920"></script>',
   '<script src="/js/gate-app-shell-controller.js?v=repo-audit-20260922" defer></script>',
   '<script src="/js/gate-fullscreen-board-layout-controller.js?v=fullscreen-board-containment-20260714b" defer></script>',
-  '<script src="/js/prc-dash-modal-mobile-validation.js?v=phase-7e-ui-ownership-20260709" defer></script>',
   '<script src="/js/gate-premium-metrics-controller.js?v=metric-live-clock-20260722" defer></script>',
   '<script src="/js/prc-dash-overtime-audit.js?v=repo-audit-20260922" defer></script>',
   '<script src="/js/gate-status-board-shadow-controller.js?v=phase-3a-status-board-shadow-20260715" defer></script>'

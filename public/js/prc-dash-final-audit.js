@@ -166,13 +166,14 @@
       const column = byId(`squadron-col-${state}`);
       const count = dorms.filter(dorm => dorm.state === state).length;
       if (!column) continue;
-      column.querySelectorAll('[data-empty-state]').forEach(node => node.remove());
-      if (!count) {
-        const blank = document.createElement('div');
-        blank.className = 'gate-squadron-empty-message';
-        blank.dataset.emptyState = 'true';
-        blank.textContent = 'None';
-        column.appendChild(blank);
+      const blank = column.querySelector('[data-empty-state]');
+      if (count && blank) blank.remove();
+      if (!count && !blank) {
+        const empty = document.createElement('div');
+        empty.className = 'gate-squadron-empty-message';
+        empty.dataset.emptyState = 'true';
+        empty.textContent = 'None';
+        column.appendChild(empty);
       }
     }
   }

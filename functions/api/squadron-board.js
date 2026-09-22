@@ -28,8 +28,19 @@ function parseRow(row) {
   } catch { return null; }
 }
 function orderDorms(a, b) {
-  const rank = dorm => number(dorm.display_order || dorm.input_order || dorm.source_row_index || 0);
-  return rank(a) - rank(b) || String(a.dorm_name || '').localeCompare(String(b.dorm_name || ''));
+  // Match GateRecordDisplay: explicit Input order first, then stable SQL created_at order.
+  const rank = dorm => {
+    for (const key of ['display_order', 'input_order', 'source_row_index', 'row_index']) {
+      const value = dorm[key];
+      if (value !== '' && value !== null && value !== undefined && Number.isFinite(Number(value))) return Number(value);
+    }
+    return null;
+  };
+  const left = rank(a), right = rank(b);
+  if (left !== null && right !== null && left !== right) return left - right;
+  if (left !== null && right === null) return -1;
+  if (left === null && right !== null) return 1;
+  return 0;
 }
 
 // Pure projection: never send raw D1 rows, notes, personnel, auditorium fields, or archives.

@@ -3,34 +3,12 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import vm from 'node:vm';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, '../..');
 
 async function source(path) {
   return readFile(resolve(root, path), 'utf8');
-}
-
-async function transformedIndex() {
-  const middleware = await source('functions/_middleware.js');
-  const index = await source('public/index.html');
-  // vm.Script tests the pure legacy HTML transformer, not the imported Pages session verifier.
-  // Strip only the exact ESM import; retain all production transformation logic unchanged.
-  const executable = `${middleware.replace("import { verifyRequestSession } from './api/session-contract.mjs';", '').replace('export async function onRequest', 'async function onRequest')}\nglobalThis.__gateTransform = applyStatusBoardMetricSourceRefactor;`;
-  const sandbox = {
-    console,
-    TextEncoder,
-    URL,
-    Headers,
-    Response,
-    Request,
-    crypto: globalThis.crypto,
-    atob: globalThis.atob,
-    btoa: globalThis.btoa
-  };
-  vm.runInNewContext(executable, sandbox, { filename: 'functions/_middleware.js' });
-  return { middleware, transformed: sandbox.__gateTransform(index) };
 }
 
 test('Status Board observer is limited to direct canonical render surfaces', async () => {
@@ -89,34 +67,37 @@ test('Metric synchronization is change-only and the Local clock is second-aligne
   assert.match(metricsController, /clockFormat:\s*'HH:MM:SS'/);
 });
 
-test('Served source contains canonical Status Board rewrite contracts', async () => {
-  const middleware = await source('functions/_middleware.js');
+test('Status Board source is canonical and middleware contains no application rewrite compiler', async () => {
+  const [index, middleware] = await Promise.all([
+    source('public/index.html'),
+    source('functions/_middleware.js')
+  ]);
 
-  assert.match(middleware, /GateStatusBoardController\?\.renderActiveBuses/);
-  assert.match(middleware, /GateStatusBoardController\?\.renderDormColumns/);
-  assert.match(middleware, /LOCAL metric live clock is owned by GatePremiumMetricsController/);
-  assert.doesNotMatch(middleware, /setInterval\(updateAirportMetric,\s*(?:1000|60000)\)/);
-  assert.match(middleware, /lastEl\.textContent !== String\(lastAirport\)/);
-  assert.doesNotMatch(middleware, /const localEl = document\.getElementById\('stat-local'\)/);
-  assert.match(middleware, /el\.classList\.remove\('timer-flash'\)/);
+  assert.match(index, /window\.GateStatusBoardController\?\.renderActiveBuses/);
+  assert.match(index, /window\.GateStatusBoardController\?\.renderDormColumns/);
+  assert.match(index, /LOCAL metric live clock is owned by GatePremiumMetricsController/);
+  assert.doesNotMatch(index, /setInterval\(updateAirportMetric,\s*(?:1000|60000)\)/);
+  assert.match(index, /lastEl && lastEl\.textContent !== String\(lastAirport\)/);
+  assert.doesNotMatch(index, /const localEl = document\.getElementById\('stat-local'\)/);
+  assert.match(index, /el\.classList\.remove\('timer-flash'\)/);
+  assert.match(index, /id="stat-arrived"/);
+  assert.match(index, /id="stat-local"/);
+  assert.doesNotMatch(index, /id="metric-arrived"|id="metric-airport"/);
+
+  assert.doesNotMatch(middleware, /STATUS_BOARD_METRICS_HTML/);
+  assert.doesNotMatch(middleware, /applyStatusBoardMetricSourceRefactor/);
+  assert.doesNotMatch(middleware, /stripLegacyInlineShellCss/);
+  assert.doesNotMatch(middleware, /normalizeServedBranding/);
+  assert.doesNotMatch(middleware, /prepareAppShellHtml/);
   assert.match(middleware, /dorm-timer-record-lifecycle-20260722/);
   assert.match(middleware, /metric-live-clock-20260722/);
 });
 
-test('Served HTML delegates Active Buses and dorm columns to the canonical owner', async () => {
-  const { transformed } = await transformedIndex();
+test('source HTML retires the legacy inline shell stylesheet', async () => {
+  const index = await source('public/index.html');
 
-  assert.match(transformed, /window\.GateStatusBoardController\?\.renderActiveBuses/);
-  assert.match(transformed, /window\.GateStatusBoardController\?\.renderDormColumns/);
-});
-
-test('Served HTML retires the legacy Local clock interval', async () => {
-  const { transformed } = await transformedIndex();
-
-  assert.match(transformed, /LOCAL metric live clock is owned by GatePremiumMetricsController/);
-  assert.match(transformed, /lastEl && lastEl\.textContent !== String\(lastAirport\)/);
-  assert.doesNotMatch(transformed, /setInterval\(updateAirportMetric,\s*(?:1000|60000)\)/);
-  assert.doesNotMatch(transformed, /const localEl = document\.getElementById\('stat-local'\)/);
+  assert.doesNotMatch(index, /<style>\s*:root/);
+  assert.doesNotMatch(index, /metric-block[\s\S]{0,500}metric-arrived/);
 });
 
 test('Active timer ownership disables the legacy flashing interval', async () => {

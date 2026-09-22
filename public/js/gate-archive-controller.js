@@ -834,7 +834,34 @@
     return items.length ? items.map(mapper).join('') : `<tr><td colspan="${colspan}" class="empty-row">No records.</td></tr>`;
   }
 
+  function arrivedBuses(buses) {
+    return (Array.isArray(buses) ? buses : []).filter(bus => String(bus?.status || '').toLowerCase() === 'arrived');
+  }
+
+  function reportMetrics(dorms, buses, summary = null) {
+    if (summary) {
+      return {
+        arrived: n(summary.total_arrived),
+        loaded: n(summary.total_loaded),
+        expected: n(summary.total_expected),
+        female: n(summary.female_total),
+        nat: n(summary.nat_total),
+        sf: n(summary.space_force_total || summary.arrived_space_force_total)
+      };
+    }
+    const completed = arrivedBuses(buses);
+    return {
+      arrived: completed.reduce((sum, bus) => sum + n(bus.otw_count), 0),
+      loaded: (Array.isArray(dorms) ? dorms : []).reduce((sum, dorm) => sum + dormLoad(dorm), 0),
+      expected: (Array.isArray(dorms) ? dorms : []).reduce((sum, dorm) => sum + n(dorm.max_load), 0),
+      female: completed.reduce((sum, bus) => sum + n(bus.female_count), 0),
+      nat: completed.reduce((sum, bus) => sum + n(bus.nat_count), 0),
+      sf: completed.reduce((sum, bus) => sum + n(bus.space_force_count), 0)
+    };
+  }
+
   function receivingSummary(dorms, buses, windows) {
+    const completed = arrivedBuses(buses);
     const totalProjected = dorms.reduce((sum, dorm) => sum + n(dorm.max_load), 0);
     const sfProjected = dorms.filter(isSpaceForceDorm).reduce((sum, dorm) => sum + n(dorm.max_load), 0);
     const nightDefs = [
@@ -846,30 +873,80 @@
     let sfCum = 0;
     return nightDefs.map(([label, start, end]) => {
       const hasWindow = Boolean(timestamp(start) && timestamp(end));
-      const windowBuses = hasWindow ? buses.filter(bus => inWindow(busTime(bus), start, end)) : [];
+      const windowBuses = hasWindow ? completed.filter(bus => inWindow(bus.arrived_at, start, end)) : [];
       const processedToday = windowBuses.reduce((sum, bus) => sum + n(bus.otw_count), 0);
       const natToday = windowBuses.reduce((sum, bus) => sum + n(bus.nat_count), 0);
       const sfToday = windowBuses.reduce((sum, bus) => sum + busSpaceForceCount(bus), 0);
       processedCum += processedToday;
       natCum += natToday;
       sfCum += sfToday;
-      const standardSentence = `Tonight, the PRC processed ${processedToday} of the projected ${totalProjected} trainees for a total of ${processedCum}. ${natToday} trainees requested naturalization for a total of ${natCum}.`;
-      const sfSentence = (sfProjected > 0 || sfToday > 0 || sfCum > 0) ? ` The PRC processed ${sfToday} Space Force trainees out of the projected ${sfProjected} Space Force trainees, for a total of ${sfCum} Space Force trainees.` : '';
-      return `<div class="night"><div class="night-title">${esc(label)} <span class="night-date">${esc(formatDateTime(start))}</span></div><div class="night-text">${hasWindow ? esc(standardSentence + sfSentence) : `${esc(label)} date/time window is not configured.`}</div></div>`;
+      const standardSentence = `The PRC received and processed ${processedToday} of the projected ${totalProjected} trainees during this window, for a cumulative total of ${processedCum}. ${natToday} trainees requested naturalization, for a cumulative total of ${natCum}.`;
+      const sfSentence = (sfProjected > 0 || sfToday > 0 || sfCum > 0)
+        ? ` The PRC received ${sfToday} Space Force trainees of the projected ${sfProjected}, for a cumulative total of ${sfCum} Space Force trainees.`
+        : '';
+      return `<article class="report-night"><div class="report-night-head"><strong>${esc(label)}</strong><span>${hasWindow ? `${esc(formatDateTime(start))} – ${esc(formatDateTime(end))}` : 'Window not configured'}</span></div><p>${hasWindow ? esc(standardSentence + sfSentence) : 'No receiving window was configured for this period.'}</p></article>`;
     }).join('');
   }
 
-  function printableHtml({ title, weekGroup, archivedAt = '', dorms, buses, windows }) {
-    const loaded = dorms.reduce((sum, dorm) => sum + dormLoad(dorm), 0);
-    const expected = dorms.reduce((sum, dorm) => sum + n(dorm.max_load), 0);
-    const arrived = buses.reduce((sum, bus) => sum + n(bus.otw_count), 0);
-    const female = buses.reduce((sum, bus) => sum + n(bus.female_count), 0);
-    const nat = buses.reduce((sum, bus) => sum + n(bus.nat_count), 0);
-    const sfArrivals = buses.reduce((sum, bus) => sum + n(bus.space_force_count), 0);
+  function chunks(items, size) {
+    const list = Array.isArray(items) ? items : [];
+    if (!list.length) return [[]];
+    const result = [];
+    for (let index = 0; index < list.length; index += size) result.push(list.slice(index, index + size));
+    return result;
+  }
+
+  function reportChrome({ title, weekGroup, pageLabel, asOf, body }) {
+    return `<section class="report-page"><div class="report-classification">UNCLASSIFIED / NO PII / STATUS COUNTS ONLY</div><header class="report-header"><div><span class="report-kicker">Gateway Arrival Tracking Environment</span><h1>${esc(title)}</h1><p>Pfingston Reception Center · Week Group ${esc(weekGroup)}</p></div><div class="report-meta"><div><span>Page</span><strong>${esc(pageLabel)}</strong></div><div><span>Data As Of</span><strong>${esc(asOf)}</strong></div></div></header><main class="report-body">${body}</main><footer class="report-footer"><span>Prepared by GATE</span><span>Historical source data remains retained in D1.</span></footer><div class="report-classification">UNCLASSIFIED / NO PII / STATUS COUNTS ONLY</div></section>`;
+  }
+
+  function printableHtml({ title, weekGroup, archivedAt = '', dorms, buses, windows, summary = null }) {
+    const metrics = reportMetrics(dorms, buses, summary);
     const generated = new Date().toLocaleString();
-    const dormRows = rows([...dorms].sort((a, b) => clean(a.dorm_name || a.name).localeCompare(clean(b.dorm_name || b.name), undefined, { numeric: true })), dorm => `<tr><td>${esc(clean(dorm.dorm_name || dorm.name))}</td><td>${esc([dorm.sdq, dorm.section, dorm.inter_sec].filter(Boolean).join(' · ') || '—')}</td><td>${esc([isSpaceForceDorm(dorm) ? 'SF' : 'AF', dorm.sex || '', isBandDorm(dorm) ? 'Band' : ''].filter(Boolean).join(' / '))}</td><td class="num">${dormLoad(dorm)} / ${n(dorm.max_load)}</td><td>${esc(clean(dorm.phase || dorm.state))}</td><td>${esc(clean(dorm.closed_timer || dorm.elapsed || ''))}</td></tr>`, 6);
-    const busRows = rows([...buses].sort((a, b) => clean(a.bus_type).localeCompare(clean(b.bus_type)) || clean(a.bus_id).localeCompare(clean(b.bus_id), undefined, { numeric: true })), bus => `<tr><td>${esc(bus.bus_type === 'local' ? clean(bus.destination || bus.originating_destination, 'Local Arrival') : `Bus #${clean(bus.bus_id)}`)}</td><td>${esc(clean(bus.bus_type))}</td><td>${esc(clean(bus.status))}</td><td class="num">${n(bus.otw_count)}</td><td class="num">${n(bus.female_count)}</td><td class="num">${n(bus.nat_count)}</td><td class="num">${n(bus.space_force_count)}</td><td>${esc(formatTime(busTime(bus)))}</td></tr>`, 8);
-    return `<!doctype html><html><head><meta charset="utf-8"><title>${esc(weekGroup)} ${esc(title)}</title><style>@page{size:Letter landscape;margin:.25in}*{box-sizing:border-box}body{font-family:Arial,Helvetica,sans-serif;color:#0f172a;background:#fff;margin:0}.sheet{padding:.08in}.classification{height:.24in;display:flex;align-items:center;justify-content:center;background:#166534;color:#fff;border:1px solid #14532d;font-size:8px;font-weight:900;letter-spacing:.14em;text-transform:uppercase}.no-print{margin:8px 0;padding:6px 10px;border:1px solid #94a3b8;border-radius:6px;background:#0f172a;color:#fff;font-weight:900}.top{display:grid;grid-template-columns:1fr 2.8in;gap:.12in;padding:.1in 0;border-bottom:2px solid #0f172a}.title h1{margin:0;font-size:20px;text-transform:uppercase;letter-spacing:-.035em}.subtitle{margin-top:4px;color:#475569;font-size:9px;font-weight:900;text-transform:uppercase}.meta{border:1px solid #cbd5e1;background:#f8fafc;padding:.06in;font-size:8px}.row{display:flex;justify-content:space-between;gap:8px;margin-bottom:3px}.label{color:#475569;font-weight:900;text-transform:uppercase}.value{font-weight:900;text-align:right}.metrics{display:grid;grid-template-columns:repeat(6,1fr);gap:.06in;margin:.1in 0}.box{border:1px solid #cbd5e1;background:#f8fafc;padding:.06in;min-height:.45in}.box .label{font-size:7px}.big{font-size:18px;font-weight:900;margin-top:2px}.section-title{margin:.08in 0 .04in;font-size:9px;font-weight:900;text-transform:uppercase;border-bottom:1px solid #cbd5e1;padding-bottom:2px}.receiving-summary{display:grid;grid-template-columns:1fr 1fr;gap:.08in}.night{border:1px solid #cbd5e1;background:#f8fafc;padding:.06in}.night-title{font-size:8px;font-weight:900;text-transform:uppercase}.night-date{color:#64748b}.night-text{font-size:8px;line-height:1.35;font-weight:700;margin-top:3px}.detail-grid{display:grid;grid-template-columns:1.4fr 1fr;gap:.08in;margin-top:.06in}table{width:100%;border-collapse:collapse;font-size:7px;table-layout:fixed}th,td{border:1px solid #cbd5e1;padding:3px;text-align:left;vertical-align:top;overflow:hidden;text-overflow:ellipsis}th{background:#e2e8f0;font-size:6px;text-transform:uppercase}.num{text-align:right;font-variant-numeric:tabular-nums}.empty-row{text-align:center;color:#64748b}.footer{display:flex;justify-content:space-between;margin-top:.08in;border-top:2px solid #0f172a;padding-top:.04in;color:#475569;font-size:7px;font-weight:800}@media print{.no-print{display:none}.classification,.box,.night,th,.meta{print-color-adjust:exact;-webkit-print-color-adjust:exact}}</style></head><body><main class="sheet"><div class="classification">UNCLASSIFIED / NO PII / STATUS COUNTS ONLY</div><button class="no-print" onclick="window.print()">Print / Save as PDF</button><header class="top"><div class="title"><h1>${esc(title)}</h1><div class="subtitle">Gateway Arrival Tracking Environment — Pfingston Reception Center</div></div><div class="meta"><div class="row"><span class="label">Week Group</span><span class="value">${esc(weekGroup)}</span></div><div class="row"><span class="label">Archived</span><span class="value">${esc(formatDateTime(archivedAt))}</span></div><div class="row"><span class="label">Generated</span><span class="value">${esc(generated)}</span></div></div></header><section class="metrics"><div class="box"><div class="label">Arrived</div><div class="big">${arrived}</div></div><div class="box"><div class="label">Loaded</div><div class="big">${loaded}</div></div><div class="box"><div class="label">Expected</div><div class="big">${expected}</div></div><div class="box"><div class="label">Females</div><div class="big">${female}</div></div><div class="box"><div class="label">NAT</div><div class="big">${nat}</div></div><div class="box"><div class="label">Space Force</div><div class="big">${sfArrivals}</div></div></section><div class="section-title">Receiving Processing Summary</div><section class="receiving-summary">${receivingSummary(dorms, buses, windows)}</section><section class="detail-grid"><div><div class="section-title">Dorm Detail Snapshot</div><table><thead><tr><th>Dorm</th><th>Sq / Sec / Int</th><th>Flags</th><th>Load</th><th>Status</th><th>Timer</th></tr></thead><tbody>${dormRows}</tbody></table></div><div><div class="section-title">Bus Detail Snapshot</div><table><thead><tr><th>Bus / Source</th><th>Type</th><th>Status</th><th>Total</th><th>F</th><th>NAT</th><th>SF</th><th>Time</th></tr></thead><tbody>${busRows}</tbody></table></div></section><div class="footer"><span>Prepared by GATE</span><span>No PII / status counts only / full record retained in archive JSON</span></div><div class="classification">UNCLASSIFIED / NO PII / STATUS COUNTS ONLY</div></main></body></html>`;
+    const asOf = archivedAt ? formatDateTime(archivedAt) : generated;
+    const sortedDorms = [...dorms].sort((a, b) => clean(a.dorm_name || a.name).localeCompare(clean(b.dorm_name || b.name), undefined, { numeric: true }));
+    const sortedBuses = [...buses].sort((a, b) => (timestamp(busTime(a))?.getTime() || 0) - (timestamp(busTime(b))?.getTime() || 0));
+    const dormPages = chunks(sortedDorms, 19);
+    const busPages = chunks(sortedBuses, 21);
+    const totalPages = 1 + dormPages.length + busPages.length;
+    let pageNumber = 1;
+
+    const metricHtml = [
+      ['Arrived', metrics.arrived],
+      ['Loaded', metrics.loaded],
+      ['Expected', metrics.expected],
+      ['Female', metrics.female],
+      ['NAT', metrics.nat],
+      ['Space Force', metrics.sf]
+    ].map(([label, value]) => `<div class="report-metric"><span>${esc(label)}</span><strong>${n(value)}</strong></div>`).join('');
+
+    const summaryBody = `<section class="report-metrics">${metricHtml}</section><section class="report-section"><div class="report-section-title">Receiving Processing Summary</div><div class="report-night-grid">${receivingSummary(dorms, buses, windows)}</div></section><section class="report-summary-note"><strong>Report Basis</strong><span>Arrived and processed totals include only bus records whose status is ARRIVED. En-route buses remain visible in movement detail but are not counted as received.</span></section>`;
+    const pages = [reportChrome({
+      title,
+      weekGroup,
+      pageLabel: `${pageNumber++} of ${totalPages}`,
+      asOf,
+      body: summaryBody
+    })];
+
+    dormPages.forEach((pageRows, index) => {
+      const bodyRows = pageRows.length
+        ? pageRows.map(dorm => `<tr><td><strong>${esc(clean(dorm.dorm_name || dorm.name))}</strong></td><td>${esc([dorm.sdq, dorm.section, dorm.inter_sec].filter(Boolean).join(' / ') || '—')}</td><td>${esc([isSpaceForceDorm(dorm) ? 'SF' : 'AF', dorm.sex || '', isBandDorm(dorm) ? 'Band' : ''].filter(Boolean).join(' · '))}</td><td class="num">${dormLoad(dorm)} / ${n(dorm.max_load)}</td><td>${esc(clean(dorm.phase || dorm.state))}</td><td class="num">${esc(clean(dorm.closed_timer || dorm.elapsed || ''))}</td></tr>`).join('')
+        : '<tr><td colspan="6" class="empty-row">No dorm records retained.</td></tr>';
+      const body = `<div class="report-section-title">Dormitory Detail · ${index + 1} of ${dormPages.length}</div><table class="report-table report-dorm-table"><colgroup><col style="width:16%"><col style="width:20%"><col style="width:19%"><col style="width:13%"><col style="width:20%"><col style="width:12%"></colgroup><thead><tr><th>Dorm</th><th>Sq / Sec / Int</th><th>Population</th><th>Load</th><th>Final Status</th><th>Timer</th></tr></thead><tbody>${bodyRows}</tbody></table>`;
+      pages.push(reportChrome({ title, weekGroup, pageLabel: `${pageNumber++} of ${totalPages}`, asOf, body }));
+    });
+
+    busPages.forEach((pageRows, index) => {
+      const bodyRows = pageRows.length
+        ? pageRows.map(bus => `<tr><td><strong>${esc(bus.bus_type === 'local' ? clean(bus.destination || bus.originating_destination, 'Local Arrival') : `Bus #${clean(bus.bus_id)}`)}</strong></td><td>${esc(clean(bus.bus_type))}</td><td>${esc(formatTime(bus.departed_at || bus.created_at))}</td><td>${esc(formatTime(bus.arrived_at))}</td><td>${esc(clean(bus.status))}</td><td class="num">${n(bus.otw_count)}</td><td class="num">${n(bus.female_count)}</td><td class="num">${n(bus.nat_count)}</td><td class="num">${n(bus.space_force_count)}</td></tr>`).join('')
+        : '<tr><td colspan="9" class="empty-row">No bus records retained.</td></tr>';
+      const body = `<div class="report-section-title">Bus / Arrival Detail · ${index + 1} of ${busPages.length}</div><table class="report-table report-bus-table"><colgroup><col style="width:20%"><col style="width:10%"><col style="width:11%"><col style="width:11%"><col style="width:12%"><col style="width:9%"><col style="width:9%"><col style="width:9%"><col style="width:9%"></colgroup><thead><tr><th>Bus / Source</th><th>Type</th><th>Departed</th><th>Arrived</th><th>Status</th><th>Total</th><th>F</th><th>NAT</th><th>SF</th></tr></thead><tbody>${bodyRows}</tbody></table>`;
+      pages.push(reportChrome({ title, weekGroup, pageLabel: `${pageNumber++} of ${totalPages}`, asOf, body }));
+    });
+
+    const css = `@page{size:11in 8.5in;margin:.35in}*{box-sizing:border-box}html,body{margin:0;padding:0;background:#e2e8f0;color:#0f172a;font-family:Arial,Helvetica,sans-serif}.screen-controls{position:fixed;top:12px;right:12px;z-index:10}.screen-controls button{padding:10px 14px;border:0;border-radius:6px;background:#0f172a;color:#fff;font-weight:800;cursor:pointer}.report-page{width:10.3in;height:7.8in;margin:18px auto;background:#fff;display:flex;flex-direction:column;overflow:hidden;break-after:page;page-break-after:always;box-shadow:0 8px 30px rgba(15,23,42,.16)}.report-page:last-of-type{break-after:auto;page-break-after:auto}.report-classification{height:.24in;flex:0 0 .24in;display:flex;align-items:center;justify-content:center;background:#166534;color:#fff;border:1px solid #14532d;font-size:7.5pt;font-weight:900;letter-spacing:.12em;text-transform:uppercase}.report-header{display:grid;grid-template-columns:minmax(0,1fr) 2.75in;gap:.22in;align-items:start;padding:.14in .08in .12in;border-bottom:2px solid #0f172a}.report-kicker{font-size:7.5pt;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#475569}.report-header h1{margin:.035in 0 0;font-size:17pt;line-height:1;text-transform:uppercase}.report-header p{margin:.055in 0 0;font-size:8.5pt;font-weight:700;color:#475569}.report-meta{display:grid;grid-template-columns:1fr 1fr;gap:.06in}.report-meta div{border:1px solid #cbd5e1;background:#f8fafc;padding:.07in}.report-meta span{display:block;font-size:6.5pt;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#64748b}.report-meta strong{display:block;margin-top:.025in;font-size:8pt}.report-body{flex:1;min-height:0;padding:.1in .08in;overflow:hidden}.report-metrics{display:grid;grid-template-columns:repeat(6,1fr);gap:.07in}.report-metric{border:1px solid #cbd5e1;background:#f8fafc;padding:.08in;min-height:.62in}.report-metric span{display:block;font-size:6.5pt;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#64748b}.report-metric strong{display:block;margin-top:.04in;font-size:18pt;line-height:1}.report-section{margin-top:.16in}.report-section-title{margin:0 0 .07in;padding-bottom:.035in;border-bottom:1px solid #94a3b8;font-size:8pt;font-weight:900;letter-spacing:.09em;text-transform:uppercase}.report-night-grid{display:grid;grid-template-columns:1fr 1fr;gap:.1in}.report-night{border:1px solid #cbd5e1;background:#f8fafc;padding:.09in;min-height:1.15in}.report-night-head{display:flex;justify-content:space-between;gap:.12in;align-items:baseline}.report-night-head strong{font-size:8pt;text-transform:uppercase}.report-night-head span{font-size:6.8pt;color:#64748b}.report-night p{margin:.08in 0 0;font-size:8pt;line-height:1.4;font-weight:600}.report-summary-note{display:grid;grid-template-columns:1.15in 1fr;gap:.1in;margin-top:.14in;padding:.08in;border:1px solid #cbd5e1}.report-summary-note strong{font-size:7pt;text-transform:uppercase}.report-summary-note span{font-size:7.5pt;line-height:1.35;color:#475569}.report-table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:8pt}.report-table thead{display:table-header-group}.report-table tr{break-inside:avoid;page-break-inside:avoid}.report-table th,.report-table td{border:1px solid #cbd5e1;padding:.052in .045in;text-align:left;vertical-align:middle;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.report-table th{background:#e2e8f0;font-size:6.5pt;font-weight:900;letter-spacing:.055em;text-transform:uppercase}.report-table td.num,.report-table th.num{text-align:right;font-variant-numeric:tabular-nums}.empty-row{text-align:center!important;color:#64748b}.report-footer{height:.27in;flex:0 0 .27in;display:flex;align-items:center;justify-content:space-between;gap:.2in;padding:.04in .08in;border-top:1px solid #94a3b8;font-size:6.5pt;font-weight:700;color:#64748b}@media print{html,body{background:#fff}.screen-controls{display:none!important}.report-page{margin:0;width:10.3in;height:7.8in;box-shadow:none}.report-classification,.report-metric,.report-night,.report-meta div,.report-table th{-webkit-print-color-adjust:exact;print-color-adjust:exact}}`;
+    return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(weekGroup)} ${esc(title)}</title><style>${css}</style></head><body><div class="screen-controls"><button type="button" onclick="window.print()">Print / Save as PDF</button></div>${pages.join('')}</body></html>`;
   }
 
   function openPrintWindow(html, slug = 'gate-report') {

@@ -12,7 +12,7 @@ The active GATE application is not defined only by `public/index.html`. Cloudfla
 ```text
 Direct stylesheets: 1
 Imported stylesheets: 0
-Direct scripts/modules: 23
+Direct scripts/modules: 22
 Visible Build 2 routes: 0
 Hidden Build 2 runtime observers: 1
 ```
@@ -52,10 +52,9 @@ Injected by middleware in current order:
 17. `/app/features/input/flight-alert-import.mjs?v=flight-alert-import-20260920`
 18. `/js/gate-app-shell-controller.js?v=repo-audit-20260922`
 19. `/js/gate-fullscreen-board-layout-controller.js?v=fullscreen-board-containment-20260714b`
-20. `/js/prc-dash-modal-mobile-validation.js?v=phase-7e-ui-ownership-20260709`
-21. `/js/gate-premium-metrics-controller.js?v=metric-live-clock-20260722`
-22. `/js/prc-dash-overtime-audit.js?v=repo-audit-20260922`
-23. `/js/gate-status-board-shadow-controller.js?v=phase-3a-status-board-shadow-20260715`
+20. `/js/gate-premium-metrics-controller.js?v=metric-live-clock-20260722`
+21. `/js/prc-dash-overtime-audit.js?v=repo-audit-20260922`
+22. `/js/gate-status-board-shadow-controller.js?v=phase-3a-status-board-shadow-20260715`
 
 ### Transitive module runtime
 
@@ -69,15 +68,16 @@ These transitive dependencies are part of the runtime audit even though they do 
 
 ### 22 Sep 2026 runtime consolidation
 
-The full-repository audit removed five direct compatibility owners without removing their behavior:
+The full-repository audit removed six direct compatibility owners without removing their behavior:
 
 - `prc-dash-space-force.js` — Space Force input/log behavior already belongs to `GateBusWorkflowController`; closed-dorm final-time normalization already belongs to `GateProcessingController`. The shared `window.allData` bridge moved into `GateHooks`, where cross-controller lifecycle infrastructure belongs.
 - `gate-tablet-shell-classifier.js` — its tablet-console media query is now evaluated directly by `GateAppShell`; the global `window.matchMedia` monkey patch is retired.
 - `gate-render-stability-fix.js` — the file had become a marker-only compatibility guard; all visual stability rules already live in the canonical stylesheet.
 - `prc-dash-processing-loaded-summary.js` — the arrived/loaded/awaiting summary is now rendered directly by `GateProcessingController`.
 - `prc-dash-runtime-fixes.js` — Processing load clamping and modal Escape behavior now live in the route owners; the canonical sound system owns sound enablement. The cross-cutting safeguard layer no longer owns unique behavior.
+- `prc-dash-modal-mobile-validation.js` — Processing workspace classes, closed-timer override, load completion, Escape/Enter behavior, and touch long-press are now source-owned by `GateProcessingController` and `public/index.html`; the global Data SDK wrapper and body-wide MutationObserver are retired.
 
-The direct runtime therefore moved from 28 to 23 assets and the maximum in `ACTIVE_RUNTIME_BUDGET.json` was lowered to 23 so later work cannot silently restore the removed layers.
+The direct runtime therefore moved from 28 to 22 assets and the maximum in `ACTIVE_RUNTIME_BUDGET.json` was lowered to 22 so later work cannot silently restore the removed layers.
 
 ## Operational owners
 
@@ -93,7 +93,6 @@ The direct runtime therefore moved from 28 to 23 assets and the maximum in `ACTI
 - `flight-alert-import.mjs` is an active Input enhancement. It consumes the controller's public row and render interface; PDF extraction/parsing remains local and draft-oriented. Its Week Group placement dependency also boots the feature-gated persistence runtime, so that transitive dependency is explicitly tracked above rather than treated as invisible runtime.
 - `GateArchiveController` owns Archives, reporting, print/PDF, and closeout presentation.
 
-`prc-dash-modal-mobile-validation.js` and the legacy Status-header compatibility path no longer create stylesheet requests. They reuse the canonical CSS asset while retaining their existing lifecycle and interaction behavior.
 
 The served legacy `renderAll()` path delegates Active Buses and dorm columns to `GateStatusBoardController` whenever the canonical owner is available. The legacy Local clock interval is removed at serve time so `GatePremiumMetricsController` is the only live clock owner. The legacy timer callback is rebound to the canonical elapsed-time and tick functions and uses steady warning/critical states without `timer-flash`.
 
@@ -131,7 +130,7 @@ The Flight Alert import is an enhancement to the existing Build 1 Input owner, n
 The production CSS budget is now fixed at one direct stylesheet and zero imported stylesheets.
 
 - A normal pull request may not add another active stylesheet or import.
-- The direct script/module ceiling is 23 and may not be increased.
+- The direct script/module ceiling is 22 and may not be increased.
 - Transitive module imports count as runtime dependencies for audit purposes and may not be used to bypass the direct ceiling.
 - No new active asset may be named or scoped as a fix, patch, corrective layer, restore layer, finalizer, cleanup layer, or stability layer.
 - Any active-asset change must update this register and `ACTIVE_RUNTIME_BUDGET.json` in the same pull request.
@@ -144,9 +143,10 @@ PASS — one canonical production stylesheet
 PASS — zero active stylesheet imports
 PASS — canonical CSS contains no priority-lock declarations
 PASS — active middleware order documented
-PASS — direct runtime reduced from 28 to 23 scripts/modules
+PASS — direct runtime reduced from 28 to 22 scripts/modules
 PASS — tablet shell logic folded into GateAppShell
 PASS — Processing summary folded into GateProcessingController
+PASS — Processing modal/touch corrective layer folded into GateProcessingController
 PASS — Space Force compatibility duplicate retired
 PASS — render-stability marker asset retired
 PASS — machine-readable active asset inventory established

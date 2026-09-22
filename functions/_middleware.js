@@ -18,7 +18,7 @@ const ROLE_HOME = Object.freeze({
 });
 
 const UI_STYLESHEETS = [
-  '<link rel="stylesheet" href="/css/military-glass-terminal.css?v=military-glass-terminal-20260922-squadron-actions1">'
+  '<link rel="stylesheet" href="/css/military-glass-terminal.css?v=military-glass-terminal-20260922-archives1">'
 ];
 
 const UI_INLINE_ASSETS = [];
@@ -40,7 +40,7 @@ const UI_HEAD_SCRIPTS = [
   '<script src="/js/gate-bus-workflow-controller.js?v=phase-3-bus-workflow-20260709" defer></script>',
   '<script src="/js/gate-airport-bus-delete-controller.js?v=airport-bus-delete-20260714" defer></script>',
   '<script src="/js/gate-input-page-controller.js?v=record-display-integrity-20260714" defer></script>',
-  '<script src="/js/gate-archive-controller.js?v=phase-8c-report-wording-20260709" defer></script>',
+  '<script src="/js/gate-archive-controller.js?v=gate-archive-workspace-20260922" defer></script>',
   '<script src="/js/gate-permission-guard.js?v=permission-server-role-20260922" defer></script>',
   '<script type="module" src="/app/features/input/flight-alert-import.mjs?v=flight-alert-import-20260920"></script>',
   '<script src="/js/gate-tablet-shell-classifier.js?v=tablet-shell-20260714" defer></script>',

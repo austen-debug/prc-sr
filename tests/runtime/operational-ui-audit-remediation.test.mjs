@@ -169,6 +169,10 @@ test('Squadron SITREP ships current canonical assets and preserves lightweight c
   assert.ok(controller.includes('>ⓘ</button>'), 'tooltips use the requested information glyph');
   assert.ok(controller.includes('id="squadron-metric-local" class="gate-squadron-value">--:--:--</div>'));
   assert.ok(!controller.includes('id="squadron-metric-local" class="gate-squadron-value is-time"'));
+  assert.ok(squadronCss.includes('display:flex; flex-direction:column; align-items:center;'), 'metric cards share one vertical layout');
+  assert.ok(squadronCss.includes('margin-top:auto; padding-top:7px;'), 'metric values share bottom alignment');
+  assert.ok(squadronCss.includes('.gate-squadron-value.is-time { font-size:clamp(24px,3.2vw,40px); }'), 'time values use the same point size as numeric values');
+  assert.ok(!squadronCss.includes('.gate-squadron-value.is-time { font-size:17px; }'), 'mobile must not shrink time metrics independently');
   assert.ok(controller.includes('dispatched in the last 60 minutes'));
   assert.ok(!controller.includes('dispatched in the rolling last 60 minutes'));
   assert.ok(controller.includes('id="squadron-information-form"'));

@@ -570,6 +570,21 @@
     if (row) openModal(row.dataset.busId);
   }
 
+  function onKeydown(event) {
+    if (event.key !== 'Escape') return;
+    const editModal = document.getElementById('airport-bus-edit-modal');
+    if (editModal && !editModal.classList.contains('hidden')) {
+      event.preventDefault();
+      closeAirportBusEditModalCanonical();
+      return;
+    }
+    const localModal = document.getElementById('local-bus-modal');
+    if (localModal && !localModal.classList.contains('hidden')) {
+      event.preventDefault();
+      closeLocalBusModalCanonical();
+    }
+  }
+
   function patchGlobals() {
     window.renderAirportBusLog = renderBusLog;
     window.openAirportBusEditModal = openModal;
@@ -606,6 +621,7 @@
     if (!installed) {
       document.addEventListener('submit', onSubmit, true);
       document.addEventListener('click', onClick, true);
+      document.addEventListener('keydown', onKeydown, true);
       installed = true;
     }
 

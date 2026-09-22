@@ -89,10 +89,10 @@ Cloudflare middleware currently serves:
 
 - 1 canonical directly injected stylesheet;
 - 0 imported stylesheets;
-- 24 directly injected scripts/modules;
+- 23 directly injected scripts/modules;
 - one hidden, read-only Phase 3A Status Board shadow observer.
 
-The 24-entry direct manifest is the permanent runtime ceiling after the 22 Sep 2026 repository audit. Transitive ES-module imports are audited separately and may not be used to hide runtime growth outside that ceiling.
+The 23-entry direct manifest is the permanent runtime ceiling after the 22 Sep 2026 repository audit. Transitive ES-module imports are audited separately and may not be used to hide runtime growth outside that ceiling.
 
 The current order and ownership are documented in [`docs/ACTIVE_RUNTIME_STACK.md`](./docs/ACTIVE_RUNTIME_STACK.md). The machine-readable ceiling is [`docs/build-2/ACTIVE_RUNTIME_BUDGET.json`](./docs/build-2/ACTIVE_RUNTIME_BUDGET.json).
 

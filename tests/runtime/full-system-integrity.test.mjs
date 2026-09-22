@@ -199,7 +199,8 @@ test('retired compatibility owners are absent and their behavior is absorbed by 
     'gate-tablet-shell-classifier.js',
     'gate-render-stability-fix.js',
     'prc-dash-processing-loaded-summary.js',
-    'prc-dash-runtime-fixes.js'
+    'prc-dash-runtime-fixes.js',
+    'prc-dash-modal-mobile-validation.js'
   ]) assert.ok(!middleware.includes(retired), `${retired} must remain retired from active middleware`);
 
   assert.match(processing, /function renderProcessingSummary\(/);

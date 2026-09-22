@@ -2066,73 +2066,8 @@ function closeAirportBusEditModal() {
 }
 
     function renderArchives() {
-  const archives = getRecords('archive');
-  const el = document.getElementById('archive-history');
-
-  if (archives.length === 0) {
-    el.innerHTML = 'No archived week groups.';
-    return;
-  }
-
-  el.innerHTML = archives.map(a => {
-    let dormLog = '';
-
-    if (a.dorm_data) {
-      try {
-        const parsed = JSON.parse(a.dorm_data);
-
-        if (parsed.length > 0) {
-          dormLog = `
-            <div class="mt-3 border-t pt-2" style="border-color:var(--border);">
-              <div class="grid grid-cols-6 gap-2 text-[10px] uppercase font-bold text-muted mb-1">
-                <div>Dorm</div>
-                <div>Loaded</div>
-                <div>Max</div>
-                <div>Opened</div>
-                <div>Closed</div>
-                <div>Elapsed</div>
-              </div>
-              <div class="space-y-1">
-                ${parsed.map(d => `
-                  <div class="grid grid-cols-6 gap-2 text-xs">
-                    <div class="font-bold">${escapeHtml(d.name || d.dorm_name || '')}</div>
-                    <div class="font-tabular">${escapeHtml(d.current_load ?? d.loaded ?? '')}</div>
-                    <div class="font-tabular">${escapeHtml(d.max_load ?? '')}</div>
-                    <div class="font-tabular">${escapeHtml(d.open_time || '')}</div>
-                    <div class="font-tabular">${escapeHtml(d.close_time || '')}</div>
-                    <div class="font-tabular text-muted">${escapeHtml(d.elapsed || '')}</div>
-                  </div>
-                `).join('')}
-              </div>
-            </div>
-          `;
-        }
-      } catch(e) {}
+      return window.GateArchiveController?.renderArchives?.();
     }
-
-    const femaleTotal = Number(a.female_total || 0);
-    const natTotal = Number(a.nat_total || 0);
-
-    return `
-      <div
-        class="surface border rounded-lg p-3 mb-3"
-        style="border-color:var(--border); cursor:pointer;"
-        oncontextmenu="openArchiveEditModal(event, '${a.__backendId}')"
-        title="Right-click to edit archived week group"
-      >
-        <div class="font-bold text-lg">${escapeHtml(a.week_group || 'Unknown')}</div>
-        <div class="text-xs text-muted mb-1">
-          Archived: ${a.archived_at ? new Date(a.archived_at).toLocaleString() : ''}
-          | Buses: ${a.bus_count || 0}
-          | Arrived: ${a.total_arrived || 0}
-          | Females: ${femaleTotal}
-          | NAT: ${natTotal}
-        </div>
-        ${dormLog}
-      </div>
-    `;
-  }).reverse().join('');
-}
    
     function initiateCloseout() {
       showConfirm('Close out this week group? This archives all data.', async () => {

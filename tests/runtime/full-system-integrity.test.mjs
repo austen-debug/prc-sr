@@ -198,17 +198,28 @@ test('retired compatibility owners are absent and their behavior is absorbed by 
     'prc-dash-space-force.js',
     'gate-tablet-shell-classifier.js',
     'gate-render-stability-fix.js',
-    'prc-dash-processing-loaded-summary.js'
+    'prc-dash-processing-loaded-summary.js',
+    'prc-dash-runtime-fixes.js'
   ]) assert.ok(!middleware.includes(retired), `${retired} must remain retired from active middleware`);
 
   assert.match(processing, /function renderProcessingSummary\(/);
   assert.match(processing, /processing-loaded-arrived-summary/);
   assert.match(processing, /function normalizeFinalTime\(/);
+  assert.match(processing, /function constrainModalLoad\(/);
+  assert.match(processing, /Math\.min\(maximum, Math\.max\(0/);
   assert.match(buses, /id="bus-sf"/);
   assert.match(buses, /id="local-sf"/);
   assert.match(buses, /id="edit-bus-sf"/);
   assert.match(buses, /function ensureSfColumn\(/);
   assert.match(shell, /const TABLET_CONSOLE_MEDIA =/);
+
+  const sound = await source('public/js/prc-dash-dorm-reopen.js');
+  const archive = await source('public/js/gate-archive-controller.js');
+  const html = await source('public/index.html');
+  assert.match(sound, /window\.GateSoundSystem = Object\.freeze/);
+  assert.match(buses, /function onKeydown\(event\)[\s\S]*event\.key !== 'Escape'/);
+  assert.match(archive, /function handleKeydown\(event\)[\s\S]*archive-edit-modal/);
+  assert.match(html, /event\.key !== 'Escape'[\s\S]*confirm-no/);
 });
 
 test('background is route-scoped and the global tactical grid is retired', async () => {

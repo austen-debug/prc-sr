@@ -28,8 +28,8 @@
   }
 
   function data() {
-    if (Array.isArray(window.allData)) return window.allData;
-    try { return Array.isArray(allData) ? allData : []; } catch (_) { return []; }
+    try { if (Array.isArray(allData)) return allData; } catch (_) {}
+    return Array.isArray(window.allData) ? window.allData : [];
   }
 
   function isBusRecord(record) {

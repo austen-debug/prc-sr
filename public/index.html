@@ -3,147 +3,11 @@
  <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pfingston Reception Status Board</title>
+  <title>GATE — Gateway Arrival Tracking Environment | Pfingston Reception Center</title>
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;900&amp;display=swap" rel="stylesheet">
-
-  
-  <style>
-:root {
-  --bg: #121212;
-  --surface: #1e1e1e;
-  --surface-alt: #2a2a2a;
-  --text: #e8e8e8;
-  --text-muted: #8a8a8a;
-  --border: #333333;
-  --green: #16a34a;
-  --red: #dc2626;
-  --yellow: #eab308;
-  --blue: #38bdf8;
-
-  --dorm-empty-text: #8a8a8a;
-  --dorm-open-text: #e8e8e8;
-  --dorm-full-text: #22c55e;
-  --dorm-closed-text: #8a8a8a;
-}
-
-.theme-light {
-  --bg: #f3f4f6;
-  --surface: #ffffff;
-  --surface-alt: #e5e7eb;
-  --text: #111827;
-  --text-muted: #6b7280;
-  --border: #d1d5db;
-
-  --dorm-empty-text: #6b7280;
-  --dorm-open-text: #111827;
-  --dorm-full-text: #15803d;
-  --dorm-closed-text: #6b7280;
-}
-
-html,
-body {
-  background: var(--bg);
-  min-height: 100vh;
-}
-
-body {
-  font-family: 'DM Sans', sans-serif;
-  color: var(--text);
-  margin: 0;
-  overflow-x: hidden;
-  position: relative;
-}
-
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background-image: url('/assets/prc-logo-blue.png');
-  background-repeat: no-repeat;
-  background-position: center center;
-  background-size: 75vw auto;
-  opacity: 0.3;
-  pointer-events: none;
-  z-index: 0;
-}
-
-body > * {
-  position: relative;
-  z-index: 1;
-}
-    .surface { background: var(--surface); border-color: var(--border); }
-    .text-muted { color: var(--text-muted); }
-    .page { display: none; min-height: calc(100 * min(var(--vh, 1vh), 1vh)); padding-top: 80px; padding-bottom: 40px; }
-    .page.active { display: flex; flex-direction: column; }
-    .border-female { border: 4px solid var(--red) !important; }
-    .border-band { border: 4px solid var(--blue) !important; }
-    .bus-badge { background: var(--green); color: #fff; padding: 0.5rem 1rem; border-radius: 0.5rem; font-weight: 700; font-size: 0.8rem; cursor: pointer; min-height: 40px; display: inline-flex; align-items: center; white-space: nowrap; }
-    .bus-badge:hover { background: #15803d; }
-    .nav-btn { color: var(--text-muted); min-height: 36px; display: inline-flex; align-items: center; justify-content: center; border-radius: 4px; padding: 0 0.75rem; font-size: 0.8rem; }
-    .nav-btn.active { background: var(--surface-alt); color: var(--text); font-weight: 700; }
-    .timer-yellow { color: var(--yellow) !important; }
-    .timer-red { color: var(--red) !important; }
-    .timer-flash { animation: flash 1s step-end infinite; }
-    @keyframes flash { 0%,100% { color: var(--red); } 50% { color: #ffffff; } }
-    .dorm-closed { opacity: 0.55; background: var(--surface-alt) !important; }
-    .confirm-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 9000; }
-    .font-tabular { font-variant-numeric: tabular-nums; }
-    select { background-color: var(--surface) !important; color: var(--text) !important; }
-    select option { background-color: var(--surface); color: var(--text); }
-    input, select, button { min-height: 36px; }
-
-#page-input input:not([type="checkbox"]),
-#page-input select {
-  background-color: rgba(211, 211, 211, 0.25) !important;
-  border-color: rgba(211, 211, 211, 0.35) !important;
-}
-    .security-banner-fixed { position: fixed; top: 0; left: 0; right: 0; height: 32px; z-index: 9999; display: flex; align-items: center; justify-content: center; font-size: 12px; }
-    .app-nav { position: fixed; top: 32px; left: 0; right: 0; height: 44px; z-index: 9998; display: flex; align-items: center; justify-content: space-between; padding: 0 1rem; border-bottom: 1px solid var(--border); background: var(--surface); }
-    .board-header { display: grid; grid-template-columns: 1fr 1fr 2fr; gap: 0.75rem; padding: 0.75rem; flex-shrink: 0; }
-    .dorm-dashboard { flex: 1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; padding: 0 0.75rem; }
-    .dorm-column { display: flex; flex-direction: column; }
-    .dorm-col-header { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 0.5rem; }
-    .dorm-col-content { flex: 1; display: flex; flex-direction: column; gap: 0.5rem; }
-    .dorm-card { background: var(--surface); border: 1px solid var(--border); border-radius: 0.5rem; padding: 0.6rem; display: flex; flex-direction: column; cursor: pointer; transition: transform 0.1s; }
-    .dorm-card:hover { transform: scale(1.01); }
-    .metric-block { background: var(--surface); border: 1px solid var(--border); border-radius: 0.5rem; padding: 0.75rem; }
-    .board-footer { flex-shrink: 0; padding: 0.5rem; display: flex; justify-content: center; border-top: 1px solid var(--border); }
-
-   .fullscreen-board .app-nav {
-  display: none !important;
-}
-
-.fullscreen-board #page-board {
-  padding-top: 32px;
-  padding-bottom: 0;
-  min-height: 100vh;
-}
-
-.fullscreen-board .board-footer {
-  display: none !important;
-}
-
-.fullscreen-board .dorm-dashboard {
-  padding-bottom: 0.75rem;
-}
-   
-    .phase-btn { padding: 0.75rem 1rem; border-radius: 0.5rem; font-weight: 700; font-size: 1rem; border: 2px solid var(--border); background: var(--surface); color: var(--text); cursor: pointer; transition: all 0.15s; }
-    .phase-btn.selected { background: var(--green); color: #fff; border-color: var(--green); }
-    .phase-btn:hover:not(.selected) { background: var(--surface-alt); }
-    .load-btn { min-width: 50px; min-height: 50px; font-size: 1.2rem; font-weight: 700; border-radius: 0.5rem; border: 2px solid var(--border); background: var(--surface); color: var(--text); cursor: pointer; }
-    .load-btn:hover { background: var(--surface-alt); }
-    .proc-card { background: var(--surface); border: 2px solid var(--border); border-radius: 0.75rem; padding: 1.25rem; cursor: pointer; transition: transform 0.1s, box-shadow 0.1s; }
-    .proc-card:hover { transform: scale(1.02); box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
-    .modal-content { background: var(--surface); border: 1px solid var(--border); border-radius: 1rem; padding: 2rem; max-width: 500px; width: 95%; max-height: 90vh; overflow-y: auto; }
-    @media (max-width: 768px) {
-      .board-header { grid-template-columns: 1fr; }
-      .dorm-dashboard { grid-template-columns: 1fr; overflow-y: auto; }
-    }
-  </style>
-  
- </head>
+</head>
  <body data-template-id="__page-root" class="w-full"><!-- Security Banner -->
   <div data-template-id="security-banner" class="canva-banner security-banner-fixed" style="background-color: #16a34a; color: white; font-weight: 900; letter-spacing: 0.1em;">
    UNCLASSIFIED / NO PII / STATUS COUNTS ONLY
@@ -180,30 +44,39 @@ body > * {
    
   </nav><!-- PAGE: STATUS BOARD -->
   <main id="page-board" class="page active" role="main">
-   <div class="board-header">
-    <div class="metric-block">
-     <div class="text-xs uppercase tracking-wider font-medium text-muted">
-      Arrived / Expected
+   <div class="board-header gate-premium-metrics-enabled" data-owner="gate-status-metrics-source" data-phase="1B">
+      <div class="gate-metrics-container">
+       <div class="metric-card arrived-card">
+        <div class="metric-header">
+         <span class="status-dot led-green" aria-hidden="true"></span>
+         <span class="metric-label">ARRIVED</span>
+        </div>
+        <div class="metric-value" id="stat-arrived" data-gate-live-value="true" aria-live="off">0</div>
+       </div>
+       <div class="metric-card expected-card">
+        <div class="metric-header">
+         <span class="metric-label">EXPECTED</span>
+        </div>
+        <div class="metric-value" id="stat-expected" data-gate-live-value="true" aria-live="off">0</div>
+       </div>
+       <div class="metric-card last-card">
+        <div class="metric-header">
+         <span class="metric-label">LAST</span>
+        </div>
+        <div class="metric-value" id="stat-last" data-gate-live-value="true" aria-live="off">00:00</div>
+       </div>
+       <div class="metric-card local-card">
+        <div class="metric-header">
+         <span class="metric-label">LOCAL</span>
+        </div>
+        <div class="metric-value" id="stat-local" data-gate-live-value="true" aria-live="off">00:00:00</div>
+       </div>
+      </div>
+      <section class="gate-active-buses-block" aria-label="Active buses en route">
+       <div class="gate-active-buses-label">ACTIVE BUSES</div>
+       <div id="active-buses" class="flex gap-2 flex-wrap items-center"></div>
+      </section>
      </div>
-     <div id="metric-arrived" class="text-2xl font-black font-tabular mt-1">
-      0 / 0
-     </div>
-    </div>
-    <div class="metric-block">
-     <div class="text-xs uppercase tracking-wider font-medium text-muted">
-      Last Airport Arrival
-     </div>
-     <div id="metric-airport" class="text-2xl font-black font-tabular mt-1">
-      —
-     </div>
-    </div>
-    <div class="metric-block">
- <div class="text-xs uppercase tracking-wider font-medium text-muted mb-1">
-  Active Buses En Route
- </div>
- <div id="active-buses" class="flex gap-2 flex-wrap items-center"></div>
-</div>
-   </div>
    <div class="dorm-dashboard">
     <div class="dorm-column">
      <div class="dorm-col-header">
@@ -710,7 +583,7 @@ body > * {
 
  <script>
   // Cloudflare Pages + D1 dataSdk replacement.
-  // This mimics Canva's dataSdk so the existing PRC-SR app can keep working.
+  // This mimics Canva's dataSdk so the existing GATE app can keep working.
   (function () {
     const API_URL = '/api/records';
     const LIVE_API_URL = '/api/records?scope=live';
@@ -760,7 +633,7 @@ async function refresh(force = false) {
 
         setInterval(() => {
           refresh().catch(err => {
-            console.error('PRC-SR refresh failed:', err);
+            console.error('GATE refresh failed:', err);
           });
         }, 3000);
 
@@ -959,7 +832,7 @@ async function initApp() {
       console.warn('Data SDK initialized with a warning:', r);
     }
   } catch (err) {
-    console.error('PRC-SR failed to initialize data layer:', err);
+    console.error('GATE failed to initialize data layer:', err);
     allData = [];
   }
 
@@ -968,7 +841,7 @@ async function initApp() {
   }
 
  timerInterval = setInterval(updateTimers, 1000);
-setInterval(updateAirportMetric, 1000);
+/* LOCAL metric live clock is owned by GatePremiumMetricsController. */
 
 initBatchGrid();
 buildNav();
@@ -989,14 +862,9 @@ renderAll();
 }
 
 function updateAirportMetric() {
-  const el = document.getElementById('metric-airport');
-
-  if (!el) {
-    return;
-  }
-
   const lastAirport = getConfig('last_airport') || '—';
-  el.textContent = `LAST: ${lastAirport} | LOCAL: ${getLocalTime24()}`;
+  const lastEl = document.getElementById('stat-last');
+  if (lastEl && lastEl.textContent !== String(lastAirport)) lastEl.textContent = String(lastAirport);
 }
 
  function updateSoundButton() {
@@ -1198,9 +1066,15 @@ function getElapsedTimer(openedAt) {
       const arrivedBuses = buses.filter(b => b.status === 'arrived');
       const totalArrived = arrivedBuses.reduce((s, b) => s + (Number(b.otw_count) || 0), 0);
 
-      document.getElementById('metric-arrived').textContent = `ARRIVED: ${totalArrived} | EXPECTED: ${totalExpected}`;
+      const arrivedMetricEl = document.getElementById('stat-arrived');
+      const expectedMetricEl = document.getElementById('stat-expected');
+      if (arrivedMetricEl && arrivedMetricEl.textContent !== String(totalArrived)) arrivedMetricEl.textContent = String(totalArrived);
+      if (expectedMetricEl && expectedMetricEl.textContent !== String(totalExpected)) expectedMetricEl.textContent = String(totalExpected);
       updateAirportMetric();
 
+      if (window.GateStatusBoardController?.renderActiveBuses) {
+        window.GateStatusBoardController.renderActiveBuses();
+      } else {
       const abEl = document.getElementById('active-buses');
 
 abEl.innerHTML = activeBuses.length === 0 ? '<span class="text-muted text-sm">None</span>' :
@@ -1220,8 +1094,13 @@ abEl.innerHTML = activeBuses.length === 0 ? '<span class="text-muted text-sm">No
       </button>
     `;
   }).join('');
+      }
 
-      renderDormColumns(dorms);
+      if (window.GateStatusBoardController?.renderDormColumns) {
+        window.GateStatusBoardController.renderDormColumns(dorms);
+      } else {
+        renderDormColumns(dorms);
+      }
       renderProcessingPage(dorms);
       renderArrivals(arrivedBuses);
       renderAirportBusLog(buses);
@@ -1701,7 +1580,8 @@ closed_timer: d.state === 'closed'
     el.classList.remove('timer-yellow', 'timer-red', 'timer-flash');
 
     if (timer.minutes >= 60) {
-  el.classList.add('timer-flash');
+  el.classList.remove('timer-flash');
+      el.classList.add('timer-red');
   triggerOvertimeSoundIfNeeded(el.dataset.dormId);
 } else if (timer.minutes >= 50) {
   el.classList.add('timer-red');
@@ -2366,7 +2246,7 @@ function printArchiveSpreadsheet() {
     <body>
       <button class="no-print" onclick="window.print()" style="padding:8px 16px;margin-bottom:12px;">Print</button>
 
-      <h1>PRC-SR Archive Report</h1>
+      <h1>GATE Archive Report</h1>
       <div><strong>Week Group:</strong> ${escapeHtml(weekGroup)}</div>
       <div><strong>Archived:</strong> ${archive.archived_at ? escapeHtml(new Date(archive.archived_at).toLocaleString()) : ''}</div>
 

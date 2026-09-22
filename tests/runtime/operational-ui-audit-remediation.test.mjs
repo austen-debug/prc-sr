@@ -130,14 +130,14 @@ test('Processing BAND designator uses rounded-rectangle geometry', async () => {
 test('middleware delivers one canonical stylesheet and no retired CSS assets', async () => {
   const middleware = await source('functions/_middleware.js');
 
-  assert.match(middleware, /military-glass-terminal\.css\?v=military-glass-terminal-20260922-squadron-sitrep1/);
+  assert.match(middleware, /military-glass-terminal\.css\?v=military-glass-terminal-20260922-squadron-info2/);
   assert.equal((middleware.match(/<link rel="stylesheet"/g) || []).length, 1);
   assert.doesNotMatch(middleware, /gate-ui-ownership-correction\.css|gate-fullscreen-board-contract\.css|gate-tablet-shell\.css|gate-mobile-corrective\.css/);
 });
 
 
 test('Squadron SITREP ships current canonical CSS with isolated three-column layout', async () => {
-  const version = 'military-glass-terminal-20260922-squadron-sitrep1';
+  const version = 'military-glass-terminal-20260922-squadron-info2';
   const url = `/css/military-glass-terminal.css?v=${version}`;
   const [middleware, standalone, budgetText, stack, css, controller, index] = await Promise.all([
     source('functions/_middleware.js'), source('public/squadron/index.html'),
@@ -150,7 +150,7 @@ test('Squadron SITREP ships current canonical CSS with isolated three-column lay
   assert.deepEqual(JSON.parse(budgetText).currentDirectStyles, [url]);
   assert.ok(stack.includes(url), 'runtime documentation must match');
   assert.equal((middleware.match(/<link rel="stylesheet"/g) || []).length, 1);
-  assert.doesNotMatch(middleware + standalone, /military-glass-terminal-20260915-bandshape1|military-glass-terminal\.css\?v=squadron-sitrep-20260921/);
+  assert.doesNotMatch(middleware + standalone, /military-glass-terminal-20260915-bandshape1|military-glass-terminal\.css\?v=squadron-sitrep-20260922-info2/);
 
   const squadronCss = css.slice(css.indexOf('/* GATE SQUADRON SITREP'));
   assert.ok(squadronCss.startsWith('/* GATE SQUADRON SITREP'), 'scoped Squadron rules must exist');

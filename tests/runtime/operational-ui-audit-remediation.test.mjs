@@ -136,21 +136,26 @@ test('middleware delivers one canonical stylesheet and no retired CSS assets', a
 });
 
 
-test('Squadron SITREP ships current canonical CSS with isolated three-column layout', async () => {
+test('Squadron SITREP ships current canonical assets and preserves lightweight communication UI', async () => {
   const version = 'military-glass-terminal-20260922-squadron-info2';
   const url = `/css/military-glass-terminal.css?v=${version}`;
+  const scriptUrl = '/js/prc-dash-final-audit.js?v=squadron-sitrep-20260922-info2';
   const [middleware, standalone, budgetText, stack, css, controller, index] = await Promise.all([
     source('functions/_middleware.js'), source('public/squadron/index.html'),
     source('docs/build-2/ACTIVE_RUNTIME_BUDGET.json'), source('docs/ACTIVE_RUNTIME_STACK.md'),
     source('public/css/military-glass-terminal.css'), source('public/js/prc-dash-final-audit.js'),
     source('public/index.html')
   ]);
+  const budget = JSON.parse(budgetText);
   assert.ok(middleware.includes(url), 'instructor middleware must reference fresh CSS');
   assert.ok(standalone.includes(url), 'standalone must use the same CSS version');
-  assert.deepEqual(JSON.parse(budgetText).currentDirectStyles, [url]);
+  assert.ok(middleware.includes(scriptUrl), 'instructor middleware must reference fresh Squadron controller');
+  assert.ok(standalone.includes(scriptUrl), 'standalone must use the same Squadron controller version');
+  assert.deepEqual(budget.currentDirectStyles, [url]);
+  assert.ok(budget.currentDirectScripts.includes(scriptUrl));
   assert.ok(stack.includes(url), 'runtime documentation must match');
   assert.equal((middleware.match(/<link rel="stylesheet"/g) || []).length, 1);
-  assert.doesNotMatch(middleware + standalone, /military-glass-terminal-20260915-bandshape1|military-glass-terminal\.css\?v=squadron-sitrep-20260922-info2/);
+  assert.doesNotMatch(middleware + standalone, /military-glass-terminal-20260915-bandshape1|military-glass-terminal-20260922-squadron-sitrep1|squadron-sitrep-20260921/);
 
   const squadronCss = css.slice(css.indexOf('/* GATE SQUADRON SITREP'));
   assert.ok(squadronCss.startsWith('/* GATE SQUADRON SITREP'), 'scoped Squadron rules must exist');
@@ -159,6 +164,16 @@ test('Squadron SITREP ships current canonical CSS with isolated three-column lay
   assert.match(squadronCss, /#page-squadron \.gate-squadron-tempo-options\s*\{[^}]*grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
   assert.match(squadronCss, /#page-squadron \.gate-squadron-columns\s*\{[^}]*grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
   assert.match(squadronCss, /#page-squadron \.gate-squadron-dorm\s*\{[^}]*background:var\(--mg-surface-strong\)/);
+  assert.match(squadronCss, /#page-squadron \.gate-info\s*\{[^}]*border:0;[^}]*font-size:17px/);
+
+  assert.ok(controller.includes('>ⓘ</button>'), 'tooltips use the requested information glyph');
+  assert.ok(controller.includes('id="squadron-metric-local" class="gate-squadron-value">--:--:--</div>'));
+  assert.ok(!controller.includes('id="squadron-metric-local" class="gate-squadron-value is-time"'));
+  assert.ok(controller.includes('dispatched in the last 60 minutes'));
+  assert.ok(!controller.includes('dispatched in the rolling last 60 minutes'));
+  assert.ok(controller.includes('id="squadron-information-form"'));
+  assert.ok(controller.includes("'X-Gate-Information': 'save'"));
+  assert.match(controller, /const nodes = new Map\(\)/, 'condensed dorm cards keep keyed DOM identity');
   assert.doesNotMatch(controller, /id="active-buses"/, 'no active bus strip on Squadron Board');
 
   const { onRequest } = await import('../../functions/_middleware.js');
@@ -178,5 +193,6 @@ test('Squadron SITREP ships current canonical CSS with isolated three-column lay
   const html = await response.text();
   assert.equal(html.split(url).length-1,1, 'served HTML must inject one fresh stylesheet');
   assert.equal((html.match(/href="\/css\/military-glass-terminal\.css\?v=/g)||[]).length,1);
+  assert.ok(html.includes(scriptUrl));
   assert.ok(!html.includes('military-glass-terminal-20260915-bandshape1'));
 });

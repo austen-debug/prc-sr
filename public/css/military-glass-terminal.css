@@ -2124,8 +2124,8 @@ tbody tr:hover {
 }
 
 .gate-archive-table-empty {
-  padding: 1.25rem !important;
-  color: var(--mg-text-muted) !important;
+  padding: 1.25rem;
+  color: var(--mg-text-muted);
   text-align: center;
 }
 

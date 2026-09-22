@@ -5,7 +5,7 @@
   "maximums": {
     "directStyles": 1,
     "importedStyles": 0,
-    "directScripts": 23
+    "directScripts": 22
   },
   "phase3BExitTargets": {
     "directStylesMaximum": 1,
@@ -39,20 +39,17 @@
     "/app/features/input/flight-alert-import.mjs?v=flight-alert-import-20260920",
     "/js/gate-app-shell-controller.js?v=repo-audit-20260922",
     "/js/gate-fullscreen-board-layout-controller.js?v=fullscreen-board-containment-20260714b",
-    "/js/prc-dash-modal-mobile-validation.js?v=phase-7e-ui-ownership-20260709",
     "/js/gate-premium-metrics-controller.js?v=metric-live-clock-20260722",
     "/js/prc-dash-overtime-audit.js?v=repo-audit-20260922",
     "/js/gate-status-board-shadow-controller.js?v=phase-3a-status-board-shadow-20260715"
   ],
-  "grandfatheredCorrectiveAssets": [
-    "/js/prc-dash-modal-mobile-validation.js"
-  ],
+  "grandfatheredCorrectiveAssets": [],
   "rules": [
     "The active middleware stack may not exceed the recorded maximums.",
     "The production CSS runtime is one canonical direct stylesheet and zero imported stylesheets.",
     "No new asset named as a fix, patch, corrective layer, restore layer, finalizer, cleanup, or stability layer may be activated.",
     "Any active-asset change must update this inventory and the active runtime register in the same pull request.",
     "The hidden Phase 3A shadow observer remains the only Build 2 runtime asset until a separate authorization decision.",
-    "Runtime ownership consolidation completed 2026-09-22; the direct-script ceiling is now 23 and may not regress upward."
+    "Runtime ownership consolidation completed 2026-09-22; the direct-script ceiling is now 22 and may not regress upward."
   ]
 }

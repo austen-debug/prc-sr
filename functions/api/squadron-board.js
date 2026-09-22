@@ -207,7 +207,7 @@ async function readSquadronInformation(env) {
   try {
     return await env.DB.prepare('SELECT id,instructions_json,published_at FROM gate_squadron_information_revisions ORDER BY id DESC LIMIT 1').first();
   } catch (error) {
-    if (!/no such table:\\s*gate_squadron_information_revisions\\b/i.test(String(error?.message || ''))) throw error;
+    if (!/no such table:\s*gate_squadron_information_revisions\b/i.test(String(error?.message || ''))) throw error;
     return null;
   }
 }
@@ -224,7 +224,7 @@ async function readBoard(env) {
   try {
     notice = await env.DB.prepare('SELECT id,message,published_at FROM gate_squadron_notices WHERE week_group=? ORDER BY id DESC LIMIT 1').bind(weekGroup).first();
   } catch (error) {
-    if (!/no such table:\\s*gate_squadron_notices\\b/i.test(String(error?.message || ''))) throw error;
+    if (!/no such table:\s*gate_squadron_notices\b/i.test(String(error?.message || ''))) throw error;
   }
   return buildSquadronSnapshot({ weekGroup, records, now: new Date(), notice, information, lastFlight: flight?.last_flight || '' });
 }

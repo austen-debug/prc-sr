@@ -188,8 +188,11 @@ test('authoritative records refresh contract remains live and mutation-confirmed
   const html = await source('public/index.html');
   assert.match(html, /const API_URL = ['"]\/api\/records['"]/);
   assert.match(html, /const LIVE_API_URL = ['"]\/api\/records\?scope=live['"]/);
-  assert.match(html, /await refresh\(true\);[\s\S]*setInterval\(\(\) => \{[\s\S]*refresh\(\)/);
+  assert.match(html, /try \{\s*await refresh\(true\);\s*\} catch \(error\) \{[\s\S]*initialSyncError = error/);
+  assert.match(html, /setInterval\(\(\) => \{[\s\S]*refresh\(\)\.catch/);
   assert.match(html, /\}, 3000\);/);
+  assert.match(html, /initial_sync_failed/);
+  assert.match(html, /polling will retry/);
   assert.ok((html.match(/if \(result\.isOk\) \{\s*await refresh\(true\);\s*\}/g) || []).length >= 3);
 });
 

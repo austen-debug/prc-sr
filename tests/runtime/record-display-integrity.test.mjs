@@ -193,15 +193,17 @@ test('shared overtime controller only paints Squadron timers and delegates styli
   assert.match(overtime, /processSoundEventsDeduped/);
 });
 
-test('legacy Status compatibility reuses the canonical stylesheet instead of requesting another CSS asset', async () => {
-  const sat = await source('public/js/prc-dash-sat-arrivals.js');
-  const loaderStart = sat.indexOf('function ensureHeaderStylesheet()');
-  const loaderEnd = sat.indexOf('function buildMetric', loaderStart);
-  const loader = sat.slice(loaderStart, loaderEnd);
+test('SAT arrivals controller is single-purpose and legacy Status-header compatibility stays retired', async () => {
+  const sat = await source('public/js/gate-sat-arrivals-controller.js');
+  const index = await source('public/index.html');
+  const middleware = await source('functions/_middleware.js');
 
-  assert.match(loader, /military-glass-terminal\.css/);
-  assert.doesNotMatch(loader, /createElement\(['"]link['"]\)/);
-  assert.doesNotMatch(sat, /prc-dash-board-header\.css/);
+  assert.match(sat, /window\.GateSatArrivalsBoard = Object\.freeze/);
+  assert.match(sat, /fetch\('\/api\/sat-arrivals'/);
+  assert.doesNotMatch(sat, /GateStatusHeaderCompatibility|ensureHeaderStylesheet|metric-arrived-v3|metric-airport/);
+  assert.doesNotMatch(index, /id="metric-arrived"|id="metric-airport"/);
+  assert.doesNotMatch(middleware, /prc-dash-sat-arrivals\.js/);
+  assert.match(middleware, /gate-sat-arrivals-controller\.js\?v=repo-audit-20260922/);
 });
 
 test('airport bus persistence refreshes Status Board before auxiliary sound persistence', async () => {

@@ -1049,6 +1049,15 @@
     });
   }
 
+  function handleKeydown(event) {
+    if (event.key !== 'Escape') return;
+    const modal = document.getElementById('archive-edit-modal');
+    if (modal && !modal.classList.contains('hidden')) {
+      event.preventDefault();
+      closeArchiveEditModalCanonical(event);
+    }
+  }
+
   function handleClick(event) {
     const current = event.target?.closest?.('#print-current-summary-btn');
     if (current) {
@@ -1160,6 +1169,7 @@
   function start() {
     if (!installed) {
       document.addEventListener('click', handleClick, true);
+    document.addEventListener('keydown', handleKeydown, true);
       document.addEventListener('submit', saveArchiveEdit, true);
       installed = true;
     }

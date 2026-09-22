@@ -313,7 +313,7 @@
     });
     page.addEventListener('keydown', event => { if (event.key === 'Escape') page.querySelectorAll('[data-squadron-tip]').forEach(hideTip); });
     byId('squadron-enable-sound')?.addEventListener('click', () => {
-      alertSound = alertSound || new Audio('/assets/sr_bus_sound.mp3');
+      alertSound = alertSound || new Audio('/assets/gate_bus_sound.mp3');
       alertSound.preload = 'auto';
       // An explicit user gesture is required. A blocked playback never suppresses the visual notice.
       alertSound.muted = true;

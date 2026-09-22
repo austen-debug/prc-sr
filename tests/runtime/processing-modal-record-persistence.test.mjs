@@ -65,36 +65,32 @@ test('Auditorium card augmentation no longer observes the entire document', asyn
   assert.match(adapter, /delegatesPersistenceTo: 'gate-processing-controller'/);
 });
 
-test('closed dorm timer edits declare the server manual override contract', async () => {
-  const lifecycle = await source('public/js/prc-dash-modal-mobile-validation.js');
+test('closed dorm timer edits declare the server manual override contract in the canonical Processing owner', async () => {
+  const controller = await source('public/js/gate-processing-controller.js');
 
-  assert.match(lifecycle, /function withManualClosedTimerOverride\(record\)/);
-  assert.match(lifecycle, /existingState !== 'closed' \|\| incomingState !== 'closed'/);
-  assert.match(lifecycle, /manual_closed_timer_override: 'true'/);
-  assert.match(lifecycle, /const payload = withManualClosedTimerOverride\(record\)/);
+  assert.match(controller, /manual_closed_timer_override:\s*isClosed && finalTime !== normalizeFinalTime\(dorm\.closed_timer, '00:00'\) \? 'true' : undefined/);
+  assert.match(controller, /const finalTime = isClosed \? normalizeFinalTime\(rawFinalTime, dorm\.closed_timer \|\| '00:00'\)/);
 });
 
-test('successful Processing mutations share one completion lifecycle', async () => {
-  const lifecycle = await source('public/js/prc-dash-modal-mobile-validation.js');
+test('successful Processing mutations close through their canonical modal owner', async () => {
+  const controller = await source('public/js/gate-processing-controller.js');
 
-  assert.match(lifecycle, /function returnToProcessingAfterSuccess\(\)/);
-  assert.match(lifecycle, /if \(result\?\.isOk && isProcessingDormMutation\(payload\)\) returnToProcessingAfterSuccess\(\)/);
-  assert.match(lifecycle, /window\.closeDormEditModal\?\.\(\)/);
-  assert.match(lifecycle, /window\.closeDormModal\?\.\(\)/);
-  assert.match(lifecycle, /window\.showPage\('processing'\)/);
-  assert.match(lifecycle, /GateProcessingController\?\.scheduleRender\?\.\(\{ force: true \}\)/);
-  assert.doesNotMatch(lifecycle, /GateProcessingController\?\.refresh\?\.\(\)/);
+  assert.match(controller, /const result = await updateDorm\(\{ \.\.\.dorm, current_load: currentLoad[\s\S]*if \(result\?\.isOk\) closeDormModalCanonical\(\)/);
+  assert.match(controller, /window\.setTimeout\(closeDormEditModalCanonical, 180\)/);
+  assert.match(controller, /if \(result\?\.isOk\) \{\s*closeDormEditModalCanonical\(\)/);
+  assert.doesNotMatch(controller, /dataSdk\.update\s*=\s*wrappedUpdate/);
 });
 
-test('validation failures stay open while Escape only cancels the topmost modal', async () => {
-  const lifecycle = await source('public/js/prc-dash-modal-mobile-validation.js');
+test('Processing owns Escape, load Enter, and touch long-press interaction directly', async () => {
+  const controller = await source('public/js/gate-processing-controller.js');
 
-  assert.doesNotMatch(lifecycle, /finally\s*\{[^}]*returnToProcessingAfterSuccess/s);
-  assert.match(lifecycle, /if \(event\.key === 'Escape'\) \{\s*cancelTopmostProcessingModal\(event\)/s);
-  assert.match(lifecycle, /if \(isVisible\(editModal\)\)/);
-  assert.match(lifecycle, /if \(isVisible\(processingModal\)\)/);
-  assert.match(lifecycle, /event\.target\?\.id === 'modal-load-input'/);
-  assert.match(lifecycle, /window\.saveLoad\?\.\(\)/);
+  assert.match(controller, /if \(event\.key === 'Escape'\)/);
+  assert.match(controller, /const editModal = document\.getElementById\('dorm-edit-modal'\)/);
+  assert.match(controller, /event\.target\?\.id === 'modal-load-input'/);
+  assert.match(controller, /void saveLoadCanonical\(\)/);
+  assert.match(controller, /function handleTouchStart\(event\)/);
+  assert.match(controller, /longPressTimer = window\.setTimeout/);
+  assert.match(controller, /showContextMenu\(\{ clientX: longPressPoint\.x, clientY: longPressPoint\.y \}, dorm\)/);
 });
 
 test('Processing workspace uses responsive geometry and persistent action rails', async () => {
@@ -120,10 +116,16 @@ test('closed and empty Processing modals contain the entire load control workspa
   assert.match(css, /#dorm-modal #modal-load-section > \.flex\.gap-2\.justify-center\s*\{[\s\S]*grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\)/);
 });
 
-test('Processing modal validation reuses the canonical stylesheet and does not request a second CSS asset', async () => {
-  const lifecycle = await source('public/js/prc-dash-modal-mobile-validation.js');
+test('Processing modal workspace classes are source-owned and require no corrective runtime', async () => {
+  const [index, middleware] = await Promise.all([
+    source('public/index.html'),
+    source('functions/_middleware.js')
+  ]);
 
-  assert.match(lifecycle, /military-glass-terminal\.css/);
-  assert.doesNotMatch(lifecycle, /gate-processing-modal-workspace\.css/);
-  assert.doesNotMatch(lifecycle, /createElement\(['"]link['"]\)/);
+  assert.match(index, /modal-content gate-processing-workspace/);
+  assert.match(index, /gate-processing-workspace__phase/);
+  assert.match(index, /gate-processing-workspace__load/);
+  assert.match(index, /modal-content gate-processing-edit-workspace/);
+  assert.match(index, /gate-processing-edit-workspace__form/);
+  assert.doesNotMatch(middleware, /prc-dash-modal-mobile-validation\.js/);
 });

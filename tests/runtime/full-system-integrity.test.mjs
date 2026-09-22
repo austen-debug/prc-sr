@@ -70,6 +70,29 @@ test('all six operational routes and their critical DOM surfaces remain present'
   assert.match(squadron, /gate-squadron-page/);
 });
 
+test('Squadron write self-bootstrap DDL stays identical to additive migrations', async () => {
+  const [api, noticeMigration, informationMigration] = await Promise.all([
+    source('functions/api/squadron-board.js'),
+    source('migrations/0005_gate_squadron_notices.sql'),
+    source('migrations/0006_gate_squadron_information_revisions.sql')
+  ]);
+
+  const template = api.match(/const SQUADRON_WRITE_SCHEMA_SQL = \`([\\s\\S]*?)\`;/);
+  assert.ok(template, 'Squadron self-bootstrap schema template is missing');
+
+  const normalizeSql = value => String(value)
+    .replace(/^--.*$/gm, '')
+    .replace(/\\s+/g, ' ')
+    .replace(/\\s*;\\s*/g, ';')
+    .trim();
+
+  assert.equal(
+    normalizeSql(template[1]),
+    normalizeSql(`${noticeMigration}\n${informationMigration}`),
+    'Squadron self-bootstrap DDL must remain byte-semantically aligned with migrations 0005 and 0006'
+  );
+});
+
 test('canonical workflow owners retain the required operational function contracts', async () => {
   const status = await source('public/js/gate-status-board-controller.js');
   assertControllerMethods(status, 'GateStatusBoardController', [
@@ -144,13 +167,16 @@ test('login, session, and authentication surfaces remain reachable', async () =>
   await exists('functions/api/session.js');
 });
 
-test('backend CRUD, session, SAT, and archive endpoints remain present without changing persistence', async () => {
+test('backend CRUD, session, SAT, and immutable archive endpoints remain present', async () => {
   for (const path of [
     'functions/api/records.js', 'functions/api/records-contract.mjs',
     'functions/api/session.js', 'functions/api/session-contract.mjs',
     'functions/api/login.js', 'functions/api/logout.js', 'functions/api/ping.js',
-    'functions/api/sat-arrivals.js', 'functions/api/archive-delete.js', 'functions/api/archives.js'
+    'functions/api/sat-arrivals.js', 'functions/api/archives.js', 'functions/api/persistence.js'
   ]) await exists(path);
+  const middleware = await source('functions/api/_middleware.js');
+  assert.match(middleware, /url\.pathname === '\/api\/archive-delete'[\s\S]*Archived history is immutable/);
+  await assert.rejects(() => source('functions/api/archive-delete.js'), /ENOENT/);
   const records = await source('functions/api/records.js');
   for (const method of ['Get', 'Post', 'Put', 'Delete']) {
     assert.match(records, new RegExp(`export async function onRequest${method}`));
@@ -162,8 +188,11 @@ test('authoritative records refresh contract remains live and mutation-confirmed
   const html = await source('public/index.html');
   assert.match(html, /const API_URL = ['"]\/api\/records['"]/);
   assert.match(html, /const LIVE_API_URL = ['"]\/api\/records\?scope=live['"]/);
-  assert.match(html, /await refresh\(true\);[\s\S]*setInterval\(\(\) => \{[\s\S]*refresh\(\)/);
+  assert.match(html, /try \{\s*await refresh\(true\);\s*\} catch \(error\) \{[\s\S]*initialSyncError = error/);
+  assert.match(html, /setInterval\(\(\) => \{[\s\S]*refresh\(\)\.catch/);
   assert.match(html, /\}, 3000\);/);
+  assert.match(html, /initial_sync_failed/);
+  assert.match(html, /polling will retry/);
   assert.ok((html.match(/if \(result\.isOk\) \{\s*await refresh\(true\);\s*\}/g) || []).length >= 3);
 });
 
@@ -171,8 +200,11 @@ test('canonical CSS preserves desktop/mobile shell ownership and accepted phone 
   const css = await source('public/css/military-glass-terminal.css');
   const shell = await source('public/js/gate-app-shell-controller.js');
   const mediaMatch = shell.match(/const MOBILE_MEDIA = '([^']+)'/);
+  const tabletMatch = shell.match(/const TABLET_CONSOLE_MEDIA = '([^']+)'/);
   assert.ok(mediaMatch, 'GateAppShell mobile media contract is missing');
+  assert.ok(tabletMatch, 'GateAppShell tablet console media contract is missing');
   assert.ok(css.includes(`@media ${mediaMatch[1]} {`), 'CSS mobile shell breakpoint must match GateAppShell');
+  assert.ok(css.includes(`@media ${tabletMatch[1]} {`), 'CSS tablet console breakpoint must match GateAppShell');
 
   assert.match(css, /#mobile-menu-trigger,[\s\S]*#gate-mobile-nav-sheet,[\s\S]*display:\s*none/);
   assert.doesNotMatch(css, /#week-group-display,\s*#mobile-menu-trigger\s*\{\s*display:\s*inline-flex/);
@@ -183,6 +215,43 @@ test('canonical CSS preserves desktop/mobile shell ownership and accepted phone 
   assert.match(css, /#page-airport #airport-form input,[\s\S]*font-size:\s*16px/);
   assert.match(css, /#page-airport \.surface:has\(#airport-bus-log-body\)[\s\S]*overflow-x:\s*auto/);
   assert.match(css, /button::before[\s\S]*content:\s*"BACK"/);
+});
+
+test('retired compatibility owners are absent and their behavior is absorbed by canonical controllers', async () => {
+  const middleware = await source('functions/_middleware.js');
+  const processing = await source('public/js/gate-processing-controller.js');
+  const buses = await source('public/js/gate-bus-workflow-controller.js');
+  const shell = await source('public/js/gate-app-shell-controller.js');
+
+  for (const retired of [
+    'prc-dash-space-force.js',
+    'gate-tablet-shell-classifier.js',
+    'gate-render-stability-fix.js',
+    'prc-dash-processing-loaded-summary.js',
+    'prc-dash-runtime-fixes.js',
+    'prc-dash-modal-mobile-validation.js'
+  ]) assert.ok(!middleware.includes(retired), `${retired} must remain retired from active middleware`);
+
+  assert.match(processing, /function renderProcessingSummary\(/);
+  assert.match(processing, /processing-loaded-arrived-summary/);
+  assert.match(processing, /function normalizeFinalTime\(/);
+  assert.match(processing, /function constrainModalLoad\(/);
+  assert.match(processing, /Math\.min\(maximum, Math\.max\(0/);
+  assert.match(buses, /id="bus-sf"/);
+  assert.match(buses, /id="local-sf"/);
+  assert.match(buses, /id="edit-bus-sf"/);
+  assert.match(buses, /function ensureSfColumn\(/);
+  assert.match(shell, /const TABLET_CONSOLE_MEDIA =/);
+
+  const sound = await source('public/js/gate-sound-controller.js');
+  const archive = await source('public/js/gate-archive-controller.js');
+  const html = await source('public/index.html');
+  assert.match(sound, /window\.GateSoundSystem = Object\.freeze/);
+  assert.match(processing, /manual_closed_timer_override:/);
+  assert.match(processing, /function handleTouchStart\(event\)/);
+  assert.match(buses, /function onKeydown\(event\)[\s\S]*event\.key !== 'Escape'/);
+  assert.match(archive, /function handleKeydown\(event\)[\s\S]*archive-edit-modal/);
+  assert.match(html, /event\.key !== 'Escape'[\s\S]*confirm-no/);
 });
 
 test('background is route-scoped and the global tactical grid is retired', async () => {

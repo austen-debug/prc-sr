@@ -48,11 +48,11 @@ test('active middleware assets match the governed runtime inventory and remain b
   assert.doesNotMatch(canonicalCss, /!important\s*;/, 'Canonical CSS may not use priority-locked declarations.');
 
   assert.ok(budget.maximums.directStyles <= 1, 'The direct stylesheet ceiling is one canonical production asset.');
-  assert.ok(budget.maximums.directScripts <= 28, 'The direct script ceiling may not increase above the audited baseline.');
+  assert.equal(budget.maximums.directScripts, 22, 'The consolidated direct script ceiling is permanently 22.');
   assert.equal(budget.maximums.importedStyles, 0, 'Imported stylesheet budget is permanently zero.');
 
   assert.ok(budget.phase3BExitTargets.directStylesMaximum <= budget.maximums.directStyles);
-  assert.ok(budget.phase3BExitTargets.directScriptsMaximum < budget.maximums.directScripts);
+  assert.ok(budget.maximums.directScripts <= budget.phase3BExitTargets.directScriptsMaximum);
   assert.equal(budget.phase3BExitTargets.correctiveAssetsAdded, 0);
   assert.equal(budget.phase3BExitTargets.statusBoardLegacyOwnersRetired, true);
   assert.equal(budget.phase3BExitTargets.middlewareStatusBoardSourceRewriteRemoved, true);

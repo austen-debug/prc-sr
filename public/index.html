@@ -3,147 +3,11 @@
  <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pfingston Reception Status Board</title>
+  <title>GATE — Gateway Arrival Tracking Environment | Pfingston Reception Center</title>
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;900&amp;display=swap" rel="stylesheet">
-
-  
-  <style>
-:root {
-  --bg: #121212;
-  --surface: #1e1e1e;
-  --surface-alt: #2a2a2a;
-  --text: #e8e8e8;
-  --text-muted: #8a8a8a;
-  --border: #333333;
-  --green: #16a34a;
-  --red: #dc2626;
-  --yellow: #eab308;
-  --blue: #38bdf8;
-
-  --dorm-empty-text: #8a8a8a;
-  --dorm-open-text: #e8e8e8;
-  --dorm-full-text: #22c55e;
-  --dorm-closed-text: #8a8a8a;
-}
-
-.theme-light {
-  --bg: #f3f4f6;
-  --surface: #ffffff;
-  --surface-alt: #e5e7eb;
-  --text: #111827;
-  --text-muted: #6b7280;
-  --border: #d1d5db;
-
-  --dorm-empty-text: #6b7280;
-  --dorm-open-text: #111827;
-  --dorm-full-text: #15803d;
-  --dorm-closed-text: #6b7280;
-}
-
-html,
-body {
-  background: var(--bg);
-  min-height: 100vh;
-}
-
-body {
-  font-family: 'DM Sans', sans-serif;
-  color: var(--text);
-  margin: 0;
-  overflow-x: hidden;
-  position: relative;
-}
-
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background-image: url('/assets/prc-logo-blue.png');
-  background-repeat: no-repeat;
-  background-position: center center;
-  background-size: 75vw auto;
-  opacity: 0.3;
-  pointer-events: none;
-  z-index: 0;
-}
-
-body > * {
-  position: relative;
-  z-index: 1;
-}
-    .surface { background: var(--surface); border-color: var(--border); }
-    .text-muted { color: var(--text-muted); }
-    .page { display: none; min-height: calc(100 * min(var(--vh, 1vh), 1vh)); padding-top: 80px; padding-bottom: 40px; }
-    .page.active { display: flex; flex-direction: column; }
-    .border-female { border: 4px solid var(--red) !important; }
-    .border-band { border: 4px solid var(--blue) !important; }
-    .bus-badge { background: var(--green); color: #fff; padding: 0.5rem 1rem; border-radius: 0.5rem; font-weight: 700; font-size: 0.8rem; cursor: pointer; min-height: 40px; display: inline-flex; align-items: center; white-space: nowrap; }
-    .bus-badge:hover { background: #15803d; }
-    .nav-btn { color: var(--text-muted); min-height: 36px; display: inline-flex; align-items: center; justify-content: center; border-radius: 4px; padding: 0 0.75rem; font-size: 0.8rem; }
-    .nav-btn.active { background: var(--surface-alt); color: var(--text); font-weight: 700; }
-    .timer-yellow { color: var(--yellow) !important; }
-    .timer-red { color: var(--red) !important; }
-    .timer-flash { animation: flash 1s step-end infinite; }
-    @keyframes flash { 0%,100% { color: var(--red); } 50% { color: #ffffff; } }
-    .dorm-closed { opacity: 0.55; background: var(--surface-alt) !important; }
-    .confirm-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 9000; }
-    .font-tabular { font-variant-numeric: tabular-nums; }
-    select { background-color: var(--surface) !important; color: var(--text) !important; }
-    select option { background-color: var(--surface); color: var(--text); }
-    input, select, button { min-height: 36px; }
-
-#page-input input:not([type="checkbox"]),
-#page-input select {
-  background-color: rgba(211, 211, 211, 0.25) !important;
-  border-color: rgba(211, 211, 211, 0.35) !important;
-}
-    .security-banner-fixed { position: fixed; top: 0; left: 0; right: 0; height: 32px; z-index: 9999; display: flex; align-items: center; justify-content: center; font-size: 12px; }
-    .app-nav { position: fixed; top: 32px; left: 0; right: 0; height: 44px; z-index: 9998; display: flex; align-items: center; justify-content: space-between; padding: 0 1rem; border-bottom: 1px solid var(--border); background: var(--surface); }
-    .board-header { display: grid; grid-template-columns: 1fr 1fr 2fr; gap: 0.75rem; padding: 0.75rem; flex-shrink: 0; }
-    .dorm-dashboard { flex: 1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; padding: 0 0.75rem; }
-    .dorm-column { display: flex; flex-direction: column; }
-    .dorm-col-header { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 0.5rem; }
-    .dorm-col-content { flex: 1; display: flex; flex-direction: column; gap: 0.5rem; }
-    .dorm-card { background: var(--surface); border: 1px solid var(--border); border-radius: 0.5rem; padding: 0.6rem; display: flex; flex-direction: column; cursor: pointer; transition: transform 0.1s; }
-    .dorm-card:hover { transform: scale(1.01); }
-    .metric-block { background: var(--surface); border: 1px solid var(--border); border-radius: 0.5rem; padding: 0.75rem; }
-    .board-footer { flex-shrink: 0; padding: 0.5rem; display: flex; justify-content: center; border-top: 1px solid var(--border); }
-
-   .fullscreen-board .app-nav {
-  display: none !important;
-}
-
-.fullscreen-board #page-board {
-  padding-top: 32px;
-  padding-bottom: 0;
-  min-height: 100vh;
-}
-
-.fullscreen-board .board-footer {
-  display: none !important;
-}
-
-.fullscreen-board .dorm-dashboard {
-  padding-bottom: 0.75rem;
-}
-   
-    .phase-btn { padding: 0.75rem 1rem; border-radius: 0.5rem; font-weight: 700; font-size: 1rem; border: 2px solid var(--border); background: var(--surface); color: var(--text); cursor: pointer; transition: all 0.15s; }
-    .phase-btn.selected { background: var(--green); color: #fff; border-color: var(--green); }
-    .phase-btn:hover:not(.selected) { background: var(--surface-alt); }
-    .load-btn { min-width: 50px; min-height: 50px; font-size: 1.2rem; font-weight: 700; border-radius: 0.5rem; border: 2px solid var(--border); background: var(--surface); color: var(--text); cursor: pointer; }
-    .load-btn:hover { background: var(--surface-alt); }
-    .proc-card { background: var(--surface); border: 2px solid var(--border); border-radius: 0.75rem; padding: 1.25rem; cursor: pointer; transition: transform 0.1s, box-shadow 0.1s; }
-    .proc-card:hover { transform: scale(1.02); box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
-    .modal-content { background: var(--surface); border: 1px solid var(--border); border-radius: 1rem; padding: 2rem; max-width: 500px; width: 95%; max-height: 90vh; overflow-y: auto; }
-    @media (max-width: 768px) {
-      .board-header { grid-template-columns: 1fr; }
-      .dorm-dashboard { grid-template-columns: 1fr; overflow-y: auto; }
-    }
-  </style>
-  
- </head>
+</head>
  <body data-template-id="__page-root" class="w-full"><!-- Security Banner -->
   <div data-template-id="security-banner" class="canva-banner security-banner-fixed" style="background-color: #16a34a; color: white; font-weight: 900; letter-spacing: 0.1em;">
    UNCLASSIFIED / NO PII / STATUS COUNTS ONLY
@@ -180,30 +44,39 @@ body > * {
    
   </nav><!-- PAGE: STATUS BOARD -->
   <main id="page-board" class="page active" role="main">
-   <div class="board-header">
-    <div class="metric-block">
-     <div class="text-xs uppercase tracking-wider font-medium text-muted">
-      Arrived / Expected
+   <div class="board-header gate-premium-metrics-enabled" data-owner="gate-status-metrics-source" data-phase="1B">
+      <div class="gate-metrics-container">
+       <div class="metric-card arrived-card">
+        <div class="metric-header">
+         <span class="status-dot led-green" aria-hidden="true"></span>
+         <span class="metric-label">ARRIVED</span>
+        </div>
+        <div class="metric-value" id="stat-arrived" data-gate-live-value="true" aria-live="off">0</div>
+       </div>
+       <div class="metric-card expected-card">
+        <div class="metric-header">
+         <span class="metric-label">EXPECTED</span>
+        </div>
+        <div class="metric-value" id="stat-expected" data-gate-live-value="true" aria-live="off">0</div>
+       </div>
+       <div class="metric-card last-card">
+        <div class="metric-header">
+         <span class="metric-label">LAST</span>
+        </div>
+        <div class="metric-value" id="stat-last" data-gate-live-value="true" aria-live="off">00:00</div>
+       </div>
+       <div class="metric-card local-card">
+        <div class="metric-header">
+         <span class="metric-label">LOCAL</span>
+        </div>
+        <div class="metric-value" id="stat-local" data-gate-live-value="true" aria-live="off">00:00:00</div>
+       </div>
+      </div>
+      <section class="gate-active-buses-block" aria-label="Active buses en route">
+       <div class="gate-active-buses-label">ACTIVE BUSES</div>
+       <div id="active-buses" class="flex gap-2 flex-wrap items-center"></div>
+      </section>
      </div>
-     <div id="metric-arrived" class="text-2xl font-black font-tabular mt-1">
-      0 / 0
-     </div>
-    </div>
-    <div class="metric-block">
-     <div class="text-xs uppercase tracking-wider font-medium text-muted">
-      Last Airport Arrival
-     </div>
-     <div id="metric-airport" class="text-2xl font-black font-tabular mt-1">
-      —
-     </div>
-    </div>
-    <div class="metric-block">
- <div class="text-xs uppercase tracking-wider font-medium text-muted mb-1">
-  Active Buses En Route
- </div>
- <div id="active-buses" class="flex gap-2 flex-wrap items-center"></div>
-</div>
-   </div>
    <div class="dorm-dashboard">
     <div class="dorm-column">
      <div class="dorm-col-header">
@@ -352,6 +225,14 @@ body > * {
 
   <div id="processing-edit-hint" class="text-xs text-muted font-bold hidden">Instructor access: right-click any dorm to edit its record.</div>
 </div>
+   <div id="processing-loaded-arrived-summary" class="px-4 pb-3 flex-shrink-0" data-owner="gate-processing-controller">
+    <div class="surface border rounded-lg p-4 grid gap-3 md:grid-cols-3" style="border-color:var(--border);">
+     <div><div class="text-xs uppercase tracking-wider font-bold text-muted">Arrived</div><div id="processing-arrived-count" class="text-2xl font-black font-tabular">0</div></div>
+     <div><div class="text-xs uppercase tracking-wider font-bold text-muted">Loaded</div><div id="processing-loaded-count" class="text-2xl font-black font-tabular">0 / 0</div></div>
+     <div><div class="text-xs uppercase tracking-wider font-bold text-muted">Awaiting Dorm Assignment</div><div id="processing-remaining-count" class="text-2xl font-black font-tabular">0</div></div>
+     <div class="md:col-span-3 text-xs text-muted">Compares arrived trainees against trainees assigned to dorms through Processing.</div>
+    </div>
+   </div>
    <div id="proc-dorm-grid" class="flex-1 px-4 pb-4 grid gap-4" style="grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); align-content: start;"></div>
   </div><!-- PAGE: ARCHIVES -->
   <div id="page-archives" class="page overflow-y-auto">
@@ -365,15 +246,15 @@ body > * {
     <span id="total-otw">0</span><span id="total-f">0</span><span id="total-nat">0</span>
    </div>
   </div><!-- Dorm Processing Modal -->
-  <div id="dorm-modal" class="confirm-overlay hidden">
-   <div class="modal-content">
-    <div class="flex justify-between items-center mb-4">
+  <div id="dorm-modal" class="confirm-overlay hidden" aria-hidden="true" data-modal-owner="gate-processing-controller" role="presentation">
+   <div class="modal-content gate-processing-workspace" role="dialog" aria-modal="true" aria-labelledby="modal-dorm-name">
+    <div class="flex justify-between items-center mb-4 gate-processing-workspace__header">
      <h2 id="modal-dorm-name" class="text-2xl font-black"></h2><button onclick="closeDormModal()" class="text-3xl leading-none text-muted hover:text-white">×</button>
     </div>
-    <div id="modal-dorm-info" class="text-sm text-muted mb-4"></div>
+    <div id="modal-dorm-info" class="text-sm text-muted mb-4 gate-processing-workspace__meta"></div>
 
 <!-- Assigned Airman -->
-<div class="mb-6">
+<div class="mb-6 gate-processing-workspace__assignment">
   <label class="block text-xs uppercase tracking-wider font-bold text-muted mb-2" for="modal-airman-input">
     Airman
   </label>
@@ -400,13 +281,13 @@ body > * {
 </div>
 
 <!-- Phase Selection -->
-    <div id="modal-phase-section" class="mb-6">
+    <div id="modal-phase-section" class="mb-6 gate-processing-workspace__phase">
      <div class="text-xs uppercase tracking-wider font-bold text-muted mb-2">
       Processing Phase
      </div>
      <div id="modal-phase-buttons" class="grid grid-cols-2 gap-2"></div>
     </div><!-- Load Control -->
-    <div id="modal-load-section" class="mb-6">
+    <div id="modal-load-section" class="mb-6 gate-processing-workspace__load">
      <div class="text-xs uppercase tracking-wider font-bold text-muted mb-2">
       Current Load
      </div>
@@ -418,19 +299,19 @@ body > * {
      <div class="flex gap-2 justify-center"><button onclick="setLoadFull()" class="px-4 py-2 rounded font-bold text-white" style="background:var(--blue);">FULL</button> <button onclick="saveLoad()" class="px-4 py-2 rounded font-bold text-white" style="background:var(--blue);">SAVE LOAD</button>
      </div>
     </div><!-- Open/Close -->
-    <div id="modal-action-section" class="flex gap-3 justify-center"></div>
+    <div id="modal-action-section" class="flex gap-3 justify-center gate-processing-workspace__footer"></div>
       </div>
   </div><!-- End Dorm Processing Modal -->
 
   <!-- Closed Dorm Edit Modal -->
-<div id="dorm-edit-modal" class="confirm-overlay hidden">
-  <div class="modal-content">
-    <div class="flex justify-between items-center mb-4">
+<div id="dorm-edit-modal" class="confirm-overlay hidden" aria-hidden="true" data-modal-owner="gate-processing-controller" role="presentation">
+  <div class="modal-content gate-processing-edit-workspace" role="dialog" aria-modal="true" aria-label="Edit Dorm Record">
+    <div class="flex justify-between items-center mb-4 gate-processing-edit-workspace__header">
       <h2 class="text-xl font-black">Edit Dorm Record</h2>
       <button onclick="closeDormEditModal()" class="text-3xl leading-none text-muted hover:text-white">×</button>
     </div>
 
-    <form id="dorm-edit-form" class="space-y-3">
+    <form id="dorm-edit-form" class="space-y-3 gate-processing-edit-workspace__form">
       <div>
         <label class="block text-sm font-medium mb-1" for="edit-dorm-name">Dorm</label>
         <input id="edit-dorm-name" type="text" class="w-full border rounded px-3 py-2 bg-transparent" style="border-color:var(--border);color:var(--text);">
@@ -500,7 +381,7 @@ body > * {
         This edits the dorm record for correction purposes. Open/close timestamps are preserved.
       </div>
 
-      <div class="flex gap-2 pt-3 justify-end items-center">
+      <div class="flex gap-2 pt-3 justify-end items-center gate-processing-edit-workspace__footer prc-dorm-edit-actions">
   <button
     type="button"
     onclick="closeDormEditModal()"
@@ -508,6 +389,16 @@ body > * {
     style="border-color:var(--border); min-height:30px;"
   >
     CANCEL
+  </button>
+
+  <button
+    id="reopen-dorm-btn"
+    type="button"
+    data-processing-action="reopen-dorm"
+    class="hidden px-3 py-1.5 rounded text-xs font-bold"
+    aria-label="Reopen closed dorm"
+  >
+    REOPEN
   </button>
 
   <button
@@ -652,7 +543,6 @@ body > * {
           <label class="block text-sm font-medium mb-1">Actions</label>
           <div class="flex gap-2">
             <button type="button" onclick="printArchiveSpreadsheet()" class="flex-1 py-2 rounded font-bold text-white" style="background:var(--blue);">PRINT</button>
-            <button type="button" onclick="deleteArchiveWithOverride()" class="flex-1 py-2 rounded font-bold text-white" style="background:var(--red);">DELETE</button>
           </div>
         </div>
       </div>
@@ -692,7 +582,7 @@ body > * {
 
  <script>
   // Cloudflare Pages + D1 dataSdk replacement.
-  // This mimics Canva's dataSdk so the existing PRC-SR app can keep working.
+  // This mimics Canva's dataSdk so the existing GATE app can keep working.
   (function () {
     const API_URL = '/api/records';
     const LIVE_API_URL = '/api/records?scope=live';
@@ -737,16 +627,24 @@ async function refresh(force = false) {
     window.dataSdk = {
       async init(handler) {
         handlerRef = handler;
+        let initialSyncError = null;
 
-        await refresh(true);
+        try {
+          await refresh(true);
+        } catch (error) {
+          initialSyncError = error;
+          console.error('GATE initial records sync failed; polling will retry:', error);
+        }
 
         setInterval(() => {
           refresh().catch(err => {
-            console.error('PRC-SR refresh failed:', err);
+            console.error('GATE refresh failed:', err);
           });
         }, 3000);
 
-        return { isOk: true };
+        return initialSyncError
+          ? { isOk: false, code: 'initial_sync_failed', error: 'Initial records sync failed; polling will retry.' }
+          : { isOk: true };
       },
 
       async create(record) {
@@ -822,10 +720,10 @@ async function refresh(force = false) {
     let editBusId = null;
 
 const SOUND_FILES = {
-  dorm_open: '/assets/sr_open_sound.mp3',
-  dorm_closed: '/assets/sr_closed_sound.mp3',
-  bus_dispatch: '/assets/sr_bus_sound.mp3',
-  overtime: '/assets/sr_overtime_sound.mp3'
+  dorm_open: '/assets/gate_open_sound.mp3',
+  dorm_closed: '/assets/gate_closed_sound.mp3',
+  bus_dispatch: '/assets/gate_bus_sound.mp3',
+  overtime: '/assets/gate_overtime_sound.mp3'
 };
 
 const SOUND_ENABLED_KEY = 'prc_sr_sound_enabled_v1';
@@ -941,7 +839,7 @@ async function initApp() {
       console.warn('Data SDK initialized with a warning:', r);
     }
   } catch (err) {
-    console.error('PRC-SR failed to initialize data layer:', err);
+    console.error('GATE failed to initialize data layer:', err);
     allData = [];
   }
 
@@ -950,7 +848,7 @@ async function initApp() {
   }
 
  timerInterval = setInterval(updateTimers, 1000);
-setInterval(updateAirportMetric, 1000);
+/* LOCAL metric live clock is owned by GatePremiumMetricsController. */
 
 initBatchGrid();
 buildNav();
@@ -971,14 +869,9 @@ renderAll();
 }
 
 function updateAirportMetric() {
-  const el = document.getElementById('metric-airport');
-
-  if (!el) {
-    return;
-  }
-
   const lastAirport = getConfig('last_airport') || '—';
-  el.textContent = `LAST: ${lastAirport} | LOCAL: ${getLocalTime24()}`;
+  const lastEl = document.getElementById('stat-last');
+  if (lastEl && lastEl.textContent !== String(lastAirport)) lastEl.textContent = String(lastAirport);
 }
 
  function updateSoundButton() {
@@ -1180,9 +1073,15 @@ function getElapsedTimer(openedAt) {
       const arrivedBuses = buses.filter(b => b.status === 'arrived');
       const totalArrived = arrivedBuses.reduce((s, b) => s + (Number(b.otw_count) || 0), 0);
 
-      document.getElementById('metric-arrived').textContent = `ARRIVED: ${totalArrived} | EXPECTED: ${totalExpected}`;
+      const arrivedMetricEl = document.getElementById('stat-arrived');
+      const expectedMetricEl = document.getElementById('stat-expected');
+      if (arrivedMetricEl && arrivedMetricEl.textContent !== String(totalArrived)) arrivedMetricEl.textContent = String(totalArrived);
+      if (expectedMetricEl && expectedMetricEl.textContent !== String(totalExpected)) expectedMetricEl.textContent = String(totalExpected);
       updateAirportMetric();
 
+      if (window.GateStatusBoardController?.renderActiveBuses) {
+        window.GateStatusBoardController.renderActiveBuses();
+      } else {
       const abEl = document.getElementById('active-buses');
 
 abEl.innerHTML = activeBuses.length === 0 ? '<span class="text-muted text-sm">None</span>' :
@@ -1202,8 +1101,13 @@ abEl.innerHTML = activeBuses.length === 0 ? '<span class="text-muted text-sm">No
       </button>
     `;
   }).join('');
+      }
 
-      renderDormColumns(dorms);
+      if (window.GateStatusBoardController?.renderDormColumns) {
+        window.GateStatusBoardController.renderDormColumns(dorms);
+      } else {
+        renderDormColumns(dorms);
+      }
       renderProcessingPage(dorms);
       renderArrivals(arrivedBuses);
       renderAirportBusLog(buses);
@@ -1683,7 +1587,8 @@ closed_timer: d.state === 'closed'
     el.classList.remove('timer-yellow', 'timer-red', 'timer-flash');
 
     if (timer.minutes >= 60) {
-  el.classList.add('timer-flash');
+  el.classList.remove('timer-flash');
+      el.classList.add('timer-red');
   triggerOvertimeSoundIfNeeded(el.dataset.dormId);
 } else if (timer.minutes >= 50) {
   el.classList.add('timer-red');
@@ -1718,16 +1623,26 @@ closed_timer: d.state === 'closed'
     function showConfirm(msg, cb) {
       document.getElementById('confirm-msg').textContent = msg;
       document.getElementById('confirm-dialog').classList.remove('hidden');
+      document.body.classList.add('gate-modal-open');
       confirmCallback = cb;
     }
     document.getElementById('confirm-yes').addEventListener('click', () => {
       document.getElementById('confirm-dialog').classList.add('hidden');
+      document.body.classList.remove('gate-modal-open');
       if (confirmCallback) confirmCallback();
       confirmCallback = null;
     });
     document.getElementById('confirm-no').addEventListener('click', () => {
       document.getElementById('confirm-dialog').classList.add('hidden');
+      document.body.classList.remove('gate-modal-open');
       confirmCallback = null;
+    });
+    document.addEventListener('keydown', event => {
+      if (event.key !== 'Escape') return;
+      const dialog = document.getElementById('confirm-dialog');
+      if (!dialog || dialog.classList.contains('hidden')) return;
+      event.preventDefault();
+      document.getElementById('confirm-no')?.click();
     });
 
     // AIRPORT FORM
@@ -2069,78 +1984,8 @@ function closeAirportBusEditModal() {
       return window.GateArchiveController?.renderArchives?.();
     }
    
-    function initiateCloseout() {
-      showConfirm('Close out this week group? This archives all data.', async () => {
-        const wg = getActiveWG();
-        const dorms = getRecords('dorm').filter(d => d.week_group === wg);
-        const buses = getRecords('bus').filter(b => b.week_group === wg);
-        const soundEvents = getRecords('sound_event').filter(e => e.week_group === wg);
-        const arrivedBuses = buses.filter(b => b.status === 'arrived');
-        const totalArrived = arrivedBuses.reduce((s, b) => s + (Number(b.otw_count) || 0), 0);
-        const dormHistory = dorms.map(d => ({
-  name: d.dorm_name,
-  dorm_name: d.dorm_name,
-  sdq: d.sdq || '',
-  section: d.section || '',
-  inter_sec: d.inter_sec || '',
-  sex: d.sex || '',
-  band: d.band || 'false',
-  current_load: Number(d.current_load || 0),
-  max_load: Number(d.max_load || 0),
-  state: d.state || '',
-  phase: d.phase || '',
-  notes: d.notes || '',
-  assigned_airman: d.assigned_airman || '',
-  opened_at: d.opened_at || '',
-  closed_at: d.closed_at || '',
-  open_time: d.opened_at ? new Date(d.opened_at).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : '—',
-  close_time: d.closed_at ? new Date(d.closed_at).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : '—',
-  elapsed: d.closed_timer || '—'
-}));
-
-const busHistory = buses.map(b => ({
-  bus_id: b.bus_id || '',
-  bus_type: b.bus_type || 'airport',
-  originating_destination: b.originating_destination || b.destination || '',
-  destination: b.destination || '',
-  departed_at: b.created_at || '',
-  arrived_at: b.arrived_at || '',
-  otw_count: Number(b.otw_count || 0),
-  female_count: Number(b.female_count || 0),
-  nat_count: Number(b.nat_count || 0),
-  status: b.status || ''
-}));
-
-const femaleTotal = buses.reduce((s, b) => s + Number(b.female_count || 0), 0);
-const natTotal = buses.reduce((s, b) => s + Number(b.nat_count || 0), 0);
-const loadedTotal = dorms.reduce((s, d) => s + Number(d.current_load || 0), 0);
-const expectedTotal = dorms.reduce((s, d) => s + Number(d.max_load || 0), 0);
-
-if (allData.length < 999) {
-  await window.dataSdk.create({
-    type: 'archive',
-    week_group: wg,
-    archived_at: new Date().toISOString(),
-    dorm_count: dorms.length,
-    bus_count: buses.length,
-    total_arrived: totalArrived,
-    total_loaded: loadedTotal,
-    total_expected: expectedTotal,
-    female_total: femaleTotal,
-    nat_total: natTotal,
-    dorm_data: JSON.stringify(dormHistory),
-    bus_data: JSON.stringify(busHistory)
-  });
-}
-        for (const rec of [...dorms, ...buses, ...soundEvents]) await window.dataSdk.delete(rec);
-        const lastAirport = allData.find(d => d.type === 'config' && d.key === 'last_airport');
-        if (lastAirport) await window.dataSdk.update({...lastAirport, value: ''});
-        const activeWgConfig = allData.find(d => d.type === 'config' && d.key === 'week_group');
-        if (activeWgConfig) await window.dataSdk.update({...activeWgConfig, value: ''});
-        document.getElementById('wg-batch-input').value = '';
-        batchRows = Array.from({length: 25}, (_, i) => ({rowIndex: i, sdq:'', sec:'', inter_sec:'', dorm_name:'', sex:'male', band:false, load:''}));
-        initBatchGrid(); updateTotalLoadCalc();
-      });
+    function initiateCloseout(event) {
+      return window.GateArchiveController?.initiateCloseout?.(event);
     }
 
     function showMsg(elId, msg, isErr) {
@@ -2148,302 +1993,17 @@ if (allData.length < 999) {
       el.textContent = msg; el.className = `text-center text-sm ${isErr ? 'text-red-500' : 'text-green-400'}`;
       el.classList.remove('hidden'); setTimeout(() => el.classList.add('hidden'), 3000);
     }
-function safeJsonPretty(value, fallback = []) {
-  try {
-    if (!value) return JSON.stringify(fallback, null, 2);
-    return JSON.stringify(JSON.parse(value), null, 2);
-  } catch {
-    return JSON.stringify(fallback, null, 2);
-  }
-}
-
-function parseJsonField(fieldId, fallback = []) {
-  const value = document.getElementById(fieldId).value.trim();
-
-  if (!value) {
-    return fallback;
-  }
-
-  return JSON.parse(value);
-}
 
 function openArchiveEditModal(event, id) {
-  event.preventDefault();
-  event.stopPropagation();
-
-  if (currentRole !== 'instructor') {
-    return;
-  }
-
-  const archive = allData.find(r => r.__backendId === id);
-
-  if (!archive) {
-    return;
-  }
-
-  editArchiveId = id;
-
-  document.getElementById('archive-edit-wg').value = archive.week_group || '';
-  document.getElementById('archive-edit-archived-at').value = archive.archived_at || '';
-  document.getElementById('archive-edit-dorm-count').value = archive.dorm_count || 0;
-  document.getElementById('archive-edit-bus-count').value = archive.bus_count || 0;
-  document.getElementById('archive-edit-total-arrived').value = archive.total_arrived || 0;
-  document.getElementById('archive-edit-female-total').value = archive.female_total || 0;
-  document.getElementById('archive-edit-nat-total').value = archive.nat_total || 0;
-  document.getElementById('archive-edit-dorm-data').value = safeJsonPretty(archive.dorm_data, []);
-  document.getElementById('archive-edit-bus-data').value = safeJsonPretty(archive.bus_data, []);
-
-  const msg = document.getElementById('archive-edit-msg');
-  msg.classList.add('hidden');
-  msg.textContent = '';
-
-  document.getElementById('archive-edit-modal').classList.remove('hidden');
+  return window.GateArchiveController?.openArchiveEditModal?.(event, id);
 }
 
-function closeArchiveEditModal() {
-  document.getElementById('archive-edit-modal').classList.add('hidden');
-  editArchiveId = null;
+function closeArchiveEditModal(event) {
+  return window.GateArchiveController?.closeArchiveEditModal?.(event);
 }
 
-document.getElementById('archive-edit-form').addEventListener('submit', async (e) => {
-  e.preventDefault();
-
-  if (currentRole !== 'instructor' || !editArchiveId) {
-    return;
-  }
-
-  const archive = allData.find(r => r.__backendId === editArchiveId);
-
-  if (!archive) {
-    return;
-  }
-
-  const msg = document.getElementById('archive-edit-msg');
-
-  try {
-    const dormData = parseJsonField('archive-edit-dorm-data', []);
-    const busData = parseJsonField('archive-edit-bus-data', []);
-
-    const updatedArchive = {
-      ...archive,
-      week_group: document.getElementById('archive-edit-wg').value.trim() || archive.week_group,
-      archived_at: document.getElementById('archive-edit-archived-at').value.trim() || archive.archived_at,
-      dorm_count: Number(document.getElementById('archive-edit-dorm-count').value || 0),
-      bus_count: Number(document.getElementById('archive-edit-bus-count').value || 0),
-      total_arrived: Number(document.getElementById('archive-edit-total-arrived').value || 0),
-      female_total: Number(document.getElementById('archive-edit-female-total').value || 0),
-      nat_total: Number(document.getElementById('archive-edit-nat-total').value || 0),
-      dorm_data: JSON.stringify(dormData),
-      bus_data: JSON.stringify(busData)
-    };
-
-    const result = await window.dataSdk.update(updatedArchive);
-
-    if (result.isOk) {
-      closeArchiveEditModal();
-    } else {
-      throw new Error('Failed to save archive.');
-    }
-  } catch (error) {
-    msg.textContent = `Archive save failed: ${error.message}`;
-    msg.style.color = 'var(--red)';
-    msg.classList.remove('hidden');
-  }
-});
-
-function printArchiveSpreadsheet() {
-  if (!editArchiveId) {
-    return;
-  }
-
-  const archive = allData.find(r => r.__backendId === editArchiveId);
-
-  if (!archive) {
-    return;
-  }
-
-  let dormData = [];
-  let busData = [];
-
-  try {
-    dormData = parseJsonField('archive-edit-dorm-data', []);
-    busData = parseJsonField('archive-edit-bus-data', []);
-  } catch (error) {
-    alert('Dorm Data JSON or Bus Data JSON is invalid. Fix the JSON before printing.');
-    return;
-  }
-
-  const weekGroup = document.getElementById('archive-edit-wg').value.trim() || archive.week_group || '';
-  const totalArrived = Number(document.getElementById('archive-edit-total-arrived').value || 0);
-  const femaleTotal = Number(document.getElementById('archive-edit-female-total').value || 0);
-  const natTotal = Number(document.getElementById('archive-edit-nat-total').value || 0);
-  const loadedTotal = dormData.reduce((s, d) => s + Number(d.current_load || d.loaded || 0), 0);
-  const expectedTotal = dormData.reduce((s, d) => s + Number(d.max_load || 0), 0);
-
-  const dormRows = dormData.map(d => `
-    <tr>
-      <td>${escapeHtml(d.name || d.dorm_name || '')}</td>
-      <td>${escapeHtml(d.assigned_airman || '')}</td>
-      <td>${escapeHtml(d.sdq || '')}</td>
-      <td>${escapeHtml(d.section || '')}</td>
-      <td>${escapeHtml(d.inter_sec || '')}</td>
-      <td>${escapeHtml(d.sex || '')}</td>
-      <td>${escapeHtml(d.band === 'true' ? 'YES' : '')}</td>
-      <td>${escapeHtml(d.current_load ?? d.loaded ?? 0)}</td>
-      <td>${escapeHtml(d.max_load ?? 0)}</td>
-      <td>${escapeHtml(d.open_time || '')}</td>
-      <td>${escapeHtml(d.close_time || '')}</td>
-      <td>${escapeHtml(d.elapsed || '')}</td>
-      <td>${escapeHtml(d.notes || '')}</td>
-    </tr>
-  `).join('');
-
-  const busRows = busData.map(b => `
-    <tr>
-      <td>${escapeHtml(b.bus_type || '')}</td>
-      <td>${escapeHtml(b.bus_id || '')}</td>
-      <td>${escapeHtml(b.originating_destination || b.destination || '')}</td>
-      <td>${escapeHtml(b.otw_count || 0)}</td>
-      <td>${escapeHtml(b.female_count || 0)}</td>
-      <td>${escapeHtml(b.nat_count || 0)}</td>
-      <td>${b.departed_at ? escapeHtml(new Date(b.departed_at).toLocaleString()) : ''}</td>
-      <td>${b.arrived_at ? escapeHtml(new Date(b.arrived_at).toLocaleString()) : ''}</td>
-      <td>${escapeHtml(b.status || '')}</td>
-    </tr>
-  `).join('');
-
-  const printWindow = window.open('', '_blank');
-
-  printWindow.document.write(`
-    <!doctype html>
-    <html>
-    <head>
-      <title>${escapeHtml(weekGroup)} Archive Report</title>
-      <style>
-        body { font-family: Arial, sans-serif; color: #111; margin: 24px; }
-        h1, h2 { margin-bottom: 6px; }
-        .summary { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin: 16px 0; }
-        .box { border: 1px solid #333; padding: 8px; }
-        .label { font-size: 10px; text-transform: uppercase; color: #555; }
-        .value { font-size: 20px; font-weight: 800; }
-        table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 11px; }
-        th, td { border: 1px solid #333; padding: 5px; text-align: left; }
-        th { background: #e5e7eb; }
-        @media print {
-          body { margin: 12px; }
-          .no-print { display: none; }
-        }
-      </style>
-    </head>
-    <body>
-      <button class="no-print" onclick="window.print()" style="padding:8px 16px;margin-bottom:12px;">Print</button>
-
-      <h1>PRC-SR Archive Report</h1>
-      <div><strong>Week Group:</strong> ${escapeHtml(weekGroup)}</div>
-      <div><strong>Archived:</strong> ${archive.archived_at ? escapeHtml(new Date(archive.archived_at).toLocaleString()) : ''}</div>
-
-      <div class="summary">
-        <div class="box"><div class="label">Total Arrived</div><div class="value">${totalArrived}</div></div>
-        <div class="box"><div class="label">Loaded to Dorms</div><div class="value">${loadedTotal}</div></div>
-        <div class="box"><div class="label">Expected Capacity</div><div class="value">${expectedTotal}</div></div>
-        <div class="box"><div class="label">Females</div><div class="value">${femaleTotal}</div></div>
-        <div class="box"><div class="label">Naturalizations</div><div class="value">${natTotal}</div></div>
-      </div>
-
-      <h2>Dorm Loadout</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>Dorm</th>
-            <th>Airman</th>
-            <th>SDQ</th>
-            <th>Section</th>
-            <th>Inter/Sec</th>
-            <th>Sex</th>
-            <th>Band</th>
-            <th>Loaded</th>
-            <th>Max</th>
-            <th>Opened</th>
-            <th>Closed</th>
-            <th>Elapsed</th>
-            <th>Notes</th>
-          </tr>
-        </thead>
-        <tbody>${dormRows}</tbody>
-      </table>
-
-      <h2>Bus / Arrival Log</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>Type</th>
-            <th>Bus #</th>
-            <th>Originating Destination</th>
-            <th>Arrived/OTW</th>
-            <th>Females</th>
-            <th>Naturalizations</th>
-            <th>Departed</th>
-            <th>Arrived</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody>${busRows}</tbody>
-      </table>
-    </body>
-    </html>
-  `);
-
-  printWindow.document.close();
-  printWindow.focus();
-}
-
-   async function deleteArchiveWithOverride() {
-  if (!editArchiveId) {
-    return;
-  }
-
-  const archive = allData.find(r => r.__backendId === editArchiveId);
-
-  if (!archive) {
-    return;
-  }
-
-  const override = prompt('Enter ADMIN_OVERRIDE password to delete this archived week group.');
-
-  if (!override) {
-    return;
-  }
-
-  const confirmed = confirm(`Delete archived week group ${archive.week_group || 'Unknown'}? This cannot be undone.`);
-
-  if (!confirmed) {
-    return;
-  }
-
-  const response = await fetch('/api/archive-delete', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json'
-    },
-    body: JSON.stringify({
-      record_id: archive.__backendId,
-      override
-    })
-  });
-
-  const result = await response.json();
-
-  if (result.isOk) {
-  closeArchiveEditModal();
-  allData = allData.filter(r => r.__backendId !== archive.__backendId);
-  renderAll();
-} else {
-    const msg = document.getElementById('archive-edit-msg');
-    msg.textContent = result.error || 'Archive delete failed.';
-    msg.style.color = 'var(--red)';
-    msg.classList.remove('hidden');
-  }
+function printArchiveSpreadsheet(event) {
+  return window.GateArchiveController?.printArchiveReport?.(event);
 }
 
  function toggleFullscreenBoard() {

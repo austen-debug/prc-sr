@@ -9,6 +9,9 @@
   let renderQueued = false;
   let contextMenu = null;
   let editSubmitBound = false;
+  let longPressTimer = null;
+  let longPressPoint = null;
+  let suppressTouchClickUntil = 0;
 
   function n(value) {
     const parsed = Number(value || 0);
@@ -159,6 +162,34 @@
     </div>`;
   }
 
+  function processingSummaryCounts(dorms) {
+    const group = activeWeekGroup();
+    const source = Array.isArray(dorms) ? dorms : processingDorms();
+    const arrivedBuses = records().filter(record => (
+      record?.type === 'bus' &&
+      (!group || record.week_group === group) &&
+      record.status === 'arrived'
+    ));
+    const loaded = source.reduce((sum, dorm) => sum + n(dorm.current_load), 0);
+    const arrived = arrivedBuses.reduce((sum, bus) => sum + n(bus.otw_count), 0);
+    return { arrived, loaded, remaining: Math.max(arrived - loaded, 0) };
+  }
+
+  function ensureProcessingSummary() {
+    return document.getElementById('processing-loaded-arrived-summary');
+  }
+
+  function renderProcessingSummary(dorms) {
+    if (!ensureProcessingSummary()) return;
+    const { arrived, loaded, remaining } = processingSummaryCounts(dorms);
+    const arrivedEl = document.getElementById('processing-arrived-count');
+    const loadedEl = document.getElementById('processing-loaded-count');
+    const remainingEl = document.getElementById('processing-remaining-count');
+    if (arrivedEl) arrivedEl.textContent = String(arrived);
+    if (loadedEl) loadedEl.textContent = `${loaded} / ${arrived}`;
+    if (remainingEl) remainingEl.textContent = String(remaining);
+  }
+
   function renderProcessingPageCanonical(dorms) {
     const grid = document.getElementById('proc-dorm-grid');
     if (!grid) return;
@@ -169,6 +200,7 @@
     grid.innerHTML = list.length
       ? list.map(processingCard).join('')
       : '<div class="text-muted text-center text-lg py-8">No dormitories loaded. Initialize a Week Group from the Input page.</div>';
+    renderProcessingSummary(source);
   }
 
   function scheduleRender(options = {}) {
@@ -210,6 +242,23 @@
     try { modalDormId = id || null; } catch (_) {}
   }
 
+  function constrainModalLoad() {
+    const input = document.getElementById('modal-load-input');
+    const dorm = dormById(activeModalDormId());
+    if (!input || !dorm) return 0;
+
+    const maximum = Math.max(0, Math.floor(n(dorm.max_load)));
+    input.min = '0';
+    input.max = String(maximum);
+    const maxLabel = document.getElementById('modal-load-max');
+    if (maxLabel) maxLabel.textContent = `/ ${maximum}`;
+
+    if (input.value === '') return 0;
+    const normalized = Math.min(maximum, Math.max(0, Math.floor(n(input.value))));
+    input.value = String(normalized);
+    return normalized;
+  }
+
   function instructorModalActions(id, state) {
     const editButton = `<button type="button" data-processing-action="edit-record" data-dorm-id="${esc(id)}" class="px-6 py-3 rounded-lg font-bold text-white text-lg" style="background:var(--surface-alt);border:1px solid var(--border);color:var(--text);">EDIT RECORD</button>`;
     if (state === 'empty') {
@@ -247,6 +296,7 @@
     if (airman) airman.value = dorm.assigned_airman || '';
     if (loadInput) loadInput.value = n(dorm.current_load);
     if (loadMax) loadMax.textContent = `/ ${n(dorm.max_load)}`;
+    constrainModalLoad();
 
     if (phaseSection && phaseButtons) {
       const open = String(dorm.state || '').toLowerCase() === 'open';
@@ -308,6 +358,7 @@
     const input = document.getElementById('modal-load-input');
     if (!input) return;
     input.value = String(Math.max(0, n(input.value) + Number(delta || 0)));
+    constrainModalLoad();
   }
 
   function setLoadFullCanonical() {
@@ -320,7 +371,10 @@
     const dorm = dormById(activeModalDormId());
     const input = document.getElementById('modal-load-input');
     if (!dorm || !input) return;
-    await updateDorm({ ...dorm, current_load: Math.max(0, n(input.value)), updated_at: new Date().toISOString() }, { source: 'processing-load-update' });
+    const currentLoad = constrainModalLoad();
+    const result = await updateDorm({ ...dorm, current_load: currentLoad, updated_at: new Date().toISOString() }, { source: 'processing-load-update' });
+    if (result?.isOk) closeDormModalCanonical();
+    return result;
   }
 
   async function saveAssignedAirmanCanonical() {
@@ -477,13 +531,20 @@
     setValue('edit-auditorium-location', dorm.auditorium_location || '');
 
     setEditMessage('', false);
+    const reopenButton = document.getElementById('reopen-dorm-btn');
+    if (reopenButton) {
+      const closed = String(dorm.state || '').toLowerCase() === 'closed';
+      reopenButton.classList.toggle('hidden', !closed);
+      reopenButton.disabled = !closed;
+      reopenButton.dataset.dormId = closed ? id : '';
+    }
     const modal = document.getElementById('dorm-edit-modal');
     if (modal) {
       modal.classList.remove('hidden');
       modal.setAttribute('aria-hidden', 'false');
     }
+    document.body.classList.add('gate-modal-open');
 
-    window.GateDormReopenController?.refresh?.();
     window.runGateHooks?.('afterModalOpen', { modal: 'dorm-edit', dormId: id, source: 'gate-processing-controller' });
   }
 
@@ -493,7 +554,14 @@
       modal.classList.add('hidden');
       modal.setAttribute('aria-hidden', 'true');
     }
+    const reopenButton = document.getElementById('reopen-dorm-btn');
+    if (reopenButton) {
+      reopenButton.classList.add('hidden');
+      reopenButton.disabled = true;
+      reopenButton.dataset.dormId = '';
+    }
     setActiveEditDorm('');
+    document.body.classList.remove('gate-modal-open');
   }
 
   function readEditPayload(dorm) {
@@ -522,6 +590,7 @@
       auditorium_location: normalizeUpper(value('edit-auditorium-location')),
       phase: isClosed ? 'Closed' : dorm.phase,
       closed_timer: finalTime,
+      manual_closed_timer_override: isClosed && finalTime !== normalizeFinalTime(dorm.closed_timer, '00:00') ? 'true' : undefined,
       updated_at: new Date().toISOString()
     };
   }
@@ -627,6 +696,14 @@
   }
 
   function handleProcessingClick(event) {
+    const touchCard = event.target?.closest?.('#page-processing .proc-card[data-dorm-id]');
+    if (touchCard && Date.now() < suppressTouchClickUntil) {
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation?.();
+      return;
+    }
+
     const phaseButton = event.target?.closest?.('[data-processing-phase]');
     if (phaseButton) {
       event.preventDefault();
@@ -689,14 +766,54 @@
     showContextMenu(event, dorm);
   }
 
+  function isTouchDevice() {
+    return window.matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
+  }
+
+  function clearLongPress() {
+    if (longPressTimer) window.clearTimeout(longPressTimer);
+    longPressTimer = null;
+    longPressPoint = null;
+  }
+
+  function handleTouchStart(event) {
+    if (!isTouchDevice() || !isInstructor()) return;
+    const card = event.target?.closest?.('#page-processing .proc-card[data-dorm-id]');
+    const touch = event.touches?.[0];
+    if (!card || !touch) return;
+    clearLongPress();
+    longPressPoint = { x: touch.clientX, y: touch.clientY };
+    longPressTimer = window.setTimeout(() => {
+      longPressTimer = null;
+      const dorm = dormById(card.dataset.dormId);
+      if (!dorm || !longPressPoint) return;
+      suppressTouchClickUntil = Date.now() + 700;
+      showContextMenu({ clientX: longPressPoint.x, clientY: longPressPoint.y }, dorm);
+      longPressPoint = null;
+    }, 560);
+  }
+
   function handleKeydown(event) {
     if (event.key === 'Escape') {
       hideContextMenu();
+      const editModal = document.getElementById('dorm-edit-modal');
+      if (editModal && !editModal.classList.contains('hidden')) {
+        event.preventDefault();
+        closeDormEditModalCanonical();
+        return;
+      }
       const dormModal = document.getElementById('dorm-modal');
       if (dormModal && !dormModal.classList.contains('hidden')) closeDormModalCanonical(event);
       return;
     }
     if (event.key === 'Enter') {
+      if (event.target?.id === 'modal-load-input') {
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation?.();
+        void saveLoadCanonical();
+        return;
+      }
       if (event.target?.id === 'modal-airman-input') {
         event.preventDefault();
         saveAssignedAirmanCanonical();
@@ -766,6 +883,16 @@
     document.addEventListener('contextmenu', handleProcessingContext, true);
     document.addEventListener('auxclick', handleProcessingContext, true);
     document.addEventListener('keydown', handleKeydown, true);
+    document.addEventListener('touchstart', handleTouchStart, { capture: true, passive: true });
+    document.addEventListener('touchend', clearLongPress, true);
+    document.addEventListener('touchcancel', clearLongPress, true);
+    document.addEventListener('touchmove', clearLongPress, true);
+    document.addEventListener('input', event => {
+      if (event.target?.id === 'modal-load-input') constrainModalLoad();
+    }, true);
+    document.addEventListener('blur', event => {
+      if (event.target?.id === 'modal-load-input') constrainModalLoad();
+    }, true);
     window.addEventListener('resize', hideContextMenu, true);
     window.registerGateHook?.('afterRenderAll', () => scheduleRender({ force: true }));
     window.registerGateHook?.('afterDataChanged', () => scheduleRender({ force: true }));
@@ -784,6 +911,7 @@
       openDormEditModal: openDormEditModalCanonical,
       closeDormEditModal: closeDormEditModalCanonical,
       saveLoad: saveLoadCanonical,
+      constrainLoad: constrainModalLoad,
       saveAssignedAirman: saveAssignedAirmanCanonical,
       updateDorm,
       refresh: () => forceRefresh('processing-refresh')

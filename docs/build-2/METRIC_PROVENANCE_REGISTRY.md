@@ -183,7 +183,7 @@ Unless a metric states otherwise:
 - **Operational definition:** Sum of current dorm loads for the active Week Group.
 - **Source records:** `dorm`.
 - **Formula:** `sum(dorm.current_load)`.
-- **Current owners:** passive Processing loaded summary and Archive payload/report.
+- **Current owners:** `GateProcessingController` Processing summary and Archive payload/report.
 - **Current status:** Aligned.
 - **Build 2 owner:** `GateDomain.dorms.calculateLoadTotals()`.
 
@@ -191,7 +191,7 @@ Unless a metric states otherwise:
 
 - **Operational definition:** Confirmed arrived trainees not yet represented in dorm current loads.
 - **Formula:** `max(confirmed arrived - total loaded, 0)`.
-- **Current owner:** `prc-dash-processing-loaded-summary.js`.
+- **Current owner:** `GateProcessingController.renderProcessingSummary()`.
 - **Current status:** Aligned calculation, legacy/passive ownership.
 - **Build 2 owner:** `GateDomain.processing.calculateAssignmentSummary()`.
 - **Migration note:** retire the passive compatibility wrapper when Processing consumes the Build 2 selector directly.

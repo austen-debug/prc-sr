@@ -140,7 +140,7 @@ test('GateAppShell owns durable page URLs without adding a second routing runtim
   assert.match(guard, /document\.body\?\.dataset\.gateSessionRole/, 'permission guard must use the same verified role during initial hydration');
   assert.doesNotMatch(shell, /localStorage[\s\S]{0,120}(active|route)|sessionStorage[\s\S]{0,120}(active|route)/i, 'route continuity must come from the URL, not browser-storage state');
 
-  const routeScript = '/js/gate-app-shell-controller.js?v=gate-route-state-20260922';
+  const routeScript = '/js/gate-app-shell-controller.js?v=repo-audit-20260922';
   assert.ok(middleware.includes(routeScript), 'middleware must ship the cache-busted canonical shell controller');
   assert.ok(budget.currentDirectScripts.includes(routeScript), 'runtime inventory must match the shell route version');
   assert.equal((budget.currentDirectScripts.filter(item => item.includes('gate-app-shell-controller.js')).length),1, 'routing must extend the one existing shell owner');
@@ -370,7 +370,7 @@ test('Archives use a full-width read-only historical workspace and exact Letter 
 
   assert.match(css, /\.gate-archive-layout\s*\{[\s\S]*grid-template-columns:\s*minmax\(300px,\s*\.78fr\) minmax\(0,\s*2\.22fr\)/);
   assert.match(css, /\.gate-archive-metrics\s*\{[\s\S]*grid-template-columns:\s*repeat\(6,\s*minmax\(0,\s*1fr\)\)/);
-  const archiveScript = '/js/gate-archive-controller.js?v=gate-archive-workspace-20260922';
+  const archiveScript = '/js/gate-archive-controller.js?v=repo-audit-20260922';
   assert.ok(middleware.includes(archiveScript));
   assert.ok(budget.currentDirectScripts.includes(archiveScript));
 });

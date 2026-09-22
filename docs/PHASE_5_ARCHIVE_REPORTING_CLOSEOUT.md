@@ -236,3 +236,67 @@ Recommended next work:
 3. Fix mobile dropdown menu corruption.
 4. Fix mobile watermark scaling/position.
 5. Run a full workflow validation matrix across Instructor, Airman, and Squadron roles.
+
+
+## Archive workspace rebuild — 22 Sep 2026
+
+The live Archives experience now separates **historical presentation** from archive persistence.
+
+### Data-preservation boundary
+
+The rebuild does **not** migrate, rewrite, normalize, truncate, or delete historical archive rows. Existing records in the canonical `records` table, typed archive mirrors, `dorm_data`, `bus_data`, and any lossless `source_records_json` snapshot remain in D1 unchanged.
+
+A new Instructor-only, read-only endpoint owns archive presentation:
+
+```txt
+GET /api/archives
+GET /api/archives?id=<archive-id>
+```
+
+The summary call returns lightweight archive metadata only. It intentionally excludes `dorm_data`, `bus_data`, and `source_records_json`. The detail call parses dorm and bus snapshots for presentation but **never returns `source_records_json`**. POST, PUT, and DELETE on this endpoint return HTTP 405.
+
+Recorded append-only archive amendments are overlaid only in the presentation model; the baseline archive bytes remain unchanged. The archive inspector displays amendment history so corrected presentation values are traceable.
+
+### Live-poll separation
+
+The three-second operational `dataSdk` refresh now uses:
+
+```txt
+GET /api/records?scope=live
+```
+
+This excludes archive payloads from normal board/airport/input/processing polling while leaving the default `GET /api/records` contract backward compatible for legacy verification paths. Archive history is read independently through `/api/archives`.
+
+### Archives page
+
+The legacy centered `.max-w-3xl` layout and mixed live-arrivals/archive view were retired from the active Archives page. The page is now a full-width historical workspace with:
+
+- Receiving Archives header and current-summary report action
+- Week Group search and year filter
+- year/month archival grouping
+- dense archive record navigator
+- read-only selected-record inspector
+- retained archive integrity indicator
+- Arrived / Loaded / Expected / Female / NAT / Space Force metrics
+- receiving-window timeline
+- dorm snapshot table
+- bus / arrival history table
+- archive amendment history
+- schema and lifecycle metadata
+
+The legacy arrivals DOM IDs remain hidden only as a compatibility surface for older inline render code; they no longer define the Archives UX.
+
+### Report correctness and geometry
+
+Archive and current-summary reports continue to use browser Print / Save as PDF without adding a PDF dependency. The print document is now designed around exact physical Letter landscape geometry:
+
+```css
+@page { size: 11in 8.5in; margin: .35in; }
+.report-page { width: 10.3in; height: 7.8in; }
+```
+
+Reports use separate summary, dorm-detail, and bus-detail pages with repeated table headers and row-break protection. Current-summary Arrived/Female/NAT/Space Force calculations count only buses whose status is `arrived`; Receiving Night processing narrative uses actual `arrived_at` timestamps rather than dispatch/create timestamps.
+
+### Compatibility
+
+Closeout ownership and archive creation logic are unchanged by the presentation rebuild. The feature-gated atomic persistence closeout remains authoritative when enabled, and the legacy verified-before-clear closeout remains available for flag-off rollback. The rebuild changes how historical data is **read and presented**, not how existing D1 archive data is stored.

@@ -18,6 +18,18 @@
     squadron: 'Squadron Board'
   });
 
+  const PAGE_ROUTES = Object.freeze({
+    board: '/board/',
+    airport: '/airport/',
+    input: '/input/',
+    processing: '/processing/',
+    archives: '/archives/',
+    squadron: '/squadron-board/'
+  });
+  const ROUTE_PAGES = Object.freeze(Object.fromEntries(
+    Object.entries(PAGE_ROUTES).map(([page, path]) => [path, page])
+  ));
+
   const MOBILE_MEDIA = '(max-width: 767px), (pointer: coarse) and (max-width: 1024px) and (max-height: 560px)';
   const SYSTEM_CONTROL_IDS = ['role-toggle', 'fullscreen-btn', 'sound-toggle-btn', 'theme-toggle-btn'];
   const SYNTHETIC_CLICK_SUPPRESS_MS = 650;
@@ -39,7 +51,29 @@
   }
 
   function role() {
+    const serverRole = document.body?.dataset.gateSessionRole || '';
+    if (ROLE_PAGES[serverRole]) return serverRole;
     try { return currentRole || 'airman'; } catch (_) { return 'airman'; }
+  }
+
+  function pageFromPath(pathname = window.location.pathname) {
+    return ROUTE_PAGES[pathname] || '';
+  }
+
+  function pathForPage(page) {
+    return PAGE_ROUTES[String(page || '').replace(/^page-/, '')] || '';
+  }
+
+  function initialRoutePage() {
+    return pageFromPath() || document.body?.dataset.gateInitialRoute || '';
+  }
+
+  function writeRoute(page, mode = 'push') {
+    const path = pathForPage(page);
+    if (!path || mode === 'none' || window.location.pathname === path) return;
+    const state = { gatePage: page };
+    if (mode === 'replace') window.history.replaceState(state, '', path);
+    else window.history.pushState(state, '', path);
   }
 
   function allowedPages(current = role()) {
@@ -85,7 +119,8 @@
 
   function activePage() {
     const page = document.querySelector('.page.active');
-    return page ? page.id.replace(/^page-/, '') : firstAllowedPage();
+    if (page) return page.id.replace(/^page-/, '');
+    return initialRoutePage() || firstAllowedPage();
   }
 
   function setBodyRouteState(page) {
@@ -342,18 +377,22 @@
     if (requested === 'squadron') ensureSquadronPage();
 
     let targetPage = requested;
+    let historyMode = options.history || 'push';
     if (!pageIsAllowed(targetPage)) {
       toast(role() === 'squadron' ? 'Squadron access is limited to Squadron Board.' : 'Instructor access required for that page.');
       targetPage = firstAllowedPage();
+      historyMode = 'replace';
       if (targetPage === 'squadron') ensureSquadronPage();
     }
 
     if (!document.getElementById(`page-${targetPage}`)) {
       const fallback = allowedPages().find(candidate => document.getElementById(`page-${candidate}`)) || 'board';
       targetPage = fallback;
+      historyMode = 'replace';
     }
 
     setActivePage(targetPage);
+    writeRoute(targetPage, historyMode);
     renderNav();
     setDrawer(false);
 
@@ -480,14 +519,28 @@
     if (event.key === 'Escape') setDrawer(false);
   }
 
+  function handlePopState() {
+    const requested = pageFromPath();
+    if (requested && pageIsAllowed(requested)) {
+      go(requested, { silent: true, history: 'none' });
+      return;
+    }
+    go(firstAllowedPage(), { silent: true, history: 'replace' });
+  }
+
   function sync() {
     scheduled = false;
     ensureShellStructure();
     patchGlobals();
+    const routed = initialRoutePage();
+    const current = routed || activePage();
+    if (!pageIsAllowed(current)) {
+      go(firstAllowedPage(), { silent: true, history: 'replace' });
+      return;
+    }
+    if (current === 'squadron') ensureSquadronPage();
+    setActivePage(current);
     renderNav();
-    const current = activePage();
-    if (!pageIsAllowed(current)) go(firstAllowedPage(), { silent: true });
-    else setActivePage(current);
   }
 
   function scheduleSync() {
@@ -504,6 +557,7 @@
     document.addEventListener('pointerup', handlePointerUp, true);
     document.addEventListener('click', handleClick, true);
     document.addEventListener('keydown', handleKeydown, true);
+    window.addEventListener('popstate', handlePopState);
     window.addEventListener('resize', scheduleSync, true);
     window.addEventListener('orientationchange', scheduleSync, true);
     window.registerGateHook?.('afterRenderAll', scheduleSync);
@@ -516,6 +570,8 @@
       allowedPages,
       pageIsAllowed,
       currentPage: activePage,
+      pathForPage,
+      pageFromPath,
       setDrawer,
       sync: scheduleSync
     });

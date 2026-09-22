@@ -651,8 +651,14 @@
     });
     return [...groups.entries()].map(([year, months], yearIndex) => {
       const yearCount = [...months.values()].reduce((sum, list) => sum + list.length, 0);
-      const monthHtml = [...months.entries()].map(([month, list], monthIndex) => `<details class="gate-archive-month" ${yearIndex === 0 && monthIndex === 0 ? 'open' : ''}><summary><span class="gate-archive-month-title-row"><span class="gate-archive-disclosure">›</span><span class="gate-archive-month-title">${esc(month)}</span></span><span class="gate-archive-month-count">${list.length} record${list.length === 1 ? '' : 's'}</span></summary><div class="gate-archive-record-list">${list.map(archiveCard).join('')}</div></details>`).join('');
-      return `<details class="gate-archive-year" ${yearIndex === 0 ? 'open' : ''}><summary><span class="gate-archive-year-title-row"><span class="gate-archive-disclosure">›</span><span class="gate-archive-year-title">${esc(year)}</span></span><span class="gate-archive-year-count">${yearCount} record${yearCount === 1 ? '' : 's'}</span></summary><div class="gate-archive-year-body">${monthHtml}</div></details>`;
+      const selectedInYear = [...months.values()].some(list => list.some(item => item.id === selectedArchiveId));
+      const monthHtml = [...months.entries()].map(([month, list], monthIndex) => {
+        const selectedInMonth = list.some(item => item.id === selectedArchiveId);
+        const open = selectedInMonth || (!selectedArchiveId && yearIndex === 0 && monthIndex === 0);
+        return `<details class="gate-archive-month" ${open ? 'open' : ''}><summary><span class="gate-archive-month-title-row"><span class="gate-archive-disclosure">›</span><span class="gate-archive-month-title">${esc(month)}</span></span><span class="gate-archive-month-count">${list.length} record${list.length === 1 ? '' : 's'}</span></summary><div class="gate-archive-record-list">${list.map(archiveCard).join('')}</div></details>`;
+      }).join('');
+      const openYear = selectedInYear || (!selectedArchiveId && yearIndex === 0);
+      return `<details class="gate-archive-year" ${openYear ? 'open' : ''}><summary><span class="gate-archive-year-title-row"><span class="gate-archive-disclosure">›</span><span class="gate-archive-year-title">${esc(year)}</span></span><span class="gate-archive-year-count">${yearCount} record${yearCount === 1 ? '' : 's'}</span></summary><div class="gate-archive-year-body">${monthHtml}</div></details>`;
     }).join('');
   }
 

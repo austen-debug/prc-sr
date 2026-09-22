@@ -110,8 +110,9 @@ test('narrow fine-pointer desktops keep a single fixed command shell and non-wra
 });
 
 test('GateAppShell owns durable page URLs without adding a second routing runtime', async () => {
-  const [shell, middleware, budgetText] = await Promise.all([
+  const [shell, guard, middleware, budgetText] = await Promise.all([
     source('public/js/gate-app-shell-controller.js'),
+    source('public/js/gate-permission-guard.js'),
     source('functions/_middleware.js'),
     source('docs/build-2/ACTIVE_RUNTIME_BUDGET.json')
   ]);
@@ -136,6 +137,7 @@ test('GateAppShell owns durable page URLs without adding a second routing runtim
   assert.match(shell, /window\.location\.pathname === path/, 'reselecting the active route must not duplicate history entries');
   assert.match(shell, /document\.body\?\.dataset\.gateInitialRoute/, 'server-selected refresh route must hydrate the client shell');
   assert.match(shell, /document\.body\?\.dataset\.gateSessionRole/, 'server-verified role must be available before async session hydration');
+  assert.match(guard, /document\.body\?\.dataset\.gateSessionRole/, 'permission guard must use the same verified role during initial hydration');
   assert.doesNotMatch(shell, /localStorage[\s\S]{0,120}(active|route)|sessionStorage[\s\S]{0,120}(active|route)/i, 'route continuity must come from the URL, not browser-storage state');
 
   const routeScript = '/js/gate-app-shell-controller.js?v=gate-route-state-20260922';

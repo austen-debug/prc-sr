@@ -1,7 +1,7 @@
 import { verifyRequestSession } from './api/session-contract.mjs';
 
 const UI_STYLESHEETS = [
-  '<link rel="stylesheet" href="/css/military-glass-terminal.css?v=military-glass-terminal-20260922-squadron-info2">'
+  '<link rel="stylesheet" href="/css/military-glass-terminal.css?v=military-glass-terminal-20260922-squadron-access1">'
 ];
 
 const UI_INLINE_ASSETS = [];
@@ -15,7 +15,7 @@ const UI_HEAD_SCRIPTS = [
   '<script src="/js/prc-dash-sat-arrivals.js" defer></script>',
   '<script src="/js/prc-dash-space-force.js" defer></script>',
   '<script src="/js/prc-dash-dorm-reopen.js" defer></script>',
-  '<script src="/js/prc-dash-final-audit.js?v=squadron-sitrep-20260922-info2" defer></script>',
+  '<script src="/js/prc-dash-final-audit.js?v=squadron-sitrep-20260922-access1" defer></script>',
   '<script src="/js/gate-status-board-controller.js?v=dorm-timer-record-lifecycle-20260722" defer></script>',
   '<script src="/js/gate-processing-controller.js?v=record-display-integrity-20260714" defer></script>',
   '<script src="/js/prc-dash-dorm-flag-validation.js?v=processing-band-designator-20260915" defer></script>',

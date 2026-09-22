@@ -8,7 +8,7 @@ import {
   onRequestPost,
   onRequestPut
 } from '../../../functions/api/records.js';
-import { verifyRequestSession } from '../../../functions/api/session-contract.mjs';
+import { roleSigningSecret, verifyRequestSession } from '../../../functions/api/session-contract.mjs';
 
 const clone = value => JSON.parse(JSON.stringify(value));
 
@@ -280,17 +280,18 @@ test('Squadron role cannot read or mutate the generic records API', async () => 
 
 test('route-local session verifier accepts a valid signed role cookie', async () => {
   const secret = 'test-secret';
+  const env = { AUTH_SECRET: secret, MTI_USERNAME:'tester', MTI_PASSWORD:'fixture-password' };
   const now = Date.now();
   const payload = { username: 'tester', role: 'instructor', iat: now, exp: now + 60_000 };
   const body = btoa(JSON.stringify(payload)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
-  const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(roleSigningSecret('instructor', env)), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
   const bytes = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(body));
   let binary = '';
   for (const byte of new Uint8Array(bytes)) binary += String.fromCharCode(byte);
   const signature = btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
   const session = await verifyRequestSession(new Request('https://gate.example/api/records', {
     headers: { Cookie: `prc_sr_session=${body}.${signature}` }
-  }), { AUTH_SECRET: secret });
+  }), env);
   assert.equal(session.role, 'instructor');
   assert.equal(session.username, 'tester');
 });

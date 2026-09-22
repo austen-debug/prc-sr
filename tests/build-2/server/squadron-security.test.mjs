@@ -4,13 +4,15 @@ import { readFileSync } from 'node:fs';
 import { DatabaseSync } from 'node:sqlite';
 import { onRequest as apiMiddleware } from '../../../functions/api/_middleware.js';
 import { onRequest as rootMiddleware } from '../../../functions/_middleware.js';
+import { roleSigningSecret } from '../../../functions/api/session-contract.mjs';
 import { buildSquadronSnapshot, onRequestGet, onRequestPost } from '../../../functions/api/squadron-board.js';
 
+const roleEnv = secret => ({ AUTH_SECRET:secret, SQUADRON_USERNAME:'squadron_access', SQUADRON_PASSWORD:'test-squadron-password', MTI_USERNAME:'mti', MTI_PASSWORD:'test-instructor-password' });
 async function sessionCookie(secret, role = 'squadron', username = 'squadron_access') {
   const now = Date.now();
   const payload = { username, role, iat: now, exp: now + 60_000 };
   const body = btoa(JSON.stringify(payload)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
-  const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(roleSigningSecret(role, roleEnv(secret))), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
   const bytes = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(body));
   let binary = '';
   for (const byte of new Uint8Array(bytes)) binary += String.fromCharCode(byte);
@@ -49,7 +51,7 @@ function sqliteD1() {
 test('root routing never serves operational app shell to Squadron and fails closed without AUTH_SECRET', async () => {
   const secret = 'route-test-secret';
   const cookie = await sessionCookie(secret);
-  const env = { AUTH_SECRET: secret };
+  const env = roleEnv(secret);
   const root = await rootMiddleware({ request: request('/', cookie), env, next: async () => new Response('APP') });
   assert.equal(root.status, 302);
   assert.equal(root.headers.get('location'), 'https://gate.example/squadron/');
@@ -67,7 +69,7 @@ test('root routing never serves operational app shell to Squadron and fails clos
 test('direct Squadron API requests can read only the projected board/session and logout', async () => {
   const secret = 'api-test-secret';
   const cookie = await sessionCookie(secret);
-  const env = { AUTH_SECRET: secret, GATE_PERSISTENCE_ENABLED: 'false' };
+  const env = { ...roleEnv(secret), GATE_PERSISTENCE_ENABLED: 'false' };
   for (const [path, method] of [['/api/squadron-board', 'GET'], ['/api/session', 'GET'], ['/api/logout', 'POST']]) {
     const response = await apiMiddleware({ request: request(path, cookie, method), env, data: {}, next: async () => new Response('ALLOWED') });
     assert.equal(response.status, 200, `${method} ${path}`);

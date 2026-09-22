@@ -5,6 +5,7 @@ import { readFileSync } from 'node:fs';
 import { DatabaseSync } from 'node:sqlite';
 import { onRequest as apiMiddleware } from '../../../functions/api/_middleware.js';
 import { onRequestPost } from '../../../functions/api/persistence.js';
+import { roleSigningSecret } from '../../../functions/api/session-contract.mjs';
 
 const migration = number => readFileSync(new URL(`../../../migrations/${number}`, import.meta.url), 'utf8');
 
@@ -59,11 +60,11 @@ function middlewareFixture() {
       async all() { return { results: native.prepare(sql).all(...values) }; }
     };
   }};
-  const env = { DB, GATE_PERSISTENCE_ENABLED:'true', AUTH_SECRET:'fixture-only' };
+  const env = { DB, GATE_PERSISTENCE_ENABLED:'true', AUTH_SECRET:'fixture-only', MTI_USERNAME:'fixture-instructor', MTI_PASSWORD:'fixture-instructor-password' };
   function signedRequest(method, path, payload) {
     const now = Date.now();
     const body = Buffer.from(JSON.stringify({ username:'fixture-instructor', role:'instructor', iat:now, exp:now+60000 })).toString('base64url');
-    const signature = createHmac('sha256', env.AUTH_SECRET).update(body).digest('base64url');
+    const signature = createHmac('sha256', roleSigningSecret('instructor', env)).update(body).digest('base64url');
     return new Request(`https://gate.example${path}`, {
       method, headers:{ Cookie:`prc_sr_session=${body}.${signature}`, 'Content-Type':'application/json' },
       body: payload === undefined ? undefined : JSON.stringify(payload)

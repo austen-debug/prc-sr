@@ -627,8 +627,14 @@ async function refresh(force = false) {
     window.dataSdk = {
       async init(handler) {
         handlerRef = handler;
+        let initialSyncError = null;
 
-        await refresh(true);
+        try {
+          await refresh(true);
+        } catch (error) {
+          initialSyncError = error;
+          console.error('GATE initial records sync failed; polling will retry:', error);
+        }
 
         setInterval(() => {
           refresh().catch(err => {
@@ -636,7 +642,9 @@ async function refresh(force = false) {
           });
         }, 3000);
 
-        return { isOk: true };
+        return initialSyncError
+          ? { isOk: false, code: 'initial_sync_failed', error: 'Initial records sync failed; polling will retry.' }
+          : { isOk: true };
       },
 
       async create(record) {

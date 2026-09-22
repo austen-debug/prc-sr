@@ -11,6 +11,25 @@
     'afterCloseout'
   ];
 
+  function ensureSharedDataBridge() {
+    try {
+      const descriptor = Object.getOwnPropertyDescriptor(window, 'allData');
+      if (descriptor && descriptor.configurable === false) return;
+      Object.defineProperty(window, 'allData', {
+        configurable: true,
+        enumerable: false,
+        get() {
+          try { return Array.isArray(allData) ? allData : []; } catch (_) { return []; }
+        },
+        set(value) {
+          try { allData = Array.isArray(value) ? value : []; } catch (_) {}
+        }
+      });
+    } catch (error) {
+      console.warn('GATE shared data bridge failed:', error);
+    }
+  }
+
   function ensureHookRegistry() {
     if (!window.GateHooks) window.GateHooks = {};
     for (const name of HOOK_GROUPS) {
@@ -130,6 +149,7 @@
   }
 
   function install() {
+    ensureSharedDataBridge();
     ensureHookRegistry();
     exposeHookApi();
     installCompatibilityStubs();

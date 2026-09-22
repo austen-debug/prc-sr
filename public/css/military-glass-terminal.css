@@ -3597,10 +3597,10 @@ body.theme-light :is(input, textarea):focus-visible {
 #page-squadron .gate-squadron-traffic-detail,#page-squadron .gate-squadron-status { font-size:12px; color:var(--mg-text-muted); text-align:center; }
 #page-squadron .gate-squadron-status.is-error { color:var(--mg-red); }
 #page-squadron .gate-squadron-metrics { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); grid-template-areas:none; margin:0; }
-#page-squadron .gate-squadron-metric { min-width:0; padding:clamp(10px,1.2vw,16px); text-align:center; }
+#page-squadron .gate-squadron-metric { min-width:0; min-height:clamp(92px,8vw,116px); padding:clamp(10px,1.2vw,16px); text-align:center; display:flex; flex-direction:column; align-items:center; }
 #page-squadron .gate-squadron-metric + .gate-squadron-metric { border-left:1px solid var(--mg-border-soft); }
-#page-squadron .gate-squadron-value { font-size:clamp(24px,3.2vw,40px); line-height:1.2; font-weight:800; margin-top:7px; color:var(--mg-text); font-variant-numeric:tabular-nums; overflow-wrap:anywhere; }
-#page-squadron .gate-squadron-value.is-time { font-size:clamp(17px,2.4vw,28px); }
+#page-squadron .gate-squadron-value { font-size:clamp(24px,3.2vw,40px); line-height:1.2; font-weight:800; margin-top:auto; padding-top:7px; color:var(--mg-text); font-variant-numeric:tabular-nums; overflow-wrap:anywhere; }
+#page-squadron .gate-squadron-value.is-time { font-size:clamp(24px,3.2vw,40px); }
 #page-squadron .gate-squadron-columns { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); align-items:start; gap:clamp(9px,1vw,16px); }
 #page-squadron .gate-squadron-column { min-width:0; overflow:visible; }
 #page-squadron .gate-squadron-column-head { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:11px 12px; border-bottom:1px solid var(--mg-border-soft); font-size:12px; font-weight:800; }
@@ -3639,7 +3639,7 @@ body.theme-light :is(input, textarea):focus-visible {
 #page-squadron .gate-squadron-information-editor { padding:12px; border:1px solid var(--mg-border-soft); border-radius:9px; background:var(--mg-surface-muted); }
 #page-squadron .gate-squadron-publish { min-height:40px; border:1px solid var(--mg-accent); border-radius:8px; color:var(--mg-text); background:var(--mg-surface-soft); font-weight:800; cursor:pointer; }
 @media(max-width:950px) { #page-squadron .gate-squadron-metrics { grid-template-columns:repeat(2,minmax(0,1fr)); } #page-squadron .gate-squadron-metric:nth-child(3) { border-left:0; } #page-squadron .gate-squadron-metric:nth-child(n+3) { border-top:1px solid var(--mg-border-soft); } #page-squadron .gate-squadron-columns { grid-template-columns:1fr; } }
-@media(max-width:620px) { #page-squadron .gate-squadron-topbar { grid-template-columns:1fr auto; } #page-squadron .gate-squadron-heading { grid-column:1/-1; grid-row:1; padding-inline:36px; } #page-squadron .gate-squadron-top-left { grid-column:1; grid-row:1; z-index:1; } #page-squadron .gate-squadron-actions { grid-column:2; grid-row:1; z-index:1; } #page-squadron .gate-squadron-actions .gate-squadron-tag { display:none; } #page-squadron .gate-squadron-traffic { grid-row:2; } #page-squadron .gate-squadron-view { padding:8px; } #page-squadron .gate-squadron-metric { padding:10px 8px; } #page-squadron .gate-squadron-tempo-option { padding:7px 1px; } #page-squadron .gate-squadron-value.is-time { font-size:17px; } #page-squadron .gate-squadron-instruction-row { grid-template-columns:1fr; } #page-squadron .gate-squadron-instruction-row .gate-squadron-utility { width:100%; } }
+@media(max-width:620px) { #page-squadron .gate-squadron-topbar { grid-template-columns:1fr auto; } #page-squadron .gate-squadron-heading { grid-column:1/-1; grid-row:1; padding-inline:36px; } #page-squadron .gate-squadron-top-left { grid-column:1; grid-row:1; z-index:1; } #page-squadron .gate-squadron-actions { grid-column:2; grid-row:1; z-index:1; } #page-squadron .gate-squadron-actions .gate-squadron-tag { display:none; } #page-squadron .gate-squadron-traffic { grid-row:2; } #page-squadron .gate-squadron-view { padding:8px; } #page-squadron .gate-squadron-metric { padding:10px 8px; } #page-squadron .gate-squadron-tempo-option { padding:7px 1px; } #page-squadron .gate-squadron-instruction-row { grid-template-columns:1fr; } #page-squadron .gate-squadron-instruction-row .gate-squadron-utility { width:100%; } }
 @media(prefers-reduced-motion:reduce) { #page-squadron .gate-squadron-information.has-notice { animation:none; } }
 
 

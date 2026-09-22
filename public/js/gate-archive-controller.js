@@ -20,6 +20,7 @@
   let archiveIndexPromise = null;
   let selectedArchiveId = '';
   const archiveDetailCache = new Map();
+  const archiveDetailPromises = new Map();
   let closeoutPatchAttempts = 0;
   let closeoutPatchTimer = null;
 

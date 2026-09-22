@@ -114,6 +114,8 @@ test('archive presentation API returns lightweight summaries without lossless or
   assert.equal(result.body.count,1);
   assert.equal(result.body.archives[0].week_group,'WG26051');
   assert.equal(result.body.archives[0].integrity,'lossless');
+  assert.equal(result.body.archives[0].total_arrived,40,'summary presentation applies recorded amendments');
+  assert.equal(result.body.archives[0].amendment_count,1);
   const serialized = JSON.stringify(result.body);
   assert.doesNotMatch(serialized,/source_records_json/);
   assert.doesNotMatch(serialized,/dorm_data/);

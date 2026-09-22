@@ -1,6 +1,53 @@
 // Single Squadron read contract. Only an authenticated instructor can publish a notice.
 const READ_ROLES = new Set(['squadron', 'instructor']);
 const DORM_STATES = new Set(['empty', 'open', 'closed']);
+const DEFAULT_INFORMATION = Object.freeze([
+  'Dormitories are "open" when they are full.',
+  'The PRC will contact CQ when dormitories are open, closed, or there are updates pertaining to that Dorm.',
+  'PRC Staff cannot edit or select Flight assignment, only assign initial dormitories.',
+  'For Questions, please contact PRC front desk at 210-671-3042.'
+]);
+const SQUADRON_WRITE_SCHEMA_SQL = `
+CREATE TABLE IF NOT EXISTS gate_squadron_notices (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  week_group TEXT NOT NULL,
+  message TEXT NOT NULL CHECK (length(trim(message)) BETWEEN 1 AND 1000),
+  published_at TEXT NOT NULL,
+  published_by_role TEXT NOT NULL CHECK (published_by_role = 'instructor')
+);
+CREATE INDEX IF NOT EXISTS idx_gate_squadron_notices_week_latest
+  ON gate_squadron_notices(week_group, id DESC);
+CREATE TRIGGER IF NOT EXISTS trg_gate_squadron_notices_no_update
+BEFORE UPDATE ON gate_squadron_notices
+BEGIN
+  SELECT RAISE(ABORT, 'Squadron notices are append-only');
+END;
+CREATE TRIGGER IF NOT EXISTS trg_gate_squadron_notices_no_delete
+BEFORE DELETE ON gate_squadron_notices
+BEGIN
+  SELECT RAISE(ABORT, 'Squadron notices are append-only');
+END;
+CREATE TABLE IF NOT EXISTS gate_squadron_information_revisions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  instructions_json TEXT NOT NULL CHECK (
+    json_valid(instructions_json)
+    AND json_type(instructions_json) = 'array'
+    AND length(instructions_json) <= 4096
+  ),
+  published_at TEXT NOT NULL,
+  published_by_role TEXT NOT NULL CHECK (published_by_role = 'instructor')
+);
+CREATE TRIGGER IF NOT EXISTS trg_gate_squadron_information_no_update
+BEFORE UPDATE ON gate_squadron_information_revisions
+BEGIN
+  SELECT RAISE(ABORT, 'Squadron information is append-only');
+END;
+CREATE TRIGGER IF NOT EXISTS trg_gate_squadron_information_no_delete
+BEFORE DELETE ON gate_squadron_information_revisions
+BEGIN
+  SELECT RAISE(ABORT, 'Squadron information is append-only');
+END;
+`;
 
 function reply(data, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -13,6 +60,24 @@ function number(value) {
   const parsed = Number(value ?? 0);
   if (!Number.isFinite(parsed) || parsed < 0) throw Object.assign(new Error('Invalid Squadron operational count.'), { code: 'integrity_error' });
   return parsed;
+}
+
+function instructionList(value, code = 'integrity_error') {
+  if (!Array.isArray(value) || value.length > 8) {
+    throw Object.assign(new Error('Squadron information must contain no more than eight instructions.'), { code });
+  }
+  const instructions = value.map(item => String(item ?? '').trim());
+  if (instructions.some(item => !item || item.length > 500) || instructions.reduce((sum, item) => sum + item.length, 0) > 3000) {
+    throw Object.assign(new Error('Each Squadron instruction must contain 1–500 characters.'), { code });
+  }
+  return instructions;
+}
+
+async function ensureSquadronWriteSchema(env) {
+  if (!env?.DB || typeof env.DB.exec !== 'function') {
+    throw Object.assign(new Error('Squadron write storage is unavailable.'), { code: 'configuration_required' });
+  }
+  await env.DB.exec(SQUADRON_WRITE_SCHEMA_SQL);
 }
 
 function bool(value) { return value === true || value === 'true' || value === 1 || value === '1'; }
@@ -44,7 +109,7 @@ function orderDorms(a, b) {
 }
 
 // Pure projection: never send raw D1 rows, notes, personnel, auditorium fields, or archives.
-export function buildSquadronSnapshot({ weekGroup = '', records = [], now = new Date(), notice = null, lastFlight = '' } = {}) {
+export function buildSquadronSnapshot({ weekGroup = '', records = [], now = new Date(), notice = null, information = null, lastFlight = '' } = {}) {
   const week = String(weekGroup || '').trim().toUpperCase();
   const instant = new Date(now).getTime();
   if (!Number.isFinite(instant)) throw new Error('Invalid snapshot time.');
@@ -88,6 +153,24 @@ export function buildSquadronSnapshot({ weekGroup = '', records = [], now = new 
     message: String(notice.message || ''),
     published_at: iso(notice.published_at)
   } : null;
+  let safeInformation = {
+    revision: 0,
+    instructions: [...DEFAULT_INFORMATION],
+    published_at: null
+  };
+  if (information) {
+    let parsed;
+    try {
+      parsed = Array.isArray(information.instructions) ? information.instructions : JSON.parse(information.instructions_json);
+    } catch {
+      throw Object.assign(new Error('Stored Squadron information is invalid.'), { code: 'integrity_error' });
+    }
+    safeInformation = {
+      revision: number(information.id),
+      instructions: instructionList(parsed),
+      published_at: iso(information.published_at)
+    };
+  }
   if (lastFlight && (typeof lastFlight !== 'string' || lastFlight.length > 64)) {
     throw Object.assign(new Error('Invalid last-flight configuration.'), { code: 'integrity_error' });
   }
@@ -97,6 +180,7 @@ export function buildSquadronSnapshot({ weekGroup = '', records = [], now = new 
     traffic: Object.freeze(traffic),
     dorms: Object.freeze(safeDorms),
     notice: safeNotice ? Object.freeze(safeNotice) : null,
+    information: Object.freeze({ ...safeInformation, instructions: Object.freeze([...safeInformation.instructions]) }),
     generated_at: new Date(instant).toISOString()
   });
 }
@@ -119,9 +203,19 @@ async function activeWeekGroup(env) {
   return cycle || config;
 }
 
+async function readSquadronInformation(env) {
+  try {
+    return await env.DB.prepare('SELECT id,instructions_json,published_at FROM gate_squadron_information_revisions ORDER BY id DESC LIMIT 1').first();
+  } catch (error) {
+    if (!/no such table:\\s*gate_squadron_information_revisions\\b/i.test(String(error?.message || ''))) throw error;
+    return null;
+  }
+}
+
 async function readBoard(env) {
+  const information = await readSquadronInformation(env);
   const weekGroup = await activeWeekGroup(env);
-  if (!weekGroup) return buildSquadronSnapshot({ now: new Date() });
+  if (!weekGroup) return buildSquadronSnapshot({ now: new Date(), information });
   const source = await env.DB.prepare("SELECT id,type,week_group,data FROM records WHERE week_group=? AND type IN ('bus','dorm') ORDER BY created_at ASC").bind(weekGroup).all();
   const records = (source.results || []).map(parseRow);
   if (records.some(record => !record)) throw Object.assign(new Error('Malformed operational record; Squadron Board withheld.'), { code: 'integrity_error' });
@@ -130,11 +224,9 @@ async function readBoard(env) {
   try {
     notice = await env.DB.prepare('SELECT id,message,published_at FROM gate_squadron_notices WHERE week_group=? ORDER BY id DESC LIMIT 1').bind(weekGroup).first();
   } catch (error) {
-    // During a staged deployment, keep the read-only SITREP available until migration 0005 is installed.
-    // Never swallow unrelated database failures.
-    if (!/no such table:\s*gate_squadron_notices\b/i.test(String(error?.message || ''))) throw error;
+    if (!/no such table:\\s*gate_squadron_notices\\b/i.test(String(error?.message || ''))) throw error;
   }
-  return buildSquadronSnapshot({ weekGroup, records, now: new Date(), notice, lastFlight: flight?.last_flight || '' });
+  return buildSquadronSnapshot({ weekGroup, records, now: new Date(), notice, information, lastFlight: flight?.last_flight || '' });
 }
 
 export async function onRequestGet({ env, data }) {
@@ -150,36 +242,72 @@ export async function onRequestGet({ env, data }) {
 export async function onRequestPost({ request, env, data }) {
   if (data?.session?.role !== 'instructor') return reply({ isOk: false, code: 'forbidden', error: 'Instructor access required.' }, 403);
   const origin = request.headers.get('Origin');
-  if (origin !== new URL(request.url).origin || request.headers.get('X-Gate-Notice') !== 'publish' || !/^application\/json(?:\s*;|$)/i.test(request.headers.get('Content-Type') || '')) {
-    return reply({ isOk: false, code: 'forbidden', error: 'Invalid publication request.' }, 403);
+  const noticeAction = request.headers.get('X-Gate-Notice') === 'publish';
+  const informationAction = request.headers.get('X-Gate-Information') === 'save';
+  if (
+    origin !== new URL(request.url).origin ||
+    noticeAction === informationAction ||
+    !/^application\/json(?:\s*;|$)/i.test(request.headers.get('Content-Type') || '')
+  ) {
+    return reply({ isOk: false, code: 'forbidden', error: 'Invalid Squadron publication request.' }, 403);
   }
   let payload;
   try {
     const text = await request.text();
-    if (text.length > 4096) return reply({ isOk: false, code: 'validation', error: 'Notice request exceeds the allowed size.' }, 400);
+    if (text.length > 8192) return reply({ isOk: false, code: 'validation', error: 'Squadron publication request exceeds the allowed size.' }, 400);
     payload = JSON.parse(text);
-  } catch { return reply({ isOk: false, code: 'validation', error: 'Invalid JSON notice.' }, 400); }
-  const message = String(payload?.message ?? '').trim();
+  } catch {
+    return reply({ isOk: false, code: 'validation', error: 'Invalid JSON publication request.' }, 400);
+  }
+
+  if (noticeAction) {
+    const message = String(payload?.message ?? '').trim();
+    const expectedRevision = payload?.expected_revision;
+    if (!message || message.length > 1000 || !Number.isSafeInteger(expectedRevision) || expectedRevision < 0) {
+      return reply({ isOk: false, code: 'validation', error: 'A notice (1–1000 characters) and current revision are required.' }, 400);
+    }
+    try {
+      await ensureSquadronWriteSchema(env);
+      const weekGroup = await activeWeekGroup(env);
+      if (!weekGroup) return reply({ isOk: false, code: 'lifecycle_required', error: 'No active Week Group.' }, 409);
+      const publishedAt = new Date().toISOString();
+      const result = await env.DB.prepare(`INSERT INTO gate_squadron_notices (week_group,message,published_at,published_by_role)
+        SELECT wg.week_group, ?, ?, 'instructor' FROM gate_week_groups wg
+        WHERE wg.state='active' AND wg.week_group=?
+          AND COALESCE((SELECT MAX(id) FROM gate_squadron_notices WHERE week_group=?),0)=?`)
+        .bind(message, publishedAt, weekGroup, weekGroup, expectedRevision).run();
+      if (result.meta?.changes !== 1) return reply({ isOk: false, code: 'conflict', error: 'The active group or notice changed. Refresh before publishing.' }, 409);
+      const revision = result.meta?.last_row_id;
+      if (!Number.isSafeInteger(revision) || revision < 1) return reply({ isOk: false, code: 'publication_unconfirmed', error: 'Check the published notice before retrying.' }, 503);
+      return reply({ isOk: true, notice: { revision, message, published_at: publishedAt } });
+    } catch (error) {
+      return reply({ isOk: false, code: error?.code || 'publication_failed', error: error?.code === 'integrity_error' || error?.code === 'configuration_required' ? error.message : 'Unable to publish notice.' }, error?.code === 'integrity_error' || error?.code === 'configuration_required' ? 503 : 500);
+    }
+  }
+
+  let instructions;
+  try {
+    instructions = instructionList(payload?.instructions, 'validation');
+  } catch (error) {
+    return reply({ isOk: false, code: 'validation', error: error.message }, 400);
+  }
   const expectedRevision = payload?.expected_revision;
-  if (!message || message.length > 1000 || !Number.isSafeInteger(expectedRevision) || expectedRevision < 0) {
-    return reply({ isOk: false, code: 'validation', error: 'A notice (1–1000 characters) and current revision are required.' }, 400);
+  if (!Number.isSafeInteger(expectedRevision) || expectedRevision < 0) {
+    return reply({ isOk: false, code: 'validation', error: 'The current Squadron information revision is required.' }, 400);
   }
   try {
-    const weekGroup = await activeWeekGroup(env);
-    if (!weekGroup) return reply({ isOk: false, code: 'lifecycle_required', error: 'No active Week Group.' }, 409);
+    await ensureSquadronWriteSchema(env);
     const publishedAt = new Date().toISOString();
-    // One atomic conditional insert: no overwrites, orphan notices, or two successful stale publishers.
-    const result = await env.DB.prepare(`INSERT INTO gate_squadron_notices (week_group,message,published_at,published_by_role)
-      SELECT wg.week_group, ?, ?, 'instructor' FROM gate_week_groups wg
-      WHERE wg.state='active' AND wg.week_group=?
-        AND COALESCE((SELECT MAX(id) FROM gate_squadron_notices WHERE week_group=?),0)=?`)
-      .bind(message, publishedAt, weekGroup, weekGroup, expectedRevision).run();
-    if (result.meta?.changes !== 1) return reply({ isOk: false, code: 'conflict', error: 'The active group or notice changed. Refresh before publishing.' }, 409);
+    const serialized = JSON.stringify(instructions);
+    const result = await env.DB.prepare(`INSERT INTO gate_squadron_information_revisions (instructions_json,published_at,published_by_role)
+      SELECT ?, ?, 'instructor'
+      WHERE COALESCE((SELECT MAX(id) FROM gate_squadron_information_revisions),0)=?`)
+      .bind(serialized, publishedAt, expectedRevision).run();
+    if (result.meta?.changes !== 1) return reply({ isOk: false, code: 'conflict', error: 'Squadron information changed. Refresh before saving.' }, 409);
     const revision = result.meta?.last_row_id;
-    if (!Number.isSafeInteger(revision) || revision < 1) return reply({ isOk: false, code: 'publication_unconfirmed', error: 'Check the published notice before retrying.' }, 503);
-    return reply({ isOk: true, notice: { revision, message, published_at: publishedAt } });
+    if (!Number.isSafeInteger(revision) || revision < 1) return reply({ isOk: false, code: 'publication_unconfirmed', error: 'Check Squadron information before retrying.' }, 503);
+    return reply({ isOk: true, information: { revision, instructions, published_at: publishedAt } });
   } catch (error) {
-    if (/no such table:\s*gate_squadron_notices\b/i.test(String(error?.message || ''))) return reply({ isOk: false, code: 'migration_required', error: 'Notice publishing is unavailable until the additive notice migration is installed.' }, 503);
-    return reply({ isOk: false, code: error?.code || 'publication_failed', error: error?.code === 'integrity_error' ? error.message : 'Unable to publish notice.' }, error?.code === 'integrity_error' ? 503 : 500);
+    return reply({ isOk: false, code: error?.code || 'information_save_failed', error: error?.code === 'integrity_error' || error?.code === 'configuration_required' ? error.message : 'Unable to save Squadron information.' }, error?.code === 'integrity_error' || error?.code === 'configuration_required' ? 503 : 500);
   }
 }

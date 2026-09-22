@@ -171,8 +171,11 @@ test('canonical CSS preserves desktop/mobile shell ownership and accepted phone 
   const css = await source('public/css/military-glass-terminal.css');
   const shell = await source('public/js/gate-app-shell-controller.js');
   const mediaMatch = shell.match(/const MOBILE_MEDIA = '([^']+)'/);
+  const tabletMatch = shell.match(/const TABLET_CONSOLE_MEDIA = '([^']+)'/);
   assert.ok(mediaMatch, 'GateAppShell mobile media contract is missing');
+  assert.ok(tabletMatch, 'GateAppShell tablet console media contract is missing');
   assert.ok(css.includes(`@media ${mediaMatch[1]} {`), 'CSS mobile shell breakpoint must match GateAppShell');
+  assert.ok(css.includes(`@media ${tabletMatch[1]} {`), 'CSS tablet console breakpoint must match GateAppShell');
 
   assert.match(css, /#mobile-menu-trigger,[\s\S]*#gate-mobile-nav-sheet,[\s\S]*display:\s*none/);
   assert.doesNotMatch(css, /#week-group-display,\s*#mobile-menu-trigger\s*\{\s*display:\s*inline-flex/);
@@ -183,6 +186,29 @@ test('canonical CSS preserves desktop/mobile shell ownership and accepted phone 
   assert.match(css, /#page-airport #airport-form input,[\s\S]*font-size:\s*16px/);
   assert.match(css, /#page-airport \.surface:has\(#airport-bus-log-body\)[\s\S]*overflow-x:\s*auto/);
   assert.match(css, /button::before[\s\S]*content:\s*"BACK"/);
+});
+
+test('retired compatibility owners are absent and their behavior is absorbed by canonical controllers', async () => {
+  const middleware = await source('functions/_middleware.js');
+  const processing = await source('public/js/gate-processing-controller.js');
+  const buses = await source('public/js/gate-bus-workflow-controller.js');
+  const shell = await source('public/js/gate-app-shell-controller.js');
+
+  for (const retired of [
+    'prc-dash-space-force.js',
+    'gate-tablet-shell-classifier.js',
+    'gate-render-stability-fix.js',
+    'prc-dash-processing-loaded-summary.js'
+  ]) assert.ok(!middleware.includes(retired), `${retired} must remain retired from active middleware`);
+
+  assert.match(processing, /function renderProcessingSummary\(/);
+  assert.match(processing, /processing-loaded-arrived-summary/);
+  assert.match(processing, /function normalizeFinalTime\(/);
+  assert.match(buses, /id="bus-sf"/);
+  assert.match(buses, /id="local-sf"/);
+  assert.match(buses, /id="edit-bus-sf"/);
+  assert.match(buses, /function ensureSfColumn\(/);
+  assert.match(shell, /const TABLET_CONSOLE_MEDIA =/);
 });
 
 test('background is route-scoped and the global tactical grid is retired', async () => {

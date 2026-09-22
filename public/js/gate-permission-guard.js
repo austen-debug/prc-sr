@@ -15,7 +15,6 @@
     'openDormEditModal',
     'deleteDormitoryFromEditModal',
     'openArchiveEditModal',
-    'deleteArchiveWithOverride',
     'initiateCloseout',
     'openAirportBusEditModal',
     'printArchiveSpreadsheet',

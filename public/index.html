@@ -1729,6 +1729,13 @@ closed_timer: d.state === 'closed'
       document.getElementById('confirm-dialog').classList.add('hidden');
       confirmCallback = null;
     });
+    document.addEventListener('keydown', event => {
+      if (event.key !== 'Escape') return;
+      const dialog = document.getElementById('confirm-dialog');
+      if (!dialog || dialog.classList.contains('hidden')) return;
+      event.preventDefault();
+      document.getElementById('confirm-no')?.click();
+    });
 
     // AIRPORT FORM
     document.getElementById('airport-form').addEventListener('submit', async (e) => {

@@ -23,7 +23,7 @@ All primary popups use the shared `.confirm-overlay` backdrop pattern and should
 | `#dorm-edit-modal` | Dorm record correction modal | Instructor right-click menu → Edit Record; original dorm edit path | Instructor only | Dorm identity/details, sex, band, Space Force, assigned airman, auditorium location, notes | Cancel/save/delete | This is the correction surface, not the normal processing flow. |
 | `#airport-bus-edit-modal` | Airport/local bus correction modal | Airport bus log row click | Instructor only | Bus ID/name, OTW, female, naturalization, Space Force counts | Cancel/save | Local bus and airport bus edit use the same correction surface. |
 | `#local-bus-modal` | Local bus creation modal | Airport/local bus workflow | Instructor only | New local bus record | Cancel/create | Should use same modal sizing and form spacing as other small correction modals. |
-| `#archive-edit-modal` | Archived week group correction and print/PDF modal | Archive card right-click/double-click/Enter | Instructor only | Archive metadata, dorm JSON, bus JSON, receiving windows, print/PDF, archive delete | Cancel/save/delete/print | This is the largest modal and must remain scroll-safe on mobile. |
+| `#archive-edit-modal` | Legacy archive-edit compatibility markup | No longer opened by the canonical Archives workspace | Instructor only if explicitly invoked by a retained legacy path | Historical edit/delete form fields | Legacy close actions | Retained base-DOM compatibility only. The active Archives workspace is read-only and uses `GateArchiveController` inspection/reporting instead of this modal. |
 | `#confirm-dialog` | Generic confirmation dialog | Destructive/major operational actions | Depends on caller | No direct data; confirms callback execution | Yes/Cancel | Used for closeout and other confirmation paths. |
 | `#gate-processing-context-menu` | Processing page instructor action menu | Desktop right-click; mobile long-press | Instructor only | Opens Edit Record, Processing Controls, or Delete Record path | Outside click, Escape, scroll, resize, action selection | Styled as a context menu on desktop and bottom sheet on mobile. |
 | `#gate-access-denied-toast` | Client-side role feedback | Airman attempts instructor-only UI control | Airman receives message | None | Auto-hide | This is a UI guard only; it does not replace server-side authorization. |
@@ -58,4 +58,4 @@ Airman-visible operational surfaces:
 
 ## Consolidation note
 
-Canonical modal and mobile UI styles should live in `public/css/prc-dash-modal-systems.css`. JavaScript modules may create DOM and perform behavior, but should avoid injecting durable styling unless a future emergency patch requires it.
+Canonical modal and mobile UI styles live in `public/css/military-glass-terminal.css`. JavaScript modules may create DOM and perform behavior, but must not create a competing stylesheet authority.

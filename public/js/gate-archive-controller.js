@@ -59,6 +59,8 @@
   }
 
   function isInstructor() {
+    const serverRole = document.body?.dataset.gateSessionRole || '';
+    if (serverRole) return serverRole === 'instructor';
     try { return currentRole === 'instructor'; } catch (_) { return false; }
   }
 

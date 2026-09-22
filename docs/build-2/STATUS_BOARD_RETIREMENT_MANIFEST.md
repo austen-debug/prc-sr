@@ -70,7 +70,9 @@ The Phase 3B activation pull request must meet all of the following:
 ```text
 Direct active stylesheets: exactly 1
 Imported active stylesheets: 0
-Direct active scripts/modules: 24 or fewer
+Direct active scripts: 24 or fewer
+
+Current governed Build 1 direct script/module ceiling: **22**.
 New corrective/patch/fix/stability assets: 0
 Middleware Status Board source rewrites: 0
 Visible Status Board owners: exactly 1

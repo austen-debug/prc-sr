@@ -1067,15 +1067,24 @@
     }
   }
 
+  function archivePageActive() {
+    return document.getElementById('page-archives')?.classList.contains('active') === true;
+  }
+
+  function renderArchivesFromLegacyLoop() {
+    if (!archivePageActive()) return;
+    if (!archiveIndexLoaded && !archiveIndexPromise) void refreshArchiveIndex();
+  }
+
   function patchGlobals() {
     window.initiateCloseout = initiateCloseoutCanonical;
-    window.renderArchives = renderArchiveManagementView;
+    window.renderArchives = renderArchivesFromLegacyLoop;
     window.openArchiveEditModal = openArchiveEditModalCanonical;
     window.closeArchiveEditModal = closeArchiveEditModalCanonical;
     window.printArchiveSpreadsheet = printArchiveReport;
     window.printCurrentSummaryReport = printCurrentSummaryReport;
     try { initiateCloseout = initiateCloseoutCanonical; } catch (_) {}
-    try { renderArchives = renderArchiveManagementView; } catch (_) {}
+    try { renderArchives = renderArchivesFromLegacyLoop; } catch (_) {}
     try { openArchiveEditModal = openArchiveEditModalCanonical; } catch (_) {}
     try { closeArchiveEditModal = closeArchiveEditModalCanonical; } catch (_) {}
     try { printArchiveSpreadsheet = printArchiveReport; } catch (_) {}
@@ -1100,9 +1109,11 @@
   function runPass() {
     patchGlobals();
     patchCloseoutButton();
-    renderArchiveManagementView();
-    ensureCurrentSummaryButton();
-    bindArchivePrintButton();
+    if (archivePageActive()) {
+      renderArchiveManagementView();
+      ensureCurrentSummaryButton();
+      bindArchivePrintButton();
+    }
     window.GateArchiveController = Object.freeze({
       isCanonicalOwner: true,
       buildArchivePayload,

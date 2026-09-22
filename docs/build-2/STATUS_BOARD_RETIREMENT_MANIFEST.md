@@ -15,31 +15,26 @@ This manifest identifies the current ownership surfaces that must be removed, ab
 | Asset | Current responsibility | Phase 3B disposition |
 |---|---|---|
 | `gate-status-board-controller.js` | Visible dorm columns, dorm cards, active buses, timer text refresh | **Retire** after Build 2 route acceptance |
-| `gate-premium-metrics-controller.js` | Visible Status Board metrics and active-bus metric presentation | **Retire**; Build 2 route owns metric composition |
-| `gate-status-board-timer-visual-stability.js` | Warning/critical class refresh | **Retire**; deterministic timer component owns state |
+| `gate-premium-metrics-controller.js` | Visible Status Board metrics and Local clock | **Retire**; Build 2 route owns metric composition |
 | `gate-fullscreen-board-layout-controller.js` | Fullscreen board containment and exit behavior | **Retire or reduce to shared shell primitive**; no Status Board-specific patch owner may remain |
-| `gate-render-stability-fix.js` | Post-render stabilization including fullscreen/board behavior | **Retire** from the Status Board path |
-| `prc-dash-overtime-audit.js` | Legacy overtime presentation/audit compatibility | **Retire from Status Board ownership** after canonical timer/audit acceptance |
+| `prc-dash-overtime-audit.js` | Shared overtime sound-event audit and Squadron timer compatibility | Remove Status Board presentation ownership after canonical timer/audit acceptance; retain only if another route still requires shared sound/audit behavior |
 | `gate-status-board-shadow-controller.js` | Hidden parity observer | **Retire after activation acceptance and final parity capture** |
 | `gate-component-contracts.js` | Shared Build 1 component compatibility | Retain only if another active route still requires it; remove Status Board-specific branches |
 | `gate-record-display-contract.js` | Shared canonical display ordering for legacy consumers | Retain until all dependent Build 1 routes migrate |
 | `prc-dash-dorm-flag-validation.js` | Shared dorm identity/indicator validation | Retain for Processing/Squadron only if still required; remove board rendering ownership |
-| `prc-dash-space-force.js` | Shared Space Force compatibility behavior | Retain only where another unmigrated route requires it |
-| `gate-ui-hooks.js` | Legacy lifecycle hook compatibility | Retain during strangler migration, but the Build 2 Status Board may not depend on global render wrapping |
+| `gate-ui-hooks.js` | Shared lifecycle hooks plus current Port Clear feature | Retain during strangler migration, but the Build 2 Status Board may not depend on global render wrapping |
+
+The 22 Sep 2026 repository audit already retired `gate-status-board-timer-visual-stability.js`, `gate-render-stability-fix.js`, and `prc-dash-space-force.js`. They are historical owners, not active retirement dependencies.
 
 ## Active stylesheet owners
 
+Production now has exactly one stylesheet authority:
+
 | Asset | Current responsibility | Phase 3B disposition |
 |---|---|---|
-| `gate-premium-metrics.css` | Metrics and active-bus visual layer | **Retire** after Build 2 metric components activate |
-| `gate-fullscreen-board-contract.css` | Status Board fullscreen patch layer | **Retire** after route-owned fullscreen composition activates |
-| `gate-board-presentation.css` | Board/Squadron responsive presentation | Remove Status Board selectors; retain Squadron selectors only while Squadron remains Build 1 |
-| `gate-clean-ui-pass.css` | Shared shell and board-card corrective ownership | Remove Status Board selectors; retain only still-owned shared/legacy selectors |
-| `gate-mobile-corrective.css` | Cross-page mobile corrective layer | Build 2 Status Board may not add dependencies; board selectors must be removed |
-| `gate-ui-ownership-correction.css` | Corrective ownership layer | Build 2 Status Board selectors must be removed |
-| `gate-light-mode-grid-correction.css` | Light-mode grid correction | Build 2 Status Board selectors must be removed or absorbed into semantic component tokens |
-| `gate-light-mode-command-contrast.css` | Command-display contrast corrections | Absorb Status Board rules into GDL semantic tokens/components |
-| `gate-tablet-shell.css` | Shared legacy tablet shell | Build 2 route may consume shell contract, not page-specific patches |
+| `public/css/military-glass-terminal.css` | Shared tokens, themes, shell, Status/Squadron boards, route layouts, modals, responsive and fullscreen contracts | Retain as the single production stylesheet; remove or replace only the Status Board-specific selectors that become source-owned by the accepted Build 2 route |
+
+The earlier `gate-premium-metrics.css`, `gate-fullscreen-board-contract.css`, `gate-board-presentation.css`, `gate-clean-ui-pass.css`, `gate-mobile-corrective.css`, `gate-ui-ownership-correction.css`, `gate-light-mode-grid-correction.css`, `gate-light-mode-command-contrast.css`, and `gate-tablet-shell.css` layers are no longer active production files. Historical phase reports may still name them for continuity.
 
 ## Middleware source transformations
 
@@ -49,7 +44,7 @@ The following middleware behavior is temporary Build 1 compatibility and must be
 - `applyStatusBoardMetricSourceRefactor()`;
 - regular-expression replacement of `updateAirportMetric()`;
 - regular-expression replacement of the legacy compound arrived/expected metric writer;
-- direct injection of retired Status Board controllers and stylesheets;
+- direct injection of Build 1 Status Board controllers that the accepted Build 2 route supersedes;
 - Phase 3A shadow-controller injection after final acceptance.
 
 The final Build 2 route must be served from source-owned markup and modules. Middleware may authenticate and apply stable shell assets, but it may not rewrite Status Board application functions or manufacture route markup.
@@ -57,7 +52,6 @@ The final Build 2 route must be served from source-owned markup and modules. Mid
 ## Compatibility globals to retire from Status Board ownership
 
 - `window.GateStatusBoardController`;
-- `window.GateStatusBoardTimerVisualStability`;
 - `window.GateStatusBoardShadow` after final acceptance;
 - Status Board branches in `GateHooks` compatibility handoffs;
 - Status Board DOM identifiers used only as compatibility sinks;
@@ -70,9 +64,9 @@ Shared globals may remain temporarily for unmigrated Build 1 routes, but the Bui
 The Phase 3B activation pull request must meet all of the following:
 
 ```text
-Direct active stylesheets: 12 or fewer
-Imported active stylesheets: 3 or fewer
-Direct active scripts: 24 or fewer
+Direct active stylesheets: exactly 1
+Imported active stylesheets: 0
+Direct active scripts/modules: 24 or fewer
 New corrective/patch/fix/stability assets: 0
 Middleware Status Board source rewrites: 0
 Visible Status Board owners: exactly 1
@@ -97,7 +91,7 @@ A new Build 2 route bundle may be introduced only when the total active runtime 
 The activation decision must include:
 
 - before/after middleware asset inventories;
-- proof that direct CSS and JavaScript counts decreased;
+- proof that the one-stylesheet contract remains intact and the direct script/module count does not exceed 24;
 - proof that no corrective asset was added;
 - source search showing retired owner globals and middleware transformations are absent from the Status Board path;
 - route-specific functional, responsive, accessibility, fullscreen, synchronization, and rollback results;

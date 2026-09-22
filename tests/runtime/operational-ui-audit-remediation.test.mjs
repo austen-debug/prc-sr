@@ -130,7 +130,53 @@ test('Processing BAND designator uses rounded-rectangle geometry', async () => {
 test('middleware delivers one canonical stylesheet and no retired CSS assets', async () => {
   const middleware = await source('functions/_middleware.js');
 
-  assert.match(middleware, /military-glass-terminal\.css\?v=military-glass-terminal-20260915-bandshape1/);
+  assert.match(middleware, /military-glass-terminal\.css\?v=military-glass-terminal-20260922-squadron-sitrep1/);
   assert.equal((middleware.match(/<link rel="stylesheet"/g) || []).length, 1);
   assert.doesNotMatch(middleware, /gate-ui-ownership-correction\.css|gate-fullscreen-board-contract\.css|gate-tablet-shell\.css|gate-mobile-corrective\.css/);
+});
+
+
+test('Squadron SITREP ships current canonical CSS with isolated three-column layout', async () => {
+  const version = 'military-glass-terminal-20260922-squadron-sitrep1';
+  const url = `/css/military-glass-terminal.css?v=${version}`;
+  const [middleware, standalone, budgetText, stack, css, controller, index] = await Promise.all([
+    source('functions/_middleware.js'), source('public/squadron/index.html'),
+    source('docs/build-2/ACTIVE_RUNTIME_BUDGET.json'), source('docs/ACTIVE_RUNTIME_STACK.md'),
+    source('public/css/military-glass-terminal.css'), source('public/js/prc-dash-final-audit.js'),
+    source('public/index.html')
+  ]);
+  assert.ok(middleware.includes(url), 'instructor middleware must reference fresh CSS');
+  assert.ok(standalone.includes(url), 'standalone must use the same CSS version');
+  assert.deepEqual(JSON.parse(budgetText).currentDirectStyles, [url]);
+  assert.ok(stack.includes(url), 'runtime documentation must match');
+  assert.equal((middleware.match(/<link rel="stylesheet"/g) || []).length, 1);
+  assert.doesNotMatch(middleware + standalone, /military-glass-terminal-20260915-bandshape1|military-glass-terminal\.css\?v=squadron-sitrep-20260921/);
+
+  const squadronCss = css.slice(css.indexOf('/* GATE SQUADRON SITREP'));
+  assert.ok(squadronCss.startsWith('/* GATE SQUADRON SITREP'), 'scoped Squadron rules must exist');
+  assert.match(squadronCss, /#page-squadron \.gate-squadron-topbar\s*\{[^}]*display:grid/);
+  assert.match(squadronCss, /#page-squadron \.gate-squadron-metrics\s*\{[^}]*grid-template-areas:none;[^}]*margin:0/);
+  assert.match(squadronCss, /#page-squadron \.gate-squadron-tempo-options\s*\{[^}]*grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
+  assert.match(squadronCss, /#page-squadron \.gate-squadron-columns\s*\{[^}]*grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
+  assert.match(squadronCss, /#page-squadron \.gate-squadron-dorm\s*\{[^}]*background:var\(--mg-surface-strong\)/);
+  assert.doesNotMatch(controller, /id="active-buses"/, 'no active bus strip on Squadron Board');
+
+  const { onRequest } = await import('../../functions/_middleware.js');
+  const { onRequestPost: login } = await import('../../functions/api/login.js');
+  const env = { AUTH_SECRET:'css-delivery-test', MTI_USERNAME:'css-instructor', MTI_PASSWORD:'test-password' };
+  const auth = await login({ env, request:new Request('https://gate.example/api/login', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({username:env.MTI_USERNAME,password:env.MTI_PASSWORD})
+  }) });
+  assert.equal(auth.status, 200);
+  const cookie = auth.headers.get('set-cookie').split(';')[0];
+  const response = await onRequest({ env,
+    request:new Request('https://gate.example/', {headers:{Cookie:cookie}}),
+    next:async () => new Response(index, {headers:{'Content-Type':'text/html; charset=UTF-8'}})
+  });
+  assert.equal(response.status,200);
+  const html = await response.text();
+  assert.equal(html.split(url).length-1,1, 'served HTML must inject one fresh stylesheet');
+  assert.equal((html.match(/href="\/css\/military-glass-terminal\.css\?v=/g)||[]).length,1);
+  assert.ok(!html.includes('military-glass-terminal-20260915-bandshape1'));
 });

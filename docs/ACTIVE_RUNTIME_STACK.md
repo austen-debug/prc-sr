@@ -38,7 +38,7 @@ Injected by middleware in current order:
 3. `/js/gate-ui-hooks.js?v=repo-audit-20260922`
 4. `/js/gate-branding-controller.js`
 5. `/js/prc-dash-sat-arrivals.js`
-6. `/js/prc-dash-dorm-reopen.js`
+6. `/js/gate-sound-controller.js?v=repo-audit-20260922`
 7. `/js/prc-dash-final-audit.js?v=squadron-sitrep-20260922-live-sync1`
 8. `/js/gate-status-board-controller.js?v=dorm-timer-record-lifecycle-20260722`
 9. `/js/gate-processing-controller.js?v=repo-audit-20260922`

@@ -38,16 +38,20 @@ The earlier `gate-premium-metrics.css`, `gate-fullscreen-board-contract.css`, `g
 
 ## Middleware source transformations
 
-The following middleware behavior is temporary Build 1 compatibility and must be removed from the Status Board activation package:
+**Completed by the 22 Sep 2026 repository audit.**
 
-- `STATUS_BOARD_METRICS_HTML` source injection;
+The legacy middleware application compiler has been retired. The canonical Status Board metric markup, metric write targets, Local-clock ownership handoff, canonical Status Board controller fallback, and stable timer behavior now live directly in `public/index.html`.
+
+Removed middleware mechanisms:
+
+- `STATUS_BOARD_METRICS_HTML`;
 - `applyStatusBoardMetricSourceRefactor()`;
 - regular-expression replacement of `updateAirportMetric()`;
 - regular-expression replacement of the legacy compound arrived/expected metric writer;
-- direct injection of Build 1 Status Board controllers that the accepted Build 2 route supersedes;
-- Phase 3A shadow-controller injection after final acceptance.
+- legacy inline shell-CSS stripping;
+- served-branding source rewriting.
 
-The final Build 2 route must be served from source-owned markup and modules. Middleware may authenticate and apply stable shell assets, but it may not rewrite Status Board application functions or manufacture route markup.
+Middleware continues to authenticate, route, hydrate the authorized initial route, and inject the governed runtime assets. It no longer rewrites Status Board application functions or manufactures Status Board markup.
 
 ## Compatibility globals to retire from Status Board ownership
 
@@ -80,7 +84,7 @@ A new Build 2 route bundle may be introduced only when the total active runtime 
 1. Complete Issue #48 evidence and resolve arrival-time semantics.
 2. Build the controlled route surface behind a default-off server-controlled activation mechanism.
 3. Validate parity, all six postures, accessibility, fullscreen, stale/offline behavior, and rollback.
-4. Remove middleware Status Board source rewriting.
+4. **COMPLETE** — Middleware Status Board source rewriting removed; source is canonical.
 5. Remove legacy Status Board controller and presentation assets identified above.
 6. Activate the Build 2 route for the controlled test cohort.
 7. Verify Build 1-only rollback by restoring the previous middleware manifest.

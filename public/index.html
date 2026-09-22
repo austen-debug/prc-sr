@@ -352,6 +352,14 @@ body > * {
 
   <div id="processing-edit-hint" class="text-xs text-muted font-bold hidden">Instructor access: right-click any dorm to edit its record.</div>
 </div>
+   <div id="processing-loaded-arrived-summary" class="px-4 pb-3 flex-shrink-0" data-owner="gate-processing-controller">
+    <div class="surface border rounded-lg p-4 grid gap-3 md:grid-cols-3" style="border-color:var(--border);">
+     <div><div class="text-xs uppercase tracking-wider font-bold text-muted">Arrived</div><div id="processing-arrived-count" class="text-2xl font-black font-tabular">0</div></div>
+     <div><div class="text-xs uppercase tracking-wider font-bold text-muted">Loaded</div><div id="processing-loaded-count" class="text-2xl font-black font-tabular">0 / 0</div></div>
+     <div><div class="text-xs uppercase tracking-wider font-bold text-muted">Awaiting Dorm Assignment</div><div id="processing-remaining-count" class="text-2xl font-black font-tabular">0</div></div>
+     <div class="md:col-span-3 text-xs text-muted">Compares arrived trainees against trainees assigned to dorms through Processing.</div>
+    </div>
+   </div>
    <div id="proc-dorm-grid" class="flex-1 px-4 pb-4 grid gap-4" style="grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); align-content: start;"></div>
   </div><!-- PAGE: ARCHIVES -->
   <div id="page-archives" class="page overflow-y-auto">

@@ -1,3 +1,5 @@
+import { roleSigningSecret } from './session-contract.mjs';
+
 const COOKIE_NAME = 'prc_sr_session';
 const SESSION_MAX_AGE_SECONDS = 12 * 60 * 60;
 
@@ -32,11 +34,7 @@ function base64urlEncodeBytes(bytes) {
 async function sign(value, secret) {
   const encoder = new TextEncoder();
   const key = await crypto.subtle.importKey(
-    'raw',
-    encoder.encode(secret),
-    { name: 'HMAC', hash: 'SHA-256' },
-    false,
-    ['sign']
+    'raw', encoder.encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
   );
   const signature = await crypto.subtle.sign('HMAC', key, encoder.encode(value));
   return base64urlEncodeBytes(signature);
@@ -57,11 +55,14 @@ function configuredCredentialMatch(username, password, configuredUsername, confi
     && password === expectedPassword;
 }
 
-function resolveRole(username, password, env) {
-  if (configuredCredentialMatch(username, password, env.MTI_USERNAME, env.MTI_PASSWORD)) return 'instructor';
-  if (configuredCredentialMatch(username, password, env.AIRMAN_USERNAME, env.AIRMAN_PASSWORD)) return 'airman';
-  if (configuredCredentialMatch(username, password, env.SQUADRON_USERNAME, env.SQUADRON_PASSWORD)) return 'squadron';
-  return null;
+function matchingRoles(username, password, env) {
+  return [
+    ['instructor', env.MTI_USERNAME, env.MTI_PASSWORD],
+    ['airman', env.AIRMAN_USERNAME, env.AIRMAN_PASSWORD],
+    ['squadron', env.SQUADRON_USERNAME, env.SQUADRON_PASSWORD]
+  ].filter(([, expectedUsername, expectedPassword]) =>
+    configuredCredentialMatch(username, password, expectedUsername, expectedPassword)
+  ).map(([role]) => role);
 }
 
 export async function onRequestPost({ request, env }) {
@@ -82,27 +83,30 @@ export async function onRequestPost({ request, env }) {
       return jsonResponse({ isOk: false, code: 'validation', error: 'Username and password are required.' }, 400);
     }
 
-    const role = resolveRole(username, password, env);
-    if (!role) {
+    const matches = matchingRoles(username, password, env);
+    if (matches.length > 1) {
+      // Shared credentials must never silently elevate Squadron or Airman to Instructor.
+      return jsonResponse({ isOk: false, code: 'configuration_conflict', error: 'Authentication configuration requires correction.' }, 503);
+    }
+    if (matches.length !== 1) {
       return jsonResponse({ isOk: false, code: 'invalid_credentials', error: 'Invalid username or password.' }, 401);
     }
 
+    const role = matches[0];
+    const signingSecret = roleSigningSecret(role, env);
+    if (!signingSecret) return jsonResponse({ isOk: false, code: 'configuration_required', error: 'Authentication is not configured.' }, 503);
     const now = Date.now();
     const token = await createSession({
       username,
       role,
       iat: now,
       exp: now + (SESSION_MAX_AGE_SECONDS * 1000)
-    }, secret);
+    }, signingSecret);
 
     return jsonResponse({ isOk: true, role }, 200, {
       'Set-Cookie': `${COOKIE_NAME}=${token}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=${SESSION_MAX_AGE_SECONDS}`
     });
-  } catch (error) {
-    return jsonResponse({
-      isOk: false,
-      code: 'login_failed',
-      error: error?.message || 'Login failed.'
-    }, 500);
+  } catch {
+    return jsonResponse({ isOk: false, code: 'login_failed', error: 'Login failed.' }, 500);
   }
 }

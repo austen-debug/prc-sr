@@ -906,7 +906,7 @@
 
   function chunks(items, size) {
     const list = Array.isArray(items) ? items : [];
-    if (!list.length) return [[]];
+    if (!list.length) return [];
     const result = [];
     for (let index = 0; index < list.length; index += size) result.push(list.slice(index, index + size));
     return result;

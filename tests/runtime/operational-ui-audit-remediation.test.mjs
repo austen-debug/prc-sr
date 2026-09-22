@@ -139,7 +139,7 @@ test('middleware delivers one canonical stylesheet and no retired CSS assets', a
 test('Squadron SITREP ships current canonical assets and preserves lightweight communication UI', async () => {
   const version = 'military-glass-terminal-20260922-squadron-access1';
   const url = `/css/military-glass-terminal.css?v=${version}`;
-  const scriptUrl = '/js/prc-dash-final-audit.js?v=squadron-sitrep-20260922-access1';
+  const scriptUrl = '/js/prc-dash-final-audit.js?v=squadron-sitrep-20260922-clear1';
   const [middleware, standalone, budgetText, stack, css, controller, index] = await Promise.all([
     source('functions/_middleware.js'), source('public/squadron/index.html'),
     source('docs/build-2/ACTIVE_RUNTIME_BUDGET.json'), source('docs/ACTIVE_RUNTIME_STACK.md'),
@@ -173,6 +173,11 @@ test('Squadron SITREP ships current canonical assets and preserves lightweight c
   assert.ok(!controller.includes('dispatched in the rolling last 60 minutes'));
   assert.ok(controller.includes('id="squadron-information-form"'));
   assert.ok(controller.includes("'X-Gate-Information': 'save'"));
+  assert.ok(controller.includes('id="squadron-clear-notice"'), 'MTI editor exposes a Clear Live Update action');
+  assert.ok(controller.includes("'X-Gate-Notice': 'clear'"), 'clear uses the protected Squadron notice endpoint');
+  assert.ok(controller.includes("window.confirm('Clear the current Live Update?')"), 'clear requires intentional confirmation');
+  assert.match(controller, /clearButton\.hidden = !editor \|\| !notice\?\.message/, 'clear is visible only to MTI editors when a live update exists');
+  assert.match(controller, /const unread = standalone\(\) && Boolean\(notice\?\.message\)/, 'a cleared revision cannot generate a Squadron unread alert');
   assert.match(controller, /const nodes = new Map\(\)/, 'condensed dorm cards keep keyed DOM identity');
   assert.doesNotMatch(controller, /id="active-buses"/, 'no active bus strip on Squadron Board');
 

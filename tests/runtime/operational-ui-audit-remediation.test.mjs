@@ -167,14 +167,14 @@ test('Processing BAND designator uses rounded-rectangle geometry', async () => {
 test('middleware delivers one canonical stylesheet and no retired CSS assets', async () => {
   const middleware = await source('functions/_middleware.js');
 
-  assert.match(middleware, /military-glass-terminal\.css\?v=military-glass-terminal-20260922-squadron-actions1/);
+  assert.match(middleware, /military-glass-terminal\.css\?v=military-glass-terminal-20260922-archives1/);
   assert.equal((middleware.match(/<link rel="stylesheet"/g) || []).length, 1);
   assert.doesNotMatch(middleware, /gate-ui-ownership-correction\.css|gate-fullscreen-board-contract\.css|gate-tablet-shell\.css|gate-mobile-corrective\.css/);
 });
 
 
 test('Squadron SITREP ships current canonical assets and preserves lightweight communication UI', async () => {
-  const version = 'military-glass-terminal-20260922-squadron-actions1';
+  const version = 'military-glass-terminal-20260922-archives1';
   const url = `/css/military-glass-terminal.css?v=${version}`;
   const scriptUrl = '/js/prc-dash-final-audit.js?v=squadron-sitrep-20260922-live-sync1';
   const [middleware, standalone, budgetText, stack, css, controller, index] = await Promise.all([
@@ -335,4 +335,42 @@ test('Squadron Access requires a non-dismissible acknowledgment once per authent
   const secondPage = await serveSquadron(secondCookie);
   const secondMarker = (await secondPage.text()).match(/<meta name="gate-auth-session" content="([^"]+)">/)?.[1];
   assert.ok(secondMarker && secondMarker !== firstMarker, 'a new authenticated login must receive a new acknowledgment marker');
+});
+
+test('Archives use a full-width read-only historical workspace and exact Letter landscape reports', async () => {
+  const [index, controller, css, middleware, budgetText] = await Promise.all([
+    source('public/index.html'),
+    source('public/js/gate-archive-controller.js'),
+    source('public/css/military-glass-terminal.css'),
+    source('functions/_middleware.js'),
+    source('docs/build-2/ACTIVE_RUNTIME_BUDGET.json')
+  ]);
+  const budget = JSON.parse(budgetText);
+
+  assert.match(index, /id="gate-archive-workspace" class="gate-archive-workspace"/);
+  assert.match(index, /const LIVE_API_URL = '\/api\/records\?scope=live'/);
+  assert.match(index, /data-gate-legacy-arrivals-compat="true"/);
+  assert.match(index, /function renderArchives\(\) \{\s*return window\.GateArchiveController\?\.renderArchives\?\.\(\);\s*\}/, 'legacy inline archive renderer must delegate to the canonical workspace');
+  assert.doesNotMatch(index, /function renderArchives\(\)[\s\S]{0,2200}Right-click to edit archived week group/, 'legacy raw archive cards must not remain active');
+  assert.doesNotMatch(index, /id="page-archives"[\s\S]{0,180}max-w-3xl/);
+
+  assert.match(controller, /archiveApi\('\/api\/archives'\)/);
+  assert.ok(controller.includes("archiveApi(`/api/archives?id=${encodeURIComponent(key)}`)"));
+  assert.match(controller, /Read-only presentation\. The stored D1 archive and any lossless source snapshot are not rewritten by this view\./);
+  assert.match(controller, /groupedArchiveHtml\(visible\)/);
+  assert.match(controller, /selectArchive\(card\.dataset\.archiveId\)/);
+  assert.doesNotMatch(controller, /if \(card\) \{\s*openArchiveEditModalCanonical/);
+
+  assert.match(controller, /String\(bus\?\.status \|\| ''\)\.toLowerCase\(\) === 'arrived'/);
+  assert.match(controller, /completed\.filter\(bus => inWindow\(bus\.arrived_at, start, end\)\)/);
+  assert.match(controller, /@page\{size:11in 8\.5in;margin:\.35in\}/);
+  assert.match(controller, /\.report-page\{width:10\.3in;height:7\.8in/);
+  assert.match(controller, /thead\{display:table-header-group\}/);
+  assert.match(controller, /break-inside:avoid;page-break-inside:avoid/);
+
+  assert.match(css, /\.gate-archive-layout\s*\{[\s\S]*grid-template-columns:\s*minmax\(300px,\s*\.78fr\) minmax\(0,\s*2\.22fr\)/);
+  assert.match(css, /\.gate-archive-metrics\s*\{[\s\S]*grid-template-columns:\s*repeat\(6,\s*minmax\(0,\s*1fr\)\)/);
+  const archiveScript = '/js/gate-archive-controller.js?v=gate-archive-workspace-20260922';
+  assert.ok(middleware.includes(archiveScript));
+  assert.ok(budget.currentDirectScripts.includes(archiveScript));
 });

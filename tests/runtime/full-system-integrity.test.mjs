@@ -149,7 +149,7 @@ test('backend CRUD, session, SAT, and archive endpoints remain present without c
     'functions/api/records.js', 'functions/api/records-contract.mjs',
     'functions/api/session.js', 'functions/api/session-contract.mjs',
     'functions/api/login.js', 'functions/api/logout.js', 'functions/api/ping.js',
-    'functions/api/sat-arrivals.js', 'functions/api/archive-delete.js'
+    'functions/api/sat-arrivals.js', 'functions/api/archive-delete.js', 'functions/api/archives.js'
   ]) await exists(path);
   const records = await source('functions/api/records.js');
   for (const method of ['Get', 'Post', 'Put', 'Delete']) {
@@ -161,6 +161,7 @@ test('backend CRUD, session, SAT, and archive endpoints remain present without c
 test('authoritative records refresh contract remains live and mutation-confirmed', async () => {
   const html = await source('public/index.html');
   assert.match(html, /const API_URL = ['"]\/api\/records['"]/);
+  assert.match(html, /const LIVE_API_URL = ['"]\/api\/records\?scope=live['"]/);
   assert.match(html, /await refresh\(true\);[\s\S]*setInterval\(\(\) => \{[\s\S]*refresh\(\)/);
   assert.match(html, /\}, 3000\);/);
   assert.ok((html.match(/if \(result\.isOk\) \{\s*await refresh\(true\);\s*\}/g) || []).length >= 3);

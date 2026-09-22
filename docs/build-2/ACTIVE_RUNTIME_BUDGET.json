@@ -16,7 +16,7 @@
     "middlewareStatusBoardSourceRewriteRemoved": true
   },
   "currentDirectStyles": [
-    "/css/military-glass-terminal.css?v=military-glass-terminal-20260922-squadron-actions1"
+    "/css/military-glass-terminal.css?v=military-glass-terminal-20260922-archives1"
   ],
   "currentImportedStyles": [],
   "currentDirectScripts": [
@@ -36,7 +36,7 @@
     "/js/gate-bus-workflow-controller.js?v=phase-3-bus-workflow-20260709",
     "/js/gate-airport-bus-delete-controller.js?v=airport-bus-delete-20260714",
     "/js/gate-input-page-controller.js?v=record-display-integrity-20260714",
-    "/js/gate-archive-controller.js?v=phase-8c-report-wording-20260709",
+    "/js/gate-archive-controller.js?v=gate-archive-workspace-20260922",
     "/js/gate-permission-guard.js?v=permission-server-role-20260922",
     "/app/features/input/flight-alert-import.mjs?v=flight-alert-import-20260920",
     "/js/gate-tablet-shell-classifier.js?v=tablet-shell-20260714",

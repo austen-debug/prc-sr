@@ -47,10 +47,14 @@
   }
 
   function hookPayload(extra) {
+    let role = document.body?.dataset.gateSessionRole || '';
+    if (!role) {
+      try { role = typeof currentRole === 'string' ? currentRole : ''; } catch (_) {}
+    }
     return Object.assign({
       allData: (() => { try { return Array.isArray(allData) ? allData : []; } catch (_) { return []; } })(),
       activePage: activePageId(),
-      role: window.currentRole || '',
+      role,
       weekGroup: activeWeekGroup(),
       timestamp: Date.now()
     }, extra || {});

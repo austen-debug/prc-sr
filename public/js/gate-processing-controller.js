@@ -272,6 +272,23 @@
     try { modalDormId = id || null; } catch (_) {}
   }
 
+  function constrainModalLoad() {
+    const input = document.getElementById('modal-load-input');
+    const dorm = dormById(activeModalDormId());
+    if (!input || !dorm) return 0;
+
+    const maximum = Math.max(0, Math.floor(n(dorm.max_load)));
+    input.min = '0';
+    input.max = String(maximum);
+    const maxLabel = document.getElementById('modal-load-max');
+    if (maxLabel) maxLabel.textContent = `/ ${maximum}`;
+
+    if (input.value === '') return 0;
+    const normalized = Math.min(maximum, Math.max(0, Math.floor(n(input.value))));
+    input.value = String(normalized);
+    return normalized;
+  }
+
   function instructorModalActions(id, state) {
     const editButton = `<button type="button" data-processing-action="edit-record" data-dorm-id="${esc(id)}" class="px-6 py-3 rounded-lg font-bold text-white text-lg" style="background:var(--surface-alt);border:1px solid var(--border);color:var(--text);">EDIT RECORD</button>`;
     if (state === 'empty') {
@@ -309,6 +326,7 @@
     if (airman) airman.value = dorm.assigned_airman || '';
     if (loadInput) loadInput.value = n(dorm.current_load);
     if (loadMax) loadMax.textContent = `/ ${n(dorm.max_load)}`;
+    constrainModalLoad();
 
     if (phaseSection && phaseButtons) {
       const open = String(dorm.state || '').toLowerCase() === 'open';
@@ -370,6 +388,7 @@
     const input = document.getElementById('modal-load-input');
     if (!input) return;
     input.value = String(Math.max(0, n(input.value) + Number(delta || 0)));
+    constrainModalLoad();
   }
 
   function setLoadFullCanonical() {
@@ -382,7 +401,8 @@
     const dorm = dormById(activeModalDormId());
     const input = document.getElementById('modal-load-input');
     if (!dorm || !input) return;
-    await updateDorm({ ...dorm, current_load: Math.max(0, n(input.value)), updated_at: new Date().toISOString() }, { source: 'processing-load-update' });
+    const currentLoad = constrainModalLoad();
+    await updateDorm({ ...dorm, current_load: currentLoad, updated_at: new Date().toISOString() }, { source: 'processing-load-update' });
   }
 
   async function saveAssignedAirmanCanonical() {
@@ -828,6 +848,12 @@
     document.addEventListener('contextmenu', handleProcessingContext, true);
     document.addEventListener('auxclick', handleProcessingContext, true);
     document.addEventListener('keydown', handleKeydown, true);
+    document.addEventListener('input', event => {
+      if (event.target?.id === 'modal-load-input') constrainModalLoad();
+    }, true);
+    document.addEventListener('blur', event => {
+      if (event.target?.id === 'modal-load-input') constrainModalLoad();
+    }, true);
     window.addEventListener('resize', hideContextMenu, true);
     window.registerGateHook?.('afterRenderAll', () => scheduleRender({ force: true }));
     window.registerGateHook?.('afterDataChanged', () => scheduleRender({ force: true }));
@@ -846,6 +872,7 @@
       openDormEditModal: openDormEditModalCanonical,
       closeDormEditModal: closeDormEditModalCanonical,
       saveLoad: saveLoadCanonical,
+      constrainLoad: constrainModalLoad,
       saveAssignedAirman: saveAssignedAirmanCanonical,
       updateDorm,
       refresh: () => forceRefresh('processing-refresh')

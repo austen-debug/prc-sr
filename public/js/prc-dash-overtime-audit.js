@@ -24,6 +24,7 @@
   function recordsOfType(type) {
     try {
       if (typeof getRecords === 'function') return getRecords(type);
+      if (Array.isArray(allData)) return allData.filter(record => record.type === type);
       if (Array.isArray(window.allData)) return window.allData.filter(record => record.type === type);
     } catch (_) {}
     return [];
@@ -129,9 +130,12 @@
       overtime_sound_at: overtimeAt
     });
 
-    if (result && result.isOk && Array.isArray(window.allData)) {
-      const index = window.allData.findIndex(record => record.__backendId === dorm.__backendId);
-      if (index >= 0) window.allData[index] = { ...window.allData[index], overtime_sound_sent: 'true', overtime_sound_at: overtimeAt };
+    if (result && result.isOk) {
+      try {
+        const list = Array.isArray(allData) ? allData : [];
+        const index = list.findIndex(record => record.__backendId === dorm.__backendId);
+        if (index >= 0) list[index] = { ...list[index], overtime_sound_sent: 'true', overtime_sound_at: overtimeAt };
+      } catch (_) {}
     }
 
     return result;

@@ -196,3 +196,46 @@ test('Squadron SITREP ships current canonical assets and preserves lightweight c
   assert.ok(html.includes(scriptUrl));
   assert.ok(!html.includes('military-glass-terminal-20260915-bandshape1'));
 });
+
+
+test('Squadron Access requires a non-dismissible per-session USG acknowledgment before board interaction', async () => {
+  const [standalone, gate, css, login] = await Promise.all([
+    source('public/squadron/index.html'),
+    source('public/js/gate-squadron-access-gate.js'),
+    source('public/css/military-glass-terminal.css'),
+    source('public/login/index.html')
+  ]);
+
+  assert.match(standalone, /gate-squadron-access-gate\.js\?v=squadron-access-gate-20260922/);
+  assert.match(login, /session\.role === 'squadron' \? '\/squadron\/' : '\/'/);
+
+  assert.match(gate, /gate-squadron-standalone/);
+  assert.match(gate, /sessionStorage/);
+  assert.match(gate, /gate-squadron-access-acknowledged/);
+  assert.match(gate, /page\.inert = true/);
+  assert.match(gate, /page\.setAttribute\('aria-hidden', 'true'\)/);
+  assert.match(gate, /event\.key === 'Escape'/);
+  assert.match(gate, /event\.preventDefault\(\)/);
+  assert.doesNotMatch(gate, /aria-label=["']Close|>\s*[×X]\s*</);
+
+  assert.match(gate, /Attention:/);
+  assert.match(gate, /Gateway Arrival Tracking Environment \(GATE\) is currently in testing/);
+  assert.match(gate, /DO NOT INPUT CUI \/ OR PII information into this system/);
+  assert.match(gate, /not disseminate usernames and passwords/);
+  assert.match(gate, /U\.S\. Government \(USG\) Information System \(IS\)/);
+  assert.match(gate, /routinely monitors, records, and audits actions/);
+  assert.match(gate, /Unauthorized use of this system is strictly prohibited/);
+  assert.match(gate, /no reasonable expectation of privacy/);
+
+  assert.match(gate, /Agree &amp; Continue/);
+  assert.match(gate, />Cancel</);
+  assert.match(gate, /store\(ACK_KEY, '1'\)/);
+  assert.match(gate, /page\.inert = false/);
+  assert.match(gate, /overlay\.remove\(\)/);
+  assert.match(gate, /fetch\('\/api\/logout', \{ method: 'POST', credentials: 'same-origin' \}\)/);
+  assert.match(gate, /window\.location\.replace\('\/login\/'\)/);
+
+  assert.match(css, /gate-squadron-access-pending #page-squadron[\s\S]*filter:blur\(8px\)[\s\S]*pointer-events:none/);
+  assert.match(css, /\.gate-squadron-access-gate[\s\S]*position:fixed[\s\S]*inset:0[\s\S]*z-index:var\(--mg-z-critical\)/);
+  assert.match(css, /backdrop-filter:blur\(4px\)/);
+});

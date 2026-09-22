@@ -18,6 +18,7 @@
   let archiveIndex = [];
   let archiveIndexLoaded = false;
   let archiveIndexPromise = null;
+  let archiveRefreshQueued = false;
   let selectedArchiveId = '';
   const archiveDetailCache = new Map();
   const archiveDetailPromises = new Map();
@@ -552,7 +553,10 @@
 
   async function refreshArchiveIndex(force = false) {
     if (!isInstructor()) return [];
-    if (archiveIndexPromise && !force) return archiveIndexPromise;
+    if (archiveIndexPromise) {
+      if (force) archiveRefreshQueued = true;
+      return archiveIndexPromise;
+    }
     archiveIndexPromise = archiveApi('/api/archives')
       .then(payload => {
         archiveIndex = Array.isArray(payload.archives) ? payload.archives : [];
@@ -575,6 +579,10 @@
       })
       .finally(() => {
         archiveIndexPromise = null;
+        if (archiveRefreshQueued) {
+          archiveRefreshQueued = false;
+          void refreshArchiveIndex(true);
+        }
       });
     return archiveIndexPromise;
   }

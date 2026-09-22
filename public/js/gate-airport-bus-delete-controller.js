@@ -11,6 +11,7 @@
   let deleting = false;
 
   function records() {
+    try { if (Array.isArray(allData)) return allData; } catch (_) {}
     if (Array.isArray(window.allData)) return window.allData;
     try { return Array.isArray(allData) ? allData : []; } catch (_) { return []; }
   }

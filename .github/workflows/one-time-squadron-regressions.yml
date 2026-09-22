@@ -35,3 +35,4 @@ jobs:
           git diff --cached --check
           git commit -m 'fix: preserve canonical dorm ordering and unchanged Squadron DOM [gate-squadron-card-fix]'
           git push origin HEAD:feat/squadron-sitrep-notices-20260921
+# Single-use, removed before merge.

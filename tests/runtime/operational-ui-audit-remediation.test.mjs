@@ -215,7 +215,7 @@ test('Squadron Access requires a non-dismissible acknowledgment once per authent
     source('public/login/index.html')
   ]);
 
-  assert.match(standalone, /gate-squadron-access-gate\.js\?v=squadron-access-gate-20260922/);
+  assert.match(standalone, /gate-squadron-access-gate\.js\?v=squadron-access-gate-20260922-authsession1/);
   assert.match(login, /session\.role === 'squadron' \? '\/squadron\/' : '\/'/);
 
   assert.match(gate, /gate-squadron-standalone/);
@@ -240,7 +240,7 @@ test('Squadron Access requires a non-dismissible acknowledgment once per authent
 
   assert.match(gate, /Agree &amp; Continue/);
   assert.match(gate, />Cancel</);
-  assert.match(gate, /store\(ACK_KEY, '1'\)/);
+  assert.match(gate, /store\(ACK_KEY, SESSION_MARKER\)/);
   assert.match(gate, /page\.inert = false/);
   assert.match(gate, /overlay\.remove\(\)/);
   assert.match(gate, /fetch\('\/api\/logout', \{ method: 'POST', credentials: 'same-origin' \}\)/);

@@ -190,15 +190,22 @@ function normalizeDormUpdate(incomingRecord, existingRecord, now) {
   return incomingRecord;
 }
 
-export async function onRequestGet({ env, data }) {
+export async function onRequestGet({ request, env, data }) {
   const role = requestRole(data);
   if (!mayReadRecords(role)) return forbidden();
 
   try {
+    const scope = new URL(request.url).searchParams.get('scope') || '';
+    const liveOnly = scope === 'live';
     const result = await env.DB.prepare(
-      `SELECT id, type, week_group, data, created_at, updated_at
-       FROM records
-       ORDER BY created_at ASC`
+      liveOnly
+        ? `SELECT id, type, week_group, data, created_at, updated_at
+           FROM records
+           WHERE type <> 'archive'
+           ORDER BY created_at ASC`
+        : `SELECT id, type, week_group, data, created_at, updated_at
+           FROM records
+           ORDER BY created_at ASC`
     ).all();
 
     const records = (result.results || [])
@@ -206,7 +213,12 @@ export async function onRequestGet({ env, data }) {
       .map(record => sanitizeRecordForRole(record, role))
       .filter(Boolean);
 
-    return jsonResponse({ isOk: true, records, capabilities: RECORDS_API_CAPABILITIES });
+    return jsonResponse({
+      isOk: true,
+      records,
+      capabilities: RECORDS_API_CAPABILITIES,
+      scope: liveOnly ? 'live' : 'all'
+    });
   } catch (error) {
     return jsonResponse({ isOk: false, error: error.message || 'Failed to load records.' }, 500);
   }

@@ -526,13 +526,19 @@
     setValue('edit-auditorium-location', dorm.auditorium_location || '');
 
     setEditMessage('', false);
+    const reopenButton = document.getElementById('reopen-dorm-btn');
+    if (reopenButton) {
+      const closed = String(dorm.state || '').toLowerCase() === 'closed';
+      reopenButton.classList.toggle('hidden', !closed);
+      reopenButton.disabled = !closed;
+      reopenButton.dataset.dormId = closed ? id : '';
+    }
     const modal = document.getElementById('dorm-edit-modal');
     if (modal) {
       modal.classList.remove('hidden');
       modal.setAttribute('aria-hidden', 'false');
     }
 
-    window.GateDormReopenController?.refresh?.();
     window.runGateHooks?.('afterModalOpen', { modal: 'dorm-edit', dormId: id, source: 'gate-processing-controller' });
   }
 
@@ -541,6 +547,12 @@
     if (modal) {
       modal.classList.add('hidden');
       modal.setAttribute('aria-hidden', 'true');
+    }
+    const reopenButton = document.getElementById('reopen-dorm-btn');
+    if (reopenButton) {
+      reopenButton.classList.add('hidden');
+      reopenButton.disabled = true;
+      reopenButton.dataset.dormId = '';
     }
     setActiveEditDorm('');
   }
@@ -571,6 +583,7 @@
       auditorium_location: normalizeUpper(value('edit-auditorium-location')),
       phase: isClosed ? 'Closed' : dorm.phase,
       closed_timer: finalTime,
+      manual_closed_timer_override: isClosed && finalTime !== normalizeFinalTime(dorm.closed_timer, '00:00') ? 'true' : undefined,
       updated_at: new Date().toISOString()
     };
   }

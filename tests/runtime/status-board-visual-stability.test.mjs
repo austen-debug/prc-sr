@@ -130,13 +130,11 @@ test('Active timer ownership disables the legacy flashing interval', async () =>
   assert.doesNotMatch(middleware, /gate-status-board-timer-visual-stability\.js/);
 });
 
-test('Runtime compositing guard no longer owns Status Board layers', async () => {
-  const renderGuard = await source('public/js/gate-render-stability-fix.js');
+test('Runtime compositing guard is retired and canonical CSS owns Status Board layers', async () => {
+  const middleware = await source('functions/_middleware.js');
   const css = await source('public/css/military-glass-terminal.css');
 
-  assert.doesNotMatch(renderGuard, /#page-board\.active/);
-  assert.doesNotMatch(renderGuard, /#page-board[^`]*translateZ\(0\)/);
-  assert.match(renderGuard, /statusBoardExcluded:\s*true/);
+  assert.doesNotMatch(middleware, /gate-render-stability-fix\.js/);
   assert.match(css, /#page-board \.metric-card\s*\{[\s\S]*overflow:\s*hidden/);
   assert.match(css, /#page-board \.gate-active-buses-block\s*\{[\s\S]*display:\s*grid/);
 });

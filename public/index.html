@@ -543,7 +543,6 @@
           <label class="block text-sm font-medium mb-1">Actions</label>
           <div class="flex gap-2">
             <button type="button" onclick="printArchiveSpreadsheet()" class="flex-1 py-2 rounded font-bold text-white" style="background:var(--blue);">PRINT</button>
-            <button type="button" onclick="deleteArchiveWithOverride()" class="flex-1 py-2 rounded font-bold text-white" style="background:var(--red);">DELETE</button>
           </div>
         </div>
       </div>
@@ -1997,55 +1996,6 @@ function closeArchiveEditModal(event) {
 
 function printArchiveSpreadsheet(event) {
   return window.GateArchiveController?.printArchiveReport?.(event);
-}
-
-   async function deleteArchiveWithOverride() {
-  if (!editArchiveId) {
-    return;
-  }
-
-  const archive = allData.find(r => r.__backendId === editArchiveId);
-
-  if (!archive) {
-    return;
-  }
-
-  const override = prompt('Enter ADMIN_OVERRIDE password to delete this archived week group.');
-
-  if (!override) {
-    return;
-  }
-
-  const confirmed = confirm(`Delete archived week group ${archive.week_group || 'Unknown'}? This cannot be undone.`);
-
-  if (!confirmed) {
-    return;
-  }
-
-  const response = await fetch('/api/archive-delete', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json'
-    },
-    body: JSON.stringify({
-      record_id: archive.__backendId,
-      override
-    })
-  });
-
-  const result = await response.json();
-
-  if (result.isOk) {
-  closeArchiveEditModal();
-  allData = allData.filter(r => r.__backendId !== archive.__backendId);
-  renderAll();
-} else {
-    const msg = document.getElementById('archive-edit-msg');
-    msg.textContent = result.error || 'Archive delete failed.';
-    msg.style.color = 'var(--red)';
-    msg.classList.remove('hidden');
-  }
 }
 
  function toggleFullscreenBoard() {

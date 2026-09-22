@@ -135,7 +135,8 @@ test('login, session, and authentication surfaces remain reachable', async () =>
   assert.match(login, /fetch\(url,\s*\{\s*credentials:\s*'same-origin'/);
   assert.match(login, /await request\('\/api\/login'/);
   assert.match(login, /await request\('\/api\/session'/);
-  assert.match(login, /if \(!session\.ok\)/);
+  assert.match(login, /if \(!sessionResponse\.ok \|\| !session\?\.isOk\)/);
+  assert.match(login, /session\.role === 'squadron' \? '\/squadron\/' : '\/'/);
   assert.match(login, /\/css\/military-glass-terminal\.css/);
   await exists('functions/api/login.js');
   await exists('functions/api/logout.js');

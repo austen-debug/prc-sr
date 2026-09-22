@@ -47,13 +47,17 @@ test('active dorm consumers use the canonical record display contract', async ()
   const processing = await source('public/js/gate-processing-controller.js');
   const squadron = await source('public/js/prc-dash-final-audit.js');
 
-  for (const [name, contents] of Object.entries({ status, processing, squadron })) {
+  for (const [name, contents] of Object.entries({ status, processing })) {
     assert.match(contents, /GateRecordDisplay/);
     assert.match(contents, /sortDorms/);
     assert.doesNotMatch(contents, /sort\(\(a, b\) => String\(a\.dorm_name/);
     assert.doesNotMatch(contents, /sort\(\(a, b\) => String\(b\.dorm_name/);
-    assert.ok(contents.length > 500, `${name} source should be present`);
+    assert.ok(contents.length > 500, name + ' source should be present');
   }
+  // Squadron consumes the restricted server snapshot; never loads a second copy of raw records.
+  assert.match(squadron, /\/api\/squadron-board/);
+  assert.match(squadron, /function renderDormCards\(board\)/);
+  assert.doesNotMatch(squadron, /function dormsForActiveWeek|function recordsByType/);
 });
 
 test('Input owns dorm identity and never re-matches a created dorm to the live grid', async () => {

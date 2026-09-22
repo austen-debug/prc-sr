@@ -1,4 +1,4 @@
-const COOKIE_NAME = 'prc_sr_session';
+import { verifyRequestSession } from './api/session-contract.mjs';
 
 const UI_STYLESHEETS = [
   '<link rel="stylesheet" href="/css/military-glass-terminal.css?v=military-glass-terminal-20260915-bandshape1">'
@@ -15,7 +15,7 @@ const UI_HEAD_SCRIPTS = [
   '<script src="/js/prc-dash-sat-arrivals.js" defer></script>',
   '<script src="/js/prc-dash-space-force.js" defer></script>',
   '<script src="/js/prc-dash-dorm-reopen.js" defer></script>',
-  '<script src="/js/prc-dash-final-audit.js?v=record-display-integrity-20260714" defer></script>',
+  '<script src="/js/prc-dash-final-audit.js?v=squadron-sitrep-20260921" defer></script>',
   '<script src="/js/gate-status-board-controller.js?v=dorm-timer-record-lifecycle-20260722" defer></script>',
   '<script src="/js/gate-processing-controller.js?v=record-display-integrity-20260714" defer></script>',
   '<script src="/js/prc-dash-dorm-flag-validation.js?v=processing-band-designator-20260915" defer></script>',
@@ -79,66 +79,6 @@ function jsonResponse(data, status = 200) {
       'Cache-Control': 'no-store'
     }
   });
-}
-
-function getCookie(request, name) {
-  const cookieHeader = request.headers.get('Cookie') || '';
-  const cookies = cookieHeader.split(';').map(cookie => cookie.trim());
-
-  for (const cookie of cookies) {
-    const [key, ...valueParts] = cookie.split('=');
-    if (key === name) return valueParts.join('=');
-  }
-
-  return '';
-}
-
-function base64urlDecodeString(value) {
-  const base64 = value.replace(/-/g, '+').replace(/_/g, '/').padEnd(Math.ceil(value.length / 4) * 4, '=');
-  return atob(base64);
-}
-
-function base64urlEncodeBytes(bytes) {
-  let binary = '';
-  const array = new Uint8Array(bytes);
-  for (const byte of array) binary += String.fromCharCode(byte);
-  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
-}
-
-function safeEqual(a, b) {
-  if (!a || !b || a.length !== b.length) return false;
-  let result = 0;
-  for (let i = 0; i < a.length; i += 1) result |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  return result === 0;
-}
-
-async function sign(value, secret) {
-  const encoder = new TextEncoder();
-  const key = await crypto.subtle.importKey(
-    'raw',
-    encoder.encode(secret || 'missing-secret'),
-    { name: 'HMAC', hash: 'SHA-256' },
-    false,
-    ['sign']
-  );
-  const signature = await crypto.subtle.sign('HMAC', key, encoder.encode(value));
-  return base64urlEncodeBytes(signature);
-}
-
-async function verifySession(request, env) {
-  const token = getCookie(request, COOKIE_NAME);
-  if (!token) return null;
-
-  const [body, signature] = token.split('.');
-  if (!body || !signature) return null;
-
-  const expected = await sign(body, env.AUTH_SECRET);
-  if (!safeEqual(signature, expected)) return null;
-
-  const payload = JSON.parse(base64urlDecodeString(body));
-  if (!payload.exp || payload.exp < Date.now()) return null;
-
-  return payload;
 }
 
 function extractUrl(assetTag, attributeName) {
@@ -322,10 +262,24 @@ export async function onRequest(context) {
     return context.next();
   }
 
-  const session = await verifySession(context.request, context.env);
+  const session = await verifyRequestSession(context.request, context.env);
   if (!session) {
-    if (pathname.startsWith('/api/')) return jsonResponse({ isOk: false, error: 'Unauthorized.' }, 401);
+    if (pathname.startsWith('/api/')) return jsonResponse({ isOk: false, code: 'unauthorized', error: 'Unauthorized.' }, 401);
     return Response.redirect(`${url.origin}/login/`, 302);
+  }
+
+  if (session.role === 'squadron') {
+    if (pathname === '/squadron') return Response.redirect(`${url.origin}/squadron/`, 302);
+    if (pathname === '/squadron/') return context.next();
+    if (pathname.startsWith('/api/')) {
+      if (pathname === '/api/session' || pathname === '/api/squadron-board') return context.next();
+      return jsonResponse({ isOk: false, code: 'forbidden', error: 'Squadron access is limited to the read-only Squadron Board.' }, 403);
+    }
+    return Response.redirect(`${url.origin}/squadron/`, 302);
+  }
+
+  if (pathname === '/squadron' || pathname === '/squadron/') {
+    return Response.redirect(`${url.origin}/`, 302);
   }
 
   return maybeApplyUiAssets(await context.next());

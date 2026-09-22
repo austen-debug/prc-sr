@@ -7,14 +7,19 @@ const restricted = (message, code = 'lifecycle_required', status = 409) => new R
 const OPERATIONAL_TYPES = new Set(['bus', 'dorm', 'sound_event']);
 const RECORD_TYPES = new Set(['bus', 'dorm', 'archive', 'config', 'sound_event', 'audit_event']);
 
+function squadronApiAllowed(pathname, method) {
+  if (pathname === '/api/session') return method === 'GET';
+  if (pathname === '/api/logout') return method === 'POST';
+  if (pathname === '/api/squadron-board') return method === 'GET';
+  return false;
+}
+
 async function guardPersistence(context) {
   const { request, env } = context;
   const url = new URL(request.url);
   if (env.GATE_PERSISTENCE_ENABLED !== 'true') return null;
   if (!env.AUTH_SECRET) return restricted('AUTH_SECRET must be configured before enabling persistence.', 'configuration_required', 503);
 
-  // The persistence endpoint alone owns retries and verifies the archived row AND closed cycle.
-  // Never return a synthetic closeout success from middleware based on an operation row alone.
   if (url.pathname === '/api/archive-delete' && request.method !== 'GET') {
     return restricted('Archived history is immutable. Record a correction through the amendment workflow.');
   }
@@ -30,7 +35,6 @@ async function guardPersistence(context) {
     const id = body.__backendId || body.id;
     if (!id) return restricted('Record ID is required.', 'validation', 400);
     stored = await env.DB.prepare('SELECT type,week_group,data FROM records WHERE id=?').bind(id).first();
-    // The records endpoint retains ownership of its not-found response.
     if (!stored) return null;
   }
 
@@ -53,8 +57,6 @@ async function guardPersistence(context) {
     return restricted('Dorm initialization must use the transactional Week Group endpoint.');
   }
 
-  // Existing bus/dorm CRUD remains owned by records; D1 triggers mirror each committed write.
-  // Reject cross-cycle, orphan and post-closeout mutations rather than creating a second live WG.
   if (OPERATIONAL_TYPES.has(type)) {
     const active = await env.DB.prepare("SELECT week_group FROM gate_week_groups WHERE state='active' LIMIT 1").first();
     if (!active) return restricted('Register an active Week Group before changing operational records.');
@@ -72,8 +74,16 @@ async function guardPersistence(context) {
 }
 
 export async function onRequest(context) {
-  const session = await verifyRequestSession(context.request, context.env);
+  // `context.data.session` may be populated by a verified upstream middleware.
+  // It is server-owned request context, not client input. Re-verify only when absent.
+  const session = context.data?.session || await verifyRequestSession(context.request, context.env);
   if (session) context.data.session = session;
+
+  const url = new URL(context.request.url);
+  if (session?.role === 'squadron' && !squadronApiAllowed(url.pathname, context.request.method)) {
+    return restricted('Squadron access is limited to the read-only Squadron Board endpoint.', 'forbidden', 403);
+  }
+
   const blocked = await guardPersistence(context);
   if (blocked) return blocked;
   return context.next();

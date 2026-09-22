@@ -30,7 +30,8 @@
     Object.entries(PAGE_ROUTES).map(([page, path]) => [path, page])
   ));
 
-  const MOBILE_MEDIA = '(max-width: 767px), (pointer: coarse) and (max-width: 1024px) and (max-height: 560px), (any-pointer: coarse) and (min-width: 768px) and (max-width: 1366px) and (min-height: 561px)';
+  const MOBILE_MEDIA = '(max-width: 767px), (pointer: coarse) and (max-width: 1024px) and (max-height: 560px)';
+  const TABLET_CONSOLE_MEDIA = '(any-pointer: coarse) and (min-width: 768px) and (max-width: 1366px) and (min-height: 561px)';
   const SYSTEM_CONTROL_IDS = ['role-toggle', 'fullscreen-btn', 'sound-toggle-btn', 'theme-toggle-btn'];
   const SYNTHETIC_CLICK_SUPPRESS_MS = 650;
 
@@ -89,7 +90,7 @@
   }
 
   function isMobileShell() {
-    return window.matchMedia(MOBILE_MEDIA).matches;
+    return window.matchMedia(MOBILE_MEDIA).matches || window.matchMedia(TABLET_CONSOLE_MEDIA).matches;
   }
 
   function pageLabel(page) {

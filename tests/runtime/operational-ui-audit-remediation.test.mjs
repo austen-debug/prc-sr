@@ -130,16 +130,16 @@ test('Processing BAND designator uses rounded-rectangle geometry', async () => {
 test('middleware delivers one canonical stylesheet and no retired CSS assets', async () => {
   const middleware = await source('functions/_middleware.js');
 
-  assert.match(middleware, /military-glass-terminal\.css\?v=military-glass-terminal-20260922-squadron-metrics1/);
+  assert.match(middleware, /military-glass-terminal\.css\?v=military-glass-terminal-20260922-squadron-actions1/);
   assert.equal((middleware.match(/<link rel="stylesheet"/g) || []).length, 1);
   assert.doesNotMatch(middleware, /gate-ui-ownership-correction\.css|gate-fullscreen-board-contract\.css|gate-tablet-shell\.css|gate-mobile-corrective\.css/);
 });
 
 
 test('Squadron SITREP ships current canonical assets and preserves lightweight communication UI', async () => {
-  const version = 'military-glass-terminal-20260922-squadron-metrics1';
+  const version = 'military-glass-terminal-20260922-squadron-actions1';
   const url = `/css/military-glass-terminal.css?v=${version}`;
-  const scriptUrl = '/js/prc-dash-final-audit.js?v=squadron-sitrep-20260922-clear1';
+  const scriptUrl = '/js/prc-dash-final-audit.js?v=squadron-sitrep-20260922-live-sync1';
   const [middleware, standalone, budgetText, stack, css, controller, index] = await Promise.all([
     source('functions/_middleware.js'), source('public/squadron/index.html'),
     source('docs/build-2/ACTIVE_RUNTIME_BUDGET.json'), source('docs/ACTIVE_RUNTIME_STACK.md'),
@@ -180,8 +180,15 @@ test('Squadron SITREP ships current canonical assets and preserves lightweight c
   assert.ok(controller.includes('id="squadron-clear-notice"'), 'MTI editor exposes a Clear Live Update action');
   assert.ok(controller.includes("'X-Gate-Notice': 'clear'"), 'clear uses the protected Squadron notice endpoint');
   assert.ok(controller.includes("window.confirm('Clear the current Live Update?')"), 'clear requires intentional confirmation');
-  assert.match(controller, /clearButton\.hidden = !editor \|\| !notice\?\.message/, 'clear is visible only to MTI editors when a live update exists');
-  assert.match(controller, /const unread = standalone\(\) && Boolean\(notice\?\.message\)/, 'a cleared revision cannot generate a Squadron unread alert');
+  assert.match(controller, /const cleared = Boolean\(notice\?\.cleared\)/, 'client consumes explicit durable clear state');
+  assert.match(controller, /clearButton\.hidden = !editor \|\| !activeMessage/, 'clear is visible only to MTI editors when an active live update exists');
+  assert.match(controller, /const unread = standalone\(\) && activeMessage/, 'a cleared revision cannot generate a Squadron unread alert');
+  assert.ok(controller.includes("document.addEventListener('visibilitychange'"), 'Squadron Access refreshes when a background tab becomes active');
+  assert.ok(controller.includes("window.addEventListener('focus', renderSquadronBoard)"), 'Squadron Access refreshes on window focus');
+  assert.ok(controller.includes("window.addEventListener('pageshow', renderSquadronBoard)"), 'restored Squadron pages revalidate immediately');
+  assert.match(controller, /displayNotice\(\{ week_group: activeWeek, notice: data\.notice \}\)/, 'clear response is rendered immediately without waiting for the next poll');
+  assert.match(squadronCss, /\.gate-squadron-publish-actions\s*\{[^}]*display:grid;[^}]*grid-template-columns:repeat\(2,minmax\(0,1fr\)\);[^}]*gap:10px/, 'publish and clear controls use explicit equal-width spacing');
+  assert.match(squadronCss, /\.gate-squadron-publish,[\s\S]*\.gate-squadron-clear\s*\{[^}]*min-height:42px;[^}]*padding:10px 14px;[^}]*white-space:nowrap/, 'publish and clear controls share stable padding and text geometry');
   assert.match(controller, /const nodes = new Map\(\)/, 'condensed dorm cards keep keyed DOM identity');
   assert.doesNotMatch(controller, /id="active-buses"/, 'no active bus strip on Squadron Board');
 

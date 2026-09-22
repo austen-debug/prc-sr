@@ -24,7 +24,7 @@
     "/js/gate-component-contracts.js",
     "/js/gate-ui-hooks.js?v=repo-audit-20260922",
     "/js/gate-branding-controller.js",
-    "/js/prc-dash-sat-arrivals.js",
+    "/js/gate-sat-arrivals-controller.js?v=repo-audit-20260922",
     "/js/gate-sound-controller.js?v=repo-audit-20260922",
     "/js/prc-dash-final-audit.js?v=squadron-sitrep-20260922-live-sync1",
     "/js/gate-status-board-controller.js?v=dorm-timer-record-lifecycle-20260722",

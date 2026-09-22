@@ -14,6 +14,12 @@
   let hooksRegistered = false;
   let renderQueued = false;
   let archiveSearchTerm = '';
+  let archiveYearFilter = 'all';
+  let archiveIndex = [];
+  let archiveIndexLoaded = false;
+  let archiveIndexPromise = null;
+  let selectedArchiveId = '';
+  const archiveDetailCache = new Map();
   let closeoutPatchAttempts = 0;
   let closeoutPatchTimer = null;
 

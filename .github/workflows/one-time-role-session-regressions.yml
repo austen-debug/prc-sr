@@ -1,0 +1,62 @@
+name: One-time role-session regression reconciliation
+on:
+  push:
+    branches:
+      - feat/squadron-sitrep-notices-20260921
+    paths:
+      - .github/workflows/one-time-role-session-regressions.yml
+permissions:
+  contents: write
+jobs:
+  reconcile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Update legacy test fixtures without weakening authentication
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          def patch(path, old, new):
+              p=Path(path); src=p.read_text()
+              if src.count(old)!=1: raise RuntimeError(f'{path}: expected one match, found {src.count(old)}: {old[:80]}')
+              p.write_text(src.replace(old,new))
+          p='tests/build-2/server/persistence-audit.test.mjs'
+          patch(p,"import { onRequestPost } from '../../../functions/api/persistence.js';", "import { onRequestPost } from '../../../functions/api/persistence.js';\nimport { roleSigningSecret } from '../../../functions/api/session-contract.mjs';")
+          patch(p,"const env = { DB, GATE_PERSISTENCE_ENABLED:'true', AUTH_SECRET:'fixture-only' };", "const env = { DB, GATE_PERSISTENCE_ENABLED:'true', AUTH_SECRET:'fixture-only', MTI_USERNAME:'fixture-instructor', MTI_PASSWORD:'fixture-instructor-password' };")
+          patch(p,"createHmac('sha256', env.AUTH_SECRET).update(body)", "createHmac('sha256', roleSigningSecret('instructor', env)).update(body)")
+          p='tests/build-2/server/records-api.test.mjs'
+          patch(p,"import { verifyRequestSession } from '../../../functions/api/session-contract.mjs';", "import { roleSigningSecret, verifyRequestSession } from '../../../functions/api/session-contract.mjs';")
+          patch(p,"const secret = 'test-secret';\n  const now = Date.now();", "const secret = 'test-secret';\n  const env = { AUTH_SECRET: secret, MTI_USERNAME:'tester', MTI_PASSWORD:'fixture-password' };\n  const now = Date.now();")
+          patch(p,"new TextEncoder().encode(secret), { name: 'HMAC'", "new TextEncoder().encode(roleSigningSecret('instructor', env)), { name: 'HMAC'")
+          patch(p,"  }), { AUTH_SECRET: secret });", "  }), env);")
+          p='tests/build-2/server/squadron-security.test.mjs'
+          patch(p,"import { onRequest as rootMiddleware } from '../../../functions/_middleware.js';", "import { onRequest as rootMiddleware } from '../../../functions/_middleware.js';\nimport { roleSigningSecret } from '../../../functions/api/session-contract.mjs';")
+          patch(p,"async function sessionCookie(secret, role = 'squadron', username = 'squadron_access') {", "const roleEnv = secret => ({ AUTH_SECRET:secret, SQUADRON_USERNAME:'squadron_access', SQUADRON_PASSWORD:'test-squadron-password', MTI_USERNAME:'mti', MTI_PASSWORD:'test-instructor-password' });\nasync function sessionCookie(secret, role = 'squadron', username = 'squadron_access') {")
+          patch(p,"new TextEncoder().encode(secret), { name: 'HMAC'", "new TextEncoder().encode(roleSigningSecret(role, roleEnv(secret))), { name: 'HMAC'")
+          patch(p,"const env = { AUTH_SECRET: secret };", "const env = roleEnv(secret);")
+          patch(p,"const env = { AUTH_SECRET: secret, GATE_PERSISTENCE_ENABLED: 'false' };", "const env = { ...roleEnv(secret), GATE_PERSISTENCE_ENABLED: 'false' };")
+          p='tests/runtime/login-session-integrity.test.mjs'
+          src=Path(p).read_text()
+          if "test('ambiguous shared credentials" in src: raise RuntimeError('Regression tests already present')
+          src += '''\n\ntest('ambiguous shared credentials fail closed without changing the shared role model', async () => {\n  const env = { AUTH_SECRET:'collision-secret', MTI_USERNAME:'shared', MTI_PASSWORD:'same-password',\n    SQUADRON_USERNAME:'shared', SQUADRON_PASSWORD:'same-password' };\n  const attempt = (username, password, config=env) => login({\n    env:config, request:new Request('https://gate.example/api/login', { method:'POST',\n      headers:{'Content-Type':'application/json'}, body:JSON.stringify({username,password}) })\n  });\n  const collision = await attempt('shared','same-password');\n  assert.equal(collision.status,503);\n  assert.equal((await collision.json()).code,'configuration_conflict');\n  assert.equal(collision.headers.get('set-cookie'),null);\n  const distinct = { ...env, SQUADRON_PASSWORD:'different-password' };\n  const squadron = await attempt('shared','different-password',distinct);\n  assert.equal((await squadron.json()).role,'squadron');\n  const instructor = await attempt('shared','same-password',distinct);\n  assert.equal((await instructor.json()).role,'instructor');\n});\n\ntest('changing Squadron credentials revokes only Squadron sessions and never exposes credentials in cookies', async () => {\n  const env = { AUTH_SECRET:'rotation-secret', SQUADRON_USERNAME:'squadron', SQUADRON_PASSWORD:'squadron-old',\n    MTI_USERNAME:'instructor', MTI_PASSWORD:'mti-password' };\n  async function authenticate(username,password,config=env) {\n    const response = await login({ env:config, request:new Request('https://gate.example/api/login', {method:'POST',\n      headers:{'Content-Type':'application/json'},body:JSON.stringify({username,password})}) });\n    assert.equal(response.status,200);\n    const cookie = response.headers.get('set-cookie').split(';')[0];\n    return new Request('https://gate.example/api/session',{headers:{Cookie:cookie}});\n  }\n  const oldSquadron=await authenticate('squadron','squadron-old');\n  const instructor=await authenticate('instructor','mti-password');\n  assert.equal((await verifyRequestSession(oldSquadron,env)).role,'squadron');\n  const rotated={...env,SQUADRON_PASSWORD:'squadron-new'};\n  assert.equal(await verifyRequestSession(oldSquadron,rotated),null);\n  assert.equal((await verifyRequestSession(instructor,rotated)).role,'instructor');\n  const newSquadron=await authenticate('squadron','squadron-new',rotated);\n  assert.equal((await verifyRequestSession(newSquadron,rotated)).role,'squadron');\n  const encoded=newSquadron.headers.get('Cookie');\n  assert.ok(!encoded.includes('squadron-new') && !encoded.includes('rotation-secret'));\n  assert.equal(await verifyRequestSession(newSquadron,{...rotated,SQUADRON_USERNAME:''}),null);\n  assert.equal(await verifyRequestSession(newSquadron,{...rotated,AUTH_SECRET:''}),null);\n});\n'''
+          Path(p).write_text(src)
+          print('Updated three legacy fixtures and added shared-credential collision/rotation regression tests.')
+          PY
+      - name: Run affected tests
+        run: |
+          node --experimental-default-type=module --test tests/build-2/server/persistence-audit.test.mjs tests/build-2/server/records-api.test.mjs tests/build-2/server/squadron-security.test.mjs
+          node --test tests/runtime/login-session-integrity.test.mjs
+      - name: Commit only test updates
+        run: |
+          git config user.name 'GATE CI'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add tests/build-2/server/persistence-audit.test.mjs tests/build-2/server/records-api.test.mjs tests/build-2/server/squadron-security.test.mjs tests/runtime/login-session-integrity.test.mjs
+          git diff --cached --check
+          git commit -m 'test: verify role collision and credential-scoped session invalidation'
+          git push origin HEAD:feat/squadron-sitrep-notices-20260921

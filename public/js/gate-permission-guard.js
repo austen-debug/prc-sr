@@ -37,6 +37,8 @@
   let passQueued = false;
 
   function currentRoleSafe() {
+    const serverRole = document.body?.dataset.gateSessionRole || '';
+    if (ROLE_PAGES[serverRole]) return serverRole;
     try { return currentRole || 'airman'; } catch (_) { return 'airman'; }
   }
 

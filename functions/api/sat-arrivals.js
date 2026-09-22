@@ -228,7 +228,7 @@ async function fetchAirLabsArrivals(apiKey) {
     hasMore: Boolean(payload.request?.has_more),
     totalItems: Number(payload.request?.total_items || normalizedArrivals.length || 0),
     returnedItems: arrivals.length,
-    note: 'PRC DASH filters SAT arrivals to a rolling next-24-hours window and hides flights before the current time.',
+    note: 'GATE filters SAT arrivals to a rolling next-24-hours window and hides flights before the current time.',
     arrivals
   };
 }
@@ -294,9 +294,11 @@ export async function onRequestGet({ env }) {
       servedAt: new Date().toISOString()
     });
   } catch (error) {
+    console.error('SAT arrivals refresh failed:', error);
     return jsonResponse({
       isOk: false,
-      error: error.message || 'Unable to load SAT arrivals.'
+      code: 'sat_arrivals_failed',
+      error: 'Unable to load SAT arrivals.'
     }, 500);
   }
 }

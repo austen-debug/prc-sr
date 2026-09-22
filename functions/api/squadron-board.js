@@ -1,6 +1,7 @@
 // Single Squadron read contract. Only an authenticated instructor can publish a notice.
 const READ_ROLES = new Set(['squadron', 'instructor']);
 const DORM_STATES = new Set(['empty', 'open', 'closed']);
+const CLEARED_NOTICE = '__GATE_NOTICE_CLEARED__';
 const DEFAULT_INFORMATION = Object.freeze([
   'Dormitories are "open" when they are full.',
   'The PRC will contact CQ when dormitories are open, closed, or there are updates pertaining to that Dorm.',
@@ -163,7 +164,7 @@ export function buildSquadronSnapshot({ weekGroup = '', records = [], now = new 
   }
   const safeNotice = notice ? {
     revision: number(notice.id),
-    message: String(notice.message || ''),
+    message: String(notice.message || '') === CLEARED_NOTICE ? '' : String(notice.message || ''),
     published_at: iso(notice.published_at)
   } : null;
   let safeInformation = {
@@ -255,7 +256,8 @@ export async function onRequestGet({ env, data }) {
 export async function onRequestPost({ request, env, data }) {
   if (data?.session?.role !== 'instructor') return reply({ isOk: false, code: 'forbidden', error: 'Instructor access required.' }, 403);
   const origin = request.headers.get('Origin');
-  const noticeAction = request.headers.get('X-Gate-Notice') === 'publish';
+  const noticeMode = String(request.headers.get('X-Gate-Notice') || '').toLowerCase();
+  const noticeAction = noticeMode === 'publish' || noticeMode === 'clear';
   const informationAction = request.headers.get('X-Gate-Information') === 'save';
   if (
     origin !== new URL(request.url).origin ||
@@ -274,9 +276,10 @@ export async function onRequestPost({ request, env, data }) {
   }
 
   if (noticeAction) {
-    const message = String(payload?.message ?? '').trim();
+    const clearing = noticeMode === 'clear';
+    const message = clearing ? CLEARED_NOTICE : String(payload?.message ?? '').trim();
     const expectedRevision = payload?.expected_revision;
-    if (!message || message.length > 1000 || !Number.isSafeInteger(expectedRevision) || expectedRevision < 0) {
+    if ((!clearing && (!message || message.length > 1000)) || !Number.isSafeInteger(expectedRevision) || expectedRevision < 0) {
       return reply({ isOk: false, code: 'validation', error: 'A notice (1–1000 characters) and current revision are required.' }, 400);
     }
     try {
@@ -291,7 +294,7 @@ export async function onRequestPost({ request, env, data }) {
       if (result.meta?.changes !== 1) return reply({ isOk: false, code: 'conflict', error: 'The active group or notice changed. Refresh before publishing.' }, 409);
       const revision = result.meta?.last_row_id;
       if (!Number.isSafeInteger(revision) || revision < 1) return reply({ isOk: false, code: 'publication_unconfirmed', error: 'Check the published notice before retrying.' }, 503);
-      return reply({ isOk: true, notice: { revision, message, published_at: publishedAt } });
+      return reply({ isOk: true, notice: { revision, message: clearing ? '' : message, published_at: publishedAt }, cleared: clearing });
     } catch (error) {
       return reply({ isOk: false, code: error?.code || 'publication_failed', error: error?.code === 'integrity_error' || error?.code === 'configuration_required' ? error.message : 'Unable to publish notice.' }, error?.code === 'integrity_error' || error?.code === 'configuration_required' ? 503 : 500);
     }

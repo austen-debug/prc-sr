@@ -214,10 +214,12 @@ test('retired compatibility owners are absent and their behavior is absorbed by 
   assert.match(buses, /function ensureSfColumn\(/);
   assert.match(shell, /const TABLET_CONSOLE_MEDIA =/);
 
-  const sound = await source('public/js/prc-dash-dorm-reopen.js');
+  const sound = await source('public/js/gate-sound-controller.js');
   const archive = await source('public/js/gate-archive-controller.js');
   const html = await source('public/index.html');
   assert.match(sound, /window\.GateSoundSystem = Object\.freeze/);
+  assert.match(processing, /manual_closed_timer_override:/);
+  assert.match(processing, /function handleTouchStart\(event\)/);
   assert.match(buses, /function onKeydown\(event\)[\s\S]*event\.key !== 'Escape'/);
   assert.match(archive, /function handleKeydown\(event\)[\s\S]*archive-edit-modal/);
   assert.match(html, /event\.key !== 'Escape'[\s\S]*confirm-no/);

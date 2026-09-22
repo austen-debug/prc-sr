@@ -70,6 +70,29 @@ test('all six operational routes and their critical DOM surfaces remain present'
   assert.match(squadron, /gate-squadron-page/);
 });
 
+test('Squadron write self-bootstrap DDL stays identical to additive migrations', async () => {
+  const [api, noticeMigration, informationMigration] = await Promise.all([
+    source('functions/api/squadron-board.js'),
+    source('migrations/0005_gate_squadron_notices.sql'),
+    source('migrations/0006_gate_squadron_information_revisions.sql')
+  ]);
+
+  const template = api.match(/const SQUADRON_WRITE_SCHEMA_SQL = \`([\\s\\S]*?)\`;/);
+  assert.ok(template, 'Squadron self-bootstrap schema template is missing');
+
+  const normalizeSql = value => String(value)
+    .replace(/^--.*$/gm, '')
+    .replace(/\\s+/g, ' ')
+    .replace(/\\s*;\\s*/g, ';')
+    .trim();
+
+  assert.equal(
+    normalizeSql(template[1]),
+    normalizeSql(`${noticeMigration}\n${informationMigration}`),
+    'Squadron self-bootstrap DDL must remain byte-semantically aligned with migrations 0005 and 0006'
+  );
+});
+
 test('canonical workflow owners retain the required operational function contracts', async () => {
   const status = await source('public/js/gate-status-board-controller.js');
   assertControllerMethods(status, 'GateStatusBoardController', [

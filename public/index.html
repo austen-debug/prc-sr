@@ -373,15 +373,15 @@ body > * {
     <span id="total-otw">0</span><span id="total-f">0</span><span id="total-nat">0</span>
    </div>
   </div><!-- Dorm Processing Modal -->
-  <div id="dorm-modal" class="confirm-overlay hidden">
-   <div class="modal-content">
-    <div class="flex justify-between items-center mb-4">
+  <div id="dorm-modal" class="confirm-overlay hidden" aria-hidden="true" data-modal-owner="gate-processing-controller" role="presentation">
+   <div class="modal-content gate-processing-workspace" role="dialog" aria-modal="true" aria-labelledby="modal-dorm-name">
+    <div class="flex justify-between items-center mb-4 gate-processing-workspace__header">
      <h2 id="modal-dorm-name" class="text-2xl font-black"></h2><button onclick="closeDormModal()" class="text-3xl leading-none text-muted hover:text-white">×</button>
     </div>
-    <div id="modal-dorm-info" class="text-sm text-muted mb-4"></div>
+    <div id="modal-dorm-info" class="text-sm text-muted mb-4 gate-processing-workspace__meta"></div>
 
 <!-- Assigned Airman -->
-<div class="mb-6">
+<div class="mb-6 gate-processing-workspace__assignment">
   <label class="block text-xs uppercase tracking-wider font-bold text-muted mb-2" for="modal-airman-input">
     Airman
   </label>
@@ -408,13 +408,13 @@ body > * {
 </div>
 
 <!-- Phase Selection -->
-    <div id="modal-phase-section" class="mb-6">
+    <div id="modal-phase-section" class="mb-6 gate-processing-workspace__phase">
      <div class="text-xs uppercase tracking-wider font-bold text-muted mb-2">
       Processing Phase
      </div>
      <div id="modal-phase-buttons" class="grid grid-cols-2 gap-2"></div>
     </div><!-- Load Control -->
-    <div id="modal-load-section" class="mb-6">
+    <div id="modal-load-section" class="mb-6 gate-processing-workspace__load">
      <div class="text-xs uppercase tracking-wider font-bold text-muted mb-2">
       Current Load
      </div>
@@ -426,19 +426,19 @@ body > * {
      <div class="flex gap-2 justify-center"><button onclick="setLoadFull()" class="px-4 py-2 rounded font-bold text-white" style="background:var(--blue);">FULL</button> <button onclick="saveLoad()" class="px-4 py-2 rounded font-bold text-white" style="background:var(--blue);">SAVE LOAD</button>
      </div>
     </div><!-- Open/Close -->
-    <div id="modal-action-section" class="flex gap-3 justify-center"></div>
+    <div id="modal-action-section" class="flex gap-3 justify-center gate-processing-workspace__footer"></div>
       </div>
   </div><!-- End Dorm Processing Modal -->
 
   <!-- Closed Dorm Edit Modal -->
-<div id="dorm-edit-modal" class="confirm-overlay hidden">
-  <div class="modal-content">
-    <div class="flex justify-between items-center mb-4">
+<div id="dorm-edit-modal" class="confirm-overlay hidden" aria-hidden="true" data-modal-owner="gate-processing-controller" role="presentation">
+  <div class="modal-content gate-processing-edit-workspace" role="dialog" aria-modal="true" aria-label="Edit Dorm Record">
+    <div class="flex justify-between items-center mb-4 gate-processing-edit-workspace__header">
       <h2 class="text-xl font-black">Edit Dorm Record</h2>
       <button onclick="closeDormEditModal()" class="text-3xl leading-none text-muted hover:text-white">×</button>
     </div>
 
-    <form id="dorm-edit-form" class="space-y-3">
+    <form id="dorm-edit-form" class="space-y-3 gate-processing-edit-workspace__form">
       <div>
         <label class="block text-sm font-medium mb-1" for="edit-dorm-name">Dorm</label>
         <input id="edit-dorm-name" type="text" class="w-full border rounded px-3 py-2 bg-transparent" style="border-color:var(--border);color:var(--text);">
@@ -508,7 +508,7 @@ body > * {
         This edits the dorm record for correction purposes. Open/close timestamps are preserved.
       </div>
 
-      <div class="flex gap-2 pt-3 justify-end items-center">
+      <div class="flex gap-2 pt-3 justify-end items-center gate-processing-edit-workspace__footer prc-dorm-edit-actions">
   <button
     type="button"
     onclick="closeDormEditModal()"
@@ -1736,15 +1736,18 @@ closed_timer: d.state === 'closed'
     function showConfirm(msg, cb) {
       document.getElementById('confirm-msg').textContent = msg;
       document.getElementById('confirm-dialog').classList.remove('hidden');
+      document.body.classList.add('gate-modal-open');
       confirmCallback = cb;
     }
     document.getElementById('confirm-yes').addEventListener('click', () => {
       document.getElementById('confirm-dialog').classList.add('hidden');
+      document.body.classList.remove('gate-modal-open');
       if (confirmCallback) confirmCallback();
       confirmCallback = null;
     });
     document.getElementById('confirm-no').addEventListener('click', () => {
       document.getElementById('confirm-dialog').classList.add('hidden');
+      document.body.classList.remove('gate-modal-open');
       confirmCallback = null;
     });
     document.addEventListener('keydown', event => {

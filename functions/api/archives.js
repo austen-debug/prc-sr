@@ -44,8 +44,9 @@ function timestamp(value) {
   return Number.isFinite(time) ? time : 0;
 }
 
-function archiveSummary(row) {
-  const data = safeObject(row.data);
+function archiveSummary(row, amendments = []) {
+  const stored = safeObject(row.data);
+  const data = applyAmendments(stored, amendments);
   const archivedAt = String(data.archived_at || row.created_at || '');
   return {
     id: String(row.id || ''),
@@ -64,9 +65,10 @@ function archiveSummary(row) {
     archive_schema_version: String(data.archive_schema_version || ''),
     source_record_count: number(data.source_record_count),
     source_snapshot_format: String(data.source_snapshot_format || ''),
-    integrity: data.source_snapshot_format === 'lossless-record-rows-v1'
+    integrity: stored.source_snapshot_format === 'lossless-record-rows-v1'
       ? 'lossless'
-      : (String(data.archive_schema_version || '').startsWith('gate-archive-schema-v3') ? 'canonical' : 'legacy')
+      : (String(stored.archive_schema_version || '').startsWith('gate-archive-schema-v3') ? 'canonical' : 'legacy'),
+    amendment_count: amendments.length
   };
 }
 
@@ -89,6 +91,20 @@ async function amendmentRows(env, archiveId) {
        WHERE archive_id = ?
        ORDER BY amendment_number ASC`
     ).bind(archiveId).all();
+    return result.results || [];
+  } catch {
+    return [];
+  }
+}
+
+async function allAmendmentRows(env) {
+  try {
+    const result = await env.DB.prepare(
+      `SELECT amendment_id, archive_id, cycle_id, amendment_number, amendment_type,
+              reason, changes_json, actor_role, created_at
+       FROM gate_archive_amendments
+       ORDER BY archive_id ASC, amendment_number ASC`
+    ).all();
     return result.results || [];
   } catch {
     return [];
@@ -184,9 +200,16 @@ export async function onRequestGet({ request, env, data }) {
     const id = String(url.searchParams.get('id') || '').trim();
 
     if (!id) {
-      const rows = await archiveRows(env);
+      const [rows, rawAmendments] = await Promise.all([archiveRows(env), allAmendmentRows(env)]);
+      const amendmentsByArchive = new Map();
+      presentAmendments(rawAmendments).forEach(amendment => {
+        const archiveId = String(rawAmendments.find(row => row.amendment_id === amendment.amendment_id)?.archive_id || '');
+        if (!archiveId) return;
+        if (!amendmentsByArchive.has(archiveId)) amendmentsByArchive.set(archiveId, []);
+        amendmentsByArchive.get(archiveId).push(amendment);
+      });
       const archives = rows
-        .map(archiveSummary)
+        .map(row => archiveSummary(row, amendmentsByArchive.get(String(row.id || '')) || []))
         .sort((a, b) => timestamp(b.archived_at) - timestamp(a.archived_at) || b.id.localeCompare(a.id));
       return jsonResponse({ isOk: true, archives, count: archives.length });
     }

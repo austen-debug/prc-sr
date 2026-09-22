@@ -195,7 +195,7 @@ export async function onRequestGet({ request, env, data }) {
   if (!mayReadRecords(role)) return forbidden();
 
   try {
-    const scope = new URL(request.url).searchParams.get('scope') || '';
+    const scope = request ? (new URL(request.url).searchParams.get('scope') || '') : '';
     const liveOnly = scope === 'live';
     const result = await env.DB.prepare(
       liveOnly

@@ -167,6 +167,19 @@ test('authoritative records refresh contract remains live and mutation-confirmed
   assert.ok((html.match(/if \(result\.isOk\) \{\s*await refresh\(true\);\s*\}/g) || []).length >= 3);
 });
 
+test('PORT CLEAR writes remain available when the legacy data SDK global is missing', async () => {
+  const hooks = await source('public/js/gate-ui-hooks.js');
+  const marker = hooks.indexOf('// PORT CLEAR:');
+  assert.notEqual(marker, -1, 'PORT CLEAR runtime block is missing');
+  const portClear = hooks.slice(marker);
+
+  assert.match(portClear, /async function writeRecord\(operation, record\)/);
+  assert.match(portClear, /const sdk = window\.dataSdk;/);
+  assert.match(portClear, /fetch\('\/api\/records'/);
+  assert.match(portClear, /credentials:\s*'same-origin'/);
+  assert.doesNotMatch(portClear, /await window\.dataSdk\.(?:create|update)\(/);
+});
+
 test('canonical CSS preserves desktop/mobile shell ownership and accepted phone workflows', async () => {
   const css = await source('public/css/military-glass-terminal.css');
   const shell = await source('public/js/gate-app-shell-controller.js');

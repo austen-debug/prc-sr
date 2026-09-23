@@ -264,6 +264,48 @@
     target.style.color = error ? 'var(--red)' : 'var(--green)';
   }
 
+  function cacheWriteResult(result) {
+    const saved = result?.data;
+    if (!saved || typeof saved !== 'object' || !saved.__backendId) return;
+    const list = records();
+    const index = list.findIndex(record => record?.__backendId === saved.__backendId);
+    if (index >= 0) list[index] = { ...list[index], ...saved };
+    else list.push(saved);
+  }
+
+  async function writeRecord(operation, record) {
+    const sdkMethod = operation === 'update' ? 'update' : 'create';
+    const sdk = window.dataSdk;
+    let result;
+
+    if (sdk && typeof sdk[sdkMethod] === 'function') {
+      result = await sdk[sdkMethod](record);
+    } else {
+      const response = await fetch('/api/records', {
+        method: sdkMethod === 'update' ? 'PUT' : 'POST',
+        credentials: 'same-origin',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(record)
+      });
+
+      try {
+        result = await response.json();
+      } catch (_) {
+        throw new Error('GATE records service returned an invalid response.');
+      }
+
+      if (!response.ok && result?.isOk !== false) {
+        result = { isOk: false, error: `GATE records service returned HTTP ${response.status}.` };
+      }
+    }
+
+    if (result?.isOk) cacheWriteResult(result);
+    return result;
+  }
+
   function ensureAirportControl() {
     const content = document.querySelector('#page-airport .max-w-3xl');
     if (!content) return;
@@ -410,7 +452,7 @@
     sending = true;
     ensureAirportControl();
     try {
-      const result = await window.dataSdk.create({
+      const result = await writeRecord('create', {
         type: 'audit_event', event_type: EVENT_TYPE, entity_type: 'week_group', entity_id: group,
         week_group: group, prior_version: 0, resulting_version: 0,
         metadata: { receiving_day: window.day, receiving_day_end: window.endValue }
@@ -437,8 +479,8 @@
     const existing = records().find(record => record?.type === 'config' && record.key === key);
     try {
       const result = existing
-        ? await window.dataSdk.update({ ...existing, value })
-        : await window.dataSdk.create({ type: 'config', key, value, week_group: group });
+        ? await writeRecord('update', { ...existing, value })
+        : await writeRecord('create', { type: 'config', key, value, week_group: group });
       if (!result?.isOk) throw new Error(result?.error || 'Unable to save receiving window.');
       sync();
     } catch (error) {

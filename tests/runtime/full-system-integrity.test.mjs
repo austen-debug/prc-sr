@@ -180,6 +180,22 @@ test('PORT CLEAR writes remain available when the legacy data SDK global is miss
   assert.doesNotMatch(portClear, /await window\.dataSdk\.(?:create|update)\(/);
 });
 
+test('PORT CLEAR remains additive to the Active Buses queue', async () => {
+  const hooks = await source('public/js/gate-ui-hooks.js');
+  const marker = hooks.indexOf('// PORT CLEAR:');
+  assert.notEqual(marker, -1, 'PORT CLEAR runtime block is missing');
+  const portClear = hooks.slice(marker);
+  const renderStart = portClear.indexOf('function renderBoard(active)');
+  const renderEnd = portClear.indexOf('function scheduleExpiry', renderStart);
+  assert.notEqual(renderStart, -1, 'PORT CLEAR board renderer is missing');
+  assert.notEqual(renderEnd, -1, 'PORT CLEAR board renderer is not statically bounded');
+  const renderBoard = portClear.slice(renderStart, renderEnd);
+
+  assert.match(renderBoard, /grid-column:1 \/ -1/);
+  assert.match(renderBoard, /buses\.style\.display = '';/);
+  assert.doesNotMatch(renderBoard, /buses\.style\.display = active \? ['"]none['"]/);
+});
+
 test('canonical CSS preserves desktop/mobile shell ownership and accepted phone workflows', async () => {
   const css = await source('public/css/military-glass-terminal.css');
   const shell = await source('public/js/gate-app-shell-controller.js');

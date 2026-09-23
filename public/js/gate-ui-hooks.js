@@ -400,7 +400,7 @@
       cue = document.createElement('div');
       cue.id = 'gate-port-clear-board-cue';
       cue.className = 'w-full rounded-lg px-4 py-4 text-center text-xl font-black tracking-widest';
-      cue.style.cssText = 'background:var(--green);color:white;letter-spacing:.12em;';
+      cue.style.cssText = 'background:var(--green);color:white;letter-spacing:.12em;grid-column:1 / -1;';
       cue.dataset.owner = OWNER;
       cue.textContent = 'PORT CLEAR';
       cue.setAttribute('role', 'status');
@@ -408,7 +408,11 @@
     }
     cue.hidden = !active;
     cue.style.display = active ? 'block' : 'none';
-    buses.style.display = active ? 'none' : '';
+
+    // PORT CLEAR is an operational status cue, not a replacement for the live
+    // transportation picture. Keep every still-inbound bus visible until its
+    // own arrival workflow removes it from the Active Buses queue.
+    buses.style.display = '';
     parent.dataset.portClear = String(active);
   }
 

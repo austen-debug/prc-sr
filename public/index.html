@@ -988,7 +988,9 @@ function updateAirportMetric() {
     return;
   }
 
-  btn.textContent = soundEnabled ? 'SOUND ON' : 'ENABLE SOUND';
+  btn.textContent = soundEnabled ? 'DISABLE SOUND' : 'ENABLE SOUND';
+  btn.setAttribute('aria-pressed', soundEnabled ? 'true' : 'false');
+  btn.setAttribute('aria-label', soundEnabled ? 'Disable operational sounds' : 'Enable operational sounds');
 }
 
 async function enableOperationalSounds() {

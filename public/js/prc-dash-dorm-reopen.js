@@ -237,6 +237,8 @@
   let observerStarted = false;
   let clickPatchReady = false;
   let hooksRegistered = false;
+  let popupSoundPlayer = null;
+  let popupSoundUnlocked = false;
 
   function normalizeSoundKey(soundKey) {
     const key = String(soundKey || '').trim().toLowerCase();
@@ -276,6 +278,40 @@
     }
   }
 
+  function popupPlayer() {
+    if (!popupSoundPlayer) {
+      popupSoundPlayer = new Audio(GATE_SOUND_FILES.plop);
+      popupSoundPlayer.preload = 'auto';
+      popupSoundPlayer.loop = false;
+      popupSoundPlayer.load();
+    }
+    return popupSoundPlayer;
+  }
+
+  function unlockPopupSound() {
+    if (popupSoundUnlocked) return;
+    try {
+      const audio = popupPlayer();
+      audio.pause();
+      audio.currentTime = 0;
+      audio.muted = true;
+      audio.volume = 0;
+      const result = audio.play();
+      if (result && typeof result.then === 'function') {
+        result.then(() => {
+          audio.pause();
+          audio.currentTime = 0;
+          audio.muted = false;
+          audio.volume = 1;
+          popupSoundUnlocked = true;
+        }).catch(() => {
+          audio.muted = false;
+          audio.volume = 1;
+        });
+      }
+    } catch (_) {}
+  }
+
   function playGateSound(soundKey, options) {
     const normalized = normalizeSoundKey(soundKey);
     const src = GATE_SOUND_FILES[normalized];
@@ -283,8 +319,10 @@
     if (!src || (!force && !soundIsEnabled())) return;
 
     try {
-      const audio = new Audio(src);
+      const audio = normalized === 'plop' ? popupPlayer() : new Audio(src);
+      audio.pause();
       audio.preload = 'auto';
+      audio.muted = false;
       audio.volume = 1;
       audio.loop = false;
       audio.currentTime = 0;
@@ -552,6 +590,12 @@
     startErrorObserver();
     preloadGateSounds();
     registerHooksOnce();
+
+    if (document.body?.dataset.gatePopupSoundUnlockBound !== 'true') {
+      document.body.dataset.gatePopupSoundUnlockBound = 'true';
+      document.addEventListener('pointerdown', unlockPopupSound, { capture: true, once: true });
+      document.addEventListener('keydown', unlockPopupSound, { capture: true, once: true });
+    }
 
     window.GateSoundSystem = Object.freeze({
       isCanonicalSoundAssetLayer: true,

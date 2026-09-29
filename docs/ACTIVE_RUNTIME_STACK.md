@@ -51,7 +51,7 @@ Injected by middleware in current order on the Flight Alert feature branch:
 16. `/js/gate-input-page-controller.js?v=record-display-integrity-20260714`
 17. `/js/gate-archive-controller.js?v=gate-archive-workspace-20260922`
 18. `/js/gate-permission-guard.js?v=permission-server-role-20260922`
-19. `/app/features/input/flight-alert-import.mjs?v=flight-alert-import-20260920` (new draft-only Input enhancement)
+19. `/app/features/input/flight-alert-import.mjs?v=flight-alert-import-20260928-wg26052` (new draft-only Input enhancement)
 20. `/js/gate-tablet-shell-classifier.js?v=tablet-shell-20260714`
 21. `/js/gate-app-shell-controller.js?v=gate-route-state-20260922`
 22. `/js/gate-fullscreen-board-layout-controller.js?v=fullscreen-board-containment-20260714b`

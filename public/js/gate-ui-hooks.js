@@ -158,10 +158,7 @@
   const EVENT_TYPE = 'port_clear';
   const ACK_PREFIX = 'gate_port_clear_ack_';
   const WINDOW_FIELDS = ['receiving_day_one_start', 'receiving_day_one_end', 'receiving_day_two_start', 'receiving_day_two_end'];
-  const clock = new Intl.DateTimeFormat('en-US', {
-    timeZone: 'America/Chicago', year: 'numeric', month: '2-digit', day: '2-digit',
-    hour: '2-digit', minute: '2-digit', hourCycle: 'h23'
-  });
+  const receivingEngine = globalThis.GateReceivingWindowEngine;
   let installed = false;
   let sending = false;
   let expirationTimer = null;
@@ -181,22 +178,9 @@
     try { return currentRole === 'instructor'; } catch (_) { return false; }
   }
 
-  function offsetAt(instant) {
-    const parts = Object.fromEntries(clock.formatToParts(new Date(instant)).map(part => [part.type, part.value]));
-    return Date.UTC(+parts.year, +parts.month - 1, +parts.day, +parts.hour, +parts.minute) - instant;
-  }
-
-  // Receiving windows use the reception center's Central time, regardless of device timezone.
+  // Receiving windows are interpreted by the shared PRC Central-time engine.
   function toEpoch(value) {
-    const text = String(value || '').trim();
-    if (!text) return NaN;
-    if (/[zZ]$|[+-]\d\d:?\d\d$/.test(text)) return Date.parse(text);
-    const match = /^(\d{4})-(\d\d)-(\d\d)T(\d\d):(\d\d)(?::\d\d)?$/.exec(text);
-    if (!match) return NaN;
-    const target = Date.UTC(+match[1], +match[2] - 1, +match[3], +match[4], +match[5]);
-    let instant = target - offsetAt(target);
-    instant = target - offsetAt(instant);
-    return instant;
+    return receivingEngine?.toEpoch(value) ?? Number.NaN;
   }
 
   function windowValue(field, group = weekGroup()) {

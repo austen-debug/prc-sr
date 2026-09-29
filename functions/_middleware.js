@@ -82,6 +82,16 @@ const STATUS_BOARD_METRICS_HTML = `<div class="board-header gate-premium-metrics
         <div class="metric-value" id="stat-local" data-gate-live-value="true" aria-live="off">00:00:00</div>
        </div>
       </div>
+      <section id="gate-port-clear-board-cue" class="gate-port-clear-status" role="status" aria-live="polite" aria-atomic="true" hidden>
+       <div class="gate-port-clear-status-main">
+        <span class="gate-port-clear-status-led" aria-hidden="true"></span>
+        <div class="gate-port-clear-status-copy">
+         <strong>PORT CLEAR</strong>
+         <span id="gate-port-clear-board-detail"></span>
+        </div>
+       </div>
+       <div id="gate-port-clear-board-day" class="gate-port-clear-status-day"></div>
+      </section>
       <section class="gate-active-buses-block" aria-label="Active buses en route">
        <div class="gate-active-buses-label">ACTIVE BUSES</div>
        <div id="active-buses" class="flex gap-2 flex-wrap items-center"></div>

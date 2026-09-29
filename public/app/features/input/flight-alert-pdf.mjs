@@ -54,7 +54,10 @@ function positionedItems(content) {
   const tdPattern = new RegExp(`(${NUMBER})\\s+(${NUMBER})\\s+(Td|TD)\\b`);
   for (const block of content.match(/\bBT\b[\s\S]*?\bET\b/g) || []) {
     let a = 1, b = 0, c = 0, d = 1, x = 0, y = 0;
-    for (const rawLine of block.split(/\r?\n/)) {
+    // Acrobat may emit several text operators on one physical line. Split only
+    // after actual PDF operators (not matching text inside a literal string).
+    const commands = block.replace(/(Tm|Td|TD|Tj|TJ)(?=\s|$)/g, '$1\n');
+    for (const rawLine of commands.split(/\r?\n/)) {
       const line = rawLine.trim();
       if (!line) continue;
       const tm = line.match(tmPattern);

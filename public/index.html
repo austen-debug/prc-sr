@@ -167,7 +167,7 @@ body > * {
 <button
   id="sound-toggle-btn"
   type="button"
-  onclick="enableOperationalSounds()"
+  onclick="toggleOperationalSounds()"
   class="nav-btn text-xs"
 >
   ENABLE SOUND
@@ -822,10 +822,10 @@ async function refresh(force = false) {
     let editBusId = null;
 
 const SOUND_FILES = {
-  dorm_open: '/assets/sr_open_sound.mp3',
-  dorm_closed: '/assets/sr_closed_sound.mp3',
-  bus_dispatch: '/assets/sr_bus_sound.mp3',
-  overtime: '/assets/sr_overtime_sound.mp3'
+  dorm_open: '/assets/sounds/gate_open_sound.mp3',
+  dorm_closed: '/assets/sounds/gate_closed_sound.mp3',
+  bus_dispatch: '/assets/sounds/gate_bus_sound.mp3',
+  overtime: '/assets/sounds/gate_overtime_sound.mp3'
 };
 
 const SOUND_ENABLED_KEY = 'prc_sr_sound_enabled_v1';
@@ -1017,6 +1017,20 @@ async function enableOperationalSounds() {
       console.warn(`Sound unlock failed for ${soundKey}:`, error);
     }
   }
+}
+
+function disableOperationalSounds() {
+  soundEnabled = false;
+  localStorage.setItem(SOUND_ENABLED_KEY, 'false');
+  updateSoundButton();
+}
+
+async function toggleOperationalSounds() {
+  if (soundEnabled) {
+    disableOperationalSounds();
+    return;
+  }
+  await enableOperationalSounds();
 }
 
 function savePlayedSoundEventIds() {

@@ -218,15 +218,17 @@
   'use strict';
 
   const GATE_SOUND_FILES = {
-    dorm_open: '/assets/gate_open_sound.mp3',
-    open: '/assets/gate_open_sound.mp3',
-    dorm_closed: '/assets/gate_closed_sound.mp3',
-    closed: '/assets/gate_closed_sound.mp3',
-    bus_dispatch: '/assets/gate_bus_sound.mp3',
-    bus: '/assets/gate_bus_sound.mp3',
-    overtime: '/assets/gate_overtime_sound.mp3',
-    error: '/assets/gate_error_sound.mp3',
-    enable: '/assets/gate_enable_sound.mp3'
+    dorm_open: '/assets/sounds/gate_open_sound.mp3',
+    open: '/assets/sounds/gate_open_sound.mp3',
+    dorm_closed: '/assets/sounds/gate_closed_sound.mp3',
+    closed: '/assets/sounds/gate_closed_sound.mp3',
+    bus_dispatch: '/assets/sounds/gate_bus_sound.mp3',
+    bus: '/assets/sounds/gate_bus_sound.mp3',
+    overtime: '/assets/sounds/gate_overtime_sound.mp3',
+    error: '/assets/sounds/gate_error_sound.mp3',
+    enable: '/assets/sounds/gate_enable_sound.mp3',
+    plop: '/assets/sounds/gate_plop_sound.mp3',
+    popup: '/assets/sounds/gate_plop_sound.mp3'
   };
 
   const SOUND_ENABLED_KEY = 'prc_sr_sound_enabled_v1';
@@ -235,6 +237,8 @@
   let observerStarted = false;
   let clickPatchReady = false;
   let hooksRegistered = false;
+  let popupSoundPlayer = null;
+  let popupSoundUnlocked = false;
 
   function normalizeSoundKey(soundKey) {
     const key = String(soundKey || '').trim().toLowerCase();
@@ -243,6 +247,7 @@
     if (key === 'bus_arrival' || key === 'bus_arrived' || key === 'dispatch_bus') return 'bus_dispatch';
     if (key === 'gate_error') return 'error';
     if (key === 'gate_enable') return 'enable';
+    if (key === 'popup' || key === 'pop_up' || key === 'modal' || key === 'dialog') return 'plop';
     return key;
   }
 
@@ -273,6 +278,40 @@
     }
   }
 
+  function popupPlayer() {
+    if (!popupSoundPlayer) {
+      popupSoundPlayer = new Audio(GATE_SOUND_FILES.plop);
+      popupSoundPlayer.preload = 'auto';
+      popupSoundPlayer.loop = false;
+      popupSoundPlayer.load();
+    }
+    return popupSoundPlayer;
+  }
+
+  function unlockPopupSound() {
+    if (popupSoundUnlocked) return;
+    try {
+      const audio = popupPlayer();
+      audio.pause();
+      audio.currentTime = 0;
+      audio.muted = true;
+      audio.volume = 0;
+      const result = audio.play();
+      if (result && typeof result.then === 'function') {
+        result.then(() => {
+          audio.pause();
+          audio.currentTime = 0;
+          audio.muted = false;
+          audio.volume = 1;
+          popupSoundUnlocked = true;
+        }).catch(() => {
+          audio.muted = false;
+          audio.volume = 1;
+        });
+      }
+    } catch (_) {}
+  }
+
   function playGateSound(soundKey, options) {
     const normalized = normalizeSoundKey(soundKey);
     const src = GATE_SOUND_FILES[normalized];
@@ -280,8 +319,10 @@
     if (!src || (!force && !soundIsEnabled())) return;
 
     try {
-      const audio = new Audio(src);
+      const audio = normalized === 'plop' ? popupPlayer() : new Audio(src);
+      audio.pause();
       audio.preload = 'auto';
+      audio.muted = false;
       audio.volume = 1;
       audio.loop = false;
       audio.currentTime = 0;
@@ -316,6 +357,26 @@
     playGateSound('enable', { force: true });
   }
 
+  function disableGateOperationalSounds(event) {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+      if (typeof event.stopImmediatePropagation === 'function') event.stopImmediatePropagation();
+    }
+    syncSoundEnabled(false);
+    if (typeof updateSoundButton === 'function') {
+      try { updateSoundButton(); } catch (error) { console.warn('GATE sound button update failed:', error); }
+    }
+  }
+
+  async function toggleGateOperationalSounds(event) {
+    if (soundIsEnabled()) {
+      disableGateOperationalSounds(event);
+      return;
+    }
+    await enableGateOperationalSounds(event);
+  }
+
   async function createGateSoundEvent(soundKey, details) {
     const normalized = normalizeSoundKey(soundKey);
     if (!GATE_SOUND_FILES[normalized]) return;
@@ -343,20 +404,24 @@
     try {
       window.playOperationalSound = playGateSound;
       window.enableOperationalSounds = enableGateOperationalSounds;
+      window.disableOperationalSounds = disableGateOperationalSounds;
+      window.toggleOperationalSounds = toggleGateOperationalSounds;
       window.createSoundEvent = createGateSoundEvent;
       window.playGateErrorSound = playGateErrorSound;
       window.playGateSound = playGateSound;
 
       try { playOperationalSound = playGateSound; } catch (_) {}
       try { enableOperationalSounds = enableGateOperationalSounds; } catch (_) {}
+      try { disableOperationalSounds = disableGateOperationalSounds; } catch (_) {}
+      try { toggleOperationalSounds = toggleGateOperationalSounds; } catch (_) {}
       try { createSoundEvent = createGateSoundEvent; } catch (_) {}
 
       const button = document.getElementById('sound-toggle-btn');
       if (button) {
-        button.onclick = enableGateOperationalSounds;
+        button.onclick = toggleGateOperationalSounds;
         button.dataset.owner = 'gate-sound-system';
         if (!clickPatchReady) {
-          button.addEventListener('click', enableGateOperationalSounds, true);
+          button.addEventListener('click', toggleGateOperationalSounds, true);
           clickPatchReady = true;
         }
       }
@@ -399,6 +464,47 @@
     return style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0';
   }
 
+  const POPUP_SELECTOR = '.confirm-overlay, dialog, [role="dialog"], [role="alertdialog"]';
+  const popupVisibility = new WeakMap();
+
+  function popupRootsWithin(root) {
+    const found = new Set();
+    if (!root || root.nodeType !== 1) return found;
+    const addRoot = node => {
+      const canonical = node.closest?.('.confirm-overlay') || node;
+      if (canonical?.matches?.(POPUP_SELECTOR)) found.add(canonical);
+    };
+    if (root.matches?.(POPUP_SELECTOR)) addRoot(root);
+    root.querySelectorAll?.(POPUP_SELECTOR).forEach(addRoot);
+    return found;
+  }
+
+  function popupIsVisible(root) {
+    if (!root) return false;
+    if (root.tagName === 'DIALOG' && !root.open) return false;
+    if (root.hasAttribute('hidden') || root.getAttribute('aria-hidden') === 'true') return false;
+    return elementIsVisible(root);
+  }
+
+  function checkPopupState(root, silent = false) {
+    const visible = popupIsVisible(root);
+    const wasVisible = popupVisibility.get(root) === true;
+    popupVisibility.set(root, visible);
+    if (!silent && visible && !wasVisible) playGateSound('plop', { force: true });
+  }
+
+  function primePopupStates() {
+    document.querySelectorAll(POPUP_SELECTOR).forEach(root => {
+      const canonical = root.closest?.('.confirm-overlay') || root;
+      if (canonical === root || !popupVisibility.has(canonical)) checkPopupState(canonical, true);
+    });
+  }
+
+  function scanPopupState(root, silent = false) {
+    popupRootsWithin(root).forEach(popup => checkPopupState(popup, silent));
+  }
+
+
   function elementLooksLikeError(el) {
     if (!el || !elementIsVisible(el)) return false;
     const text = String(el.textContent || '').trim();
@@ -436,11 +542,15 @@
 
     const observer = new MutationObserver(mutations => {
       mutations.forEach(mutation => {
-        if (mutation.target && mutation.target.nodeType === 1) signalErrorFromElement(mutation.target);
+        if (mutation.target && mutation.target.nodeType === 1) {
+          signalErrorFromElement(mutation.target);
+          scanPopupState(mutation.target);
+        }
         mutation.addedNodes.forEach(node => {
           if (node.nodeType !== 1) return;
           signalErrorFromElement(node);
           scanVisibleErrors(node);
+          scanPopupState(node);
         });
       });
     });
@@ -453,6 +563,7 @@
       characterData: true
     });
 
+    primePopupStates();
     scanVisibleErrors(document);
   }
 
@@ -480,10 +591,18 @@
     preloadGateSounds();
     registerHooksOnce();
 
+    if (document.body?.dataset.gatePopupSoundUnlockBound !== 'true') {
+      document.body.dataset.gatePopupSoundUnlockBound = 'true';
+      document.addEventListener('pointerdown', unlockPopupSound, { capture: true, once: true });
+      document.addEventListener('keydown', unlockPopupSound, { capture: true, once: true });
+    }
+
     window.GateSoundSystem = Object.freeze({
       isCanonicalSoundAssetLayer: true,
       play: playGateSound,
       enable: enableGateOperationalSounds,
+      disable: disableGateOperationalSounds,
+      toggle: toggleGateOperationalSounds,
       createSoundEvent: createGateSoundEvent,
       refresh: patchSoundFunctions
     });

@@ -4,10 +4,10 @@
   'use strict';
 
   const QUIET_UNLOCK_SOUND_FILES = Object.freeze({
-    dorm_open: '/assets/sr_open_sound.mp3',
-    dorm_closed: '/assets/sr_closed_sound.mp3',
-    bus_dispatch: '/assets/sr_bus_sound.mp3',
-    overtime: '/assets/sr_overtime_sound.mp3'
+    dorm_open: '/assets/sounds/gate_open_sound.mp3',
+    dorm_closed: '/assets/sounds/gate_closed_sound.mp3',
+    bus_dispatch: '/assets/sounds/gate_bus_sound.mp3',
+    overtime: '/assets/sounds/gate_overtime_sound.mp3'
   });
   const SOUND_ENABLED_KEY = 'prc_sr_sound_enabled_v1';
 
@@ -73,10 +73,14 @@
 
   function patchSoundButton() {
     try {
-      window.enableOperationalSounds = enableOperationalSoundsQuietly;
+      if (typeof window.GateSoundSystem?.toggle !== 'function') {
+        window.enableOperationalSounds = enableOperationalSoundsQuietly;
+      }
       const button = document.getElementById('sound-toggle-btn');
-      if (button) {
-        button.onclick = enableOperationalSoundsQuietly;
+      if (button && button.dataset.owner !== 'gate-sound-system') {
+        button.onclick = typeof window.toggleOperationalSounds === 'function'
+          ? window.toggleOperationalSounds
+          : enableOperationalSoundsQuietly;
         button.dataset.owner = 'gate-runtime-safeguards';
       }
       safeUpdateSoundButton();

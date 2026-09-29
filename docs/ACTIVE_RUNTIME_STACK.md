@@ -37,10 +37,10 @@ Injected by middleware in current order on the Flight Alert feature branch:
 2. `/js/gate-component-contracts.js`
 3. `/js/gate-ui-hooks.js?v=port-clear-banner-20260928`
 4. `/js/gate-branding-controller.js`
-5. `/js/prc-dash-runtime-fixes.js?v=phase-8e-runtime-safeguards-20260709`
+5. `/js/prc-dash-runtime-fixes.js?v=sound-toggle-assets-20260928`
 6. `/js/prc-dash-sat-arrivals.js`
 7. `/js/prc-dash-space-force.js`
-8. `/js/prc-dash-dorm-reopen.js`
+8. `/js/prc-dash-dorm-reopen.js?v=popup-plop-sounds-20260928`
 9. `/js/prc-dash-final-audit.js?v=record-display-integrity-20260714`
 10. `/js/gate-status-board-controller.js?v=dorm-timer-record-lifecycle-20260722`
 11. `/js/gate-processing-controller.js?v=record-display-integrity-20260714`

@@ -18,7 +18,7 @@ const ROLE_HOME = Object.freeze({
 });
 
 const UI_STYLESHEETS = [
-  '<link rel="stylesheet" href="/css/military-glass-terminal.css?v=military-glass-terminal-20260922-archives1">'
+  '<link rel="stylesheet" href="/css/military-glass-terminal.css?v=military-glass-terminal-20260928-portclear">'
 ];
 
 const UI_INLINE_ASSETS = [];
@@ -26,7 +26,7 @@ const UI_INLINE_ASSETS = [];
 const UI_HEAD_SCRIPTS = [
   '<script src="/js/gate-record-display-contract.js?v=record-display-integrity-20260714b" defer></script>',
   '<script src="/js/gate-component-contracts.js" defer></script>',
-  '<script src="/js/gate-ui-hooks.js?v=receiving-day-truth-20260928" defer></script>',
+  '<script src="/js/gate-ui-hooks.js?v=port-clear-banner-20260928" defer></script>',
   '<script src="/js/gate-branding-controller.js" defer></script>',
   '<script src="/js/prc-dash-runtime-fixes.js?v=phase-8e-runtime-safeguards-20260709" defer></script>',
   '<script src="/js/prc-dash-sat-arrivals.js" defer></script>',

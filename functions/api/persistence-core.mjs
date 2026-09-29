@@ -24,7 +24,7 @@ function noUnknownKeys(object, allowed, context) {
 }
 function validateReceivingWindows(windows) {
   const validation = globalThis.GateReceivingWindowEngine.validateWindows(windows);
-  if (!validation.valid) throw new PersistenceValidationError(validation.errors[0] || 'Receiving windows are invalid.');
+  if (!validation.valid) throw new PersistenceValidationError(`Receiving window: ${validation.errors[0] || 'invalid configuration.'}`);
 }
 export function normalizeDraft(payload = {}) {
   if (!payload || typeof payload !== 'object' || Array.isArray(payload)) throw new PersistenceValidationError('Draft must be an object.');

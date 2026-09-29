@@ -1,78 +1,54 @@
-import { normalizeText, normalizeTimestamp, normalizeWeekGroup } from './normalization.mjs';
+import { normalizeWeekGroup } from './normalization.mjs';
 import {
   calculateBusTotals,
   calculateCapacityTotals,
   selectConfirmedArrivals
 } from './operational-metrics.mjs';
+import '../../js/gate-receiving-window-engine.js';
+
+const engine = globalThis.GateReceivingWindowEngine;
 
 const WINDOW_DEFINITIONS = Object.freeze([
   Object.freeze({
     key: 'nightOne',
-    label: 'Receiving Night One',
+    dayKey: 'dayOne',
+    label: 'Receiving Day One',
     startField: 'receiving_day_one_start',
     endField: 'receiving_day_one_end'
   }),
   Object.freeze({
     key: 'nightTwo',
-    label: 'Receiving Night Two',
+    dayKey: 'dayTwo',
+    label: 'Receiving Day Two',
     startField: 'receiving_day_two_start',
     endField: 'receiving_day_two_end'
   })
 ]);
 
-function toEpoch(timestamp) {
-  return timestamp ? Date.parse(timestamp) : Number.NaN;
-}
-
 export function normalizeReceivingWindows(windows = {}) {
-  return WINDOW_DEFINITIONS.map(definition => {
-    const rawStart = normalizeText(windows[definition.startField]);
-    const rawEnd = normalizeText(windows[definition.endField]);
-    return Object.freeze({
-      ...definition,
-      rawStart,
-      rawEnd,
-      start: normalizeTimestamp(rawStart),
-      end: normalizeTimestamp(rawEnd)
-    });
-  });
+  const normalized = engine.normalizeWindows(windows);
+  return WINDOW_DEFINITIONS.map((definition, index) => Object.freeze({
+    ...definition,
+    rawStart: normalized[index].rawStart,
+    rawEnd: normalized[index].rawEnd,
+    start: normalized[index].startIso,
+    end: normalized[index].endIso
+  }));
 }
 
 export function validateReceivingWindows(windows = {}) {
+  const validation = engine.validateWindows(windows);
   const normalized = normalizeReceivingWindows(windows);
-  const errors = [];
-
-  for (const window of normalized) {
-    const hasRawStart = Boolean(window.rawStart);
-    const hasRawEnd = Boolean(window.rawEnd);
-    if (hasRawStart !== hasRawEnd) errors.push(`${window.label} requires both start and end timestamps.`);
-    if (hasRawStart && !window.start) errors.push(`${window.label} start must include a valid timezone offset.`);
-    if (hasRawEnd && !window.end) errors.push(`${window.label} end must include a valid timezone offset.`);
-    if (window.start && window.end && toEpoch(window.end) <= toEpoch(window.start)) {
-      errors.push(`${window.label} end must be after start.`);
-    }
-  }
-
-  const configured = normalized.filter(window => window.start && window.end);
-  for (let index = 1; index < configured.length; index += 1) {
-    const previous = configured[index - 1];
-    const current = configured[index];
-    if (toEpoch(current.start) < toEpoch(previous.end)) {
-      errors.push(`${current.label} cannot overlap ${previous.label}.`);
-    }
-  }
-
   return Object.freeze({
-    valid: errors.length === 0,
-    errors: Object.freeze(errors),
+    valid: validation.valid,
+    errors: Object.freeze([...validation.errors]),
     windows: Object.freeze(normalized)
   });
 }
 
 export function isTimestampInWindow(timestamp, window) {
   if (!timestamp || !window?.start || !window?.end) return false;
-  const value = toEpoch(timestamp);
-  return Number.isFinite(value) && value >= toEpoch(window.start) && value < toEpoch(window.end);
+  return engine.inWindow(timestamp, window.start, window.end);
 }
 
 export function calculateReceivingSummary({ records = [], weekGroup = '', windows = {} } = {}) {

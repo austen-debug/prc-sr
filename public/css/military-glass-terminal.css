@@ -839,6 +839,7 @@ tbody tr:hover {
   grid-template-columns: repeat(4, minmax(0, 1fr));
   grid-template-areas:
     "metrics metrics metrics metrics"
+    "portclear portclear portclear portclear"
     "active active active active";
   gap: .75rem;
   margin: 0 0 1rem;
@@ -926,6 +927,78 @@ tbody tr:hover {
   border-radius: 50%;
   background: var(--mg-ok);
   box-shadow: var(--mg-glow-ok);
+}
+
+#page-board .gate-port-clear-status {
+  grid-area: portclear;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-width: 0;
+  min-height: 58px;
+  padding: .68rem .9rem;
+  border: 1px solid color-mix(in srgb, var(--mg-ok) 56%, var(--mg-border-glass));
+  border-radius: var(--mg-radius-lg);
+  background: color-mix(in srgb, var(--mg-ok) 8%, var(--mg-board-plane));
+  box-shadow: var(--mg-inset-edge), 0 0 18px color-mix(in srgb, var(--mg-ok) 14%, transparent);
+}
+
+#page-board .gate-port-clear-status[hidden] {
+  display: none;
+}
+
+#page-board .gate-port-clear-status-main {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  min-width: 0;
+}
+
+#page-board .gate-port-clear-status-led {
+  width: 10px;
+  height: 10px;
+  flex: 0 0 10px;
+  border-radius: 50%;
+  background: var(--mg-ok);
+  box-shadow: var(--mg-glow-ok);
+}
+
+#page-board .gate-port-clear-status-copy {
+  display: grid;
+  gap: .18rem;
+  min-width: 0;
+}
+
+#page-board .gate-port-clear-status-copy strong {
+  color: var(--mg-text);
+  font-family: var(--mg-font-mono);
+  font-size: clamp(.92rem, 1.15vw, 1.12rem);
+  font-weight: 800;
+  letter-spacing: .12em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+#page-board .gate-port-clear-status-copy span,
+#page-board .gate-port-clear-status-day {
+  color: var(--mg-text-soft);
+  font-family: var(--mg-font-mono);
+  font-size: clamp(.62rem, .72vw, .74rem);
+  font-weight: 600;
+  letter-spacing: .055em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+#page-board .gate-port-clear-status-day {
+  flex: 0 0 auto;
+  padding: .42rem .58rem;
+  border: 1px solid color-mix(in srgb, var(--mg-ok) 38%, var(--mg-border-soft));
+  border-radius: var(--mg-radius-sm);
+  background: color-mix(in srgb, var(--mg-ok) 8%, var(--mg-surface-muted));
+  color: var(--mg-text);
+  white-space: nowrap;
 }
 
 #page-board .gate-active-buses-block {
@@ -3025,6 +3098,7 @@ body.gate-fullscreen-board-active #page-board .board-header {
   grid-template-columns: repeat(4, minmax(0, 1fr));
   grid-template-areas:
     "metrics metrics metrics metrics"
+    "portclear portclear portclear portclear"
     "active active active active";
   gap: .65rem;
   margin: 0 0 .65rem;
@@ -3045,6 +3119,18 @@ body.gate-fullscreen-board-active #page-board .metric-card {
 body.fullscreen-board #page-board .metric-value,
 body.gate-fullscreen-board-active #page-board .metric-value {
   font-size: clamp(2.2rem, 3.15vw, 4.3rem);
+}
+
+body.fullscreen-board #page-board .gate-port-clear-status,
+body.gate-fullscreen-board-active #page-board .gate-port-clear-status {
+  min-height: clamp(54px, 6.5vh, 64px);
+  padding: .62rem .9rem;
+  background: color-mix(in srgb, var(--mg-ok) 8%, var(--mg-bg-elevated));
+}
+
+body.fullscreen-board #page-board .gate-port-clear-status-copy strong,
+body.gate-fullscreen-board-active #page-board .gate-port-clear-status-copy strong {
+  font-size: clamp(1rem, 1.2vw, 1.28rem);
 }
 
 body.fullscreen-board #page-board .gate-active-buses-block,
@@ -3373,6 +3459,18 @@ body.gate-fullscreen-board-active #page-board #active-buses .gate-component-acti
   #page-board .metric-value,
   .gate-squadron-metric-value {
     font-size: clamp(1.65rem, 8vw, 2.35rem);
+  }
+
+  #page-board .gate-port-clear-status {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: .42rem;
+    min-height: 0;
+    padding: .72rem .78rem;
+  }
+
+  #page-board .gate-port-clear-status-day {
+    align-self: flex-start;
   }
 
   #page-board .gate-active-buses-block {

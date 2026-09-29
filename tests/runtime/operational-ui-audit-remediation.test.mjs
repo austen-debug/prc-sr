@@ -370,7 +370,7 @@ test('Archives use a full-width read-only historical workspace and exact Letter 
 
   assert.match(css, /\.gate-archive-layout\s*\{[\s\S]*grid-template-columns:\s*minmax\(300px,\s*\.78fr\) minmax\(0,\s*2\.22fr\)/);
   assert.match(css, /\.gate-archive-metrics\s*\{[\s\S]*grid-template-columns:\s*repeat\(6,\s*minmax\(0,\s*1fr\)\)/);
-  const archiveScript = '/js/gate-archive-controller.js?v=gate-archive-workspace-20260922';
+  const archiveScript = '/js/gate-archive-controller.js?v=receiving-day-truth-20260928';
   assert.ok(middleware.includes(archiveScript));
   assert.ok(budget.currentDirectScripts.includes(archiveScript));
 });

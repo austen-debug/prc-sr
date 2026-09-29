@@ -10,6 +10,8 @@
     'receiving_day_two_end'
   ];
 
+  const receivingEngine = globalThis.GateReceivingWindowEngine;
+
   let installed = false;
   let hooksRegistered = false;
   let renderQueued = false;
@@ -153,10 +155,17 @@
   }
 
   function inWindow(value, start, end) {
-    const date = timestamp(value);
-    const s = timestamp(start);
-    const e = timestamp(end);
-    return Boolean(date && s && e && date.getTime() >= s.getTime() && date.getTime() < e.getTime());
+    return receivingEngine?.inWindow(value, start, end) === true;
+  }
+
+  function formatReceivingWindowDateTime(value) {
+    const epoch = receivingEngine?.toEpoch(value);
+    if (!Number.isFinite(epoch)) return '—';
+    return new Intl.DateTimeFormat('en-US', {
+      timeZone: receivingEngine.TIME_ZONE,
+      year: 'numeric', month: 'short', day: '2-digit',
+      hour: '2-digit', minute: '2-digit'
+    }).format(new Date(epoch));
   }
 
   function collectWindows({ weekGroup = '', archive = {}, dorms = [] } = {}) {
@@ -877,30 +886,35 @@
   }
 
   function receivingSummary(dorms, buses, windows) {
-    const completed = arrivedBuses(buses);
     const totalProjected = dorms.reduce((sum, dorm) => sum + n(dorm.max_load), 0);
     const sfProjected = dorms.filter(isSpaceForceDorm).reduce((sum, dorm) => sum + n(dorm.max_load), 0);
-    const nightDefs = [
-      ['Receiving Night One', windows.receiving_day_one_start, windows.receiving_day_one_end],
-      ['Receiving Night Two', windows.receiving_day_two_start, windows.receiving_day_two_end]
+    const summary = receivingEngine?.summarizeArrivals(buses, windows);
+    const dayDefs = [
+      ['Receiving Day One', summary?.dayOne],
+      ['Receiving Day Two', summary?.dayTwo]
     ];
     let processedCum = 0;
     let natCum = 0;
     let sfCum = 0;
-    return nightDefs.map(([label, start, end]) => {
-      const hasWindow = Boolean(timestamp(start) && timestamp(end));
-      const windowBuses = hasWindow ? completed.filter(bus => inWindow(bus.arrived_at, start, end)) : [];
-      const processedToday = windowBuses.reduce((sum, bus) => sum + n(bus.otw_count), 0);
-      const natToday = windowBuses.reduce((sum, bus) => sum + n(bus.nat_count), 0);
-      const sfToday = windowBuses.reduce((sum, bus) => sum + busSpaceForceCount(bus), 0);
+
+    return dayDefs.map(([label, day]) => {
+      const hasWindow = Boolean(day && Number.isFinite(day.start) && Number.isFinite(day.end));
+      const processedToday = hasWindow ? n(day.totals.arrived) : 0;
+      const natToday = hasWindow ? n(day.totals.naturalization) : 0;
+      const sfToday = hasWindow ? n(day.totals.spaceForce) : 0;
       processedCum += processedToday;
       natCum += natToday;
       sfCum += sfToday;
-      const standardSentence = `The PRC received and processed ${processedToday} of the projected ${totalProjected} trainees during this window, for a cumulative total of ${processedCum}. ${natToday} trainees requested naturalization, for a cumulative total of ${natCum}.`;
+
+      const standardSentence = `The PRC received and processed ${processedToday} of the projected ${totalProjected} trainees during this receiving day, for a cumulative total of ${processedCum}. ${natToday} trainees requested U.S. naturalization, for a cumulative total of ${natCum}.`;
       const sfSentence = (sfProjected > 0 || sfToday > 0 || sfCum > 0)
         ? ` The PRC received ${sfToday} Space Force trainees of the projected ${sfProjected}, for a cumulative total of ${sfCum} Space Force trainees.`
         : '';
-      return `<article class="report-night"><div class="report-night-head"><strong>${esc(label)}</strong><span>${hasWindow ? `${esc(formatDateTime(start))} – ${esc(formatDateTime(end))}` : 'Window not configured'}</span></div><p>${hasWindow ? esc(standardSentence + sfSentence) : 'No receiving window was configured for this period.'}</p></article>`;
+      const range = hasWindow
+        ? `${formatReceivingWindowDateTime(day.rawStart)} – ${formatReceivingWindowDateTime(day.rawEnd)}`
+        : 'Window not configured';
+
+      return `<article class="report-night"><div class="report-night-head"><strong>${esc(label)}</strong><span>${esc(range)}</span></div><p>${hasWindow ? esc(standardSentence + sfSentence) : 'No receiving window was configured for this period.'}</p></article>`;
     }).join('');
   }
 
@@ -936,7 +950,7 @@
       ['Space Force', metrics.sf]
     ].map(([label, value]) => `<div class="report-metric"><span>${esc(label)}</span><strong>${n(value)}</strong></div>`).join('');
 
-    const summaryBody = `<section class="report-metrics">${metricHtml}</section><section class="report-section"><div class="report-section-title">Receiving Processing Summary</div><div class="report-night-grid">${receivingSummary(dorms, buses, windows)}</div></section><section class="report-summary-note"><strong>Report Basis</strong><span>Arrived and processed totals include only bus records whose status is ARRIVED. En-route buses remain visible in movement detail but are not counted as received.</span></section>`;
+    const summaryBody = `<section class="report-metrics">${metricHtml}</section><section class="report-section"><div class="report-section-title">Receiving Processing Summary</div><div class="report-night-grid">${receivingSummary(dorms, buses, windows)}</div></section><section class="report-summary-note"><strong>Report Basis</strong><span>Receiving Day totals include only ARRIVED bus records and classify them exclusively by ARRIVED AT time within the configured PRC Central-time window. En-route buses, departure times, and dorm processing times do not determine Receiving Day credit.</span></section>`;
     const pages = [reportChrome({
       title,
       weekGroup,

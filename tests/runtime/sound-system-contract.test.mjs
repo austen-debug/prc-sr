@@ -57,6 +57,9 @@ test('main SOUND button toggles operational sounds on and off', async () => {
   ]);
 
   assert.match(html, /onclick="toggleOperationalSounds\(\)"/);
+  assert.match(html, /btn\.textContent = soundEnabled \? 'DISABLE SOUND' : 'ENABLE SOUND'/);
+  assert.match(html, /aria-pressed', soundEnabled \? 'true' : 'false'/);
+  assert.match(html, /aria-label', soundEnabled \? 'Disable operational sounds' : 'Enable operational sounds'/);
   assert.match(html, /function disableOperationalSounds\(\)/);
   assert.match(html, /function toggleOperationalSounds\(\)/);
   assert.match(soundLayer, /function disableGateOperationalSounds\(event\)/);

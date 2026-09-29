@@ -43,11 +43,8 @@ test('active runtime consumers are wired to the canonical Receiving Day engine',
     readFile(new URL('../../../public/js/gate-archive-controller.js', import.meta.url), 'utf8')
   ]);
 
-  const engineIndex = middleware.indexOf('/js/gate-receiving-window-engine.js');
-  const hooksIndex = middleware.indexOf('/js/gate-ui-hooks.js');
-  const archiveIndex = middleware.indexOf('/js/gate-archive-controller.js');
-  assert.ok(engineIndex >= 0 && engineIndex < hooksIndex && engineIndex < archiveIndex);
-
+  assert.doesNotMatch(middleware, /gate-receiving-window-engine\.js/);
+  assert.match(portClear, /gate-receiving-window-engine\.js/);
   assert.match(portClear, /GateReceivingWindowEngine/);
   assert.match(portClear, /time >= window\.start && time < window\.end/);
   assert.match(archive, /GateReceivingWindowEngine/);

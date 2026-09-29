@@ -176,7 +176,7 @@ test('middleware delivers one canonical stylesheet and no retired CSS assets', a
 test('Squadron SITREP ships current canonical assets and preserves lightweight communication UI', async () => {
   const version = 'military-glass-terminal-20260928-portclear';
   const url = `/css/military-glass-terminal.css?v=${version}`;
-  const scriptUrl = '/js/prc-dash-final-audit.js?v=squadron-sitrep-20260922-live-sync1';
+  const scriptUrl = '/js/prc-dash-final-audit.js?v=squadron-popup-sounds-20260928';
   const [middleware, standalone, budgetText, stack, css, controller, index] = await Promise.all([
     source('functions/_middleware.js'), source('public/squadron/index.html'),
     source('docs/build-2/ACTIVE_RUNTIME_BUDGET.json'), source('docs/ACTIVE_RUNTIME_STACK.md'),

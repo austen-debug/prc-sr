@@ -24,7 +24,8 @@ test('fullscreen separates telemetry from the Active Buses lane', async () => {
   const fullscreen = fullscreenContract(css);
 
   assert.match(fullscreen, /grid-template-columns:\s*repeat\(4,\s*minmax\(0,\s*1fr\)\)/);
-  assert.match(fullscreen, /grid-template-areas:[\s\S]*"metrics metrics metrics metrics"[\s\S]*"active active active active"/);
+  assert.match(fullscreen, /grid-template-areas:[\s\S]*"metrics metrics metrics metrics"[\s\S]*"portclear portclear portclear portclear"[\s\S]*"active active active active"/);
+  assert.match(fullscreen, /gate-port-clear-status[\s\S]*min-height:\s*clamp\(54px,\s*6\.5vh,\s*64px\)/);
   assert.match(fullscreen, /gate-active-buses-block[\s\S]*grid-template-columns:\s*130px minmax\(0,\s*1fr\)/);
 });
 
@@ -59,5 +60,6 @@ test('phone fullscreen converts metrics to a two-column posture and buses to ful
 
   assert.match(mobile, /body\.fullscreen-board #page-board \.gate-metrics-container,[\s\S]*grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\)/);
   assert.match(mobile, /body\.fullscreen-board #page-board #active-buses \.prc-bus-card,[\s\S]*flex-basis:\s*100%/);
+  assert.match(mobile, /#page-board \.gate-port-clear-status\s*\{[\s\S]*flex-direction:\s*column/);
   assert.match(mobile, /body\.fullscreen-board #page-board #active-buses \.prc-bus-card,[\s\S]*width:\s*100%/);
 });

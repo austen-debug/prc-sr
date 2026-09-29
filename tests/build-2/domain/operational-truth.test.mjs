@@ -127,11 +127,43 @@ test('assignment summary exposes both awaiting and over-assigned conditions', ()
   });
 });
 
-test('canonical receiving timestamps require explicit timezone offsets', () => {
+test('datetime-local receiving windows are interpreted in PRC Central time', () => {
   const validation = validateReceivingWindows({
-    receiving_day_one_start: '2026-01-01T00:00',
-    receiving_day_one_end: '2026-01-01T01:00'
+    receiving_day_one_start: '2026-09-29T05:00',
+    receiving_day_one_end: '2026-09-30T07:00',
+    receiving_day_two_start: '2026-09-30T07:00',
+    receiving_day_two_end: '2026-10-01T07:00'
   });
-  assert.equal(validation.valid, false);
-  assert.match(validation.errors.join(' '), /timezone offset/i);
+  assert.equal(validation.valid, true);
+  assert.equal(validation.windows[0].start, '2026-09-29T10:00:00.000Z');
+  assert.equal(validation.windows[0].end, '2026-09-30T12:00:00.000Z');
+  assert.equal(validation.windows[1].start, '2026-09-30T12:00:00.000Z');
+  assert.equal(validation.windows[1].end, '2026-10-01T12:00:00.000Z');
+});
+
+test('real Receiving Day boundary counts arrivals and naturalizations exactly once', () => {
+  const records = canonicalize([
+    { type: 'dorm', week_group: 'WG', max_load: 200 },
+    { type: 'bus', week_group: 'WG', status: 'arrived', otw_count: 11, nat_count: 1, arrived_at: '2026-09-29T09:59:59Z' },
+    { type: 'bus', week_group: 'WG', status: 'arrived', otw_count: 20, nat_count: 2, arrived_at: '2026-09-29T10:00:00Z' },
+    { type: 'bus', week_group: 'WG', status: 'arrived', otw_count: 30, nat_count: 3, arrived_at: '2026-09-30T11:59:59Z' },
+    { type: 'bus', week_group: 'WG', status: 'arrived', otw_count: 40, nat_count: 4, arrived_at: '2026-09-30T12:00:00Z' },
+    { type: 'bus', week_group: 'WG', status: 'active', otw_count: 50, nat_count: 5, departed_at: '2026-09-30T13:00:00Z' },
+    { type: 'bus', week_group: 'WG', status: 'arrived', otw_count: 60, nat_count: 6, arrived_at: '2026-10-01T12:00:00Z' }
+  ]);
+  const windows = {
+    receiving_day_one_start: '2026-09-29T05:00',
+    receiving_day_one_end: '2026-09-30T07:00',
+    receiving_day_two_start: '2026-09-30T07:00',
+    receiving_day_two_end: '2026-10-01T07:00'
+  };
+  const summary = calculateReceivingSummary({ records, weekGroup: 'WG', windows });
+  assert.equal(summary.nights[0].totals.total, 50);
+  assert.equal(summary.nights[0].totals.naturalization, 5);
+  assert.equal(summary.nights[0].cumulative.total, 50);
+  assert.equal(summary.nights[1].totals.total, 40);
+  assert.equal(summary.nights[1].totals.naturalization, 4);
+  assert.equal(summary.nights[1].cumulative.total, 90);
+  assert.equal(summary.nights[1].cumulative.naturalization, 9);
+  assert.equal(summary.unassignedConfirmedTotals.total, 71);
 });

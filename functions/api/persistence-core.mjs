@@ -1,3 +1,5 @@
+import '../../public/js/gate-receiving-window-engine.js';
+
 // Pure GATE persistence validation and lossless snapshot construction.
 const WINDOWS = ['receiving_day_one_start','receiving_day_one_end','receiving_day_two_start','receiving_day_two_end'];
 const ROW_FIELDS = new Set(['rowIndex','sdq','sec','inter_sec','dorm_name','sex','band','space_force','load']);
@@ -21,12 +23,8 @@ function noUnknownKeys(object, allowed, context) {
   for (const key of Object.keys(object)) if (!allowed.has(key)) throw new PersistenceValidationError(`Unsupported ${context} field: ${key}. Nothing was silently discarded.`);
 }
 function validateReceivingWindows(windows) {
-  for (const [startKey,endKey] of [[WINDOWS[0],WINDOWS[1]],[WINDOWS[2],WINDOWS[3]]]) {
-    const start = windows[startKey], end = windows[endKey];
-    if (Boolean(start) !== Boolean(end)) throw new PersistenceValidationError('Both start and end of each receiving window are required.');
-    if (start && (!Number.isFinite(Date.parse(start)) || !Number.isFinite(Date.parse(end)) || Date.parse(start) >= Date.parse(end))) throw new PersistenceValidationError('Receiving window end must be later than start.');
-  }
-  if (windows[WINDOWS[1]] && windows[WINDOWS[2]] && Date.parse(windows[WINDOWS[2]]) < Date.parse(windows[WINDOWS[1]])) throw new PersistenceValidationError('Receiving Day Two cannot precede Day One.');
+  const validation = globalThis.GateReceivingWindowEngine.validateWindows(windows);
+  if (!validation.valid) throw new PersistenceValidationError(`Receiving window: ${validation.errors[0] || 'invalid configuration.'}`);
 }
 export function normalizeDraft(payload = {}) {
   if (!payload || typeof payload !== 'object' || Array.isArray(payload)) throw new PersistenceValidationError('Draft must be an object.');

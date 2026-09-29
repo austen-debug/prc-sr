@@ -180,8 +180,18 @@ test('PORT CLEAR writes remain available when the legacy data SDK global is miss
   assert.doesNotMatch(portClear, /await window\.dataSdk\.(?:create|update)\(/);
 });
 
-test('PORT CLEAR remains additive to the Active Buses queue', async () => {
-  const hooks = await source('public/js/gate-ui-hooks.js');
+test('PORT CLEAR is an independent board status surface and never owns Active Buses', async () => {
+  const [middleware, hooks] = await Promise.all([
+    source('functions/_middleware.js'),
+    source('public/js/gate-ui-hooks.js')
+  ]);
+  const boardSource = middleware.match(/const STATUS_BOARD_METRICS_HTML = `([\s\S]*?)`;/)?.[1] || '';
+  const cueIndex = boardSource.indexOf('id="gate-port-clear-board-cue"');
+  const busesIndex = boardSource.indexOf('class="gate-active-buses-block"');
+  assert.ok(cueIndex >= 0 && busesIndex > cueIndex, 'PORT CLEAR must be a board-level sibling before Active Buses');
+  const activeSection = boardSource.slice(busesIndex);
+  assert.doesNotMatch(activeSection, /gate-port-clear-board-cue/, 'PORT CLEAR must not be nested inside Active Buses');
+
   const marker = hooks.indexOf('// PORT CLEAR:');
   assert.notEqual(marker, -1, 'PORT CLEAR runtime block is missing');
   const portClear = hooks.slice(marker);
@@ -191,9 +201,14 @@ test('PORT CLEAR remains additive to the Active Buses queue', async () => {
   assert.notEqual(renderEnd, -1, 'PORT CLEAR board renderer is not statically bounded');
   const renderBoard = portClear.slice(renderStart, renderEnd);
 
-  assert.match(renderBoard, /grid-column:1 \/ -1/);
+  assert.match(renderBoard, /getElementById\('gate-port-clear-board-cue'\)/);
   assert.match(renderBoard, /buses\.style\.display = '';/);
-  assert.doesNotMatch(renderBoard, /buses\.style\.display = active \? ['"]none['"]/);
+  assert.match(renderBoard, /cue\.hidden = false/);
+  assert.match(renderBoard, /cue\.hidden = true/);
+  assert.doesNotMatch(renderBoard, /appendChild\(cue\)/);
+  assert.doesNotMatch(renderBoard, /closest\(['"]\.gate-active-buses-block/);
+  assert.doesNotMatch(renderBoard, /grid-column:1 \/ -1/);
+  assert.doesNotMatch(renderBoard, /isAcknowledged\(/, 'board visibility must not depend on per-session acknowledgement');
 });
 
 test('canonical CSS preserves desktop/mobile shell ownership and accepted phone workflows', async () => {

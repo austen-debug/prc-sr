@@ -230,6 +230,21 @@
     return { event, cutoff: window.end, day: window.day };
   }
 
+  function formatPortClearClock(value) {
+    const epoch = typeof value === 'number' ? value : Date.parse(String(value || ''));
+    if (!Number.isFinite(epoch)) return '—';
+    return new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Chicago',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    }).format(new Date(epoch));
+  }
+
+  function receivingDayLabel(day) {
+    return day === 'two' ? 'RECEIVING DAY TWO' : 'RECEIVING DAY ONE';
+  }
+
   function ackKey(id) { return `${ACK_PREFIX}${id}`; }
 
   function isAcknowledged(id) {
@@ -379,28 +394,37 @@
   }
 
   function renderBoard(active) {
+    const board = document.querySelector('#page-board .board-header');
     const buses = document.getElementById('active-buses');
-    const parent = buses?.closest('.gate-active-buses-block') || buses?.parentElement;
-    if (!buses || !parent) return;
-    let cue = document.getElementById('gate-port-clear-board-cue');
-    if (!cue) {
-      cue = document.createElement('div');
-      cue.id = 'gate-port-clear-board-cue';
-      cue.className = 'w-full rounded-lg px-4 py-4 text-center text-xl font-black tracking-widest';
-      cue.style.cssText = 'background:var(--green);color:white;letter-spacing:.12em;grid-column:1 / -1;';
-      cue.dataset.owner = OWNER;
-      cue.textContent = 'PORT CLEAR';
-      cue.setAttribute('role', 'status');
-      parent.appendChild(cue);
-    }
-    cue.hidden = !active;
-    cue.style.display = active ? 'block' : 'none';
+    const cue = document.getElementById('gate-port-clear-board-cue');
+    if (!board || !buses || !cue) return;
 
-    // PORT CLEAR is an operational status cue, not a replacement for the live
-    // transportation picture. Keep every still-inbound bus visible until its
-    // own arrival workflow removes it from the Active Buses queue.
+    // PORT CLEAR is board-level operational state. It must never replace,
+    // hide, cover, or own the Active Buses transportation surface.
     buses.style.display = '';
-    parent.dataset.portClear = String(active);
+
+    if (!active) {
+      cue.hidden = true;
+      cue.dataset.eventId = '';
+      const detail = document.getElementById('gate-port-clear-board-detail');
+      const day = document.getElementById('gate-port-clear-board-day');
+      if (detail) detail.textContent = '';
+      if (day) day.textContent = '';
+      board.removeAttribute('data-port-clear-active');
+      return;
+    }
+
+    const detail = document.getElementById('gate-port-clear-board-detail');
+    const day = document.getElementById('gate-port-clear-board-day');
+    const issuedAt = formatPortClearClock(active.event?.created_at);
+    const activeUntil = formatPortClearClock(active.cutoff);
+
+    cue.dataset.owner = OWNER;
+    cue.dataset.eventId = String(active.event?.__backendId || '');
+    if (detail) detail.textContent = `Issued ${issuedAt} • Active until ${activeUntil}`;
+    if (day) day.textContent = receivingDayLabel(active.day);
+    cue.hidden = false;
+    board.setAttribute('data-port-clear-active', 'true');
   }
 
   function scheduleExpiry(cutoff = 0) {
@@ -416,7 +440,7 @@
   function sync() {
     const active = activeEvent();
     ensureAirportControl();
-    renderBoard(Boolean(active));
+    renderBoard(active);
     scheduleExpiry(active?.cutoff || 0);
     if (active && !isAcknowledged(active.event.__backendId)) showDialog('alert', active.event.__backendId);
     // If a receiving period ends while the confirmation is open, require a new send attempt.

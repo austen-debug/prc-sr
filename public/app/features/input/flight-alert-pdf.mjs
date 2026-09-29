@@ -170,6 +170,10 @@ function flightAlertTableText(items) {
 
 function genericTextFromItems(items) {
   if (!items.length) return '';
+  const distinctCoordinates = new Set(items.map(item => `${Math.round(item.x * 10)}:${Math.round(item.y * 10)}`));
+  if (distinctCoordinates.size < 2) {
+    return [...items].sort((a, b) => a.order - b.order).map(item => item.text).join('\n');
+  }
   const schedule = items.filter(item => /FLT\s*\/\s*SQUADRON/i.test(item.text));
   const cutoff = schedule.length ? Math.min(...schedule.map(item => item.x)) - 2 : Infinity;
   const buckets = new Map();

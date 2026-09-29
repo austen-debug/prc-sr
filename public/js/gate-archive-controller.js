@@ -10,7 +10,11 @@
     'receiving_day_two_end'
   ];
 
-  const receivingEngine = globalThis.GateReceivingWindowEngine;
+  const receivingEngineReady = globalThis.GateReceivingWindowEngine
+    ? Promise.resolve(globalThis.GateReceivingWindowEngine)
+    : import('/js/gate-receiving-window-engine.js?v=receiving-day-truth-20260928')
+      .then(() => globalThis.GateReceivingWindowEngine);
+  const receivingEngine = () => globalThis.GateReceivingWindowEngine || null;
 
   let installed = false;
   let hooksRegistered = false;
@@ -155,14 +159,14 @@
   }
 
   function inWindow(value, start, end) {
-    return receivingEngine?.inWindow(value, start, end) === true;
+    return receivingEngine()?.inWindow(value, start, end) === true;
   }
 
   function formatReceivingWindowDateTime(value) {
-    const epoch = receivingEngine?.toEpoch(value);
+    const epoch = receivingEngine()?.toEpoch(value);
     if (!Number.isFinite(epoch)) return '—';
     return new Intl.DateTimeFormat('en-US', {
-      timeZone: receivingEngine.TIME_ZONE,
+      timeZone: receivingEngine()?.TIME_ZONE || 'America/Chicago',
       year: 'numeric', month: 'short', day: '2-digit',
       hour: '2-digit', minute: '2-digit'
     }).format(new Date(epoch));
@@ -888,7 +892,7 @@
   function receivingSummary(dorms, buses, windows) {
     const totalProjected = dorms.reduce((sum, dorm) => sum + n(dorm.max_load), 0);
     const sfProjected = dorms.filter(isSpaceForceDorm).reduce((sum, dorm) => sum + n(dorm.max_load), 0);
-    const summary = receivingEngine?.summarizeArrivals(buses, windows);
+    const summary = receivingEngine()?.summarizeArrivals(buses, windows);
     const dayDefs = [
       ['Receiving Day One', summary?.dayOne],
       ['Receiving Day Two', summary?.dayTwo]
@@ -993,6 +997,7 @@
 
   async function printArchiveReport(event) {
     event?.preventDefault?.();
+    await receivingEngineReady;
     event?.stopPropagation?.();
     event?.stopImmediatePropagation?.();
     const triggerId = event?.target?.closest?.('[data-archive-print-id]')?.dataset.archivePrintId || '';
@@ -1028,7 +1033,8 @@
     }
   }
 
-  function printCurrentSummaryReport(event) {
+  async function printCurrentSummaryReport(event) {
+    await receivingEngineReady;
     event?.preventDefault?.();
     event?.stopPropagation?.();
     event?.stopImmediatePropagation?.();

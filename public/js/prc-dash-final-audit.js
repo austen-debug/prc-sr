@@ -14,6 +14,16 @@
   let editor = false;
   let soundEnabled = false;
   let alertSound = null;
+  const PLOP_SOUND_SRC = '/assets/sounds/gate_plop_sound.mp3';
+
+  function playSquadronPopupSound() {
+    try {
+      const audio = new Audio(PLOP_SOUND_SRC);
+      audio.preload = 'auto';
+      const result = audio.play();
+      if (result && typeof result.catch === 'function') result.catch(() => {});
+    } catch (_) {}
+  }
   const nodes = new Map();
   const POLL_MS = 15000;
   const byId = id => document.getElementById(id);
@@ -286,7 +296,10 @@
         opener.classList.remove('has-notice');
         if (byId('squadron-new')) byId('squadron-new').hidden = true;
       }
-      if (!dialog.open) dialog.showModal();
+      if (!dialog.open) {
+        dialog.showModal();
+        playSquadronPopupSound();
+      }
     });
     byId('squadron-info-close')?.addEventListener('click', () => dialog.close());
     dialog?.addEventListener('close', () => opener?.focus());
@@ -313,7 +326,7 @@
     });
     page.addEventListener('keydown', event => { if (event.key === 'Escape') page.querySelectorAll('[data-squadron-tip]').forEach(hideTip); });
     byId('squadron-enable-sound')?.addEventListener('click', () => {
-      alertSound = alertSound || new Audio('/assets/sr_bus_sound.mp3');
+      alertSound = alertSound || new Audio('/assets/sounds/gate_bus_sound.mp3');
       alertSound.preload = 'auto';
       // An explicit user gesture is required. A blocked playback never suppresses the visual notice.
       alertSound.muted = true;

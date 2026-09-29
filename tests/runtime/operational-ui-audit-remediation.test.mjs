@@ -338,9 +338,10 @@ test('Squadron Access requires a non-dismissible acknowledgment once per authent
 });
 
 test('Archives use a full-width read-only historical workspace and exact Letter landscape reports', async () => {
-  const [index, controller, css, middleware, budgetText] = await Promise.all([
+  const [index, controller, receivingEngine, css, middleware, budgetText] = await Promise.all([
     source('public/index.html'),
     source('public/js/gate-archive-controller.js'),
+    source('public/js/gate-receiving-window-engine.js'),
     source('public/css/military-glass-terminal.css'),
     source('functions/_middleware.js'),
     source('docs/build-2/ACTIVE_RUNTIME_BUDGET.json')
@@ -361,8 +362,10 @@ test('Archives use a full-width read-only historical workspace and exact Letter 
   assert.match(controller, /selectArchive\(card\.dataset\.archiveId\)/);
   assert.doesNotMatch(controller, /if \(card\) \{\s*openArchiveEditModalCanonical/);
 
-  assert.match(controller, /String\(bus\?\.status \|\| ''\)\.toLowerCase\(\) === 'arrived'/);
-  assert.match(controller, /completed\.filter\(bus => inWindow\(bus\.arrived_at, start, end\)\)/);
+  assert.match(controller, /summarizeArrivals\(buses, windows\)/);
+  assert.match(receivingEngine, /status \|\| ''\).*toLowerCase\(\) === 'arrived'/);
+  assert.match(receivingEngine, /toEpoch\(bus\?\.arrived_at\)/);
+  assert.match(receivingEngine, /valueEpoch >= start && valueEpoch < end/);
   assert.match(controller, /@page\{size:11in 8\.5in;margin:\.35in\}/);
   assert.match(controller, /\.report-page\{width:10\.3in;height:7\.8in/);
   assert.match(controller, /thead\{display:table-header-group\}/);

@@ -1,5 +1,16 @@
 /** Local-only PDF extraction. Text PDFs only; intentionally fails closed on unfamiliar layouts. */
 const MAX_BYTES = 6 * 1024 * 1024;
+const NUMBER = '[-+]?(?:\\d+\\.?\\d*|\\.\\d+)';
+const DORM_CELL = /^(?:[0-9][A-Z][0-9]|[A-Z][0-9]{2})$/;
+const HEADER_ALIASES = Object.freeze({
+  sdq: ['SQD', 'SDQ', 'SQUADRON'],
+  sec: ['SEC', 'SECTION'],
+  inter: ['INTER/SECT', 'INTER/SEC'],
+  dorm: ['DORM', 'DORMITORY'],
+  sex: ['SEX', 'GENDER'],
+  load: ['LOAD', 'EXPECTED']
+});
+
 function latin1(bytes) {
   let text = '';
   for (let i = 0; i < bytes.length; i += 16384) {
@@ -13,43 +24,171 @@ function pdfLiteral(raw) {
     return special[value] ?? (/^[0-7]/.test(value) ? String.fromCharCode(parseInt(value, 8)) : value);
   });
 }
-function positionedText(segment) {
+function compact(value) {
+  return String(value ?? '').replace(/\s+/g, '').toUpperCase();
+}
+function textPieces(source) {
   const pieces = [];
   const pattern = /\(((?:\\.|[^\\)])*)\)|<([0-9a-fA-F\s]+)>/g;
-  for (const match of segment.matchAll(pattern)) {
+  for (const match of source.matchAll(pattern)) {
     if (match[1] !== undefined) pieces.push(pdfLiteral(match[1]));
     else if (match[2] && match[2].replace(/\s/g, '').length % 2 === 0) {
       const hex = match[2].replace(/\s/g, '');
       let decoded = '';
-      for (let i=0; i<hex.length; i+=2) decoded += String.fromCharCode(parseInt(hex.slice(i,i+2),16));
+      for (let i = 0; i < hex.length; i += 2) decoded += String.fromCharCode(parseInt(hex.slice(i, i + 2), 16));
       pieces.push(decoded);
     }
   }
-  if (!pieces.length) return null;
-  const number = '[-+]?(?:\\d+\\.?\\d*|\\.\\d+)';
-  const tm = [...segment.matchAll(new RegExp(`(?:${number}\\s+){4}(${number})\\s+(${number})\\s+Tm\\b`, 'g'))].at(-1);
-  const td = tm ? null : [...segment.matchAll(new RegExp(`(${number})\\s+(${number})\\s+Td\\b`, 'g'))].at(-1);
-  const position = tm || td;
-  return { text: pieces.join(' '), x: position ? Number(position[1]) : null, y: position ? Number(position[2]) : null };
+  return pieces;
 }
-function textFromSegments(segments) {
-  if (!segments.length) return '';
-  const positioned = segments.filter(item => Number.isFinite(item.x) && Number.isFinite(item.y));
-  if (positioned.length < 3 || positioned.length < segments.length * 0.7) return segments.map(item=>item.text).join('\n');
-  // The flight/procedure schedule lives to the RIGHT of the dorm table. Avoid
-  // concatenating its tokens onto a dorm row at the same vertical coordinate.
-  const schedule = positioned.filter(item => /FLT\s*\/\s*SQUADRON/i.test(item.text));
-  const cutoff = schedule.length ? Math.min(...schedule.map(item=>item.x)) - 2 : Infinity;
+
+/**
+ * Extract every text-show operation with its current text position.
+ * Excel/Acrobat Flight Alerts use merged cells expressed with TD/Td moves inside
+ * one BT/ET block; treating the whole block as one string loses SQD/SEC geometry.
+ */
+function positionedItems(content) {
+  const items = [];
+  let order = 0;
+  const tmPattern = new RegExp(`(${NUMBER})\\s+(${NUMBER})\\s+(${NUMBER})\\s+(${NUMBER})\\s+(${NUMBER})\\s+(${NUMBER})\\s+Tm\\b`);
+  const tdPattern = new RegExp(`(${NUMBER})\\s+(${NUMBER})\\s+(Td|TD)\\b`);
+  for (const block of content.match(/\bBT\b[\s\S]*?\bET\b/g) || []) {
+    let a = 1, b = 0, c = 0, d = 1, x = 0, y = 0;
+    // Acrobat may emit several text operators on one physical line. Split only
+    // after actual PDF operators (not matching text inside a literal string).
+    const commands = block.replace(/(Tm|Td|TD|Tj|TJ)(?=\s|$)/g, '$1\n');
+    for (const rawLine of commands.split(/\r?\n/)) {
+      const line = rawLine.trim();
+      if (!line) continue;
+      const tm = line.match(tmPattern);
+      if (tm) {
+        a = Number(tm[1]); b = Number(tm[2]); c = Number(tm[3]); d = Number(tm[4]);
+        x = Number(tm[5]); y = Number(tm[6]);
+      }
+      const td = line.match(tdPattern);
+      if (td) {
+        const tx = Number(td[1]);
+        const ty = Number(td[2]);
+        // Td/TD translate in text space, so preserve the active Tm scale.
+        x += (tx * a) + (ty * c);
+        y += (tx * b) + (ty * d);
+      }
+      if (!/\b(?:Tj|TJ)\b/.test(line)) continue;
+      const text = textPieces(line).join('');
+      if (!text.trim() || !Number.isFinite(x) || !Number.isFinite(y)) continue;
+      items.push({ text, x, y, order: order++ });
+    }
+  }
+  return items;
+}
+
+function nearestField(x, headers) {
+  return Object.keys(headers).reduce((best, field) => (
+    Math.abs(x - headers[field].x) < Math.abs(x - headers[best].x) ? field : best
+  ), 'sdq');
+}
+function nearestY(candidates, y, maxDistance) {
+  let best = null;
+  let distance = Infinity;
+  for (const item of candidates) {
+    const next = Math.abs(item.y - y);
+    if (next < distance || (next === distance && item.order < (best?.order ?? Infinity))) {
+      best = item;
+      distance = next;
+    }
+  }
+  return best && distance <= maxDistance ? best : null;
+}
+
+/**
+ * Convert a positioned six-column dorm table into canonical parser text.
+ * This specifically preserves merged SQD/SEC values by assigning each dorm row
+ * to the nearest merged-cell center rather than relying on visual line breaks.
+ */
+function flightAlertTableText(items) {
+  if (!Array.isArray(items) || !items.length) return '';
+  const headers = {};
+  for (const [field, aliases] of Object.entries(HEADER_ALIASES)) {
+    const accepted = new Set(aliases.map(compact));
+    headers[field] = items.find(item => accepted.has(compact(item.text))) || null;
+  }
+  if (Object.values(headers).some(value => !value)) return '';
+
+  const headerY = Object.values(headers).reduce((sum, item) => sum + item.y, 0) / Object.keys(headers).length;
+  const leftLimit = headers.load.x + Math.max(60, Math.abs(headers.load.x - headers.sex.x) * 1.5);
+  const left = items.filter(item => item.x <= leftLimit && item.y < headerY - 1);
+  const dorms = left
+    .filter(item => nearestField(item.x, headers) === 'dorm' && DORM_CELL.test(compact(item.text)))
+    .sort((a, b) => b.y - a.y || a.order - b.order);
+  if (!dorms.length) return '';
+
+  const minDormY = dorms.at(-1).y;
+  const region = left.filter(item => item.y >= minDormY - 20);
+  const candidates = (field, predicate) => region.filter(item => nearestField(item.x, headers) === field && predicate(compact(item.text)));
+  const squadrons = candidates('sdq', value => /^\d{3}$/.test(value));
+  const sections = candidates('sec', value => /^[1-4]$/.test(value));
+  const inters = candidates('inter', value => /^\d{1,3}$/.test(value));
+  const sexes = candidates('sex', value => /^(?:M|F|MALE|FEMALE)$/.test(value));
+  const loads = candidates('load', value => /^\d{1,3}$/.test(value) && Number(value) >= 1 && Number(value) <= 100);
+
+  const rows = [];
+  const seen = new Set();
+  for (const dorm of dorms) {
+    const squadron = nearestY(squadrons, dorm.y, 20);
+    const section = nearestY(sections, dorm.y, 15);
+    const inter = nearestY(inters, dorm.y, 2);
+    const sex = nearestY(sexes, dorm.y, 2);
+    const load = nearestY(loads, dorm.y, 2);
+    if (!squadron || !section || !inter || !sex || !load) return '';
+    const dormName = compact(dorm.text);
+    const key = `${compact(squadron.text)}::${dormName}`;
+    if (seen.has(key)) return '';
+    seen.add(key);
+    rows.push(`${compact(squadron.text)} ${compact(section.text)} ${compact(inter.text)} ${dormName} ${compact(sex.text)} ${Number(compact(load.text))}`);
+  }
+
+  let publishedTotal = null;
+  for (const item of items) {
+    const match = compact(item.text).match(/^AAFES[:=\-]?([\d,]+)$/);
+    if (match) {
+      publishedTotal = Number(match[1].replaceAll(',', ''));
+      break;
+    }
+  }
+
+  let declaredRows = null;
+  for (const item of items) {
+    const match = compact(item.text).match(/^TOTALFLT'?S[:=\-]?(\d+)$/);
+    if (match) {
+      declaredRows = Number(match[1]);
+      break;
+    }
+  }
+
+  const output = ['SQD SEC INTER/SECT DORM SEX LOAD', ...rows];
+  if (Number.isSafeInteger(declaredRows)) output.push(`TOTAL FLTS - ${declaredRows}`);
+  if (Number.isSafeInteger(publishedTotal)) output.push(`AAFES: ${publishedTotal}`);
+  return output.join('\n');
+}
+
+function genericTextFromItems(items) {
+  if (!items.length) return '';
+  const distinctCoordinates = new Set(items.map(item => `${Math.round(item.x * 10)}:${Math.round(item.y * 10)}`));
+  if (distinctCoordinates.size < 2) {
+    return [...items].sort((a, b) => a.order - b.order).map(item => item.text).join('\n');
+  }
+  const schedule = items.filter(item => /FLT\s*\/\s*SQUADRON/i.test(item.text));
+  const cutoff = schedule.length ? Math.min(...schedule.map(item => item.x)) - 2 : Infinity;
   const buckets = new Map();
-  for (const item of positioned) {
+  for (const item of items) {
     if (item.x >= cutoff) continue;
     const y = Math.round(item.y / 2) * 2;
     const bucket = buckets.get(y) || [];
     bucket.push(item);
     buckets.set(y, bucket);
   }
-  return [...buckets.keys()].sort((a,b)=>b-a)
-    .map(y=>buckets.get(y).sort((a,b)=>a.x-b.x).map(item=>item.text).join(' '))
+  return [...buckets.keys()].sort((a, b) => b - a)
+    .map(y => buckets.get(y).sort((a, b) => a.x - b.x || a.order - b.order).map(item => item.text).join(' '))
     .join('\n');
 }
 async function decodeStream(raw, compressed) {
@@ -65,7 +204,7 @@ async function extractFallback(bytes) {
   const pdf = latin1(bytes);
   if (/\/Encrypt\b/.test(pdf)) throw new Error('Encrypted PDFs are unsupported. Use Paste text.');
   const streamRegex = /stream\r?\n([\s\S]*?)\r?\nendstream/g;
-  const pages = [];
+  const candidates = [];
   let match;
   while ((match = streamRegex.exec(pdf)) !== null) {
     const dictionary = pdf.slice(Math.max(0, match.index - 800), match.index);
@@ -73,13 +212,16 @@ async function extractFallback(bytes) {
     const unsupported = /\/Filter\b/.test(dictionary) && !flate;
     if (unsupported) continue;
     try {
-      const content = await decodeStream(match[1], flate);
-      const items = (content.match(/\bBT\b[\s\S]*?\bET\b/g) || []).map(positionedText).filter(Boolean);
-      if (items.length) pages.push(textFromSegments(items));
+      const decoded = await decodeStream(match[1], flate);
+      const items = positionedItems(decoded);
+      if (!items.length) continue;
+      const table = flightAlertTableText(items);
+      candidates.push({ text: table || genericTextFromItems(items), score: (table ? 1_000_000 : 0) + items.length });
     } catch { /* Unsupported streams are not treated as successful extraction. */ }
   }
-  if (!pages.length) throw new Error('Unable to extract flight rows from this PDF. Copy and paste the text instead.');
-  return pages.join('\n');
+  const best = candidates.filter(candidate => candidate.text.trim()).sort((a, b) => b.score - a.score)[0];
+  if (!best) throw new Error('Unable to extract flight rows from this PDF. Copy and paste the text instead.');
+  return best.text;
 }
 /** Never transmits or stores the file. The caller discards buffers after parsing. */
 export async function extractFlightAlertPdf(file, pdfEngine = null) {
@@ -96,20 +238,18 @@ export async function extractFlightAlertPdf(file, pdfEngine = null) {
       for (let number = 1; number <= doc.numPages; number++) {
         const page = await doc.getPage(number);
         const content = await page.getTextContent();
-        const buckets = new Map();
-        for (const item of content.items || []) {
-          if (!item.str?.trim()) continue;
-          const y = Math.round((item.transform?.[5] ?? 0) / 3) * 3;
-          const bucket = buckets.get(y) || [];
-          bucket.push({ x: item.transform?.[4] ?? 0, str: item.str });
-          buckets.set(y, bucket);
-        }
-        for (const y of [...buckets.keys()].sort((a,b)=>b-a)) {
-          result.push(buckets.get(y).sort((a,b)=>a.x-b.x).map(item=>item.str).join(' '));
-        }
+        const items = (content.items || []).filter(item => item.str?.trim()).map((item, order) => ({
+          text: item.str,
+          x: Number(item.transform?.[4] ?? 0),
+          y: Number(item.transform?.[5] ?? 0),
+          order
+        }));
+        const table = flightAlertTableText(items);
+        result.push(table || genericTextFromItems(items));
       }
-      if (!result.length) throw new Error('This PDF has no extractable text. Use Paste text.');
-      return result.join('\n');
+      const text = result.filter(Boolean).join('\n');
+      if (!text.trim()) throw new Error('This PDF has no extractable text. Use Paste text.');
+      return text;
     } finally { await doc?.destroy?.(); await task.destroy?.(); }
   }
   return extractFallback(bytes);

@@ -42,7 +42,7 @@ const UI_HEAD_SCRIPTS = [
   '<script src="/js/gate-input-page-controller.js?v=record-display-integrity-20260714" defer></script>',
   '<script src="/js/gate-archive-controller.js?v=gate-archive-workspace-20260922" defer></script>',
   '<script src="/js/gate-permission-guard.js?v=permission-server-role-20260922" defer></script>',
-  '<script type="module" src="/app/features/input/flight-alert-import.mjs?v=flight-alert-import-20260920"></script>',
+  '<script type="module" src="/app/features/input/flight-alert-import.mjs?v=flight-alert-import-20260928-wg26052"></script>',
   '<script src="/js/gate-tablet-shell-classifier.js?v=tablet-shell-20260714" defer></script>',
   '<script src="/js/gate-app-shell-controller.js?v=gate-route-state-20260922" defer></script>',
   '<script src="/js/gate-fullscreen-board-layout-controller.js?v=fullscreen-board-containment-20260714b" defer></script>',

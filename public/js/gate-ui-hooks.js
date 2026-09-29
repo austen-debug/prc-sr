@@ -158,7 +158,6 @@
   const EVENT_TYPE = 'port_clear';
   const ACK_PREFIX = 'gate_port_clear_ack_';
   const WINDOW_FIELDS = ['receiving_day_one_start', 'receiving_day_one_end', 'receiving_day_two_start', 'receiving_day_two_end'];
-  const receivingEngine = globalThis.GateReceivingWindowEngine;
   let installed = false;
   let sending = false;
   let expirationTimer = null;
@@ -178,9 +177,13 @@
     try { return currentRole === 'instructor'; } catch (_) { return false; }
   }
 
+  function receivingEngine() {
+    return globalThis.GateReceivingWindowEngine || null;
+  }
+
   // Receiving windows are interpreted by the shared PRC Central-time engine.
   function toEpoch(value) {
-    return receivingEngine?.toEpoch(value) ?? Number.NaN;
+    return receivingEngine()?.toEpoch(value) ?? Number.NaN;
   }
 
   function windowValue(field, group = weekGroup()) {
@@ -497,7 +500,20 @@
     });
   }
 
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', install, { once: true });
-  else install();
-  window.addEventListener('load', install, { once: true });
+  function startPortClear() {
+    const begin = () => {
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', install, { once: true });
+      else install();
+      window.addEventListener('load', install, { once: true });
+    };
+    if (receivingEngine()) {
+      begin();
+      return;
+    }
+    import('/js/gate-receiving-window-engine.js?v=receiving-day-truth-20260928')
+      .then(begin)
+      .catch(error => console.error('Receiving Day engine failed to load; PORT CLEAR remains disabled.', error));
+  }
+
+  startPortClear();
 })();

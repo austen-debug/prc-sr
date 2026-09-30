@@ -22,3 +22,9 @@ test('Status and Processing consume the shared accounting contract without addin
   assert.match(processing, /GateOperationalCounts\?\.calculateAssignmentSummary/);
   assert.match(status, /GateOperationalCounts\?\.calculateAssignmentSummary/);
 });
+
+test('Processing load guard permits repairs but blocks increases in over-assignment', async () => {
+  const processing = await source('public/js/gate-processing-controller.js');
+  assert.match(processing, /proposedOverAssigned\s*>\s*accounting\.overAssigned/);
+  assert.doesNotMatch(processing, /if \(requested > availableForDorm\)/);
+});

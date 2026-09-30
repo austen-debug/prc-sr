@@ -23,7 +23,7 @@ The machine-readable inventory and ceilings are governed by `docs/build-2/ACTIVE
 
 Middleware now injects one stylesheet and no stylesheet imports:
 
-1. `/css/military-glass-terminal.css?v=military-glass-terminal-20260929-tablet-menu`
+1. `/css/military-glass-terminal.css?v=military-glass-terminal-20260929-tablet-direct`
 
 `public/css/military-glass-terminal.css` is the production visual source of truth for tokens, light/dark themes, shell geometry, page spacing, Status/Squadron boards, Processing, Airport, Input, Archives, login, modal geometry, responsive behavior, fullscreen behavior, skeleton geometry, z-index bands, and interaction motion.
 
@@ -52,7 +52,7 @@ Injected by middleware in current order on the Flight Alert feature branch:
 17. `/js/gate-archive-controller.js?v=receiving-day-truth-20260928`
 18. `/js/gate-permission-guard.js?v=permission-server-role-20260922`
 19. `/app/features/input/flight-alert-import.mjs?v=flight-alert-import-20260929-tablet-dialog` (new draft-only Input enhancement)
-20. `/js/gate-app-shell-controller.js?v=tablet-menu-20260929`
+20. `/js/gate-app-shell-controller.js?v=tablet-direct-20260929`
 21. `/js/gate-fullscreen-board-layout-controller.js?v=fullscreen-board-containment-20260714b`
 22. `/js/prc-dash-modal-mobile-validation.js?v=phase-7e-ui-ownership-20260709`
 23. `/js/gate-render-stability-fix.js?v=status-board-compositing-retired-20260721`

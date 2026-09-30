@@ -319,6 +319,10 @@
     trigger.setAttribute('aria-haspopup', 'dialog');
     trigger.setAttribute('aria-expanded', drawerOpen ? 'true' : 'false');
     trigger.setAttribute('aria-controls', 'gate-mobile-nav-sheet');
+    if (trigger.dataset.gateMenuBound !== 'true') {
+      trigger.addEventListener('click', handleMenuTrigger);
+      trigger.dataset.gateMenuBound = 'true';
+    }
 
     ensureScrim();
     ensureMobileSheet();
@@ -564,16 +568,15 @@
     return true;
   }
 
-  function handleShellInteraction(event) {
-    const trigger = event.target?.closest?.('#mobile-menu-trigger');
-    if (trigger) {
-      event.preventDefault?.();
-      event.stopPropagation?.();
-      event.stopImmediatePropagation?.();
-      setDrawer(!drawerOpen);
-      return true;
-    }
+  function handleMenuTrigger(event) {
+    event.preventDefault?.();
+    event.stopPropagation?.();
+    event.stopImmediatePropagation?.();
+    setDrawer(!drawerOpen);
+  }
 
+  function handleShellInteraction(event) {
+    if (event.target?.closest?.('#mobile-menu-trigger')) return false;
     if (routeFromEvent(event)) return true;
 
     const scrim = event.target?.closest?.('#gate-mobile-menu-scrim');

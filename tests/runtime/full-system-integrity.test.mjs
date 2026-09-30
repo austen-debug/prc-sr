@@ -227,9 +227,12 @@ test('canonical CSS and GateAppShell share one explicit shell posture contract',
   assert.doesNotMatch(shell, /const MOBILE_MEDIA/);
   assert.doesNotMatch(shell, /window\.matchMedia\s*=\s*function/);
   assert.doesNotMatch(shell, /addEventListener\('pointerup'|SYNTHETIC_CLICK_SUPPRESS_MS|suppressClickUntil|suppressNextOutsideClick/);
+  assert.match(shell, /trigger\.addEventListener\('click', handleMenuTrigger\)/);
+  assert.match(shell, /trigger\.dataset\.gateMenuBound = 'true'/);
   assert.match(shell, /document\.addEventListener\('click', handleClick, true\)/);
 
   assert.match(css, /@media \(any-pointer: coarse\) and \(min-width: 600px\) and \(max-width: 1600px\) and \(min-height: 561px\)/);
+  assert.match(css, /#mobile-menu-trigger\s*\{[\s\S]*touch-action:\s*manipulation/);
   assert.match(css, /data-gate-shell-posture="tablet-landscape"[\s\S]*#mobile-menu-trigger[\s\S]*display:\s*inline-flex/);
   assert.match(css, /data-gate-shell-posture="tablet-landscape"[\s\S]*#main-nav-menu[\s\S]*display:\s*flex/);
   assert.match(css, /data-gate-shell-posture="tablet-portrait"[\s\S]*#main-nav-menu[\s\S]*display:\s*none/);
@@ -239,7 +242,7 @@ test('canonical CSS and GateAppShell share one explicit shell posture contract',
   assert.match(css, /#page-airport \.surface:has\(#airport-bus-log-body\)[\s\S]*overflow-x:\s*auto/);
 
   assert.doesNotMatch(middleware, /gate-tablet-shell-classifier/);
-  assert.match(middleware, /gate-app-shell-controller\.js\?v=tablet-menu-20260929/);
+  assert.match(middleware, /gate-app-shell-controller\.js\?v=tablet-direct-20260929/);
 });
 
 test('background is route-scoped and the global tactical grid is retired', async () => {

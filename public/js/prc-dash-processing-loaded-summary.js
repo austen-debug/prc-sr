@@ -32,16 +32,26 @@
   }
 
   function getArrivedBuses() {
-    return recordsByType('bus', activeWg()).filter(bus => bus.status === 'arrived');
+    return recordsByType('bus', activeWg()).filter(bus => String(bus.status || '').trim().toLowerCase() === 'arrived');
   }
 
   function calculateCounts(providedDorms) {
+    const accounting = window.GateOperationalCounts?.calculateAssignmentSummary?.(records(), activeWg());
+    if (accounting) {
+      return {
+        arrived: accounting.arrived,
+        loaded: accounting.loaded,
+        remaining: accounting.awaitingAssignment,
+        overAssigned: accounting.overAssigned
+      };
+    }
+
     const dorms = getDorms(providedDorms);
     const arrivedBuses = getArrivedBuses();
     const loaded = dorms.reduce((sum, dorm) => sum + n(dorm.current_load), 0);
     const arrived = arrivedBuses.reduce((sum, bus) => sum + n(bus.otw_count), 0);
     const remaining = Math.max(arrived - loaded, 0);
-    return { arrived, loaded, remaining };
+    return { arrived, loaded, remaining, overAssigned: Math.max(loaded - arrived, 0) };
   }
 
   function ensureSummaryElement() {

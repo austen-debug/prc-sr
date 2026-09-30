@@ -70,6 +70,57 @@
     window.unregisterGateHook = unregisterGateHook;
   }
 
+  function operationalCount(value) {
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed)) return 0;
+    return Math.max(0, Math.trunc(parsed));
+  }
+
+  function normalizeOperationalWeekGroup(value) {
+    return String(value ?? '').trim().toUpperCase();
+  }
+
+  function matchesOperationalWeekGroup(record, weekGroup) {
+    const requested = normalizeOperationalWeekGroup(weekGroup);
+    return !requested || normalizeOperationalWeekGroup(record?.week_group) === requested;
+  }
+
+  function calculatePhysicalArrivalTotal(records = [], weekGroup = '') {
+    return (Array.isArray(records) ? records : [])
+      .filter(record => record?.type === 'bus' &&
+        matchesOperationalWeekGroup(record, weekGroup) &&
+        String(record?.status ?? '').trim().toLowerCase() === 'arrived')
+      .reduce((sum, bus) => sum + operationalCount(bus.otw_count), 0);
+  }
+
+  function calculateLoadedTotal(records = [], weekGroup = '') {
+    return (Array.isArray(records) ? records : [])
+      .filter(record => record?.type === 'dorm' && matchesOperationalWeekGroup(record, weekGroup))
+      .reduce((sum, dorm) => sum + operationalCount(dorm.current_load), 0);
+  }
+
+  function calculateAssignmentSummary(records = [], weekGroup = '') {
+    const arrived = calculatePhysicalArrivalTotal(records, weekGroup);
+    const loaded = calculateLoadedTotal(records, weekGroup);
+    return Object.freeze({
+      weekGroup: normalizeOperationalWeekGroup(weekGroup),
+      arrived,
+      loaded,
+      awaitingAssignment: Math.max(arrived - loaded, 0),
+      overAssigned: Math.max(loaded - arrived, 0)
+    });
+  }
+
+  function exposeOperationalAccounting() {
+    window.GateOperationalCounts = Object.freeze({
+      isCanonicalLiveAccountingOwner: true,
+      calculatePhysicalArrivalTotal,
+      calculateLoadedTotal,
+      calculateAssignmentSummary
+    });
+  }
+
+
   function wrapRenderAll() {
     const current = window.renderAll;
     if (typeof current !== 'function') return false;
@@ -132,9 +183,12 @@
   function install() {
     ensureHookRegistry();
     exposeHookApi();
+    exposeOperationalAccounting();
     installCompatibilityStubs();
     installWrappers();
   }
+
+  exposeOperationalAccounting();
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', install, { once: true });
   else install();

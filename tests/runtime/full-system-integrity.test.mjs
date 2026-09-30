@@ -242,7 +242,7 @@ test('canonical CSS and GateAppShell share one explicit shell posture contract',
   assert.match(css, /#page-airport \.surface:has\(#airport-bus-log-body\)[\s\S]*overflow-x:\s*auto/);
 
   assert.doesNotMatch(middleware, /gate-tablet-shell-classifier/);
-  assert.match(middleware, /gate-app-shell-controller\.js\?v=tablet-menu-20260929/);
+  assert.match(middleware, /gate-app-shell-controller\.js\?v=tablet-direct-20260929/);
 });
 
 test('background is route-scoped and the global tactical grid is retired', async () => {

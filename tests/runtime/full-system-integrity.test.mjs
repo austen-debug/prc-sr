@@ -214,6 +214,7 @@ test('PORT CLEAR is an independent board status surface and never owns Active Bu
 test('canonical CSS and GateAppShell share one explicit shell posture contract', async () => {
   const css = await source('public/css/military-glass-terminal.css');
   const shell = await source('public/js/gate-app-shell-controller.js');
+  const fullscreen = await source('public/js/gate-fullscreen-board-layout-controller.js');
   const middleware = await source('functions/_middleware.js');
 
   assert.match(shell, /const SHELL_POSTURES = Object\.freeze/);
@@ -230,6 +231,11 @@ test('canonical CSS and GateAppShell share one explicit shell posture contract',
   assert.match(shell, /trigger\.addEventListener\('click', handleMenuTrigger\)/);
   assert.match(shell, /trigger\.dataset\.gateMenuBound = 'true'/);
   assert.match(shell, /document\.addEventListener\('click', handleClick, true\)/);
+  assert.match(shell, /labelNode\.textContent = 'Menu'/);
+  assert.match(shell, /sheet\.setAttribute\('aria-label', 'Navigation Menu'\)/);
+  assert.match(shell, /gate-mobile-sheet-section-label">Navigation/);
+  assert.match(shell, /gate-shell-system-label">Utilities/);
+  assert.doesNotMatch(shell, /compactTablet \? 'System' : 'Menu'/);
 
   assert.match(css, /@media \(any-pointer: coarse\) and \(min-width: 600px\) and \(max-width: 1600px\) and \(min-height: 561px\)/);
   assert.match(css, /#mobile-menu-trigger\s*\{[\s\S]*touch-action:\s*manipulation/);
@@ -239,11 +245,16 @@ test('canonical CSS and GateAppShell share one explicit shell posture contract',
   assert.match(css, /data-gate-shell-posture="tablet-portrait"[\s\S]*#mobile-menu-trigger[\s\S]*display:\s*inline-flex/);
   assert.match(css, /data-gate-shell-posture\^="tablet"[\s\S]*#gate-mobile-nav-sheet[\s\S]*z-index:\s*var\(--mg-z-sheet\)/);
   assert.match(css, /#gate-mobile-nav-sheet \.gate-shell-system-controls\s*\{[\s\S]*visibility:\s*visible[\s\S]*pointer-events:\s*auto/, 'responsive System controls must not remain globally hidden');
+  assert.match(css, /#gate-mobile-nav-sheet \.gate-mobile-sheet-routes,[\s\S]*display:\s*grid/, 'tablet Menu must render navigation routes');
+  assert.doesNotMatch(css, /tablet-landscape"[\s\S]{0,260}#gate-mobile-nav-sheet \.gate-mobile-sheet-routes[\s\S]{0,160}display:\s*none/, 'tablet landscape Menu must not hide route buttons');
   assert.match(css, /data-gate-shell-posture\^="tablet"[\s\S]*\.page\.active button[\s\S]*min-height:\s*44px/);
   assert.match(css, /#page-airport \.surface:has\(#airport-bus-log-body\)[\s\S]*overflow-x:\s*auto/);
 
   assert.doesNotMatch(middleware, /gate-tablet-shell-classifier/);
   assert.match(middleware, /gate-app-shell-controller\.js\?v=tablet-menu-20260929/);
+  assert.match(middleware, /gate-fullscreen-board-layout-controller\.js\?v=fullscreen-board-menu-owner-20260929/);
+  assert.match(fullscreen, /window\.GateAppShell\?\.setDrawer/);
+  assert.match(fullscreen, /window\.GateAppShell\.setDrawer\(false\)/);
 });
 
 test('background is route-scoped and the global tactical grid is retired', async () => {

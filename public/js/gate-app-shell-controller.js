@@ -30,12 +30,21 @@
     Object.entries(PAGE_ROUTES).map(([page, path]) => [path, page])
   ));
 
-  const MOBILE_MEDIA = '(max-width: 767px), (pointer: coarse) and (max-width: 1024px) and (max-height: 560px)';
+  const SHELL_POSTURES = Object.freeze({
+    DESKTOP: 'desktop',
+    TABLET_LANDSCAPE: 'tablet-landscape',
+    TABLET_PORTRAIT: 'tablet-portrait',
+    PHONE: 'phone'
+  });
+  const TABLET_MIN_DIMENSION = 600;
+  const TABLET_MAX_DIMENSION = 1366;
+  const NARROW_SHELL_MAX_WIDTH = 767;
   const SYSTEM_CONTROL_IDS = ['role-toggle', 'fullscreen-btn', 'sound-toggle-btn', 'theme-toggle-btn'];
   const SYNTHETIC_CLICK_SUPPRESS_MS = 650;
 
   let installed = false;
   let drawerOpen = false;
+  let shellPosture = '';
   let systemAnchor = null;
   let scheduled = false;
   let suppressClickUntil = 0;
@@ -88,8 +97,89 @@
     return allowedPages(current)[0] || 'board';
   }
 
-  function isMobileShell() {
-    return window.matchMedia(MOBILE_MEDIA).matches;
+  function viewportSize() {
+    const root = document.documentElement;
+    return {
+      width: Math.max(0, Number(window.innerWidth || root?.clientWidth || 0)),
+      height: Math.max(0, Number(window.innerHeight || root?.clientHeight || 0))
+    };
+  }
+
+  function hasTouchCapability() {
+    const touchPoints = typeof navigator !== 'undefined' ? Number(navigator.maxTouchPoints || 0) : 0;
+    const coarsePointer = typeof window.matchMedia === 'function'
+      ? window.matchMedia('(any-pointer: coarse)').matches
+      : false;
+    return touchPoints > 0 || coarsePointer;
+  }
+
+  function classifyShellPosture(width, height, touchCapable) {
+    const w = Math.max(0, Number(width) || 0);
+    const h = Math.max(0, Number(height) || 0);
+    if (!w || !h) return SHELL_POSTURES.DESKTOP;
+
+    const minDimension = Math.min(w, h);
+    const maxDimension = Math.max(w, h);
+    const touch = Boolean(touchCapable);
+
+    if (touch && minDimension < TABLET_MIN_DIMENSION) return SHELL_POSTURES.PHONE;
+    if (touch && minDimension >= TABLET_MIN_DIMENSION && maxDimension <= TABLET_MAX_DIMENSION) {
+      return w >= h ? SHELL_POSTURES.TABLET_LANDSCAPE : SHELL_POSTURES.TABLET_PORTRAIT;
+    }
+    if (w <= NARROW_SHELL_MAX_WIDTH) return SHELL_POSTURES.PHONE;
+    return SHELL_POSTURES.DESKTOP;
+  }
+
+  function resolveShellPosture() {
+    const { width, height } = viewportSize();
+    return classifyShellPosture(width, height, hasTouchCapability());
+  }
+
+  function resetDrawerState() {
+    drawerOpen = false;
+    document.body?.classList.remove('gate-mobile-drawer-open');
+    if (document.body) document.body.dataset.gateMobileMenuOpen = 'false';
+    const menu = menuElement();
+    const sheet = mobileSheetElement();
+    const trigger = document.getElementById('mobile-menu-trigger');
+    const scrim = document.getElementById('gate-mobile-menu-scrim');
+    if (menu) menu.classList.remove('mobile-dropdown-active');
+    if (sheet) {
+      sheet.classList.remove('gate-mobile-sheet-open');
+      sheet.setAttribute('aria-hidden', 'true');
+    }
+    if (scrim) scrim.setAttribute('aria-hidden', 'true');
+    if (trigger) trigger.setAttribute('aria-expanded', 'false');
+  }
+
+  function applyShellPosture() {
+    const next = resolveShellPosture();
+    const changed = Boolean(shellPosture && shellPosture !== next);
+    shellPosture = next;
+
+    if (document.body) {
+      document.body.dataset.gateShellPosture = next;
+      document.body.classList.toggle('gate-app-shell-desktop', next === SHELL_POSTURES.DESKTOP);
+      document.body.classList.toggle('gate-app-shell-mobile', next === SHELL_POSTURES.PHONE);
+      document.body.classList.toggle('gate-app-shell-tablet', next === SHELL_POSTURES.TABLET_LANDSCAPE || next === SHELL_POSTURES.TABLET_PORTRAIT);
+      document.body.classList.toggle('gate-app-shell-tablet-landscape', next === SHELL_POSTURES.TABLET_LANDSCAPE);
+      document.body.classList.toggle('gate-app-shell-tablet-portrait', next === SHELL_POSTURES.TABLET_PORTRAIT);
+    }
+
+    if (changed) resetDrawerState();
+    return next;
+  }
+
+  function currentShellPosture() {
+    return shellPosture || document.body?.dataset.gateShellPosture || applyShellPosture();
+  }
+
+  function usesResponsiveMenu(posture = currentShellPosture()) {
+    return posture !== SHELL_POSTURES.DESKTOP;
+  }
+
+  function usesSheetRoutes(posture = currentShellPosture()) {
+    return posture === SHELL_POSTURES.TABLET_PORTRAIT || posture === SHELL_POSTURES.PHONE;
   }
 
   function pageLabel(page) {
@@ -189,6 +279,7 @@
     if (!nav || !menu) return;
 
     document.body.classList.add('gate-app-shell-ready');
+    applyShellPosture();
     setBodyRouteState(activePage());
     nav.classList.add('command-header-bar');
     nav.dataset.owner = 'gate-app-shell-controller';
@@ -244,7 +335,7 @@
   }
 
   function ensureSystemPanel() {
-    if (isMobileShell()) {
+    if (usesResponsiveMenu()) {
       const sheet = ensureMobileSheet();
       const target = sheet.querySelector('#gate-mobile-sheet-system-controls');
       return target || null;
@@ -276,11 +367,23 @@
 
   function moveSystemControlsForViewport() {
     ensureSystemAnchor();
-    const mobile = isMobileShell();
-    document.body.classList.toggle('gate-app-shell-mobile', mobile);
-    document.body.classList.toggle('gate-app-shell-desktop', !mobile);
+    const posture = applyShellPosture();
+    const responsive = usesResponsiveMenu(posture);
+    const compactTablet = posture === SHELL_POSTURES.TABLET_LANDSCAPE;
+    const sheet = ensureMobileSheet();
+    const trigger = document.getElementById('mobile-menu-trigger');
+    const title = sheet.querySelector('.gate-mobile-sheet-title');
 
-    if (mobile) {
+    if (trigger) {
+      const label = compactTablet ? 'System' : 'Menu';
+      const labelNode = trigger.querySelector('span');
+      if (labelNode) labelNode.textContent = label;
+      trigger.setAttribute('aria-label', compactTablet ? 'Toggle System Controls Menu' : 'Toggle Operational Navigation Menu');
+    }
+    if (title) title.textContent = compactTablet ? 'System' : 'Navigation';
+    sheet.setAttribute('aria-label', compactTablet ? 'System controls' : 'Operational Navigation');
+
+    if (responsive) {
       const target = ensureSystemPanel();
       if (!target) return;
       systemControls().forEach(control => {
@@ -309,7 +412,7 @@
     try { wg = typeof getActiveWG === 'function' ? getActiveWG() : ''; } catch (_) { wg = ''; }
     const text = wg || 'No WG';
     const cleaned = String(wg || '').replace(/^WG\s*/i, '').trim();
-    el.textContent = isMobileShell() && cleaned ? `WG ${cleaned}` : text;
+    el.textContent = usesResponsiveMenu() && cleaned ? `WG ${cleaned}` : text;
     el.title = text;
     el.setAttribute('aria-label', `Active week group: ${text}`);
     el.dataset.owner = 'gate-app-shell-controller';
@@ -417,7 +520,9 @@
   }
 
   function setDrawer(open) {
-    drawerOpen = Boolean(open) && isMobileShell();
+    const posture = applyShellPosture();
+    drawerOpen = Boolean(open) && usesResponsiveMenu(posture);
+    const sheetRoutes = usesSheetRoutes(posture);
     const menu = menuElement();
     const sheet = ensureMobileSheet();
     const trigger = document.getElementById('mobile-menu-trigger');
@@ -425,8 +530,8 @@
     document.body.classList.toggle('gate-mobile-drawer-open', drawerOpen);
     document.body.dataset.gateMobileMenuOpen = drawerOpen ? 'true' : 'false';
     if (menu) {
-      menu.classList.toggle('mobile-dropdown-active', drawerOpen);
-      menu.setAttribute('aria-hidden', drawerOpen ? 'false' : 'true');
+      menu.classList.toggle('mobile-dropdown-active', drawerOpen && sheetRoutes);
+      menu.setAttribute('aria-hidden', sheetRoutes ? 'true' : 'false');
     }
     if (sheet) {
       sheet.classList.toggle('gate-mobile-sheet-open', drawerOpen);
@@ -500,12 +605,12 @@
   }
 
   function handlePointerUp(event) {
-    if (!isMobileShell()) return;
+    if (!usesResponsiveMenu()) return;
     handleShellInteraction(event, true);
   }
 
   function handleClick(event) {
-    if (isMobileShell() && Date.now() < suppressClickUntil && (isShellClickTarget(event) || suppressNextOutsideClick)) {
+    if (usesResponsiveMenu() && Date.now() < suppressClickUntil && (isShellClickTarget(event) || suppressNextOutsideClick)) {
       event.preventDefault?.();
       event.stopPropagation?.();
       event.stopImmediatePropagation?.();
@@ -516,7 +621,9 @@
   }
 
   function handleKeydown(event) {
-    if (event.key === 'Escape') setDrawer(false);
+    if (event.key !== 'Escape' || !drawerOpen) return;
+    setDrawer(false);
+    document.getElementById('mobile-menu-trigger')?.focus?.();
   }
 
   function handlePopState() {
@@ -573,6 +680,8 @@
       pathForPage,
       pageFromPath,
       setDrawer,
+      shellPosture: currentShellPosture,
+      classifyPosture: classifyShellPosture,
       sync: scheduleSync
     });
     scheduleSync();

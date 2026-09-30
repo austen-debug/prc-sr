@@ -83,27 +83,28 @@ test('GateAppShell classifies representative touch tablet geometry without user-
   assert.doesNotMatch(shell, /window\.matchMedia\s*=\s*function/);
 });
 
-test('tablet Menu uses one native click path and opens a focusable sheet', async () => {
+test('tablet Menu is directly bound once to the native button and opens a focusable sheet', async () => {
   const shell = await source('public/js/gate-app-shell-controller.js');
   assert.doesNotMatch(shell, /addEventListener\('pointerup'/);
   assert.doesNotMatch(shell, /SYNTHETIC_CLICK_SUPPRESS_MS|suppressClickUntil|suppressNextOutsideClick/);
+  assert.match(shell, /trigger\.addEventListener\('click', handleMenuTrigger\)/);
+  assert.match(shell, /trigger\.dataset\.gateMenuBound = 'true'/);
+  assert.match(shell, /if \(event\.target\?\.closest\?\.\('#mobile-menu-trigger'\)\) return false/);
   assert.match(shell, /document\.addEventListener\('click', handleClick, true\)/);
 
   const setStart = shell.indexOf('function setDrawer(open)');
   const routeStart = shell.indexOf('function routeFromEvent(event)', setStart);
-  const interactionStart = shell.indexOf('function handleShellInteraction(event)', routeStart);
-  const clickStart = shell.indexOf('function handleClick(event)', interactionStart);
-  const keyStart = shell.indexOf('function handleKeydown(event)', clickStart);
-  assert.ok(setStart >= 0 && routeStart > setStart && interactionStart > routeStart && clickStart > interactionStart && keyStart > clickStart);
+  const triggerStart = shell.indexOf('function handleMenuTrigger(event)', routeStart);
+  const interactionStart = shell.indexOf('function handleShellInteraction(event)', triggerStart);
+  assert.ok(setStart >= 0 && routeStart > setStart && triggerStart > routeStart && interactionStart > triggerStart);
 
   const setText = shell.slice(setStart, routeStart).trim();
-  const interactionText = shell.slice(interactionStart, clickStart).trim();
-  const clickText = shell.slice(clickStart, keyStart).trim();
+  const triggerText = shell.slice(triggerStart, interactionStart).trim();
 
   const makeHarness = new Function(
     'applyShellPosture', 'usesResponsiveMenu', 'usesSheetRoutes', 'menuElement',
-    'ensureMobileSheet', 'document', 'ensureScrim', 'window', 'routeFromEvent', 'mobileSheetElement',
-    `let drawerOpen = false;\n${setText}\n${interactionText}\n${clickText}\nreturn { handleClick, isOpen: () => drawerOpen };`
+    'ensureMobileSheet', 'document', 'ensureScrim', 'window',
+    `let drawerOpen = false;\n${setText}\n${triggerText}\nreturn { handleMenuTrigger, isOpen: () => drawerOpen };`
   );
 
   const classState = () => {
@@ -121,25 +122,19 @@ test('tablet Menu uses one native click path and opens a focusable sheet', async
   const bodyClasses = classState();
   const menuClasses = classState();
   const sheetClasses = classState();
-  const attrs = node => ({
-    setAttribute(name, value) { node.attributes[name] = String(value); }
-  });
 
   let focused = false;
   const focusTarget = { focus() { focused = true; } };
   const menu = {
-    classList: menuClasses.api, attributes: {},
-    ...attrs({ attributes: {} }),
-    contains() { return false; }
+    classList: menuClasses.api,
+    attributes: {},
+    setAttribute(name, value) { this.attributes[name] = String(value); }
   };
-  menu.setAttribute = (name, value) => { menu.attributes[name] = String(value); };
-
   const sheet = {
     classList: sheetClasses.api,
     attributes: {},
     setAttribute(name, value) { this.attributes[name] = String(value); },
-    querySelector() { return focusTarget; },
-    contains() { return false; }
+    querySelector() { return focusTarget; }
   };
   const trigger = {
     attributes: {},
@@ -164,19 +159,16 @@ test('tablet Menu uses one native click path and opens a focusable sheet', async
     () => sheet,
     documentMock,
     () => scrim,
-    windowMock,
-    () => false,
-    () => sheet
+    windowMock
   );
 
   const event = {
-    target: { closest(selector) { return selector === '#mobile-menu-trigger' ? trigger : null; } },
     preventDefault() {},
     stopPropagation() {},
     stopImmediatePropagation() {}
   };
 
-  harness.handleClick(event);
+  harness.handleMenuTrigger(event);
   assert.equal(harness.isOpen(), true);
   assert.equal(body.dataset.gateMobileMenuOpen, 'true');
   assert.equal(bodyClasses.api.contains('gate-mobile-drawer-open'), true);
@@ -185,7 +177,7 @@ test('tablet Menu uses one native click path and opens a focusable sheet', async
   assert.equal(trigger.attributes['aria-expanded'], 'true');
   assert.equal(focused, true, 'opening the Menu should move focus into the sheet');
 
-  harness.handleClick(event);
+  harness.handleMenuTrigger(event);
   assert.equal(harness.isOpen(), false);
   assert.equal(sheet.attributes['aria-hidden'], 'true');
   assert.equal(trigger.attributes['aria-expanded'], 'false');
@@ -258,6 +250,8 @@ test('tablet posture keeps logout utilities reachable and removes unintended rou
   assert.match(shell, /event\.key !== 'Escape'[\s\S]*mobile-menu-trigger'[\s\S]*focus/);
   assert.match(shell, /sheet\.setAttribute\('role', 'dialog'\)/);
   assert.match(shell, /sheet\.setAttribute\('aria-modal', 'true'\)/);
+  assert.match(shell, /trigger\.addEventListener\('click', handleMenuTrigger\)/);
+  assert.match(css, /#mobile-menu-trigger\s*\{[\s\S]*touch-action:\s*manipulation/);
 
   const postureStart = css.indexOf('16. CANONICAL SHELL POSTURES');
   assert.ok(postureStart >= 0, 'canonical posture CSS contract missing');

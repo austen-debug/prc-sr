@@ -18,6 +18,7 @@ test('canonical layer pipeline keeps modals and critical overlays above the shel
   assert.match(css, /--mg-z-static:\s*10/);
   assert.match(css, /--mg-z-shell:\s*100/);
   assert.match(css, /--mg-z-popover:\s*500/);
+  assert.match(css, /--mg-z-sheet:\s*5000/);
   assert.match(css, /--mg-z-modal:\s*50000/);
   assert.match(css, /--mg-z-critical:\s*999999/);
   assert.match(css, /\.confirm-overlay,[\s\S]*z-index:\s*var\(--mg-z-modal\)/);
@@ -31,9 +32,73 @@ test('mobile navigation sheet stays above its non-blurring outside-tap scrim', a
   const mobile = css.slice(mobileStart);
 
   assert.match(mobile, /#gate-mobile-menu-scrim\s*\{[\s\S]*z-index:\s*var\(--mg-z-popover\)[\s\S]*backdrop-filter:\s*none[\s\S]*-webkit-backdrop-filter:\s*none/);
-  assert.match(mobile, /#gate-mobile-nav-sheet\s*\{[\s\S]*z-index:\s*var\(--mg-z-modal\)[\s\S]*isolation:\s*isolate[\s\S]*translate3d\(0,\s*0,\s*0\)[\s\S]*touch-action:\s*manipulation/);
+  assert.match(mobile, /#gate-mobile-nav-sheet\s*\{[\s\S]*z-index:\s*var\(--mg-z-sheet\)[\s\S]*isolation:\s*isolate[\s\S]*translate3d\(0,\s*0,\s*0\)[\s\S]*touch-action:\s*manipulation/);
   assert.match(mobile, /gate-mobile-drawer-open #gate-mobile-menu-scrim\s*\{[\s\S]*pointer-events:\s*auto/);
   assert.match(mobile, /gate-mobile-nav-sheet\.gate-mobile-sheet-open[\s\S]*pointer-events:\s*auto/);
+});
+
+test('GateAppShell classifies representative touch tablet geometry without user-agent or matchMedia interception', async () => {
+  const shell = await source('public/js/gate-app-shell-controller.js');
+  const start = shell.indexOf('function classifyShellPosture(width, height, touchCapable)');
+  const end = shell.indexOf('function resolveShellPosture()', start);
+  assert.ok(start >= 0 && end > start, 'pure shell posture classifier must remain directly testable');
+
+  const functionText = shell.slice(start, end).trim();
+  const makeClassifier = new Function(
+    'SHELL_POSTURES',
+    'TABLET_MIN_DIMENSION',
+    'TABLET_MAX_DIMENSION',
+    'NARROW_SHELL_MAX_WIDTH',
+    `${functionText}\nreturn classifyShellPosture;`
+  );
+  const postures = {
+    DESKTOP: 'desktop',
+    TABLET_LANDSCAPE: 'tablet-landscape',
+    TABLET_PORTRAIT: 'tablet-portrait',
+    PHONE: 'phone'
+  };
+  const classify = makeClassifier(postures, 600, 1366, 767);
+
+  for (const [width, height, touch, expected] of [
+    [768, 1024, true, 'tablet-portrait'],
+    [820, 1180, true, 'tablet-portrait'],
+    [1024, 768, true, 'tablet-landscape'],
+    [1180, 820, true, 'tablet-landscape'],
+    [1366, 1024, true, 'tablet-landscape'],
+    [1024, 1366, true, 'tablet-portrait'],
+    [744, 1133, true, 'tablet-portrait'],
+    [932, 430, true, 'phone'],
+    [390, 844, true, 'phone'],
+    [1024, 768, false, 'desktop']
+  ]) {
+    assert.equal(classify(width, height, touch), expected, `${width}x${height} touch=${touch}`);
+  }
+
+  assert.doesNotMatch(shell, /window\.matchMedia\s*=\s*function/);
+});
+
+test('tablet posture keeps logout utilities reachable and removes unintended route-level nested vertical scroll owners', async () => {
+  const [css, shell] = await Promise.all([
+    source('public/css/military-glass-terminal.css'),
+    source('public/js/gate-app-shell-controller.js')
+  ]);
+
+  assert.match(shell, /const SYSTEM_CONTROL_IDS = \['role-toggle', 'fullscreen-btn', 'sound-toggle-btn', 'theme-toggle-btn'\]/);
+  assert.match(shell, /if \(responsive\)[\s\S]*target\.appendChild\(control\)/);
+  assert.match(shell, /compactTablet \? 'System' : 'Menu'/);
+  assert.match(shell, /menu\.setAttribute\('aria-hidden', sheetRoutes \? 'true' : 'false'\)/);
+  assert.match(shell, /event\.key !== 'Escape'[\s\S]*mobile-menu-trigger'[\s\S]*focus/);
+
+  const postureStart = css.indexOf('16. CANONICAL SHELL POSTURES');
+  assert.ok(postureStart >= 0, 'canonical posture CSS contract missing');
+  const posture = css.slice(postureStart);
+  assert.match(posture, /tablet-landscape"[\s\S]*#main-nav-menu,[\s\S]*display:\s*flex[\s\S]*visibility:\s*visible/);
+  assert.match(posture, /tablet-portrait"[\s\S]*#main-nav-menu,[\s\S]*display:\s*none[\s\S]*visibility:\s*hidden/);
+  assert.match(posture, /tablet-landscape"[\s\S]*#gate-mobile-nav-sheet \.gate-mobile-sheet-routes,[\s\S]*display:\s*none/);
+  assert.match(posture, /data-gate-shell-posture\^="tablet"[\s\S]*#gate-mobile-nav-sheet[\s\S]*z-index:\s*var\(--mg-z-sheet\)/);
+  assert.match(posture, /#page-board \.dorm-column,[\s\S]*#page-archives \.gate-archive-manager[\s\S]*max-height:\s*none[\s\S]*overflow-y:\s*visible/);
+  assert.match(posture, /#batch-grid-wrapper[\s\S]*overflow-x:\s*auto[\s\S]*overflow-y:\s*visible/);
+  assert.match(posture, /#archive-edit-form > \.flex\.gap-3\.pt-2[\s\S]*position:\s*sticky[\s\S]*bottom:\s*0/);
 });
 
 test('Processing modal tablet reachability uses contained scrolling and sticky action rails', async () => {

@@ -4284,6 +4284,11 @@ body.gate-fullscreen-board-active #page-board #active-buses .gate-component-acti
     border-top: 1px solid var(--mg-border-soft);
   }
 
+  body.gate-app-shell-ready[data-gate-shell-posture^="tablet"] #gate-mobile-nav-sheet .gate-shell-system-controls {
+    visibility: visible;
+    pointer-events: auto;
+  }
+
   body.gate-app-shell-ready[data-gate-shell-posture^="tablet"] #gate-mobile-nav-sheet button {
     display: flex;
     align-items: center;

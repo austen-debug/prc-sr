@@ -205,7 +205,7 @@ test('GateAppShell owns durable page URLs without adding a second routing runtim
   assert.match(guard, /document\.body\?\.dataset\.gateSessionRole/, 'permission guard must use the same verified role during initial hydration');
   assert.doesNotMatch(shell, /localStorage[\s\S]{0,120}(active|route)|sessionStorage[\s\S]{0,120}(active|route)/i, 'route continuity must come from the URL, not browser-storage state');
 
-  const routeScript = '/js/gate-app-shell-controller.js?v=gate-route-state-20260922';
+  const routeScript = '/js/gate-app-shell-controller.js?v=tablet-posture-20260929';
   assert.ok(middleware.includes(routeScript), 'middleware must ship the cache-busted canonical shell controller');
   assert.ok(budget.currentDirectScripts.includes(routeScript), 'runtime inventory must match the shell route version');
   assert.equal((budget.currentDirectScripts.filter(item => item.includes('gate-app-shell-controller.js')).length),1, 'routing must extend the one existing shell owner');

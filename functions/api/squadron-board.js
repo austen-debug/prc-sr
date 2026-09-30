@@ -1,3 +1,6 @@
+import { calculateConfirmedArrivalTotals } from '../../public/app/domain/operational-metrics.mjs';
+import { normalizePersistedRecords } from '../../public/app/data/record-normalizer.mjs';
+
 // Single Squadron read contract. Only an authenticated instructor can publish a notice.
 const READ_ROLES = new Set(['squadron', 'instructor']);
 const DORM_STATES = new Set(['empty', 'open', 'closed']);
@@ -127,9 +130,11 @@ export function buildSquadronSnapshot({ weekGroup = '', records = [], now = new 
   const week = String(weekGroup || '').trim().toUpperCase();
   const instant = new Date(now).getTime();
   if (!Number.isFinite(instant)) throw new Error('Invalid snapshot time.');
-  const airport = week ? records.filter(r => r?.type === 'bus' && String(r.week_group).toUpperCase() === week && String(r.bus_type || '').toLowerCase() === 'airport') : [];
-  const dorms = week ? records.filter(r => r?.type === 'dorm' && String(r.week_group).toUpperCase() === week).sort(orderDorms) : [];
-  const arrived = airport.filter(bus => String(bus.status || '').toLowerCase() === 'arrived').reduce((sum, bus) => sum + number(bus.otw_count), 0);
+  const weekRecords = week ? records.filter(r => String(r?.week_group || '').toUpperCase() === week) : [];
+  const airport = weekRecords.filter(r => r?.type === 'bus' && String(r.bus_type || '').toLowerCase() === 'airport');
+  const dorms = weekRecords.filter(r => r?.type === 'dorm').sort(orderDorms);
+  const canonicalRecords = normalizePersistedRecords(weekRecords, { timeZone: 'America/Chicago' }).records;
+  const arrived = calculateConfirmedArrivalTotals(canonicalRecords, week).total;
   const expected = dorms.reduce((sum, dorm) => sum + number(dorm.max_load), 0);
   const since = instant - 60 * 60 * 1000;
   const dispatches = airport.filter(bus => {

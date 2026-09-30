@@ -30,18 +30,12 @@
   }
 
   function closeResponsiveMenu() {
+    if (window.GateAppShell?.setDrawer) {
+      window.GateAppShell.setDrawer(false);
+      return;
+    }
     document.body.classList.remove('gate-mobile-drawer-open');
     document.body.dataset.gateMobileMenuOpen = 'false';
-
-    const sheet = document.getElementById('gate-mobile-nav-sheet');
-    const menu = document.getElementById('main-nav-menu');
-    const trigger = document.getElementById('mobile-menu-trigger');
-
-    sheet?.classList.remove('gate-mobile-sheet-open');
-    menu?.classList.remove('mobile-dropdown-active');
-    sheet?.setAttribute('aria-hidden', 'true');
-    menu?.setAttribute('aria-hidden', 'true');
-    trigger?.setAttribute('aria-expanded', 'false');
   }
 
   function sync() {

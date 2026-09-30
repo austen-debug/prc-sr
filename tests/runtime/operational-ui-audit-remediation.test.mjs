@@ -57,7 +57,7 @@ test('GateAppShell classifies representative touch tablet geometry without user-
     TABLET_PORTRAIT: 'tablet-portrait',
     PHONE: 'phone'
   };
-  const classify = makeClassifier(postures, 600, 1366, 767);
+  const classify = makeClassifier(postures, 600, 1600, 767);
 
   for (const [width, height, touch, expected] of [
     [768, 1024, true, 'tablet-portrait'],
@@ -66,15 +66,183 @@ test('GateAppShell classifies representative touch tablet geometry without user-
     [1180, 820, true, 'tablet-landscape'],
     [1366, 1024, true, 'tablet-landscape'],
     [1024, 1366, true, 'tablet-portrait'],
+    [1376, 1032, true, 'tablet-landscape'],
+    [1376, 946, true, 'tablet-landscape'],
+    [1032, 1376, true, 'tablet-portrait'],
     [744, 1133, true, 'tablet-portrait'],
     [932, 430, true, 'phone'],
     [390, 844, true, 'phone'],
+    [1600, 1000, true, 'tablet-landscape'],
+    [1601, 1000, true, 'desktop'],
+    [1376, 1032, false, 'desktop'],
     [1024, 768, false, 'desktop']
   ]) {
     assert.equal(classify(width, height, touch), expected, `${width}x${height} touch=${touch}`);
   }
 
   assert.doesNotMatch(shell, /window\.matchMedia\s*=\s*function/);
+});
+
+test('tablet Menu uses one native click path and opens a focusable sheet', async () => {
+  const shell = await source('public/js/gate-app-shell-controller.js');
+  assert.doesNotMatch(shell, /addEventListener\('pointerup'/);
+  assert.doesNotMatch(shell, /SYNTHETIC_CLICK_SUPPRESS_MS|suppressClickUntil|suppressNextOutsideClick/);
+  assert.match(shell, /document\.addEventListener\('click', handleClick, true\)/);
+
+  const setStart = shell.indexOf('function setDrawer(open)');
+  const routeStart = shell.indexOf('function routeFromEvent(event)', setStart);
+  const interactionStart = shell.indexOf('function handleShellInteraction(event)', routeStart);
+  const clickStart = shell.indexOf('function handleClick(event)', interactionStart);
+  const keyStart = shell.indexOf('function handleKeydown(event)', clickStart);
+  assert.ok(setStart >= 0 && routeStart > setStart && interactionStart > routeStart && clickStart > interactionStart && keyStart > clickStart);
+
+  const setText = shell.slice(setStart, routeStart).trim();
+  const interactionText = shell.slice(interactionStart, clickStart).trim();
+  const clickText = shell.slice(clickStart, keyStart).trim();
+
+  const makeHarness = new Function(
+    'applyShellPosture', 'usesResponsiveMenu', 'usesSheetRoutes', 'menuElement',
+    'ensureMobileSheet', 'document', 'ensureScrim', 'window', 'routeFromEvent', 'mobileSheetElement',
+    `let drawerOpen = false;\n${setText}\n${interactionText}\n${clickText}\nreturn { handleClick, isOpen: () => drawerOpen };`
+  );
+
+  const classState = () => {
+    const values = new Set();
+    return {
+      values,
+      api: {
+        toggle(name, on) { if (on) values.add(name); else values.delete(name); },
+        add(name) { values.add(name); },
+        remove(name) { values.delete(name); },
+        contains(name) { return values.has(name); }
+      }
+    };
+  };
+  const bodyClasses = classState();
+  const menuClasses = classState();
+  const sheetClasses = classState();
+  const attrs = node => ({
+    setAttribute(name, value) { node.attributes[name] = String(value); }
+  });
+
+  let focused = false;
+  const focusTarget = { focus() { focused = true; } };
+  const menu = {
+    classList: menuClasses.api, attributes: {},
+    ...attrs({ attributes: {} }),
+    contains() { return false; }
+  };
+  menu.setAttribute = (name, value) => { menu.attributes[name] = String(value); };
+
+  const sheet = {
+    classList: sheetClasses.api,
+    attributes: {},
+    setAttribute(name, value) { this.attributes[name] = String(value); },
+    querySelector() { return focusTarget; },
+    contains() { return false; }
+  };
+  const trigger = {
+    attributes: {},
+    setAttribute(name, value) { this.attributes[name] = String(value); }
+  };
+  const scrim = {
+    attributes: {},
+    setAttribute(name, value) { this.attributes[name] = String(value); }
+  };
+  const body = { classList: bodyClasses.api, dataset: {} };
+  const documentMock = {
+    body,
+    getElementById(id) { return id === 'mobile-menu-trigger' ? trigger : null; }
+  };
+  const windowMock = { requestAnimationFrame(callback) { callback(); } };
+
+  const harness = makeHarness(
+    () => 'tablet-portrait',
+    () => true,
+    () => true,
+    () => menu,
+    () => sheet,
+    documentMock,
+    () => scrim,
+    windowMock,
+    () => false,
+    () => sheet
+  );
+
+  const event = {
+    target: { closest(selector) { return selector === '#mobile-menu-trigger' ? trigger : null; } },
+    preventDefault() {},
+    stopPropagation() {},
+    stopImmediatePropagation() {}
+  };
+
+  harness.handleClick(event);
+  assert.equal(harness.isOpen(), true);
+  assert.equal(body.dataset.gateMobileMenuOpen, 'true');
+  assert.equal(bodyClasses.api.contains('gate-mobile-drawer-open'), true);
+  assert.equal(sheetClasses.api.contains('gate-mobile-sheet-open'), true);
+  assert.equal(sheet.attributes['aria-hidden'], 'false');
+  assert.equal(trigger.attributes['aria-expanded'], 'true');
+  assert.equal(focused, true, 'opening the Menu should move focus into the sheet');
+
+  harness.handleClick(event);
+  assert.equal(harness.isOpen(), false);
+  assert.equal(sheet.attributes['aria-hidden'], 'true');
+  assert.equal(trigger.attributes['aria-expanded'], 'false');
+});
+
+test('tablet system menu physically moves Logout and utilities into the opened sheet', async () => {
+  const shell = await source('public/js/gate-app-shell-controller.js');
+  const start = shell.indexOf('function moveSystemControlsForViewport()');
+  const end = shell.indexOf('function renderWeekGroup()', start);
+  assert.ok(start >= 0 && end > start);
+  const functionText = shell.slice(start, end).trim();
+
+  const moved = [];
+  const controls = [
+    { id: 'role-toggle', dataset: {} },
+    { id: 'fullscreen-btn', dataset: {} },
+    { id: 'sound-toggle-btn', dataset: {} },
+    { id: 'theme-toggle-btn', dataset: {} }
+  ];
+  const target = { appendChild(control) { moved.push(control); } };
+  const labelNode = { textContent: '' };
+  const trigger = {
+    attributes: {},
+    querySelector() { return labelNode; },
+    setAttribute(name, value) { this.attributes[name] = String(value); }
+  };
+  const title = { textContent: '' };
+  const sheet = {
+    attributes: {},
+    querySelector(selector) { return selector === '.gate-mobile-sheet-title' ? title : null; },
+    setAttribute(name, value) { this.attributes[name] = String(value); }
+  };
+
+  const makeMove = new Function(
+    'ensureSystemAnchor', 'applyShellPosture', 'usesResponsiveMenu', 'SHELL_POSTURES',
+    'ensureMobileSheet', 'document', 'ensureSystemPanel', 'systemControls', 'rightGroup', 'setDrawer',
+    `${functionText}\nreturn moveSystemControlsForViewport;`
+  );
+
+  const move = makeMove(
+    () => null,
+    () => 'tablet-landscape',
+    () => true,
+    { TABLET_LANDSCAPE: 'tablet-landscape' },
+    () => sheet,
+    { getElementById(id) { return id === 'mobile-menu-trigger' ? trigger : null; } },
+    () => target,
+    () => controls,
+    () => null,
+    () => {}
+  );
+  move();
+
+  assert.deepEqual(moved.map(control => control.id), ['role-toggle', 'fullscreen-btn', 'sound-toggle-btn', 'theme-toggle-btn']);
+  assert.equal(moved[0].id, 'role-toggle', 'Logout control must be the first moved system control');
+  assert.equal(labelNode.textContent, 'System');
+  assert.equal(sheet.attributes['aria-label'], 'System controls');
 });
 
 test('tablet posture keeps logout utilities reachable and removes unintended route-level nested vertical scroll owners', async () => {
@@ -88,6 +256,8 @@ test('tablet posture keeps logout utilities reachable and removes unintended rou
   assert.match(shell, /compactTablet \? 'System' : 'Menu'/);
   assert.match(shell, /menu\.setAttribute\('aria-hidden', sheetRoutes \? 'true' : 'false'\)/);
   assert.match(shell, /event\.key !== 'Escape'[\s\S]*mobile-menu-trigger'[\s\S]*focus/);
+  assert.match(shell, /sheet\.setAttribute\('role', 'dialog'\)/);
+  assert.match(shell, /sheet\.setAttribute\('aria-modal', 'true'\)/);
 
   const postureStart = css.indexOf('16. CANONICAL SHELL POSTURES');
   assert.ok(postureStart >= 0, 'canonical posture CSS contract missing');
@@ -116,9 +286,9 @@ test('Processing modal tablet reachability uses contained scrolling and sticky a
   assert.match(tablet, /\.gate-processing-workspace__footer[\s\S]*bottom:\s*0/);
 });
 
-test('coarse-pointer tablet Processing retains route-owned scrolling and touch stability through 1366px', async () => {
+test('coarse-pointer tablet Processing retains route-owned scrolling and touch stability through 1600px', async () => {
   const css = await source('public/css/military-glass-terminal.css');
-  const start = css.indexOf('@media (any-pointer: coarse) and (min-width: 768px) and (max-width: 1366px) and (min-height: 561px)');
+  const start = css.indexOf('@media (any-pointer: coarse) and (min-width: 600px) and (max-width: 1600px) and (min-height: 561px)');
   assert.ok(start >= 0, 'coarse-pointer tablet restoration media query must exist');
   const nextMedia = css.indexOf('@media ', start + 8);
   const tablet = css.slice(start, nextMedia > start ? nextMedia : undefined);
@@ -150,7 +320,7 @@ test('short-height Processing workspace retains compact controls without losing 
 
 test('touch Input workflow retains stacked setup controls and a controlled scrollable dorm matrix', async () => {
   const css = await source('public/css/military-glass-terminal.css');
-  const start = css.indexOf('@media (max-width: 900px), (pointer: coarse) and (max-width: 1024px)');
+  const start = css.indexOf('@media (max-width: 900px), (pointer: coarse) and (orientation: portrait) and (max-width: 1100px)');
   assert.ok(start >= 0, 'touch Input restoration media query must exist');
   const nextMedia = css.indexOf('@media ', start + 8);
   const touch = css.slice(start, nextMedia > start ? nextMedia : undefined);

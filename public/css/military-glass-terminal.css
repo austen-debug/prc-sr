@@ -3423,6 +3423,13 @@ body.gate-fullscreen-board-active #page-board #active-buses .gate-component-acti
     border-top: 1px solid var(--mg-border-soft);
   }
 
+  /* Responsive system controls are globally hidden by default. Once they are
+     moved into the open sheet they must become both visible and interactive. */
+  body.gate-app-shell-ready #gate-mobile-nav-sheet .gate-shell-system-controls {
+    visibility: visible;
+    pointer-events: auto;
+  }
+
   body.gate-app-shell-ready #gate-mobile-nav-sheet .nav-btn,
   body.gate-app-shell-ready #gate-mobile-nav-sheet .gate-component-nav-button,
   body.gate-app-shell-ready #gate-mobile-nav-sheet button {
@@ -4275,6 +4282,11 @@ body.gate-fullscreen-board-active #page-board #active-buses .gate-component-acti
     margin-top: .2rem;
     padding-top: .65rem;
     border-top: 1px solid var(--mg-border-soft);
+  }
+
+  body.gate-app-shell-ready[data-gate-shell-posture^="tablet"] #gate-mobile-nav-sheet .gate-shell-system-controls {
+    visibility: visible;
+    pointer-events: auto;
   }
 
   body.gate-app-shell-ready[data-gate-shell-posture^="tablet"] #gate-mobile-nav-sheet button {

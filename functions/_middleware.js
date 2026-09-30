@@ -18,7 +18,7 @@ const ROLE_HOME = Object.freeze({
 });
 
 const UI_STYLESHEETS = [
-  '<link rel="stylesheet" href="/css/military-glass-terminal.css?v=military-glass-terminal-20260929-tablet-direct">'
+  '<link rel="stylesheet" href="/css/military-glass-terminal.css?v=military-glass-terminal-20260929-tablet-system-controls">'
 ];
 
 const UI_INLINE_ASSETS = [];

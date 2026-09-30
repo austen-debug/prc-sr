@@ -260,6 +260,7 @@ test('tablet posture keeps logout utilities reachable and removes unintended rou
   assert.match(posture, /tablet-portrait"[\s\S]*#main-nav-menu,[\s\S]*display:\s*none[\s\S]*visibility:\s*hidden/);
   assert.match(posture, /tablet-landscape"[\s\S]*#gate-mobile-nav-sheet \.gate-mobile-sheet-routes,[\s\S]*display:\s*none/);
   assert.match(posture, /data-gate-shell-posture\^="tablet"[\s\S]*#gate-mobile-nav-sheet[\s\S]*z-index:\s*var\(--mg-z-sheet\)/);
+  assert.match(posture, /#gate-mobile-nav-sheet \.gate-shell-system-controls\s*\{[\s\S]*visibility:\s*visible[\s\S]*pointer-events:\s*auto/, 'tablet System controls must override the global hidden state');
   assert.match(posture, /#page-board \.dorm-column,[\s\S]*#page-archives \.gate-archive-manager[\s\S]*max-height:\s*none[\s\S]*overflow-y:\s*visible/);
   assert.match(posture, /#batch-grid-wrapper[\s\S]*overflow-x:\s*auto[\s\S]*overflow-y:\s*visible/);
   assert.match(posture, /#archive-edit-form > \.flex\.gap-3\.pt-2[\s\S]*position:\s*sticky[\s\S]*bottom:\s*0/);
@@ -396,14 +397,14 @@ test('Processing BAND designator uses rounded-rectangle geometry', async () => {
 test('middleware delivers one canonical stylesheet and no retired CSS assets', async () => {
   const middleware = await source('functions/_middleware.js');
 
-  assert.match(middleware, /military-glass-terminal\.css\?v=military-glass-terminal-20260929-tablet-direct/);
+  assert.match(middleware, /military-glass-terminal\.css\?v=military-glass-terminal-20260929-tablet-system-controls/);
   assert.equal((middleware.match(/<link rel="stylesheet"/g) || []).length, 1);
   assert.doesNotMatch(middleware, /gate-ui-ownership-correction\.css|gate-fullscreen-board-contract\.css|gate-tablet-shell\.css|gate-mobile-corrective\.css/);
 });
 
 
 test('Squadron SITREP ships current canonical assets and preserves lightweight communication UI', async () => {
-  const version = 'military-glass-terminal-20260929-tablet-direct';
+  const version = 'military-glass-terminal-20260929-tablet-system-controls';
   const url = `/css/military-glass-terminal.css?v=${version}`;
   const scriptUrl = '/js/prc-dash-final-audit.js?v=squadron-popup-sounds-20260928';
   const [middleware, standalone, budgetText, stack, css, controller, index] = await Promise.all([

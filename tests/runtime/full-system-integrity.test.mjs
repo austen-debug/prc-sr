@@ -238,6 +238,7 @@ test('canonical CSS and GateAppShell share one explicit shell posture contract',
   assert.match(css, /data-gate-shell-posture="tablet-portrait"[\s\S]*#main-nav-menu[\s\S]*display:\s*none/);
   assert.match(css, /data-gate-shell-posture="tablet-portrait"[\s\S]*#mobile-menu-trigger[\s\S]*display:\s*inline-flex/);
   assert.match(css, /data-gate-shell-posture\^="tablet"[\s\S]*#gate-mobile-nav-sheet[\s\S]*z-index:\s*var\(--mg-z-sheet\)/);
+  assert.match(css, /#gate-mobile-nav-sheet \.gate-shell-system-controls\s*\{[\s\S]*visibility:\s*visible[\s\S]*pointer-events:\s*auto/, 'responsive System controls must not remain globally hidden');
   assert.match(css, /data-gate-shell-posture\^="tablet"[\s\S]*\.page\.active button[\s\S]*min-height:\s*44px/);
   assert.match(css, /#page-airport \.surface:has\(#airport-bus-log-body\)[\s\S]*overflow-x:\s*auto/);
 

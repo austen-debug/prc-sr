@@ -37,18 +37,15 @@
     PHONE: 'phone'
   });
   const TABLET_MIN_DIMENSION = 600;
-  const TABLET_MAX_DIMENSION = 1366;
+  const TABLET_MAX_DIMENSION = 1600;
   const NARROW_SHELL_MAX_WIDTH = 767;
   const SYSTEM_CONTROL_IDS = ['role-toggle', 'fullscreen-btn', 'sound-toggle-btn', 'theme-toggle-btn'];
-  const SYNTHETIC_CLICK_SUPPRESS_MS = 650;
 
   let installed = false;
   let drawerOpen = false;
   let shellPosture = '';
   let systemAnchor = null;
   let scheduled = false;
-  let suppressClickUntil = 0;
-  let suppressNextOutsideClick = false;
 
   function esc(value) {
     return String(value ?? '')
@@ -266,6 +263,8 @@
       sheet.dataset.owner = 'gate-app-shell-controller';
       sheet.dataset.component = 'mobile-nav-sheet';
       sheet.setAttribute('aria-label', 'Operational Navigation');
+      sheet.setAttribute('role', 'dialog');
+      sheet.setAttribute('aria-modal', 'true');
       sheet.setAttribute('aria-hidden', 'true');
       sheet.innerHTML = '<div class="gate-mobile-sheet-title">Navigation</div><div id="gate-mobile-sheet-routes" class="gate-mobile-sheet-routes"></div><div class="gate-mobile-sheet-system"><div class="gate-shell-system-label">System</div><div id="gate-mobile-sheet-system-controls" class="gate-shell-system-controls"></div></div>';
       document.body.appendChild(sheet);
@@ -539,6 +538,15 @@
     }
     if (scrim) scrim.setAttribute('aria-hidden', drawerOpen ? 'false' : 'true');
     if (trigger) trigger.setAttribute('aria-expanded', drawerOpen ? 'true' : 'false');
+
+    if (drawerOpen && sheet) {
+      window.requestAnimationFrame(() => {
+        const selector = sheetRoutes
+          ? '[data-gate-mobile-sheet-button="true"], #gate-mobile-sheet-system-controls button'
+          : '#gate-mobile-sheet-system-controls button';
+        sheet.querySelector(selector)?.focus?.({ preventScroll: true });
+      });
+    }
   }
 
   function routeFromEvent(event) {
@@ -556,15 +564,9 @@
     return true;
   }
 
-  function isShellClickTarget(event) {
-    return Boolean(event.target?.closest?.('#mobile-menu-trigger, #main-nav-menu, #gate-mobile-nav-sheet, #gate-mobile-menu-scrim'));
-  }
-
-  function handleShellInteraction(event, pointerSource = false) {
+  function handleShellInteraction(event) {
     const trigger = event.target?.closest?.('#mobile-menu-trigger');
     if (trigger) {
-      if (pointerSource) suppressClickUntil = Date.now() + SYNTHETIC_CLICK_SUPPRESS_MS;
-      suppressNextOutsideClick = false;
       event.preventDefault?.();
       event.stopPropagation?.();
       event.stopImmediatePropagation?.();
@@ -572,16 +574,10 @@
       return true;
     }
 
-    if (routeFromEvent(event)) {
-      if (pointerSource) suppressClickUntil = Date.now() + SYNTHETIC_CLICK_SUPPRESS_MS;
-      suppressNextOutsideClick = false;
-      return true;
-    }
+    if (routeFromEvent(event)) return true;
 
     const scrim = event.target?.closest?.('#gate-mobile-menu-scrim');
     if (scrim) {
-      if (pointerSource) suppressClickUntil = Date.now() + SYNTHETIC_CLICK_SUPPRESS_MS;
-      suppressNextOutsideClick = true;
       event.preventDefault?.();
       event.stopPropagation?.();
       event.stopImmediatePropagation?.();
@@ -591,12 +587,10 @@
 
     const menu = menuElement();
     const sheet = mobileSheetElement();
-    if (drawerOpen && !event.target?.closest?.('#mobile-menu-trigger')) {
+    if (drawerOpen) {
       const insideMenu = Boolean(menu && menu.contains(event.target));
       const insideSheet = Boolean(sheet && sheet.contains(event.target));
       if (!insideMenu && !insideSheet) {
-        if (pointerSource) suppressClickUntil = Date.now() + SYNTHETIC_CLICK_SUPPRESS_MS;
-        suppressNextOutsideClick = true;
         setDrawer(false);
         return true;
       }
@@ -604,20 +598,8 @@
     return false;
   }
 
-  function handlePointerUp(event) {
-    if (!usesResponsiveMenu()) return;
-    handleShellInteraction(event, true);
-  }
-
   function handleClick(event) {
-    if (usesResponsiveMenu() && Date.now() < suppressClickUntil && (isShellClickTarget(event) || suppressNextOutsideClick)) {
-      event.preventDefault?.();
-      event.stopPropagation?.();
-      event.stopImmediatePropagation?.();
-      suppressNextOutsideClick = false;
-      return;
-    }
-    handleShellInteraction(event, false);
+    handleShellInteraction(event);
   }
 
   function handleKeydown(event) {
@@ -661,7 +643,6 @@
     installed = true;
     ensureShellStructure();
     patchGlobals();
-    document.addEventListener('pointerup', handlePointerUp, true);
     document.addEventListener('click', handleClick, true);
     document.addEventListener('keydown', handleKeydown, true);
     window.addEventListener('popstate', handlePopState);

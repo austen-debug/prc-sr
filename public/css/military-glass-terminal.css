@@ -3856,7 +3856,7 @@ body.gate-fullscreen-board-active #page-board #active-buses .gate-component-acti
    single canonical visual asset; no retired stylesheet is reactivated.
    -------------------------------------------------------------------------- */
 
-@media (any-pointer: coarse) and (min-width: 768px) and (max-width: 1366px) and (min-height: 561px) {
+@media (any-pointer: coarse) and (min-width: 600px) and (max-width: 1600px) and (min-height: 561px) {
   html {
     overscroll-behavior-x: none;
     overscroll-behavior-y: none;
@@ -3989,7 +3989,7 @@ body.gate-fullscreen-board-active #page-board #active-buses .gate-component-acti
   }
 }
 
-@media (max-width: 900px), (pointer: coarse) and (max-width: 1024px) {
+@media (max-width: 900px), (pointer: coarse) and (orientation: portrait) and (max-width: 1100px) {
   #page-airport,
   #page-input,
   #page-processing,
@@ -4423,6 +4423,25 @@ body.gate-fullscreen-board-active #page-board #active-buses .gate-component-acti
   body.gate-app-shell-ready[data-gate-shell-posture="tablet-portrait"] #archive-edit-form > .grid.grid-cols-4,
   body.gate-app-shell-ready[data-gate-shell-posture="tablet-portrait"] #archive-edit-form > .grid.grid-cols-2 {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  body.gate-app-shell-ready[data-gate-shell-posture="tablet-portrait"] :is(
+    #page-archives .gate-archive-hero,
+    #page-archives .gate-archive-toolbar,
+    #page-archives .gate-archive-layout,
+    #page-archives .gate-archive-inspector-head
+  ) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  body.gate-app-shell-ready[data-gate-shell-posture="tablet-portrait"] #page-archives .gate-archive-browser {
+    max-height: none;
+  }
+
+  body.gate-app-shell-ready[data-gate-shell-posture="tablet-portrait"] #page-archives .gate-archive-clear-search,
+  body.gate-app-shell-ready[data-gate-shell-posture="tablet-portrait"] #page-archives .gate-archive-current-report,
+  body.gate-app-shell-ready[data-gate-shell-posture="tablet-portrait"] #page-archives .gate-archive-print-action {
+    width: 100%;
   }
 
   body.gate-app-shell-ready[data-gate-shell-posture="tablet-portrait"] #archive-edit-form > .grid.grid-cols-2 .flex.gap-2 {

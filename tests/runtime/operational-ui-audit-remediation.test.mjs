@@ -183,7 +183,7 @@ test('tablet Menu is directly bound once to the native button and opens a focusa
   assert.equal(trigger.attributes['aria-expanded'], 'false');
 });
 
-test('tablet system menu physically moves Logout and utilities into the opened sheet', async () => {
+test('tablet Menu remains a complete navigation surface and moves utilities into it', async () => {
   const shell = await source('public/js/gate-app-shell-controller.js');
   const start = shell.indexOf('function moveSystemControlsForViewport()');
   const end = shell.indexOf('function renderWeekGroup()', start);
@@ -233,8 +233,9 @@ test('tablet system menu physically moves Logout and utilities into the opened s
 
   assert.deepEqual(moved.map(control => control.id), ['role-toggle', 'fullscreen-btn', 'sound-toggle-btn', 'theme-toggle-btn']);
   assert.equal(moved[0].id, 'role-toggle', 'Logout control must be the first moved system control');
-  assert.equal(labelNode.textContent, 'System');
-  assert.equal(sheet.attributes['aria-label'], 'System controls');
+  assert.equal(labelNode.textContent, 'Menu');
+  assert.equal(title.textContent, 'Menu');
+  assert.equal(sheet.attributes['aria-label'], 'Navigation Menu');
 });
 
 test('tablet posture keeps logout utilities reachable and removes unintended route-level nested vertical scroll owners', async () => {
@@ -245,7 +246,11 @@ test('tablet posture keeps logout utilities reachable and removes unintended rou
 
   assert.match(shell, /const SYSTEM_CONTROL_IDS = \['role-toggle', 'fullscreen-btn', 'sound-toggle-btn', 'theme-toggle-btn'\]/);
   assert.match(shell, /if \(responsive\)[\s\S]*target\.appendChild\(control\)/);
-  assert.match(shell, /compactTablet \? 'System' : 'Menu'/);
+  assert.match(shell, /labelNode\.textContent = 'Menu'/);
+  assert.match(shell, /sheet\.setAttribute\('aria-label', 'Navigation Menu'\)/);
+  assert.match(shell, /gate-mobile-sheet-section-label">Navigation/);
+  assert.match(shell, /gate-shell-system-label">Utilities/);
+  assert.match(shell, /id="gate-mobile-sheet-routes" class="gate-mobile-sheet-routes" role="navigation" aria-label="Menu navigation"/);
   assert.match(shell, /menu\.setAttribute\('aria-hidden', sheetRoutes \? 'true' : 'false'\)/);
   assert.match(shell, /event\.key !== 'Escape'[\s\S]*mobile-menu-trigger'[\s\S]*focus/);
   assert.match(shell, /sheet\.setAttribute\('role', 'dialog'\)/);
@@ -258,12 +263,24 @@ test('tablet posture keeps logout utilities reachable and removes unintended rou
   const posture = css.slice(postureStart);
   assert.match(posture, /tablet-landscape"[\s\S]*#main-nav-menu,[\s\S]*display:\s*flex[\s\S]*visibility:\s*visible/);
   assert.match(posture, /tablet-portrait"[\s\S]*#main-nav-menu,[\s\S]*display:\s*none[\s\S]*visibility:\s*hidden/);
-  assert.match(posture, /tablet-landscape"[\s\S]*#gate-mobile-nav-sheet \.gate-mobile-sheet-routes,[\s\S]*display:\s*none/);
+  assert.doesNotMatch(posture, /tablet-landscape"[\s\S]{0,260}#gate-mobile-nav-sheet \.gate-mobile-sheet-routes[\s\S]{0,160}display:\s*none/, 'landscape Menu must keep navigation routes visible');
   assert.match(posture, /data-gate-shell-posture\^="tablet"[\s\S]*#gate-mobile-nav-sheet[\s\S]*z-index:\s*var\(--mg-z-sheet\)/);
   assert.match(posture, /#gate-mobile-nav-sheet \.gate-shell-system-controls\s*\{[\s\S]*visibility:\s*visible[\s\S]*pointer-events:\s*auto/, 'tablet System controls must override the global hidden state');
+  assert.match(posture, /#gate-mobile-nav-sheet \.gate-mobile-sheet-routes,[\s\S]*display:\s*grid/, 'tablet Menu must render route buttons in the sheet');
   assert.match(posture, /#page-board \.dorm-column,[\s\S]*#page-archives \.gate-archive-manager[\s\S]*max-height:\s*none[\s\S]*overflow-y:\s*visible/);
   assert.match(posture, /#batch-grid-wrapper[\s\S]*overflow-x:\s*auto[\s\S]*overflow-y:\s*visible/);
   assert.match(posture, /#archive-edit-form > \.flex\.gap-3\.pt-2[\s\S]*position:\s*sticky[\s\S]*bottom:\s*0/);
+});
+
+test('fullscreen closes the responsive Menu through the GateAppShell state owner', async () => {
+  const fullscreen = await source('public/js/gate-fullscreen-board-layout-controller.js');
+  assert.match(fullscreen, /window\.GateAppShell\?\.setDrawer/);
+  assert.match(fullscreen, /window\.GateAppShell\.setDrawer\(false\)/);
+  const closeStart = fullscreen.indexOf('function closeResponsiveMenu()');
+  const closeEnd = fullscreen.indexOf('function sync()', closeStart);
+  assert.ok(closeStart >= 0 && closeEnd > closeStart);
+  const closeBlock = fullscreen.slice(closeStart, closeEnd);
+  assert.doesNotMatch(closeBlock, /gate-mobile-sheet-open|aria-expanded|mobile-dropdown-active/, 'fullscreen must not independently mutate Menu DOM state');
 });
 
 test('Processing modal tablet reachability uses contained scrolling and sticky action rails', async () => {
@@ -370,7 +387,7 @@ test('GateAppShell owns durable page URLs without adding a second routing runtim
   assert.match(guard, /document\.body\?\.dataset\.gateSessionRole/, 'permission guard must use the same verified role during initial hydration');
   assert.doesNotMatch(shell, /localStorage[\s\S]{0,120}(active|route)|sessionStorage[\s\S]{0,120}(active|route)/i, 'route continuity must come from the URL, not browser-storage state');
 
-  const routeScript = '/js/gate-app-shell-controller.js?v=tablet-direct-20260929';
+  const routeScript = '/js/gate-app-shell-controller.js?v=tablet-menu-20260929';
   assert.ok(middleware.includes(routeScript), 'middleware must ship the cache-busted canonical shell controller');
   assert.ok(budget.currentDirectScripts.includes(routeScript), 'runtime inventory must match the shell route version');
   assert.equal((budget.currentDirectScripts.filter(item => item.includes('gate-app-shell-controller.js')).length),1, 'routing must extend the one existing shell owner');
@@ -397,14 +414,14 @@ test('Processing BAND designator uses rounded-rectangle geometry', async () => {
 test('middleware delivers one canonical stylesheet and no retired CSS assets', async () => {
   const middleware = await source('functions/_middleware.js');
 
-  assert.match(middleware, /military-glass-terminal\.css\?v=military-glass-terminal-20260929-tablet-system-controls/);
+  assert.match(middleware, /military-glass-terminal\.css\?v=military-glass-terminal-20260929-tablet-menu/);
   assert.equal((middleware.match(/<link rel="stylesheet"/g) || []).length, 1);
   assert.doesNotMatch(middleware, /gate-ui-ownership-correction\.css|gate-fullscreen-board-contract\.css|gate-tablet-shell\.css|gate-mobile-corrective\.css/);
 });
 
 
 test('Squadron SITREP ships current canonical assets and preserves lightweight communication UI', async () => {
-  const version = 'military-glass-terminal-20260929-tablet-system-controls';
+  const version = 'military-glass-terminal-20260929-tablet-menu';
   const url = `/css/military-glass-terminal.css?v=${version}`;
   const scriptUrl = '/js/prc-dash-final-audit.js?v=squadron-popup-sounds-20260928';
   const [middleware, standalone, budgetText, stack, css, controller, index] = await Promise.all([

@@ -16,7 +16,7 @@
     "middlewareStatusBoardSourceRewriteRemoved": true
   },
   "currentDirectStyles": [
-    "/css/military-glass-terminal.css?v=military-glass-terminal-20260929-tablet-system-controls"
+    "/css/military-glass-terminal.css?v=military-glass-terminal-20260929-tablet-menu"
   ],
   "currentImportedStyles": [],
   "currentDirectScripts": [
@@ -39,8 +39,8 @@
     "/js/gate-archive-controller.js?v=receiving-day-truth-20260928",
     "/js/gate-permission-guard.js?v=permission-server-role-20260922",
     "/app/features/input/flight-alert-import.mjs?v=flight-alert-import-20260929-tablet-dialog",
-    "/js/gate-app-shell-controller.js?v=tablet-direct-20260929",
-    "/js/gate-fullscreen-board-layout-controller.js?v=fullscreen-board-containment-20260714b",
+    "/js/gate-app-shell-controller.js?v=tablet-menu-20260929",
+    "/js/gate-fullscreen-board-layout-controller.js?v=fullscreen-board-menu-owner-20260929",
     "/js/prc-dash-modal-mobile-validation.js?v=phase-7e-ui-ownership-20260709",
     "/js/gate-render-stability-fix.js?v=status-board-compositing-retired-20260721",
     "/js/prc-dash-processing-loaded-summary.js",

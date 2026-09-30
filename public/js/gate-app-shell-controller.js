@@ -262,11 +262,11 @@
       sheet.id = 'gate-mobile-nav-sheet';
       sheet.dataset.owner = 'gate-app-shell-controller';
       sheet.dataset.component = 'mobile-nav-sheet';
-      sheet.setAttribute('aria-label', 'Operational Navigation');
+      sheet.setAttribute('aria-label', 'Navigation Menu');
       sheet.setAttribute('role', 'dialog');
       sheet.setAttribute('aria-modal', 'true');
       sheet.setAttribute('aria-hidden', 'true');
-      sheet.innerHTML = '<div class="gate-mobile-sheet-title">Navigation</div><div id="gate-mobile-sheet-routes" class="gate-mobile-sheet-routes"></div><div class="gate-mobile-sheet-system"><div class="gate-shell-system-label">System</div><div id="gate-mobile-sheet-system-controls" class="gate-shell-system-controls"></div></div>';
+      sheet.innerHTML = '<div class="gate-mobile-sheet-title">Menu</div><div class="gate-mobile-sheet-section-label">Navigation</div><div id="gate-mobile-sheet-routes" class="gate-mobile-sheet-routes" role="navigation" aria-label="Menu navigation"></div><div class="gate-mobile-sheet-system"><div class="gate-shell-system-label">Utilities</div><div id="gate-mobile-sheet-system-controls" class="gate-shell-system-controls"></div></div>';
       document.body.appendChild(sheet);
     }
     return sheet;
@@ -372,19 +372,17 @@
     ensureSystemAnchor();
     const posture = applyShellPosture();
     const responsive = usesResponsiveMenu(posture);
-    const compactTablet = posture === SHELL_POSTURES.TABLET_LANDSCAPE;
     const sheet = ensureMobileSheet();
     const trigger = document.getElementById('mobile-menu-trigger');
     const title = sheet.querySelector('.gate-mobile-sheet-title');
 
     if (trigger) {
-      const label = compactTablet ? 'System' : 'Menu';
       const labelNode = trigger.querySelector('span');
-      if (labelNode) labelNode.textContent = label;
-      trigger.setAttribute('aria-label', compactTablet ? 'Toggle System Controls Menu' : 'Toggle Operational Navigation Menu');
+      if (labelNode) labelNode.textContent = 'Menu';
+      trigger.setAttribute('aria-label', 'Toggle Navigation Menu');
     }
-    if (title) title.textContent = compactTablet ? 'System' : 'Navigation';
-    sheet.setAttribute('aria-label', compactTablet ? 'System controls' : 'Operational Navigation');
+    if (title) title.textContent = 'Menu';
+    sheet.setAttribute('aria-label', 'Navigation Menu');
 
     if (responsive) {
       const target = ensureSystemPanel();
@@ -545,9 +543,7 @@
 
     if (drawerOpen && sheet) {
       window.requestAnimationFrame(() => {
-        const selector = sheetRoutes
-          ? '[data-gate-mobile-sheet-button="true"], #gate-mobile-sheet-system-controls button'
-          : '#gate-mobile-sheet-system-controls button';
+        const selector = '[data-gate-mobile-sheet-button="true"], #gate-mobile-sheet-system-controls button';
         sheet.querySelector(selector)?.focus?.({ preventScroll: true });
       });
     }

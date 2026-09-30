@@ -211,22 +211,31 @@ test('PORT CLEAR is an independent board status surface and never owns Active Bu
   assert.doesNotMatch(renderBoard, /isAcknowledged\(/, 'board visibility must not depend on per-session acknowledgement');
 });
 
-test('canonical CSS preserves desktop/mobile shell ownership and accepted phone workflows', async () => {
+test('canonical CSS and GateAppShell share one explicit shell posture contract', async () => {
   const css = await source('public/css/military-glass-terminal.css');
   const shell = await source('public/js/gate-app-shell-controller.js');
-  const mediaMatch = shell.match(/const MOBILE_MEDIA = '([^']+)'/);
-  assert.ok(mediaMatch, 'GateAppShell mobile media contract is missing');
-  assert.ok(css.includes(`@media ${mediaMatch[1]} {`), 'CSS mobile shell breakpoint must match GateAppShell');
+  const middleware = await source('functions/_middleware.js');
 
-  assert.match(css, /#mobile-menu-trigger,[\s\S]*#gate-mobile-nav-sheet,[\s\S]*display:\s*none/);
-  assert.doesNotMatch(css, /#week-group-display,\s*#mobile-menu-trigger\s*\{\s*display:\s*inline-flex/);
-  assert.match(css, /#mobile-menu-trigger\s*\{[\s\S]*display:\s*inline-flex[\s\S]*visibility:\s*visible[\s\S]*pointer-events:\s*auto/);
-  assert.match(css, /gate-mobile-drawer-open #gate-mobile-menu-scrim\s*\{[\s\S]*display:\s*block[\s\S]*visibility:\s*visible[\s\S]*pointer-events:\s*auto/);
-  assert.match(css, /#gate-mobile-nav-sheet\.gate-mobile-sheet-open[\s\S]*display:\s*grid[\s\S]*visibility:\s*visible[\s\S]*pointer-events:\s*auto/);
-  assert.match(css, /#main-nav-menu,[\s\S]*display:\s*none[\s\S]*visibility:\s*hidden/);
-  assert.match(css, /#page-airport #airport-form input,[\s\S]*font-size:\s*16px/);
+  assert.match(shell, /const SHELL_POSTURES = Object\.freeze/);
+  assert.match(shell, /TABLET_LANDSCAPE:\s*'tablet-landscape'/);
+  assert.match(shell, /TABLET_PORTRAIT:\s*'tablet-portrait'/);
+  assert.match(shell, /function classifyShellPosture\(/);
+  assert.match(shell, /document\.body\.dataset\.gateShellPosture = next/);
+  assert.match(shell, /navigator\.maxTouchPoints/);
+  assert.match(shell, /\(any-pointer: coarse\)/);
+  assert.doesNotMatch(shell, /const MOBILE_MEDIA/);
+  assert.doesNotMatch(shell, /window\.matchMedia\s*=\s*function/);
+
+  assert.match(css, /data-gate-shell-posture="tablet-landscape"[\s\S]*#mobile-menu-trigger[\s\S]*display:\s*inline-flex/);
+  assert.match(css, /data-gate-shell-posture="tablet-landscape"[\s\S]*#main-nav-menu[\s\S]*display:\s*flex/);
+  assert.match(css, /data-gate-shell-posture="tablet-portrait"[\s\S]*#main-nav-menu[\s\S]*display:\s*none/);
+  assert.match(css, /data-gate-shell-posture="tablet-portrait"[\s\S]*#mobile-menu-trigger[\s\S]*display:\s*inline-flex/);
+  assert.match(css, /data-gate-shell-posture\^="tablet"[\s\S]*#gate-mobile-nav-sheet[\s\S]*z-index:\s*var\(--mg-z-sheet\)/);
+  assert.match(css, /data-gate-shell-posture\^="tablet"[\s\S]*\.page\.active button[\s\S]*min-height:\s*44px/);
   assert.match(css, /#page-airport \.surface:has\(#airport-bus-log-body\)[\s\S]*overflow-x:\s*auto/);
-  assert.match(css, /button::before[\s\S]*content:\s*"BACK"/);
+
+  assert.doesNotMatch(middleware, /gate-tablet-shell-classifier/);
+  assert.match(middleware, /gate-app-shell-controller\.js\?v=tablet-posture-20260929/);
 });
 
 test('background is route-scoped and the global tactical grid is retired', async () => {

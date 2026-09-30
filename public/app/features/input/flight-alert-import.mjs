@@ -177,7 +177,7 @@ function ensureModal() {
   const dialog=element('dialog','rounded-xl border shadow-2xl p-0');
   dialog.id='gate-import-dialog';
   dialog.setAttribute('aria-labelledby','gate-import-dialog-title');
-  dialog.style.cssText='width:min(760px,calc(100vw - 24px));max-height:calc(100dvh - 32px);overflow:auto;border-color:var(--border);background:var(--surface);color:var(--text);padding:0;z-index:10050;';
+  dialog.style.cssText='width:min(760px,calc(100vw - 24px));max-height:calc(100dvh - 32px);overflow:auto;border-color:var(--border);background:var(--surface);color:var(--text);padding:0;z-index:var(--mg-z-modal);';
   dialog.innerHTML=`<div class="p-4 sm:p-6 grid gap-4"><header class="flex gap-3 justify-between items-start"><div><h2 id="gate-import-dialog-title" class="text-lg font-bold">Import Flight Alert</h2><p id="gate-import-dialog-help" class="text-xs text-muted">Extract data into the Input draft. Initialization stays separate.</p></div><button type="button" id="gate-import-close" class="${BTN}" aria-label="Close Flight Alert dialog">Close</button></header><div id="gate-import-dialog-main" class="grid gap-4"></div><p id="gate-import-modal-error" role="alert" class="text-sm" style="color:var(--red)" hidden></p></div>`;
   document.body.append(dialog);
   dialog.addEventListener('close',()=>{

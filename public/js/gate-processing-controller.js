@@ -353,7 +353,9 @@
     const existingLoad = Math.max(0, Math.trunc(n(dorm.current_load)));
     const loadedOutsideDorm = Math.max(0, accounting.loaded - existingLoad);
     const availableForDorm = Math.max(0, accounting.arrived - loadedOutsideDorm);
-    if (requested > availableForDorm) {
+    const proposedLoaded = loadedOutsideDorm + requested;
+    const proposedOverAssigned = Math.max(proposedLoaded - accounting.arrived, 0);
+    if (proposedOverAssigned > accounting.overAssigned) {
       input.setCustomValidity(`Only ${availableForDorm} physically arrived trainee${availableForDorm === 1 ? '' : 's'} are available for this dorm assignment.`);
       input.reportValidity();
       return;

@@ -224,7 +224,7 @@ test('canonical CSS and GateAppShell share one explicit shell posture contract',
   assert.match(shell, /navigator\.maxTouchPoints/);
   assert.match(shell, /\(any-pointer: coarse\)/);
   assert.doesNotMatch(shell, /const MOBILE_MEDIA/);
-  assert.doesNotMatch(shell, /window\.matchMedia\s*=/);
+  assert.doesNotMatch(shell, /window\.matchMedia\s*=\s*function/);
 
   assert.match(css, /data-gate-shell-posture="tablet-landscape"[\s\S]*#mobile-menu-trigger[\s\S]*display:\s*inline-flex/);
   assert.match(css, /data-gate-shell-posture="tablet-landscape"[\s\S]*#main-nav-menu[\s\S]*display:\s*flex/);

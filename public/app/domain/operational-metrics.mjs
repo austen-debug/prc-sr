@@ -17,6 +17,10 @@ export function selectConfirmedArrivals(records, weekGroup) {
   return selectBuses(records, weekGroup).filter(bus => bus.isConfirmedArrival);
 }
 
+export function selectPhysicalArrivals(records, weekGroup) {
+  return selectBuses(records, weekGroup).filter(bus => bus.status === 'arrived');
+}
+
 export function selectActiveBuses(records, weekGroup) {
   return selectBuses(records, weekGroup).filter(bus => bus.isActive && !bus.isConfirmedArrival);
 }
@@ -35,6 +39,11 @@ export function calculateBusTotals(buses = []) {
 
 export function calculateConfirmedArrivalTotals(records, weekGroup) {
   const buses = selectConfirmedArrivals(records, weekGroup);
+  return Object.freeze({ weekGroup: normalizeWeekGroup(weekGroup), buses: Object.freeze([...buses]), ...calculateBusTotals(buses) });
+}
+
+export function calculatePhysicalArrivalTotals(records, weekGroup) {
+  const buses = selectPhysicalArrivals(records, weekGroup);
   return Object.freeze({ weekGroup: normalizeWeekGroup(weekGroup), buses: Object.freeze([...buses]), ...calculateBusTotals(buses) });
 }
 
@@ -67,7 +76,7 @@ export function calculateLoadTotals(records, weekGroup) {
 }
 
 export function calculateAssignmentSummary(records, weekGroup) {
-  const arrivals = calculateConfirmedArrivalTotals(records, weekGroup);
+  const arrivals = calculatePhysicalArrivalTotals(records, weekGroup);
   const loads = calculateLoadTotals(records, weekGroup);
   return Object.freeze({
     weekGroup: normalizeWeekGroup(weekGroup),

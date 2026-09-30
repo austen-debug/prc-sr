@@ -55,6 +55,21 @@
     return recordDisplay()?.sortDorms ? recordDisplay().sortDorms(dorms) : dorms;
   }
 
+  function assignmentSummary() {
+    const wg = activeWeekGroup();
+    const accounting = window.GateOperationalCounts?.calculateAssignmentSummary?.(records(), wg);
+    if (accounting) return accounting;
+
+    const weekRecords = records().filter(record => !wg || String(record?.week_group || '') === wg);
+    const arrived = weekRecords
+      .filter(record => record?.type === 'bus' && String(record.status || '').trim().toLowerCase() === 'arrived')
+      .reduce((sum, bus) => sum + Math.max(0, Math.trunc(n(bus.otw_count))), 0);
+    const loaded = weekRecords
+      .filter(record => record?.type === 'dorm')
+      .reduce((sum, dorm) => sum + Math.max(0, Math.trunc(n(dorm.current_load))), 0);
+    return { arrived, loaded, awaitingAssignment: Math.max(arrived - loaded, 0), overAssigned: Math.max(loaded - arrived, 0) };
+  }
+
   function normalizeUpper(value) {
     return String(value ?? '').trim().toUpperCase();
   }
@@ -307,20 +322,45 @@
   function modLoadCanonical(delta) {
     const input = document.getElementById('modal-load-input');
     if (!input) return;
+    input.setCustomValidity('');
     input.value = String(Math.max(0, n(input.value) + Number(delta || 0)));
   }
 
   function setLoadFullCanonical() {
     const dorm = dormById(activeModalDormId());
     const input = document.getElementById('modal-load-input');
-    if (dorm && input) input.value = String(n(dorm.max_load));
+    if (dorm && input) {
+      input.setCustomValidity('');
+      input.value = String(n(dorm.max_load));
+    }
   }
 
   async function saveLoadCanonical() {
     const dorm = dormById(activeModalDormId());
     const input = document.getElementById('modal-load-input');
     if (!dorm || !input) return;
-    await updateDorm({ ...dorm, current_load: Math.max(0, n(input.value)), updated_at: new Date().toISOString() }, { source: 'processing-load-update' });
+
+    input.setCustomValidity('');
+    const requested = Math.max(0, Math.trunc(n(input.value)));
+    const capacity = Math.max(0, Math.trunc(n(dorm.max_load)));
+    if (requested > capacity) {
+      input.setCustomValidity(`Dorm load cannot exceed the configured capacity of ${capacity}.`);
+      input.reportValidity();
+      return;
+    }
+
+    const accounting = assignmentSummary();
+    const existingLoad = Math.max(0, Math.trunc(n(dorm.current_load)));
+    const loadedOutsideDorm = Math.max(0, accounting.loaded - existingLoad);
+    const availableForDorm = Math.max(0, accounting.arrived - loadedOutsideDorm);
+    if (requested > availableForDorm) {
+      input.setCustomValidity(`Only ${availableForDorm} physically arrived trainee${availableForDorm === 1 ? '' : 's'} are available for this dorm assignment.`);
+      input.reportValidity();
+      return;
+    }
+
+    input.value = String(requested);
+    await updateDorm({ ...dorm, current_load: requested, updated_at: new Date().toISOString() }, { source: 'processing-load-update' });
   }
 
   async function saveAssignedAirmanCanonical() {

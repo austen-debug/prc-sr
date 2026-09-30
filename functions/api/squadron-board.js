@@ -1,4 +1,4 @@
-import { calculateConfirmedArrivalTotals } from '../../public/app/domain/operational-metrics.mjs';
+import { calculatePhysicalArrivalTotals } from '../../public/app/domain/operational-metrics.mjs';
 import { normalizePersistedRecords } from '../../public/app/data/record-normalizer.mjs';
 
 // Single Squadron read contract. Only an authenticated instructor can publish a notice.
@@ -134,7 +134,7 @@ export function buildSquadronSnapshot({ weekGroup = '', records = [], now = new 
   const airport = weekRecords.filter(r => r?.type === 'bus' && String(r.bus_type || '').toLowerCase() === 'airport');
   const dorms = weekRecords.filter(r => r?.type === 'dorm').sort(orderDorms);
   const canonicalRecords = normalizePersistedRecords(weekRecords, { timeZone: 'America/Chicago' }).records;
-  const arrived = calculateConfirmedArrivalTotals(canonicalRecords, week).total;
+  const arrived = calculatePhysicalArrivalTotals(canonicalRecords, week).total;
   const expected = dorms.reduce((sum, dorm) => sum + number(dorm.max_load), 0);
   const since = instant - 60 * 60 * 1000;
   const dispatches = airport.filter(bus => {

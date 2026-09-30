@@ -10,6 +10,7 @@ import {
   calculateCapacityTotals,
   calculateConfirmedArrivalTotals,
   calculateManifestedBusTotals,
+  calculatePhysicalArrivalTotals,
   calculateReceivingSummary,
   selectActiveBuses,
   selectConfirmedArrivals,
@@ -67,6 +68,21 @@ test('active and malformed arrived records never enter confirmed-arrival totals'
   const confirmed = selectConfirmedArrivals(records, 'WG');
   assert.equal(confirmed.length, 1);
   assert.equal(confirmed[0].total, 40);
+});
+
+test('physical ARRIVED is status-based while confirmed reporting still requires an arrival timestamp', () => {
+  const records = canonicalize([
+    { type: 'bus', week_group: 'WG', status: 'arrived', otw_count: 20, arrived_at: '' },
+    { type: 'bus', week_group: 'WG', status: 'arrived', otw_count: 30, arrived_at: '2026-01-01T02:00:00Z' },
+    { type: 'bus', week_group: 'WG', status: 'active', otw_count: 40, arrived_at: '2026-01-01T03:00:00Z' },
+    { type: 'dorm', week_group: 'WG', max_load: 60, current_load: 35 }
+  ]);
+
+  assert.equal(calculateConfirmedArrivalTotals(records, 'WG').total, 30);
+  assert.equal(calculatePhysicalArrivalTotals(records, 'WG').total, 50);
+  assert.deepEqual(calculateAssignmentSummary(records, 'WG'), {
+    weekGroup: 'WG', arrived: 50, loaded: 35, awaitingAssignment: 15, overAssigned: 0
+  });
 });
 
 test('receiving windows are half-open and assign a boundary arrival once', () => {

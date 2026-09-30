@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
 import {
+  calculateOperationalAccounting,
   onRequestDelete,
   onRequestGet,
   onRequestPost,
@@ -212,6 +213,73 @@ test('invalid If-Match and stale conditional deletes fail closed', async () => {
   });
   assert.equal(deleted.status, 200);
   assert.equal(db.rows.length, 0);
+});
+
+test('operational accounting treats arrived airport/local trainees as the physical pool', () => {
+  const accounting = calculateOperationalAccounting([
+    { type: 'bus', week_group: 'WG', bus_type: 'airport', status: 'arrived', otw_count: 44 },
+    { type: 'bus', week_group: 'WG', bus_type: 'local', status: 'arrived', otw_count: 12 },
+    { type: 'bus', week_group: 'WG', bus_type: 'airport', status: 'active', otw_count: 40 },
+    { type: 'dorm', week_group: 'WG', current_load: 30 },
+    { type: 'dorm', week_group: 'WG', current_load: 20 }
+  ], 'WG');
+
+  assert.deepEqual(accounting, { arrived: 56, loaded: 50, awaitingAssignment: 6, overAssigned: 0 });
+});
+
+test('records API rejects dorm assignments beyond physically arrived trainees or dorm capacity', async () => {
+  const db = createD1([
+    { __backendId: 'bus-1', type: 'bus', week_group: 'WG', status: 'arrived', otw_count: 40, record_version: 1 },
+    { __backendId: 'dorm-1', type: 'dorm', week_group: 'WG', max_load: 30, current_load: 20, record_version: 1 },
+    { __backendId: 'dorm-2', type: 'dorm', week_group: 'WG', max_load: 30, current_load: 15, record_version: 1 }
+  ]);
+
+  const beyondArrived = await onRequestPut({
+    env: { DB: db },
+    data: roleData('instructor'),
+    request: request('PUT', { __backendId: 'dorm-2', type: 'dorm', week_group: 'WG', max_load: 30, current_load: 25 }, { 'If-Match': '1' })
+  });
+  const beyondArrivedBody = await json(beyondArrived);
+  assert.equal(beyondArrived.status, 409);
+  assert.equal(beyondArrivedBody.code, 'operational_invariant');
+
+  const beyondCapacity = await onRequestPut({
+    env: { DB: db },
+    data: roleData('instructor'),
+    request: request('PUT', { __backendId: 'dorm-1', type: 'dorm', week_group: 'WG', max_load: 30, current_load: 31 }, { 'If-Match': '1' })
+  });
+  const beyondCapacityBody = await json(beyondCapacity);
+  assert.equal(beyondCapacity.status, 409);
+  assert.equal(beyondCapacityBody.code, 'operational_invariant');
+});
+
+test('records API prevents reducing or deleting ARRIVED below assigned dorm load while allowing repairs', async () => {
+  const db = createD1([
+    { __backendId: 'bus-1', type: 'bus', week_group: 'WG', status: 'arrived', otw_count: 40, record_version: 1 },
+    { __backendId: 'bus-2', type: 'bus', week_group: 'WG', status: 'arrived', otw_count: 20, record_version: 1 },
+    { __backendId: 'dorm-1', type: 'dorm', week_group: 'WG', max_load: 60, current_load: 55, record_version: 1 }
+  ]);
+
+  const reduceArrival = await onRequestPut({
+    env: { DB: db },
+    data: roleData('instructor'),
+    request: request('PUT', { __backendId: 'bus-2', type: 'bus', week_group: 'WG', status: 'arrived', otw_count: 10 }, { 'If-Match': '1' })
+  });
+  assert.equal(reduceArrival.status, 409);
+
+  const deleteArrival = await onRequestDelete({
+    env: { DB: db },
+    data: roleData('instructor'),
+    request: request('DELETE', { __backendId: 'bus-2' }, { 'If-Match': '1' })
+  });
+  assert.equal(deleteArrival.status, 409);
+
+  const reduceLoad = await onRequestPut({
+    env: { DB: db },
+    data: roleData('instructor'),
+    request: request('PUT', { __backendId: 'dorm-1', type: 'dorm', week_group: 'WG', max_load: 60, current_load: 45 }, { 'If-Match': '1' })
+  });
+  assert.equal(reduceLoad.status, 200);
 });
 
 test('audit events are server-attributed, PII-restricted, and append-only', async () => {

@@ -6,7 +6,7 @@ import { onRequest as apiMiddleware } from '../../../functions/api/_middleware.j
 import { onRequest as rootMiddleware } from '../../../functions/_middleware.js';
 import { roleSigningSecret } from '../../../functions/api/session-contract.mjs';
 import { buildSquadronSnapshot, onRequestGet, onRequestPost } from '../../../functions/api/squadron-board.js';
-import { calculateConfirmedArrivalTotals } from '../../../public/app/domain/operational-metrics.mjs';
+import { calculatePhysicalArrivalTotals } from '../../../public/app/domain/operational-metrics.mjs';
 import { normalizePersistedRecords } from '../../../public/app/data/record-normalizer.mjs';
 
 const roleEnv = secret => ({ AUTH_SECRET:secret, SQUADRON_USERNAME:'squadron_access', SQUADRON_PASSWORD:'test-squadron-password', MTI_USERNAME:'mti', MTI_PASSWORD:'test-instructor-password' });
@@ -97,7 +97,7 @@ test('direct Squadron API requests can read only the projected board/session and
   }
 });
 
-test('Squadron ARRIVED uses shared confirmed-arrival totals while traffic tempo remains airport-only', () => {
+test('Squadron ARRIVED uses shared physical-arrival totals while traffic tempo remains airport-only', () => {
   const now = new Date('2026-09-21T17:00:00Z');
   const records = [
     bus('arrived', '2026-09-21T16:30:00Z', { id:'b1' }),
@@ -109,7 +109,7 @@ test('Squadron ARRIVED uses shared confirmed-arrival totals while traffic tempo 
     dorm()
   ];
   const heavy = buildSquadronSnapshot({ weekGroup:'WG26050', records, now });
-  const sharedArrived = calculateConfirmedArrivalTotals(
+  const sharedArrived = calculatePhysicalArrivalTotals(
     normalizePersistedRecords(records, { timeZone:'America/Chicago' }).records,
     'WG26050'
   ).total;

@@ -190,6 +190,108 @@ function normalizeDormUpdate(incomingRecord, existingRecord, now) {
   return incomingRecord;
 }
 
+
+function operationalCount(value) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return 0;
+  return Math.max(0, Math.trunc(parsed));
+}
+
+function normalizedOperationalWeek(value) {
+  return String(value || '').trim().toUpperCase();
+}
+
+export function calculateOperationalAccounting(records = [], weekGroup = '') {
+  const requestedWeek = normalizedOperationalWeek(weekGroup);
+  let arrived = 0;
+  let loaded = 0;
+
+  for (const record of Array.isArray(records) ? records : []) {
+    if (!record || (requestedWeek && normalizedOperationalWeek(record.week_group) !== requestedWeek)) continue;
+    if (record.type === 'bus' && String(record.status || '').trim().toLowerCase() === 'arrived') {
+      arrived += operationalCount(record.otw_count);
+    }
+    if (record.type === 'dorm') {
+      loaded += operationalCount(record.current_load);
+    }
+  }
+
+  return Object.freeze({
+    arrived,
+    loaded,
+    awaitingAssignment: Math.max(arrived - loaded, 0),
+    overAssigned: Math.max(loaded - arrived, 0)
+  });
+}
+
+function operationalInvariant(message, status = 409) {
+  return Object.assign(new Error(message), { code: 'operational_invariant', status });
+}
+
+function dormLoadShapeChanged(existingRecord, replacement) {
+  return operationalCount(existingRecord?.current_load) !== operationalCount(replacement?.current_load) ||
+    operationalCount(existingRecord?.max_load) !== operationalCount(replacement?.max_load);
+}
+
+function validateDormLoadShape(record) {
+  const rawLoad = Number(record?.current_load ?? 0);
+  const rawCapacity = Number(record?.max_load ?? 0);
+  if (!Number.isFinite(rawLoad) || !Number.isInteger(rawLoad) || rawLoad < 0) {
+    throw operationalInvariant('Dorm current load must be a non-negative whole number.', 400);
+  }
+  if (!Number.isFinite(rawCapacity) || !Number.isInteger(rawCapacity) || rawCapacity < 0) {
+    throw operationalInvariant('Dorm capacity must be a non-negative whole number.', 400);
+  }
+  if (rawLoad > rawCapacity) {
+    throw operationalInvariant('Dorm current load cannot exceed dorm capacity.', 409);
+  }
+}
+
+async function operationalWeekRecords(env, weekGroup) {
+  const week = String(weekGroup || '');
+  const result = await env.DB.prepare(
+    `SELECT id, type, week_group, data, created_at, updated_at
+     FROM records
+     WHERE week_group = ?
+       AND type IN ('bus','dorm')
+     ORDER BY created_at ASC`
+  ).bind(week).all();
+
+  return (result.results || [])
+    .map(parseStoredRecord)
+    .filter(record => record && ['bus', 'dorm'].includes(record.type) &&
+      normalizedOperationalWeek(record.week_group) === normalizedOperationalWeek(week));
+}
+
+async function enforceOperationalAccountingMutation(env, existingRecord, incomingRecord, { deleting = false } = {}) {
+  if (!existingRecord || !['bus', 'dorm'].includes(existingRecord.type)) return;
+
+  const replacement = deleting ? null : {
+    ...existingRecord,
+    ...(incomingRecord || {}),
+    type: existingRecord.type,
+    week_group: incomingRecord?.week_group ?? existingRecord.week_group
+  };
+
+  if (replacement?.type === 'dorm' && dormLoadShapeChanged(existingRecord, replacement)) {
+    validateDormLoadShape(replacement);
+  }
+
+  const weekGroup = replacement?.week_group ?? existingRecord.week_group;
+  const currentRecords = await operationalWeekRecords(env, weekGroup);
+  const before = calculateOperationalAccounting(currentRecords, weekGroup);
+  const id = existingRecord.__backendId || existingRecord.id;
+  const projectedRecords = currentRecords.filter(record => (record.__backendId || record.id) !== id);
+  if (replacement) projectedRecords.push(replacement);
+
+  const after = calculateOperationalAccounting(projectedRecords, weekGroup);
+  if (after.overAssigned > before.overAssigned) {
+    throw operationalInvariant(
+      `This change would assign ${after.loaded} trainees to dorms while only ${after.arrived} are physically arrived. Reduce dorm assignments before reducing or removing arrived trainees.`
+    );
+  }
+}
+
 export async function onRequestGet({ request, env, data }) {
   const role = requestRole(data);
   if (!mayReadRecords(role)) return forbidden();
@@ -237,6 +339,14 @@ export async function onRequestPost({ request, env, data }) {
       const validation = validateAuditEvent(record);
       if (!validation.valid) {
         return jsonResponse({ isOk: false, code: 'validation', error: validation.errors.join(' ') }, 400);
+      }
+    }
+
+    if (type === 'dorm') {
+      try {
+        validateDormLoadShape(record);
+      } catch (error) {
+        return jsonResponse({ isOk: false, code: error.code || 'validation', error: error.message }, error.status || 400);
       }
     }
 
@@ -294,6 +404,7 @@ export async function onRequestPut({ request, env, data }) {
 
     const now = new Date().toISOString();
     const normalized = normalizeDormUpdate(record, existingRecord, now);
+    await enforceOperationalAccountingMutation(env, existingRecord, normalized);
     const storedRecord = stampUpdatedRecord(existingRecord, {
       ...normalized,
       type: existingRecord.type,
@@ -338,7 +449,11 @@ export async function onRequestPut({ request, env, data }) {
 
     return jsonResponse({ isOk: true, data: storedRecord }, 200, { ETag: `"${storedRecord.record_version}"` });
   } catch (error) {
-    return jsonResponse({ isOk: false, error: error.message || 'Failed to update record.' }, 500);
+    return jsonResponse({
+      isOk: false,
+      code: error?.code || 'update_failed',
+      error: error.message || 'Failed to update record.'
+    }, Number(error?.status) || 500);
   }
 }
 
@@ -369,6 +484,8 @@ export async function onRequestDelete({ request, env, data }) {
       }), 409);
     }
 
+    await enforceOperationalAccountingMutation(env, existingRecord, null, { deleting: true });
+
     const statement = expected.supplied
       ? env.DB.prepare(
         `DELETE FROM records
@@ -389,6 +506,10 @@ export async function onRequestDelete({ request, env, data }) {
 
     return jsonResponse({ isOk: true, id, deletedRecordVersion: currentVersion });
   } catch (error) {
-    return jsonResponse({ isOk: false, error: error.message || 'Failed to delete record.' }, 500);
+    return jsonResponse({
+      isOk: false,
+      code: error?.code || 'delete_failed',
+      error: error.message || 'Failed to delete record.'
+    }, Number(error?.status) || 500);
   }
 }

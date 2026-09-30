@@ -3398,6 +3398,7 @@ body.gate-fullscreen-board-active #page-board #active-buses .gate-component-acti
   }
 
   body.gate-app-shell-ready #gate-mobile-nav-sheet .gate-mobile-sheet-title,
+  body.gate-app-shell-ready #gate-mobile-nav-sheet .gate-mobile-sheet-section-label,
   body.gate-app-shell-ready #gate-mobile-nav-sheet .gate-shell-system-label {
     color: var(--mg-text-muted);
     font-family: var(--mg-font-mono);
@@ -4302,18 +4303,7 @@ body.gate-fullscreen-board-active #page-board #active-buses .gate-component-acti
 
   body.gate-app-shell-ready[data-gate-shell-posture="tablet-landscape"] #gate-mobile-nav-sheet {
     left: auto;
-    width: min(360px, calc(100vw - 1.5rem - env(safe-area-inset-left) - env(safe-area-inset-right)));
-  }
-
-  body.gate-app-shell-ready[data-gate-shell-posture="tablet-landscape"] #gate-mobile-nav-sheet .gate-mobile-sheet-routes,
-  body.gate-app-shell-ready[data-gate-shell-posture="tablet-landscape"] #gate-mobile-nav-sheet .gate-shell-system-label {
-    display: none;
-  }
-
-  body.gate-app-shell-ready[data-gate-shell-posture="tablet-landscape"] #gate-mobile-nav-sheet .gate-mobile-sheet-system {
-    margin-top: 0;
-    padding-top: 0;
-    border-top: 0;
+    width: min(420px, calc(100vw - 1.5rem - env(safe-area-inset-left) - env(safe-area-inset-right)));
   }
 
   body.gate-app-shell-ready[data-gate-shell-posture^="tablet"] .page,

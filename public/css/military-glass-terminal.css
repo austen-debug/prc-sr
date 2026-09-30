@@ -615,6 +615,9 @@ body.theme-light .command-header-bar::before {
 #mobile-menu-trigger {
   align-items: center;
   justify-content: center;
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
   border: 1px solid var(--mg-border-glass);
   border-radius: var(--mg-radius-sm);
   background: var(--mg-surface-muted);

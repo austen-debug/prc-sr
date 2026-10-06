@@ -20,6 +20,7 @@
     'openAirportBusEditModal',
     'printArchiveSpreadsheet',
     'printCurrentSummaryReport',
+    'printDormTags',
     'initializeWeekGroup',
     'updateFlightTime'
   ];

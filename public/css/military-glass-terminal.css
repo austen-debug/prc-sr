@@ -1711,6 +1711,13 @@ tbody tr:hover {
   gap: .4rem;
 }
 
+.gate-archive-current-report-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: .5rem;
+}
+
 .gate-archive-current-report,
 .gate-archive-print-action {
   min-height: 42px;
@@ -2303,6 +2310,11 @@ tbody tr:hover {
 
   .gate-archive-hero-actions {
     justify-items: stretch;
+  }
+
+  .gate-archive-current-report-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .gate-archive-current-report {

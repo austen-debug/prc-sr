@@ -73,7 +73,7 @@ Injected by middleware in current order on the Flight Alert feature branch:
 - `GateBusWorkflowController` owns airport and local-arrival bus workflows.
 - `GateInputPageController` owns Input and Week Group initialization presentation.
 - `flight-alert-import.mjs` enhances the existing Input controller's in-memory draft grid only. It consumes the controller's public row and render interface; it does not own routes, server writes, initialization, operational records, or new stylesheet authority. PDF extraction and parsing are pure/local adapters. This feature-branch candidate is not accepted for production until real-document and live UI testing pass.
-- `GateArchiveController` owns Archives, reporting, print/PDF, and closeout presentation.
+- `GateArchiveController` owns Archives, reporting, print/PDF, live Week Group folder-tag generation, and closeout presentation. Folder tags lazy-load `public/app/reports/dorm-tag-pdf.mjs` only when requested, preserving the governed direct-script budget.
 
 `prc-dash-modal-mobile-validation.js` and the legacy Status-header compatibility path no longer create stylesheet requests. They reuse the canonical CSS asset while retaining their existing lifecycle and interaction behavior.
 

@@ -109,7 +109,8 @@ test('canonical workflow owners retain the required operational function contrac
   ]);
   assert.match(archive, /id="print-tags-btn"/);
   assert.match(archive, /app\/reports\/dorm-tag-pdf\.mjs/);
-  assert.match(archive, /fetchRecordsDirectly\(\)/);
+  assert.match(archive, /fetchLiveRecordsDirectly\(\)/);
+  assert.match(archive, /\/api\/records\?scope=live/);
   assert.match(archive, /record\?\.type === 'dorm'[\s\S]*record\?\.week_group/);
 
   const shell = await source('public/js/gate-app-shell-controller.js');

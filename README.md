@@ -56,6 +56,7 @@ verified immutable archive closeout
 
 - Review immutable closed Week Groups and operational rollups.
 - Print/PDF archived reports and the current receiving summary.
+- Generate 3 × 2 inch live Week Group folder tags from initialized dorm configuration, nine per landscape Letter page.
 - Record corrections as amendments rather than silent archive overwrites.
 
 ### Squadron Board

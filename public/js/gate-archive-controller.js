@@ -16,14 +16,6 @@
       .then(() => globalThis.GateReceivingWindowEngine);
   const receivingEngine = () => globalThis.GateReceivingWindowEngine || null;
 
-  let dormTagPdfPromise = null;
-  function loadDormTagPdf() {
-    if (!dormTagPdfPromise) {
-      dormTagPdfPromise = import('/app/reports/dorm-tag-pdf.mjs?v=archive-tags-20261006');
-    }
-    return dormTagPdfPromise;
-  }
-
   let installed = false;
   let hooksRegistered = false;
   let renderQueued = false;
@@ -249,18 +241,6 @@
     const response = await fetch('/api/records', { method: 'GET', headers: { Accept: 'application/json' }, cache: 'no-store' });
     const result = await response.json();
     if (!result.isOk) throw new Error(result.error || 'Unable to fetch records.');
-    return Array.isArray(result.records) ? result.records : [];
-  }
-
-  async function fetchLiveRecordsDirectly() {
-    const response = await fetch('/api/records?scope=live', {
-      method: 'GET',
-      headers: { Accept: 'application/json' },
-      cache: 'no-store',
-      credentials: 'same-origin'
-    });
-    const result = await response.json();
-    if (!response.ok || !result?.isOk) throw new Error(result?.error || 'Unable to fetch current Week Group records.');
     return Array.isArray(result.records) ? result.records : [];
   }
 
@@ -1076,38 +1056,7 @@
     );
   }
 
-  function weekGroupFromRecords(items = []) {
-    const config = (Array.isArray(items) ? items : []).find(record =>
-      record?.type === 'config' && record?.key === 'week_group' && String(record?.value || '').trim()
-    );
-    return String(config?.value || activeWeekGroup() || '').trim().toUpperCase();
-  }
-
-  function tagPdfFilename(weekGroup) {
-    const safe = String(weekGroup || 'CURRENT')
-      .trim()
-      .toUpperCase()
-      .replace(/[^A-Z0-9_-]+/g, '_')
-      .replace(/^_+|_+$/g, '') || 'CURRENT';
-    return `GATE_${safe}_TAGS.pdf`;
-  }
-
-  function openTagPreviewWindow() {
-    const preview = window.open('about:blank', '_blank');
-    if (!preview) {
-      window.alert('Popup blocked. Allow popups to open the folder-tag PDF.');
-      return null;
-    }
-    try { preview.opener = null; } catch (_) {}
-    try {
-      preview.document.open();
-      preview.document.write('<!doctype html><html><head><title>GATE Folder Tags</title><meta charset="utf-8"></head><body style="font-family:Arial,sans-serif;padding:24px">Generating current Week Group folder tags…</body></html>');
-      preview.document.close();
-    } catch (_) {}
-    return preview;
-  }
-
-  async function printDormTags(event) {
+  function printDormTags(event) {
     event?.preventDefault?.();
     event?.stopPropagation?.();
     event?.stopImmediatePropagation?.();
@@ -1117,34 +1066,18 @@
       return;
     }
 
-    const preview = openTagPreviewWindow();
-    if (!preview) return;
-
-    try {
-      const [renderer, latest] = await Promise.all([
-        loadDormTagPdf(),
-        fetchLiveRecordsDirectly()
-      ]);
-      const weekGroup = weekGroupFromRecords(latest);
-      if (!weekGroup) throw new Error('No active Week Group is available to generate tags.');
-
-      const dorms = latest.filter(record =>
-        record?.type === 'dorm' && String(record?.week_group || '').trim().toUpperCase() === weekGroup
-      );
-      if (!dorms.length) throw new Error('The current Week Group does not contain any dorms.');
-
-      const pdfBytes = renderer.buildDormTagPdf({ weekGroup, dorms });
-      const filename = tagPdfFilename(weekGroup);
-      const pdf = typeof File === 'function'
-        ? new File([pdfBytes], filename, { type: 'application/pdf' })
-        : new Blob([pdfBytes], { type: 'application/pdf' });
-      const url = URL.createObjectURL(pdf);
-      preview.location.replace(url);
-      window.setTimeout(() => URL.revokeObjectURL(url), 5 * 60 * 1000);
-    } catch (error) {
-      try { preview.close(); } catch (_) {}
-      window.alert(`Tag PDF could not be generated. ${error?.message || 'Try again.'}`);
+    const weekGroup = activeWeekGroup();
+    if (!weekGroup) {
+      window.alert('No active Week Group is available to generate tags.');
+      return;
     }
+
+    const preview = window.open('/api/reports/tags', '_blank');
+    if (!preview) {
+      window.alert('Popup blocked. Allow popups to open the folder-tag PDF.');
+      return;
+    }
+    try { preview.opener = null; } catch (_) {}
   }
 
   function ensureCurrentSummaryButton() {

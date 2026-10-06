@@ -108,10 +108,8 @@ test('canonical workflow owners retain the required operational function contrac
     'printCurrentSummaryReport', 'printDormTags', 'refresh'
   ]);
   assert.match(archive, /id="print-tags-btn"/);
-  assert.match(archive, /app\/reports\/dorm-tag-pdf\.mjs/);
-  assert.match(archive, /fetchLiveRecordsDirectly\(\)/);
-  assert.match(archive, /\/api\/records\?scope=live/);
-  assert.match(archive, /record\?\.type === 'dorm'[\s\S]*record\?\.week_group/);
+  assert.match(archive, /window\.open\('\/api\/reports\/tags', '_blank'\)/);
+  assert.doesNotMatch(archive, /dorm-tag-pdf\.mjs/, 'Archive controller must not generate report bytes in the browser.');
 
   const shell = await source('public/js/gate-app-shell-controller.js');
   assertControllerMethods(shell, 'GateAppShell', [
@@ -130,7 +128,7 @@ test('canonical workflow owners retain the required operational function contrac
 });
 
 test('Archive PRINT TAGS keeps exact physical geometry and Input-owned dorm metadata', async () => {
-  const report = await import('../../public/app/reports/dorm-tag-pdf.mjs');
+  const report = await import('../../functions/lib/dorm-tag-pdf.mjs');
   assert.deepEqual(report.DORM_TAG_LAYOUT, {
     pageWidth: 792,
     pageHeight: 612,
@@ -179,6 +177,55 @@ test('Archive PRINT TAGS keeps exact physical geometry and Input-owned dorm meta
   assert.match(pdf, /PRINT AT ACTUAL SIZE \/ 100%/);
 });
 
+test('Archive folder-tag endpoint is instructor-only and returns a non-cacheable inline PDF', async () => {
+  const { onRequestGet } = await import('../../functions/api/reports/tags.js');
+
+  const config = {
+    type:'config',
+    week_group:'',
+    data:JSON.stringify({ type:'config', key:'week_group', value:'WG26052' }),
+    created_at:'2026-10-06T12:00:00Z',
+    updated_at:'2026-10-06T12:00:00Z'
+  };
+  const dormRows = [
+    { type:'dorm', week_group:'WG26052', data:JSON.stringify({ type:'dorm', week_group:'WG26052', sdq:'321', dorm_name:'3C2', max_load:58, current_load:4, sex:'male', band:'true', display_order:1 }), created_at:'2026-10-06T12:01:00Z', updated_at:'2026-10-06T12:01:00Z' },
+    { type:'dorm', week_group:'WG26052', data:JSON.stringify({ type:'dorm', week_group:'WG26052', sdq:'535', dorm_name:'B09', max_load:52, current_load:8, sex:'female', space_force:'true', display_order:2 }), created_at:'2026-10-06T12:02:00Z', updated_at:'2026-10-06T12:02:00Z' }
+  ];
+
+  const DB = {
+    prepare(sql) {
+      const state = { args:[] };
+      return {
+        bind(...args) { state.args = args; return this; },
+        async first() {
+          return sql.includes("type = 'config'") ? config : null;
+        },
+        async all() {
+          if (!sql.includes("type = 'dorm'")) return { results:[] };
+          return { results:dormRows.filter(row => row.week_group === state.args[0]) };
+        }
+      };
+    }
+  };
+
+  const denied = await onRequestGet({ env:{ DB }, data:{ session:{ role:'airman' } } });
+  assert.equal(denied.status, 403);
+
+  const response = await onRequestGet({ env:{ DB }, data:{ session:{ role:'instructor' } } });
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get('Content-Type'), 'application/pdf');
+  assert.match(response.headers.get('Content-Disposition') || '', /inline; filename="GATE_WG26052_TAGS\.pdf"/);
+  assert.match(response.headers.get('Cache-Control') || '', /no-store/);
+
+  const pdf = new TextDecoder().decode(new Uint8Array(await response.arrayBuffer()));
+  assert.match(pdf, /^%PDF-1\.4/);
+  assert.match(pdf, /\(321 \/ 3C2\) Tj/);
+  assert.match(pdf, /\(LOAD: 58\) Tj/);
+  assert.match(pdf, /\(BAND\) Tj/);
+  assert.match(pdf, /\(SPACE FORCE\) Tj/);
+  assert.match(pdf, /\(FEMALE\) Tj/);
+});
+
 test('login, session, and authentication surfaces remain reachable', async () => {
   const redirect = await source('public/login.html');
   const login = await source('public/login/index.html');
@@ -204,7 +251,8 @@ test('backend CRUD, session, SAT, and archive endpoints remain present without c
     'functions/api/records.js', 'functions/api/records-contract.mjs',
     'functions/api/session.js', 'functions/api/session-contract.mjs',
     'functions/api/login.js', 'functions/api/logout.js', 'functions/api/ping.js',
-    'functions/api/sat-arrivals.js', 'functions/api/archive-delete.js', 'functions/api/archives.js'
+    'functions/api/sat-arrivals.js', 'functions/api/archive-delete.js', 'functions/api/archives.js',
+    'functions/api/reports/tags.js', 'functions/lib/dorm-tag-pdf.mjs'
   ]) await exists(path);
   const records = await source('functions/api/records.js');
   for (const method of ['Get', 'Post', 'Put', 'Delete']) {

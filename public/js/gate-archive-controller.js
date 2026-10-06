@@ -252,6 +252,18 @@
     return Array.isArray(result.records) ? result.records : [];
   }
 
+  async function fetchLiveRecordsDirectly() {
+    const response = await fetch('/api/records?scope=live', {
+      method: 'GET',
+      headers: { Accept: 'application/json' },
+      cache: 'no-store',
+      credentials: 'same-origin'
+    });
+    const result = await response.json();
+    if (!response.ok || !result?.isOk) throw new Error(result?.error || 'Unable to fetch current Week Group records.');
+    return Array.isArray(result.records) ? result.records : [];
+  }
+
   function buildDormHistory(dorms, windows = {}) {
     return dorms.map(dorm => Object.assign({}, windows, {
       name: dorm.dorm_name,
@@ -1111,7 +1123,7 @@
     try {
       const [renderer, latest] = await Promise.all([
         loadDormTagPdf(),
-        fetchRecordsDirectly()
+        fetchLiveRecordsDirectly()
       ]);
       const weekGroup = weekGroupFromRecords(latest);
       if (!weekGroup) throw new Error('No active Week Group is available to generate tags.');

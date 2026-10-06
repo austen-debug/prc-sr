@@ -74,8 +74,7 @@ function pdfEscape(value) {
 }
 
 function number(value) {
-  const rounded = Math.round(Number(value) * 100) / 100;
-  return Number.isInteger(rounded) ? String(rounded) : String(rounded);
+  return String(Math.round(Number(value) * 100) / 100);
 }
 
 function textWidth(value, fontSize, bold = false) {
@@ -182,7 +181,7 @@ function tagCommands(tag, x, y) {
 
 function pageContent(tags, weekGroup, pageNumber, pageCount) {
   const commands = [];
-  const header = `GATE  •  ${ascii(weekGroup || 'ACTIVE WEEK GROUP')}  •  FOLDER TAGS  •  PAGE ${pageNumber} / ${pageCount}`;
+  const header = `GATE  |  ${ascii(weekGroup || 'ACTIVE WEEK GROUP')}  |  FOLDER TAGS  |  PAGE ${pageNumber} / ${pageCount}`;
   commands.push(textCommand(header, { x: DORM_TAG_LAYOUT.marginX, y: 580, size: 8, font: 'F1', rgb: [0.25, 0.29, 0.34] }));
 
   tags.forEach((tag, index) => {

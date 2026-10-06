@@ -16,6 +16,14 @@
       .then(() => globalThis.GateReceivingWindowEngine);
   const receivingEngine = () => globalThis.GateReceivingWindowEngine || null;
 
+  let dormTagPdfPromise = null;
+  function loadDormTagPdf() {
+    if (!dormTagPdfPromise) {
+      dormTagPdfPromise = import('/app/reports/dorm-tag-pdf.mjs?v=archive-tags-20261006');
+    }
+    return dormTagPdfPromise;
+  }
+
   let installed = false;
   let hooksRegistered = false;
   let renderQueued = false;
@@ -793,7 +801,7 @@
     const totals = archiveTotals(visible);
     const years = [...new Set(archiveIndex.map(archiveYear))].sort((a, b) => b.localeCompare(a, undefined, { numeric: true }));
     const activeGroup = activeWeekGroup();
-    const hero = `<section class="gate-archive-hero"><div><span class="gate-archive-kicker">Historical Operations Repository</span><h1>Receiving Archives</h1><p>Closed Week Groups are presented from retained D1 archive records. Historical source snapshots remain untouched.</p></div><div class="gate-archive-hero-actions"><button id="print-current-summary-btn" type="button" class="gate-archive-current-report" ${activeGroup ? '' : 'disabled'}>PRINT CURRENT SUMMARY</button><span class="gate-archive-current-context">${activeGroup ? `Active: ${esc(activeGroup)}` : 'No active Week Group'}</span></div></section>`;
+    const hero = `<section class="gate-archive-hero"><div><span class="gate-archive-kicker">Historical Operations Repository</span><h1>Receiving Archives</h1><p>Closed Week Groups are presented from retained D1 archive records. Historical source snapshots remain untouched.</p></div><div class="gate-archive-hero-actions"><div class="gate-archive-current-report-row"><button id="print-current-summary-btn" type="button" class="gate-archive-current-report" ${activeGroup ? '' : 'disabled'}>PRINT CURRENT SUMMARY</button><button id="print-tags-btn" type="button" class="gate-archive-current-report" title="Generate 3 × 2 inch folder tags for the current live Week Group" ${activeGroup ? '' : 'disabled'}>PRINT TAGS</button></div><span class="gate-archive-current-context">${activeGroup ? `Active: ${esc(activeGroup)}` : 'No active Week Group'}</span></div></section>`;
     const toolbar = `<section class="gate-archive-toolbar"><div class="gate-archive-toolbar-summary"><span class="gate-archive-toolbar-title">${visible.length} of ${archiveIndex.length} Archived Week Groups</span><span class="gate-archive-toolbar-copy">${totals.arrived} arrived · ${totals.expected} expected · ${totals.dorms} dorm snapshots · ${totals.buses} movement records</span></div><label class="gate-archive-search-wrap" for="gate-archive-search"><span class="gate-archive-search-label">Search Week Group</span><input id="gate-archive-search" type="search" value="${esc(archiveSearchTerm)}" placeholder="Search archives…"></label><label class="gate-archive-year-wrap" for="gate-archive-year-filter"><span class="gate-archive-search-label">Year</span><select id="gate-archive-year-filter"><option value="all">All years</option>${years.map(year => `<option value="${esc(year)}" ${archiveYearFilter === year ? 'selected' : ''}>${esc(year)}</option>`).join('')}</select></label><button id="gate-archive-clear-search" type="button" class="gate-archive-clear-search" ${archiveSearchTerm || archiveYearFilter !== 'all' ? '' : 'disabled'}>Clear</button></section>`;
     let browser;
     if (!archiveIndex.length) browser = '<div class="gate-archive-empty"><span><span class="gate-archive-empty-title">No Archived Week Groups</span><span class="gate-archive-empty-copy">Closed Week Groups will appear here without changing or rewriting their retained D1 data.</span></span></div>';
@@ -1056,11 +1064,89 @@
     );
   }
 
+  function weekGroupFromRecords(items = []) {
+    const config = (Array.isArray(items) ? items : []).find(record =>
+      record?.type === 'config' && record?.key === 'week_group' && String(record?.value || '').trim()
+    );
+    return String(config?.value || activeWeekGroup() || '').trim().toUpperCase();
+  }
+
+  function tagPdfFilename(weekGroup) {
+    const safe = String(weekGroup || 'CURRENT')
+      .trim()
+      .toUpperCase()
+      .replace(/[^A-Z0-9_-]+/g, '_')
+      .replace(/^_+|_+$/g, '') || 'CURRENT';
+    return `GATE_${safe}_TAGS.pdf`;
+  }
+
+  function openTagPreviewWindow() {
+    const preview = window.open('about:blank', '_blank');
+    if (!preview) {
+      window.alert('Popup blocked. Allow popups to open the folder-tag PDF.');
+      return null;
+    }
+    try { preview.opener = null; } catch (_) {}
+    try {
+      preview.document.open();
+      preview.document.write('<!doctype html><html><head><title>GATE Folder Tags</title><meta charset="utf-8"></head><body style="font-family:Arial,sans-serif;padding:24px">Generating current Week Group folder tags…</body></html>');
+      preview.document.close();
+    } catch (_) {}
+    return preview;
+  }
+
+  async function printDormTags(event) {
+    event?.preventDefault?.();
+    event?.stopPropagation?.();
+    event?.stopImmediatePropagation?.();
+
+    if (!isInstructor()) {
+      window.alert('Instructor access required to generate folder tags.');
+      return;
+    }
+
+    const preview = openTagPreviewWindow();
+    if (!preview) return;
+
+    try {
+      const [renderer, latest] = await Promise.all([
+        loadDormTagPdf(),
+        fetchRecordsDirectly()
+      ]);
+      const weekGroup = weekGroupFromRecords(latest);
+      if (!weekGroup) throw new Error('No active Week Group is available to generate tags.');
+
+      const dorms = latest.filter(record =>
+        record?.type === 'dorm' && String(record?.week_group || '').trim().toUpperCase() === weekGroup
+      );
+      if (!dorms.length) throw new Error('The current Week Group does not contain any dorms.');
+
+      const pdfBytes = renderer.buildDormTagPdf({ weekGroup, dorms });
+      const filename = tagPdfFilename(weekGroup);
+      const pdf = typeof File === 'function'
+        ? new File([pdfBytes], filename, { type: 'application/pdf' })
+        : new Blob([pdfBytes], { type: 'application/pdf' });
+      const url = URL.createObjectURL(pdf);
+      preview.location.replace(url);
+      window.setTimeout(() => URL.revokeObjectURL(url), 5 * 60 * 1000);
+    } catch (error) {
+      try { preview.close(); } catch (_) {}
+      window.alert(`Tag PDF could not be generated. ${error?.message || 'Try again.'}`);
+    }
+  }
+
   function ensureCurrentSummaryButton() {
-    const button = document.getElementById('print-current-summary-btn');
-    if (!button) return;
-    button.dataset.owner = 'gate-archive-controller';
-    button.onclick = printCurrentSummaryReport;
+    const summaryButton = document.getElementById('print-current-summary-btn');
+    if (summaryButton) {
+      summaryButton.dataset.owner = 'gate-archive-controller';
+      summaryButton.onclick = printCurrentSummaryReport;
+    }
+
+    const tagButton = document.getElementById('print-tags-btn');
+    if (tagButton) {
+      tagButton.dataset.owner = 'gate-archive-controller';
+      tagButton.onclick = printDormTags;
+    }
   }
 
   function bindArchivePrintButton() {
@@ -1070,9 +1156,14 @@
   }
 
   function handleClick(event) {
+    const tagPrint = event.target?.closest?.('#print-tags-btn');
+    if (tagPrint) {
+      void printDormTags(event);
+      return;
+    }
     const current = event.target?.closest?.('#print-current-summary-btn');
     if (current) {
-      printCurrentSummaryReport(event);
+      void printCurrentSummaryReport(event);
       return;
     }
     const archivePrint = event.target?.closest?.('[data-archive-print-id]');
@@ -1103,6 +1194,7 @@
     window.closeArchiveEditModal = closeArchiveEditModalCanonical;
     window.printArchiveSpreadsheet = printArchiveReport;
     window.printCurrentSummaryReport = printCurrentSummaryReport;
+    window.printDormTags = printDormTags;
     try { initiateCloseout = initiateCloseoutCanonical; } catch (_) {}
     try { renderArchives = renderArchivesFromLegacyLoop; } catch (_) {}
     try { openArchiveEditModal = openArchiveEditModalCanonical; } catch (_) {}
@@ -1144,6 +1236,7 @@
       closeArchiveEditModal: closeArchiveEditModalCanonical,
       printArchiveReport,
       printCurrentSummaryReport,
+      printDormTags,
       refresh: refreshArchives
     });
   }

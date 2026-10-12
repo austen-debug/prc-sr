@@ -793,7 +793,7 @@
     const totals = archiveTotals(visible);
     const years = [...new Set(archiveIndex.map(archiveYear))].sort((a, b) => b.localeCompare(a, undefined, { numeric: true }));
     const activeGroup = activeWeekGroup();
-    const hero = `<section class="gate-archive-hero"><div><span class="gate-archive-kicker">Historical Operations Repository</span><h1>Receiving Archives</h1><p>Closed Week Groups are presented from retained D1 archive records. Historical source snapshots remain untouched.</p></div><div class="gate-archive-hero-actions"><div class="gate-archive-current-report-row"><button id="print-current-summary-btn" type="button" class="gate-archive-current-report" ${activeGroup ? '' : 'disabled'}>PRINT CURRENT SUMMARY</button><button id="print-tags-btn" type="button" class="gate-archive-current-report" title="Generate 3 × 2 inch folder tags for the current live Week Group" ${activeGroup ? '' : 'disabled'}>PRINT TAGS</button></div><span class="gate-archive-current-context">${activeGroup ? `Active: ${esc(activeGroup)}` : 'No active Week Group'}</span></div></section>`;
+    const hero = `<section class="gate-archive-hero"><div><span class="gate-archive-kicker">Historical Operations Repository</span><h1>Receiving Archives</h1><p>Closed Week Groups are presented from retained D1 archive records. Historical source snapshots remain untouched.</p></div><div class="gate-archive-hero-actions"><div class="gate-archive-current-report-row"><button id="print-current-summary-btn" type="button" class="gate-archive-current-report" ${activeGroup ? '' : 'disabled'}>PRINT CURRENT SUMMARY</button><button id="print-tags-btn" type="button" class="gate-archive-current-report" title="Generate 3 × 2 inch folder tags for the current live Week Group" ${activeGroup ? '' : 'disabled'}>PRINT TAGS</button><button id="print-matrix-btn" type="button" class="gate-archive-current-report gate-archive-matrix-action" title="Generate the landscape receiving matrix for the active Week Group" ${activeGroup ? '' : 'disabled'}>PRINT MATRIX</button></div><span class="gate-archive-current-context">${activeGroup ? `Active: ${esc(activeGroup)}` : 'No active Week Group'}</span></div></section>`;
     const toolbar = `<section class="gate-archive-toolbar"><div class="gate-archive-toolbar-summary"><span class="gate-archive-toolbar-title">${visible.length} of ${archiveIndex.length} Archived Week Groups</span><span class="gate-archive-toolbar-copy">${totals.arrived} arrived · ${totals.expected} expected · ${totals.dorms} dorm snapshots · ${totals.buses} movement records</span></div><label class="gate-archive-search-wrap" for="gate-archive-search"><span class="gate-archive-search-label">Search Week Group</span><input id="gate-archive-search" type="search" value="${esc(archiveSearchTerm)}" placeholder="Search archives…"></label><label class="gate-archive-year-wrap" for="gate-archive-year-filter"><span class="gate-archive-search-label">Year</span><select id="gate-archive-year-filter"><option value="all">All years</option>${years.map(year => `<option value="${esc(year)}" ${archiveYearFilter === year ? 'selected' : ''}>${esc(year)}</option>`).join('')}</select></label><button id="gate-archive-clear-search" type="button" class="gate-archive-clear-search" ${archiveSearchTerm || archiveYearFilter !== 'all' ? '' : 'disabled'}>Clear</button></section>`;
     let browser;
     if (!archiveIndex.length) browser = '<div class="gate-archive-empty"><span><span class="gate-archive-empty-title">No Archived Week Groups</span><span class="gate-archive-empty-copy">Closed Week Groups will appear here without changing or rewriting their retained D1 data.</span></span></div>';
@@ -1056,6 +1056,65 @@
     );
   }
 
+
+  // Keep the preparation dialog outside the dynamically replaced Archive grid.
+  // The existing delegated capture click handler remains the single button owner.
+  function ensureMatrixDialog() {
+    const existing = document.getElementById('gate-matrix-dialog');
+    if (existing) return existing;
+    const dialog = document.createElement('dialog');
+    dialog.id = 'gate-matrix-dialog';
+    dialog.className = 'gate-matrix-dialog';
+    dialog.setAttribute('aria-labelledby', 'gate-matrix-dialog-title');
+    dialog.innerHTML = [
+      '<form id="gate-matrix-form" method="post" action="/api/reports/matrix" target="_blank" rel="noopener">',
+      '<div class="gate-matrix-dialog-head">',
+      '<span class="gate-archive-kicker">Receiving Reports</span>',
+      '<h2 id="gate-matrix-dialog-title">Prepare Receiving Matrix</h2>',
+      '<p id="gate-matrix-week-label" class="gate-matrix-week-label"></p>',
+      '</div>',
+      '<div class="gate-matrix-dialog-body">',
+      '<p>GATE will fill in M/F, Dorm, SQ and Max Enrolled. All other matrix fields remain blank for handwriting.</p>',
+      '<input type="hidden" name="week_group" id="gate-matrix-week-group">',
+      '<label for="gate-matrix-notes">Print notes <span>(optional)</span></label>',
+      '<textarea id="gate-matrix-notes" name="notes" rows="3" maxlength="220" placeholder="Notes to include in the PDF&#8230;"></textarea>',
+      '<small>Maximum 220 characters. Notes print on the PDF only and are not saved to GATE.</small>',
+      '</div>',
+      '<div class="gate-matrix-dialog-actions">',
+      '<button id="gate-matrix-cancel" type="button">Cancel</button>',
+      '<button id="gate-matrix-generate" type="submit">Generate PDF</button>',
+      '</div>',
+      '</form>'
+    ].join('');
+    dialog.querySelector('#gate-matrix-cancel').addEventListener('click', () => dialog.close());
+    dialog.addEventListener('close', () => {
+      document.getElementById('print-matrix-btn')?.focus({ preventScroll: true });
+    });
+    document.body.appendChild(dialog);
+    return dialog;
+  }
+
+  function openMatrixDialog(event) {
+    event?.preventDefault?.();
+    event?.stopPropagation?.();
+    event?.stopImmediatePropagation?.();
+    if (!isInstructor()) {
+      window.alert('Instructor access required to generate the receiving matrix.');
+      return;
+    }
+    const weekGroup = activeWeekGroup();
+    if (!weekGroup) {
+      window.alert('No active Week Group is available to generate the receiving matrix.');
+      return;
+    }
+    const dialog = ensureMatrixDialog();
+    dialog.querySelector('#gate-matrix-week-group').value = weekGroup;
+    dialog.querySelector('#gate-matrix-week-label').textContent = 'Week Group: ' + weekGroup;
+    dialog.querySelector('#gate-matrix-notes').value = '';
+    if (!dialog.open) dialog.showModal();
+    dialog.querySelector('#gate-matrix-notes').focus();
+  }
+
   function printDormTags(event) {
     event?.preventDefault?.();
     event?.stopPropagation?.();
@@ -1101,6 +1160,11 @@
   }
 
   function handleClick(event) {
+    const matrixPrint = event.target?.closest?.('#print-matrix-btn');
+    if (matrixPrint) {
+      openMatrixDialog(event);
+      return;
+    }
     const tagPrint = event.target?.closest?.('#print-tags-btn');
     if (tagPrint) {
       void printDormTags(event);
@@ -1182,6 +1246,7 @@
       printArchiveReport,
       printCurrentSummaryReport,
       printDormTags,
+      openMatrixDialog,
       refresh: refreshArchives
     });
   }

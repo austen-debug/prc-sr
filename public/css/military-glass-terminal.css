@@ -4824,3 +4824,354 @@ body.theme-light :is(input, textarea):focus-visible {
     flex: 1 1 0;
   }
 }
+
+
+/* GATE archive library simplification — scoped to Archives; header remains unchanged. */
+#page-archives .gate-archive-toolbar-simple {
+  grid-template-columns: minmax(11rem, 1fr) minmax(0, 2fr);
+  align-items: end;
+  padding: .8rem 1rem;
+  gap: 1rem;
+}
+
+#page-archives .gate-archive-toolbar-simple .gate-archive-toolbar-title {
+  font-size: .83rem;
+  line-height: 1.3;
+  letter-spacing: .025em;
+}
+
+#page-archives .gate-archive-toolbar-simple .gate-archive-toolbar-copy {
+  font-size: .72rem;
+}
+
+#page-archives .gate-archive-library-filters {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(8rem, 11rem);
+  gap: .6rem;
+  align-items: end;
+  min-width: 0;
+}
+
+#page-archives .gate-archive-library {
+  min-width: 0;
+  padding: .45rem 1.1rem .85rem;
+  border: 1px solid var(--mg-border-glass);
+  border-radius: var(--mg-radius-xl);
+  background: var(--mg-surface);
+}
+
+#page-archives .gate-archive-year-group + .gate-archive-year-group {
+  margin-top: 1.1rem;
+}
+
+#page-archives .gate-archive-year-divider {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+  min-height: 2.4rem;
+  padding: .3rem .2rem;
+  border-bottom: 1px solid var(--mg-border-soft);
+}
+
+#page-archives .gate-archive-year-divider h3 {
+  margin: 0;
+  color: var(--mg-text);
+  font-size: .82rem;
+  font-weight: 760;
+  letter-spacing: .035em;
+}
+
+#page-archives .gate-archive-year-divider span {
+  color: var(--mg-text-muted);
+  font-family: var(--mg-font-mono);
+  font-size: .66rem;
+}
+
+#page-archives .gate-archive-year-list {
+  display: grid;
+}
+
+#page-archives .gate-archive-list-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(9.5rem, auto) 1rem;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  min-height: 65px;
+  padding: .7rem .3rem;
+  border: 0;
+  border-bottom: 1px solid var(--mg-border-soft);
+  border-radius: 0;
+  appearance: none;
+  background: transparent;
+  color: var(--mg-text);
+  text-align: left;
+  cursor: pointer;
+  box-shadow: none;
+}
+
+#page-archives .gate-archive-year-list > .gate-archive-list-row:last-child {
+  border-bottom: 0;
+}
+
+#page-archives .gate-archive-list-row:hover,
+#page-archives .gate-archive-list-row:focus-visible {
+  background: var(--mg-surface-soft);
+}
+
+#page-archives .gate-archive-list-row:focus-visible,
+#page-archives .gate-archive-back-action:focus-visible,
+#page-archives .gate-archive-detail-section > summary:focus-visible {
+  outline: 2px solid var(--mg-accent);
+  outline-offset: -2px;
+}
+
+#page-archives .gate-archive-list-primary {
+  display: grid;
+  gap: .2rem;
+  min-width: 0;
+}
+
+#page-archives .gate-archive-list-primary strong {
+  font-size: .91rem;
+  font-weight: 750;
+  letter-spacing: .008em;
+}
+
+#page-archives .gate-archive-list-primary > span {
+  color: var(--mg-text-muted);
+  font-size: .74rem;
+  line-height: 1.35;
+}
+
+#page-archives .gate-archive-list-counts {
+  color: var(--mg-text-soft);
+  font-family: var(--mg-font-mono);
+  font-size: .7rem;
+  white-space: nowrap;
+}
+
+#page-archives .gate-archive-list-counts > span {
+  padding: 0 .25rem;
+  color: var(--mg-text-muted);
+}
+
+#page-archives .gate-archive-list-chevron {
+  color: var(--mg-text-muted);
+  font-size: 1.4rem;
+  line-height: 1;
+  text-align: right;
+}
+
+/* Focused historical record view: summary first, details disclosed on demand. */
+#page-archives .gate-archive-focused-detail {
+  min-width: 0;
+  padding: 1rem 1.25rem 1.25rem;
+  border: 1px solid var(--mg-border-glass);
+  border-radius: var(--mg-radius-xl);
+  background: var(--mg-surface);
+}
+
+#page-archives .gate-archive-detail-nav {
+  margin-bottom: 1rem;
+}
+
+#page-archives .gate-archive-back-action {
+  min-height: 40px;
+  padding: .4rem .45rem;
+  border: 0;
+  border-radius: var(--mg-radius-sm);
+  background: transparent;
+  color: var(--mg-accent-ink);
+  font-size: .77rem;
+  font-weight: 720;
+  cursor: pointer;
+}
+
+#page-archives .gate-archive-back-action span {
+  padding-right: .35rem;
+  font-size: 1rem;
+}
+
+#page-archives .gate-archive-detail-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: .9rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--mg-border-soft);
+}
+
+#page-archives .gate-archive-detail-head h2 {
+  margin: .2rem 0 .25rem;
+  color: var(--mg-text);
+  font-size: clamp(1.35rem, 2.1vw, 1.75rem);
+  line-height: 1.2;
+}
+
+#page-archives .gate-archive-detail-head p {
+  margin: 0;
+  color: var(--mg-text-muted);
+  font-size: .77rem;
+}
+
+#page-archives .gate-archive-overview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.2rem 2rem;
+  margin-top: 1.15rem;
+}
+
+#page-archives .gate-archive-overview-stat {
+  display: grid;
+  gap: .3rem;
+  min-width: 3.5rem;
+}
+
+#page-archives .gate-archive-overview-stat strong {
+  color: var(--mg-text);
+  font-family: var(--mg-font-mono);
+  font-size: 1.2rem;
+  font-weight: 760;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+
+#page-archives .gate-archive-overview-stat small {
+  color: var(--mg-text-muted);
+  font-size: .7rem;
+}
+
+#page-archives .gate-archive-overview-secondary {
+  margin: .7rem 0 1.3rem;
+  color: var(--mg-text-soft);
+  font-size: .72rem;
+  white-space: pre-wrap;
+}
+
+#page-archives .gate-archive-detail-sections {
+  border-top: 1px solid var(--mg-border-soft);
+}
+
+#page-archives .gate-archive-detail-section {
+  min-width: 0;
+  border-bottom: 1px solid var(--mg-border-soft);
+}
+
+#page-archives .gate-archive-detail-section > summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 1rem;
+  align-items: center;
+  gap: 1rem;
+  min-height: 58px;
+  padding: .65rem .15rem;
+  border-radius: var(--mg-radius-sm);
+  list-style: none;
+  cursor: pointer;
+}
+
+#page-archives .gate-archive-detail-section > summary::-webkit-details-marker {
+  display: none;
+}
+
+#page-archives .gate-archive-detail-section-title {
+  color: var(--mg-text);
+  font-size: .85rem;
+  font-weight: 720;
+}
+
+#page-archives .gate-archive-detail-section-description {
+  color: var(--mg-text-muted);
+  font-size: .71rem;
+  text-align: right;
+}
+
+#page-archives .gate-archive-detail-chevron {
+  color: var(--mg-text-muted);
+  font-size: 1.15rem;
+  transition: transform .15s ease;
+}
+
+#page-archives .gate-archive-detail-section[open] .gate-archive-detail-chevron {
+  transform: rotate(180deg);
+}
+
+#page-archives .gate-archive-detail-section-body {
+  min-width: 0;
+  padding: .35rem .1rem 1.05rem;
+}
+
+#page-archives .gate-archive-compact-line {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: .75rem .25rem;
+  border-bottom: 1px solid var(--mg-border-soft);
+  font-size: .75rem;
+}
+
+#page-archives .gate-archive-compact-line > span {
+  color: var(--mg-text-muted);
+}
+
+#page-archives .gate-archive-compact-line > strong {
+  color: var(--mg-text-soft);
+  font-size: inherit;
+  font-weight: 650;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+#page-archives .gate-archive-history-label {
+  margin: 1.2rem 0 .55rem;
+  color: var(--mg-text);
+  font-size: .79rem;
+  font-weight: 720;
+}
+
+#page-archives .gate-archive-detail-disclaimer,
+#page-archives .gate-archive-detail-secondary {
+  color: var(--mg-text-muted);
+  font-size: .73rem;
+  line-height: 1.5;
+}
+
+#page-archives .gate-archive-detail-disclaimer {
+  margin: 0 0 .65rem;
+}
+
+@media (max-width: 740px) {
+  #page-archives .gate-archive-toolbar-simple {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  #page-archives .gate-archive-library-filters {
+    grid-template-columns: minmax(0, 1fr) minmax(6.5rem, 9rem);
+  }
+  #page-archives .gate-archive-list-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: .65rem;
+  }
+  #page-archives .gate-archive-list-counts {
+    display: none;
+  }
+  #page-archives .gate-archive-detail-section > summary {
+    grid-template-columns: minmax(0, 1fr) 1rem;
+  }
+  #page-archives .gate-archive-detail-section-description {
+    display: none;
+  }
+  #page-archives .gate-archive-focused-detail {
+    padding: .9rem .85rem 1rem;
+  }
+  #page-archives .gate-archive-compact-line {
+    align-items: start;
+    flex-direction: column;
+    gap: .35rem;
+  }
+  #page-archives .gate-archive-compact-line > strong {
+    text-align: left;
+  }
+}

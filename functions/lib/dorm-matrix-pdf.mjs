@@ -4,9 +4,9 @@ export const DORM_MATRIX_LAYOUT = Object.freeze({
   pageWidth: 792,
   pageHeight: 612,
   tableLeft: 33,
-  tableTop: 565,
+  tableTop: 533,
   headerHeight: 24,
-  rowHeight: 22,
+  rowHeight: 20,
   rowsPerPage: 20,
   columnWidths: Object.freeze([22, 34, 51, 41, 41, 56, 70, 47, 39, 52, 45, 56, 66, 53, 53])
 });
@@ -150,10 +150,12 @@ function contentForPage(rows, weekGroup, pageNumber, pageCount, notes) {
   const width = columnWidths.reduce((sum, current) => sum + current, 0);
   const bottom = tableTop - headerHeight - rowHeight * rowsPerPage;
   const commands = [];
-  commands.push(drawText('GATE  |  RECEIVING MATRIX', tableLeft, 588, 12, BLACK, true));
-  commands.push(drawText('WEEK GROUP: ' + text(weekGroup), tableLeft + 285, 588, 10, BLACK, true));
-  const pageLabel = 'PAGE ' + pageNumber + ' OF ' + pageCount;
-  commands.push(drawText(pageLabel, tableLeft + width - approximateWidth(pageLabel, 8), 588, 8));
+  // Controlled document markings: same top line, centered CUI and right-aligned pagination.
+  commands.push(centered('CUI', 0, DORM_MATRIX_LAYOUT.pageWidth, 587, 9, BLACK, true));
+  const pageLabel = 'page ' + pageNumber + ' of ' + pageCount;
+  commands.push(drawText(pageLabel, tableLeft + width - approximateWidth(pageLabel, 8), 587, 8));
+  commands.push(drawText('GATE | RECEIVING MATRIX | AIRMEN PROGRESS TRACKER', tableLeft, 568, 11, BLACK, true));
+  commands.push(drawText('WEEK GROUP: ' + text(weekGroup), tableLeft, 551, 10, BLACK, true));
   commands.push('0.91 0.93 0.95 rg\n' + number(tableLeft) + ' ' + number(tableTop - headerHeight) + ' ' + number(width) + ' ' + number(headerHeight) + ' re f');
   commands.push('0.25 0.28 0.31 RG\n0.55 w');
   commands.push(number(tableLeft) + ' ' + number(bottom) + ' ' + number(width) + ' ' + number(tableTop - bottom) + ' re S');
@@ -193,7 +195,7 @@ function contentForPage(rows, weekGroup, pageNumber, pageCount, notes) {
   noteLines.forEach((line, i) => {
     if (line) commands.push(drawText(line, tableLeft + 8, 63 - 11 * i, 8.5));
   });
-  commands.push(centered('UNCLASSIFIED', 0, DORM_MATRIX_LAYOUT.pageWidth, 13, 6.5));
+  commands.push(centered('CUI', 0, DORM_MATRIX_LAYOUT.pageWidth, 19, 9, BLACK, true));
   return commands.join('\n') + '\n';
 }
 

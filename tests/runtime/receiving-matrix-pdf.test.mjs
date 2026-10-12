@@ -24,7 +24,7 @@ test('Matrix columns, physical dimensions and 20 blank-capable rows fit Letter l
   assert.equal(total, 726);
   assert.equal(DORM_MATRIX_LAYOUT.tableLeft + total, 759);
   const bottom = DORM_MATRIX_LAYOUT.tableTop - DORM_MATRIX_LAYOUT.headerHeight - DORM_MATRIX_LAYOUT.rowsPerPage * DORM_MATRIX_LAYOUT.rowHeight;
-  assert.equal(bottom, 101);
+  assert.equal(bottom, 109);
   const pdf = asText(buildDormMatrixPdf({ weekGroup: 'WG26052', dorms, notes: 'Prepare the receiving area.' }));
   assert.match(pdf, /^%PDF-1\.4/);
   assert.match(pdf, /\/MediaBox \[0 0 792 612\]/);
@@ -35,7 +35,14 @@ test('Matrix columns, physical dimensions and 20 blank-capable rows fit Letter l
   assert.match(pdf, /\(WEEK GROUP: WG26052\) Tj/);
   assert.match(pdf, /\(Prepare the receiving area\.\) Tj/);
   assert.match(pdf, /\(NOTES\) Tj/);
-  assert.match(pdf, /\(UNCLASSIFIED\) Tj/);
+  assert.match(pdf, /\(GATE \| RECEIVING MATRIX \| AIRMEN PROGRESS TRACKER\) Tj/);
+  assert.match(pdf, /\(page 1 of 1\) Tj/);
+  assert.doesNotMatch(pdf, /\(UNCLASSIFIED\) Tj/);
+  const cui = [...pdf.matchAll(/1 0 0 1 ([\d.]+) (587|19) Tm\n\(CUI\) Tj/g)];
+  assert.equal(cui.length, 2, 'CUI must appear in the upper and lower center of every page');
+  assert.equal(cui[0][1], cui[1][1], 'the top and bottom CUI markings must share a centered x coordinate');
+  const center = Number(cui[0][1]) + 8.235;
+  assert.ok(Math.abs(center - DORM_MATRIX_LAYOUT.pageWidth / 2) < 2, 'CUI must be horizontally centered');
   assert.doesNotMatch(pdf, /\(current_load\) Tj/);
 });
 
@@ -64,8 +71,11 @@ test('Matrix uses 20 numbered rows on every page and handles legacy ordering', (
   }));
   const pdf = asText(buildDormMatrixPdf({ weekGroup: 'WG26052', dorms: manyDorms }));
   assert.match(pdf, /\/Count 2/);
-  assert.match(pdf, /\(PAGE 1 OF 2\) Tj/);
-  assert.match(pdf, /\(PAGE 2 OF 2\) Tj/);
+  assert.match(pdf, /\(page 1 of 2\) Tj/);
+  assert.match(pdf, /\(page 2 of 2\) Tj/);
+  assert.equal([...pdf.matchAll(/\(CUI\) Tj/g)].length, 4, 'both pages require top and bottom CUI markings');
+  assert.equal([...pdf.matchAll(/\(GATE \| RECEIVING MATRIX \| AIRMEN PROGRESS TRACKER\) Tj/g)].length, 2);
+  assert.equal([...pdf.matchAll(/\(WEEK GROUP: WG26052\) Tj/g)].length, 2);
   assert.match(pdf, /\(21\) Tj/);
   const legacy = normalizeDormMatrix([
     { type: 'dorm', dorm_name: 'Later', created_at: '2026-10-12T09:10:00Z', max_load: 0 },

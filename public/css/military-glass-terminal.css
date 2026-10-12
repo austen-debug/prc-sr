@@ -4668,3 +4668,159 @@ body.theme-light :is(input, textarea):focus-visible {
   .gate-squadron-access-actions { display:grid; grid-template-columns:1fr; }
   .gate-squadron-access-agree { grid-row:1; }
 }
+
+
+/* GATE Archive Receiving Matrix: localized sizing, no changes to existing print buttons. */
+#page-archives .gate-archive-hero-actions,
+#page-archives .gate-archive-current-report-row {
+  min-width: 0;
+  max-width: 100%;
+}
+
+#page-archives .gate-archive-matrix-action {
+  padding: .68rem .75rem;
+  white-space: nowrap;
+  flex: 0 1 auto;
+}
+
+#gate-matrix-dialog {
+  box-sizing: border-box;
+  width: min(34rem, calc(100vw - 2rem));
+  max-width: calc(100vw - 2rem);
+  max-height: min(90dvh, 44rem);
+  margin: auto;
+  padding: 0;
+  overflow: auto;
+  color: var(--mg-text);
+  background: var(--mg-surface);
+  border: 1px solid var(--mg-border-strong);
+  border-radius: var(--mg-radius-xl);
+  box-shadow: 0 22px 72px rgb(0 0 0 / .32);
+}
+
+#gate-matrix-dialog::backdrop {
+  background: rgb(0 0 0 / .6);
+}
+
+#gate-matrix-dialog #gate-matrix-form {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  max-height: min(90dvh, 44rem);
+}
+
+#gate-matrix-dialog .gate-matrix-dialog-head {
+  padding: 1.25rem 1.4rem .8rem;
+  border-bottom: 1px solid var(--mg-border-glass);
+}
+
+#gate-matrix-dialog h2 {
+  margin: .35rem 0 .25rem;
+  font-size: 1.4rem;
+  font-weight: 750;
+  color: var(--mg-text);
+}
+
+#gate-matrix-dialog .gate-matrix-week-label {
+  margin: 0;
+  color: var(--mg-text-soft);
+  font-size: .83rem;
+  font-weight: 650;
+}
+
+#gate-matrix-dialog .gate-matrix-dialog-body {
+  display: grid;
+  gap: .7rem;
+  min-height: 0;
+  overflow: auto;
+  padding: 1.15rem 1.4rem;
+}
+
+#gate-matrix-dialog .gate-matrix-dialog-body p {
+  margin: 0 0 .35rem;
+  line-height: 1.5;
+  font-size: .86rem;
+  color: var(--mg-text-soft);
+}
+
+#gate-matrix-dialog label {
+  font-size: .82rem;
+  font-weight: 750;
+  color: var(--mg-text);
+}
+
+#gate-matrix-dialog label span {
+  font-weight: 500;
+  color: var(--mg-text-soft);
+}
+
+#gate-matrix-dialog textarea {
+  box-sizing: border-box;
+  display: block;
+  width: 100%;
+  min-height: 6rem;
+  max-height: 13rem;
+  resize: vertical;
+  padding: .7rem .8rem;
+  border: 1px solid var(--mg-border-strong);
+  border-radius: var(--mg-radius-sm);
+  background: var(--mg-surface-soft);
+  color: var(--mg-text);
+  font: inherit;
+  line-height: 1.45;
+}
+
+#gate-matrix-dialog textarea:focus-visible,
+#gate-matrix-dialog button:focus-visible {
+  outline: 2px solid var(--mg-accent);
+  outline-offset: 2px;
+}
+
+#gate-matrix-dialog small {
+  display: block;
+  color: var(--mg-text-muted);
+  font-size: .72rem;
+  line-height: 1.4;
+}
+
+#gate-matrix-dialog .gate-matrix-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: .65rem;
+  padding: 1rem 1.4rem;
+  border-top: 1px solid var(--mg-border-glass);
+}
+
+#gate-matrix-dialog .gate-matrix-dialog-actions button {
+  min-height: 42px;
+  padding: .65rem 1rem;
+  border: 1px solid var(--mg-border-strong);
+  border-radius: var(--mg-radius-sm);
+  font-size: .78rem;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+#gate-matrix-dialog #gate-matrix-cancel {
+  color: var(--mg-text);
+  background: var(--mg-surface-soft);
+}
+
+#gate-matrix-dialog #gate-matrix-generate {
+  color: var(--mg-text);
+  border-color: var(--mg-accent);
+  background: color-mix(in srgb, var(--mg-accent) 24%, var(--mg-surface));
+}
+
+@media (max-width: 560px) {
+  #gate-matrix-dialog .gate-matrix-dialog-head,
+  #gate-matrix-dialog .gate-matrix-dialog-body,
+  #gate-matrix-dialog .gate-matrix-dialog-actions {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  #gate-matrix-dialog .gate-matrix-dialog-actions button {
+    flex: 1 1 0;
+  }
+}

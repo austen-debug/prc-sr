@@ -59,6 +59,9 @@ jobs:
       - name: Full system integrity
         run: node --test tests/runtime/full-system-integrity.test.mjs
 
+      - name: Receiving matrix PDF and Archive button integration
+        run: node --test tests/runtime/receiving-matrix-pdf.test.mjs
+
       - name: Flight Alert parser and extraction
         run: node --test tests/runtime/flight-alert-import.test.mjs
 

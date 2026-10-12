@@ -1087,6 +1087,10 @@
       '</form>'
     ].join('');
     dialog.querySelector('#gate-matrix-cancel').addEventListener('click', () => dialog.close());
+    dialog.querySelector('#gate-matrix-form').addEventListener('submit', () => {
+      // Allow the browser's native new-tab POST before closing the preparation dialog.
+      setTimeout(() => { if (dialog.open) dialog.close(); }, 0);
+    });
     dialog.addEventListener('close', () => {
       document.getElementById('print-matrix-btn')?.focus({ preventScroll: true });
     });

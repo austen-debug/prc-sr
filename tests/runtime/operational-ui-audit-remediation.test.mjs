@@ -584,7 +584,7 @@ test('Squadron Access requires a non-dismissible acknowledgment once per authent
   assert.ok(secondMarker && secondMarker !== firstMarker, 'a new authenticated login must receive a new acknowledgment marker');
 });
 
-test('Archives use a full-width read-only historical workspace and exact Letter landscape reports', async () => {
+test('Archives use a compact read-only historical library and exact Letter landscape reports', async () => {
   const [index, controller, receivingEngine, css, middleware, budgetText] = await Promise.all([
     source('public/index.html'),
     source('public/js/gate-archive-controller.js'),
@@ -604,7 +604,7 @@ test('Archives use a full-width read-only historical workspace and exact Letter 
 
   assert.match(controller, /archiveApi\('\/api\/archives'\)/);
   assert.ok(controller.includes("archiveApi(`/api/archives?id=${encodeURIComponent(key)}`)"));
-  assert.match(controller, /Read-only presentation\. The stored D1 archive and any lossless source snapshot are not rewritten by this view\./);
+  assert.match(controller, /Read-only history\. Stored archives and source snapshots are not rewritten by this view\./);
   assert.match(controller, /groupedArchiveHtml\(visible\)/);
   assert.match(controller, /selectArchive\(card\.dataset\.archiveId\)/);
   assert.doesNotMatch(controller, /if \(card\) \{\s*openArchiveEditModalCanonical/);
@@ -618,8 +618,10 @@ test('Archives use a full-width read-only historical workspace and exact Letter 
   assert.match(controller, /thead\{display:table-header-group\}/);
   assert.match(controller, /break-inside:avoid;page-break-inside:avoid/);
 
-  assert.match(css, /\.gate-archive-layout\s*\{[\s\S]*grid-template-columns:\s*minmax\(300px,\s*\.78fr\) minmax\(0,\s*2\.22fr\)/);
-  assert.match(css, /\.gate-archive-metrics\s*\{[\s\S]*grid-template-columns:\s*repeat\(6,\s*minmax\(0,\s*1fr\)\)/);
+  assert.match(controller, /gate-archive-library-mode/);
+  assert.match(controller, /gate-archive-detail-section/);
+  assert.match(css, /#page-archives \.gate-archive-toolbar-simple\s*\{/);
+  assert.match(css, /#page-archives \.gate-archive-detail-section\s*\{/);
   const archiveScript = '/js/gate-archive-controller.js?v=receiving-day-truth-20260928';
   assert.ok(middleware.includes(archiveScript));
   assert.ok(budget.currentDirectScripts.includes(archiveScript));

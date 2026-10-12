@@ -577,7 +577,6 @@
         if (selectedArchiveId && !archiveIndex.some(item => item.id === selectedArchiveId)) {
           selectedArchiveId = '';
         }
-        if (!selectedArchiveId && archiveIndex.length) selectedArchiveId = archiveIndex[0].id;
         renderArchiveManagementView();
         if (selectedArchiveId) void loadArchiveDetail(selectedArchiveId);
         return archiveIndex;
@@ -654,44 +653,45 @@
     });
   }
 
-  function archiveCard(archive) {
-    const selected = archive.id === selectedArchiveId;
-    const time = archiveTime(archive).getTime()
-      ? archiveTime(archive).toLocaleString([], { month: 'short', day: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
-      : 'No archive timestamp';
-    return `<button type="button" class="gate-archive-record-card${selected ? ' is-selected' : ''}" data-archive-id="${esc(archive.id)}" aria-pressed="${selected ? 'true' : 'false'}"><span class="gate-archive-record-primary"><span class="gate-archive-record-title">${esc(archive.week_group || 'Archived Week Group')}</span><span class="gate-archive-record-meta">Archived ${esc(time)}</span></span><span class="gate-archive-record-numbers"><span><strong>${n(archive.total_arrived)}</strong><small>Arrived</small></span><span><strong>${n(archive.total_expected)}</strong><small>Expected</small></span><span><strong>${n(archive.dorm_count)}</strong><small>Dorms</small></span></span><span class="gate-archive-integrity ${integrityTone(archive.integrity)}">${esc(integrityLabel(archive.integrity))}</span></button>`;
+
+  // An archive index is a document library, not a second operational dashboard.
+  function archiveListRow(archive) {
+    const value = archiveTime(archive);
+    const archived = value.getTime()
+      ? value.toLocaleString([], { month: 'short', day: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+      : 'Date unavailable';
+    return '<button type="button" class="gate-archive-list-row" data-archive-id="' + esc(archive.id) + '">' +
+      '<span class="gate-archive-list-primary"><strong>' + esc(archive.week_group || 'Archived Week Group') + '</strong>' +
+      '<span>Archived ' + esc(archived) + '</span></span>' +
+      '<span class="gate-archive-list-counts">' + n(archive.total_arrived) + ' arrived <span aria-hidden="true">·</span> ' +
+      n(archive.dorm_count) + ' dorms</span>' +
+      '<span class="gate-archive-list-chevron" aria-hidden="true">›</span>' +
+      '</button>';
   }
 
   function groupedArchiveHtml(items) {
     const groups = new Map();
-    items.forEach(archive => {
+    const sorted = [...items].sort((a, b) => archiveTime(b).getTime() - archiveTime(a).getTime());
+    sorted.forEach(archive => {
       const year = archiveYear(archive);
-      const month = archiveMonth(archive);
-      if (!groups.has(year)) groups.set(year, new Map());
-      const months = groups.get(year);
-      if (!months.has(month)) months.set(month, []);
-      months.get(month).push(archive);
+      if (!groups.has(year)) groups.set(year, []);
+      groups.get(year).push(archive);
     });
-    return [...groups.entries()].map(([year, months], yearIndex) => {
-      const yearCount = [...months.values()].reduce((sum, list) => sum + list.length, 0);
-      const selectedInYear = [...months.values()].some(list => list.some(item => item.id === selectedArchiveId));
-      const monthHtml = [...months.entries()].map(([month, list], monthIndex) => {
-        const selectedInMonth = list.some(item => item.id === selectedArchiveId);
-        const open = selectedInMonth || (!selectedArchiveId && yearIndex === 0 && monthIndex === 0);
-        return `<details class="gate-archive-month" ${open ? 'open' : ''}><summary><span class="gate-archive-month-title-row"><span class="gate-archive-disclosure">›</span><span class="gate-archive-month-title">${esc(month)}</span></span><span class="gate-archive-month-count">${list.length} record${list.length === 1 ? '' : 's'}</span></summary><div class="gate-archive-record-list">${list.map(archiveCard).join('')}</div></details>`;
-      }).join('');
-      const openYear = selectedInYear || (!selectedArchiveId && yearIndex === 0);
-      return `<details class="gate-archive-year" ${openYear ? 'open' : ''}><summary><span class="gate-archive-year-title-row"><span class="gate-archive-disclosure">›</span><span class="gate-archive-year-title">${esc(year)}</span></span><span class="gate-archive-year-count">${yearCount} record${yearCount === 1 ? '' : 's'}</span></summary><div class="gate-archive-year-body">${monthHtml}</div></details>`;
-    }).join('');
+    return [...groups.entries()].map(([year, entries]) =>
+      '<section class="gate-archive-year-group" aria-label="Archives from ' + esc(year) + '">' +
+      '<div class="gate-archive-year-divider"><h3>' + esc(year) + '</h3><span>' +
+      entries.length + ' Week Group' + (entries.length === 1 ? '' : 's') + '</span></div>' +
+      '<div class="gate-archive-year-list">' + entries.map(archiveListRow).join('') + '</div>' +
+      '</section>'
+    ).join('');
   }
 
-  function archiveMetric(label, value) {
-    return `<div class="gate-archive-metric"><span>${esc(label)}</span><strong>${n(value)}</strong></div>`;
-  }
 
-  function archiveWindowCard(label, start, end) {
+  function archiveWindowRow(label, start, end) {
     const configured = Boolean(timestamp(start) && timestamp(end));
-    return `<div class="gate-archive-window"><span class="gate-archive-window-label">${esc(label)}</span><strong>${configured ? esc(formatDateTime(start)) : 'Not configured'}</strong><span>${configured ? `through ${esc(formatDateTime(end))}` : 'No receiving window retained.'}</span></div>`;
+    return '<div class="gate-archive-compact-line"><span>' + esc(label) + '</span><strong>' +
+      (configured ? esc(formatDateTime(start)) + ' – ' + esc(formatDateTime(end)) : 'Not configured') +
+      '</strong></div>';
   }
 
   function archiveDormRows(dorms) {
@@ -718,16 +718,33 @@
     }).join('')}</ol>`;
   }
 
-  function archiveInspectorHtml() {
-    if (!selectedArchiveId) {
-      return '<section class="gate-archive-inspector gate-archive-inspector-empty"><div><span class="gate-archive-empty-title">Select an Archived Week Group</span><span class="gate-archive-empty-copy">Choose a historical record to review its receiving summary, dorm snapshot, bus history, and correction history.</span></div></section>';
-    }
+
+  function archiveBackButton() {
+    return '<button id="gate-archive-back" type="button" class="gate-archive-back-action">' +
+      '<span aria-hidden="true">←</span> All archived Week Groups</button>';
+  }
+
+  function archiveDetailSection(key, label, supportingText, contents, openPanels) {
+    return '<details class="gate-archive-detail-section" data-archive-panel="' + esc(key) + '"' +
+      (openPanels.has(key) ? ' open' : '') + '>' +
+      '<summary><span class="gate-archive-detail-section-title">' + esc(label) + '</span>' +
+      '<span class="gate-archive-detail-section-description">' + esc(supportingText) + '</span>' +
+      '<span class="gate-archive-detail-chevron" aria-hidden="true">⌄</span></summary>' +
+      '<div class="gate-archive-detail-section-body">' + contents + '</div></details>';
+  }
+
+  function archiveInspectorHtml(openPanels = new Set()) {
+    if (!selectedArchiveId) return '';
     const detail = archiveDetailCache.get(selectedArchiveId);
+    const back = '<nav class="gate-archive-detail-nav" aria-label="Archive navigation">' + archiveBackButton() + '</nav>';
     if (!detail) {
-      return '<section class="gate-archive-inspector"><div class="gate-archive-loading" role="status">Loading archive detail…</div></section>';
+      return '<section class="gate-archive-focused-detail" data-archive-detail-id="' + esc(selectedArchiveId) + '">' +
+        back + '<div class="gate-archive-loading" role="status">Loading Week Group details…</div></section>';
     }
     if (detail.isOk === false) {
-      return `<section class="gate-archive-inspector"><div class="gate-archive-empty is-error"><span><span class="gate-archive-empty-title">Archive Detail Unavailable</span><span class="gate-archive-empty-copy">${esc(detail.error || 'Unable to load archive.')}</span></span></div></section>`;
+      return '<section class="gate-archive-focused-detail" data-archive-detail-id="' + esc(selectedArchiveId) + '">' +
+        back + '<div class="gate-archive-empty is-error"><span><strong>Archive unavailable</strong><span>' +
+        esc(detail.error || 'Unable to load this archive.') + '</span></span></div></section>';
     }
 
     const archive = detail.archive || {};
@@ -735,52 +752,78 @@
     const buses = Array.isArray(detail.buses) ? detail.buses : [];
     const amendments = Array.isArray(detail.amendments) ? detail.amendments : [];
     const lifecycle = detail.lifecycle || null;
-    return `<section class="gate-archive-inspector">
-      <header class="gate-archive-inspector-head">
-        <div><span class="gate-archive-kicker">Historical Receiving Record</span><h2>${esc(archive.week_group || 'Archived Week Group')}</h2><div class="gate-archive-inspector-meta">Archived ${esc(formatDateTime(archive.archived_at))} · ${esc(integrityLabel(archive.integrity))}${archive.source_record_count ? ` · ${n(archive.source_record_count)} source rows retained` : ''}</div></div>
-        <div class="gate-archive-inspector-actions"><button type="button" class="gate-archive-print-action" data-archive-print-id="${esc(selectedArchiveId)}">PRINT / PDF</button></div>
-      </header>
-      <div class="gate-archive-readonly-note">Read-only presentation. The stored D1 archive and any lossless source snapshot are not rewritten by this view.</div>
-      <section class="gate-archive-metrics">
-        ${archiveMetric('Arrived', archive.total_arrived)}
-        ${archiveMetric('Loaded', archive.total_loaded)}
-        ${archiveMetric('Expected', archive.total_expected)}
-        ${archiveMetric('Female', archive.female_total)}
-        ${archiveMetric('NAT', archive.nat_total)}
-        ${archiveMetric('Space Force', archive.space_force_total)}
-      </section>
-      <section class="gate-archive-section">
-        <div class="gate-archive-section-head"><div><span class="gate-archive-kicker">Receiving Windows</span><h3>Operational Timeline</h3></div></div>
-        <div class="gate-archive-window-grid">
-          ${archiveWindowCard('Receiving Night One', archive.receiving_day_one_start, archive.receiving_day_one_end)}
-          ${archiveWindowCard('Receiving Night Two', archive.receiving_day_two_start, archive.receiving_day_two_end)}
-        </div>
-      </section>
-      <section class="gate-archive-section">
-        <div class="gate-archive-section-head"><div><span class="gate-archive-kicker">Dormitories</span><h3>Dorm Snapshot</h3></div><span>${dorms.length} records</span></div>
-        <div class="gate-archive-table-wrap"><table class="gate-archive-table"><thead><tr><th>Dorm</th><th>Sq / Sec / Int</th><th>Population</th><th>Load</th><th>Final Status</th><th>Timer</th></tr></thead><tbody>${archiveDormRows(dorms)}</tbody></table></div>
-      </section>
-      <section class="gate-archive-section">
-        <div class="gate-archive-section-head"><div><span class="gate-archive-kicker">Movement History</span><h3>Bus / Arrival Snapshot</h3></div><span>${buses.length} records</span></div>
-        <div class="gate-archive-table-wrap"><table class="gate-archive-table"><thead><tr><th>Bus / Source</th><th>Type</th><th>Departed</th><th>Arrived</th><th>Status</th><th>Total</th><th>F</th><th>NAT</th><th>SF</th></tr></thead><tbody>${archiveBusRows(buses)}</tbody></table></div>
-      </section>
-      <section class="gate-archive-section gate-archive-amendments">
-        <div class="gate-archive-section-head"><div><span class="gate-archive-kicker">Record Integrity</span><h3>Correction History</h3></div><span>${amendments.length} amendment${amendments.length === 1 ? '' : 's'}</span></div>
-        ${archiveAmendments(amendments)}
-      </section>
-      <footer class="gate-archive-record-footer"><span>Schema: ${esc(archive.archive_schema_version || 'Legacy / unspecified')}</span><span>${lifecycle ? `Lifecycle: ${esc(lifecycle.state || 'closed')} · ${esc(lifecycle.cycle_id || '—')}` : 'Lifecycle metadata unavailable for this historical record.'}</span></footer>
-    </section>`;
+    const stat = (label, value) =>
+      '<span class="gate-archive-overview-stat"><strong>' + n(value) + '</strong><small>' + esc(label) + '</small></span>';
+    const stats = [
+      stat('Arrived', archive.total_arrived),
+      stat('Expected', archive.total_expected),
+      stat('Loaded', archive.total_loaded),
+      stat('Dorms', archive.dorm_count || dorms.length),
+      stat('Buses', archive.bus_count || buses.length)
+    ].join('');
+    const smallerStats = [
+      'Female ' + n(archive.female_total),
+      'NAT ' + n(archive.nat_total),
+      'Space Force ' + n(archive.space_force_total)
+    ].join('  ·  ');
+
+    const dormTable = '<div class="gate-archive-table-wrap"><table class="gate-archive-table">' +
+      '<thead><tr><th>Dorm</th><th>Sq / Sec / Int</th><th>Population</th><th>Load</th><th>Final Status</th><th>Timer</th></tr></thead>' +
+      '<tbody>' + archiveDormRows(dorms) + '</tbody></table></div>';
+    const busTable = '<div class="gate-archive-table-wrap"><table class="gate-archive-table">' +
+      '<thead><tr><th>Bus / Source</th><th>Type</th><th>Departed</th><th>Arrived</th><th>Status</th>' +
+      '<th>Total</th><th>F</th><th>NAT</th><th>SF</th></tr></thead>' +
+      '<tbody>' + archiveBusRows(buses) + '</tbody></table></div>';
+    const windowRows =
+      archiveWindowRow('Receiving Night One', archive.receiving_day_one_start, archive.receiving_day_one_end) +
+      archiveWindowRow('Receiving Night Two', archive.receiving_day_two_start, archive.receiving_day_two_end);
+    const history =
+      '<p class="gate-archive-detail-disclaimer">Read-only history. Stored archives and source snapshots are not rewritten by this view.</p>' +
+      '<div class="gate-archive-compact-line"><span>Snapshot</span><strong>' + esc(integrityLabel(archive.integrity)) + '</strong></div>' +
+      '<div class="gate-archive-compact-line"><span>Schema</span><strong>' + esc(archive.archive_schema_version || 'Legacy / unspecified') + '</strong></div>' +
+      '<div class="gate-archive-compact-line"><span>Lifecycle</span><strong>' +
+        (lifecycle ? esc(lifecycle.state || 'closed') + ' · ' + esc(lifecycle.cycle_id || '—') : 'Unavailable') +
+      '</strong></div>' +
+      (archive.source_record_count ? '<p class="gate-archive-detail-secondary">' + n(archive.source_record_count) + ' retained source records</p>' : '') +
+      '<div class="gate-archive-history-label">Correction history · ' + amendments.length + '</div>' +
+      archiveAmendments(amendments);
+
+    return '<section class="gate-archive-focused-detail" data-archive-detail-id="' + esc(selectedArchiveId) + '">' +
+      back +
+      '<header class="gate-archive-detail-head"><div><span class="gate-archive-kicker">Historical Receiving Record</span>' +
+      '<h2>' + esc(archive.week_group || 'Archived Week Group') + '</h2>' +
+      '<p>Archived ' + esc(formatDateTime(archive.archived_at)) + '</p></div>' +
+      '<button type="button" class="gate-archive-print-action" data-archive-print-id="' +
+      esc(selectedArchiveId) + '">PRINT / PDF</button></header>' +
+      '<div class="gate-archive-overview" aria-label="Week Group summary">' + stats + '</div>' +
+      '<p class="gate-archive-overview-secondary">' + esc(smallerStats) + '</p>' +
+      '<div class="gate-archive-detail-sections">' +
+      archiveDetailSection('dorms', 'Dormitories', dorms.length + ' records', dormTable, openPanels) +
+      archiveDetailSection('buses', 'Movement History', buses.length + ' bus records', busTable, openPanels) +
+      archiveDetailSection('windows', 'Receiving Windows', 'Receiving Night One and Two', windowRows, openPanels) +
+      archiveDetailSection('history', 'Record Information', amendments.length + ' correction' +
+        (amendments.length === 1 ? '' : 's') + ' · ' + integrityLabel(archive.integrity), history, openPanels) +
+      '</div></section>';
   }
+
 
   function renderArchiveManagementView() {
     const container = document.getElementById('archive-history');
     if (!container) return;
     const search = document.getElementById('gate-archive-search');
     const yearSelect = document.getElementById('gate-archive-year-filter');
-    const focus = search === document.activeElement;
-    const selectionStart = focus ? search.selectionStart : null;
+    const searchFocused = search === document.activeElement;
+    const selectionStart = searchFocused ? search.selectionStart : null;
     if (search) archiveSearchTerm = search.value;
     if (yearSelect) archiveYearFilter = yearSelect.value || 'all';
+
+    // Preserve a user's expanded disclosure panels through unrelated re-renders,
+    // but reset disclosure state when another historical record is selected.
+    const previousDetail = container.querySelector('[data-archive-detail-id]');
+    const openPanels = previousDetail?.dataset.archiveDetailId === selectedArchiveId
+      ? new Set([...previousDetail.querySelectorAll('[data-archive-panel][open]')]
+        .map(panel => panel.dataset.archivePanel))
+      : new Set();
 
     if (!archiveIndexLoaded) {
       container.className = 'gate-archive-manager';
@@ -790,22 +833,45 @@
     }
 
     const visible = filteredArchives();
-    const totals = archiveTotals(visible);
-    const years = [...new Set(archiveIndex.map(archiveYear))].sort((a, b) => b.localeCompare(a, undefined, { numeric: true }));
+    const years = [...new Set(archiveIndex.map(archiveYear))].sort((a, b) =>
+      b.localeCompare(a, undefined, { numeric: true }));
     const activeGroup = activeWeekGroup();
-    const hero = `<section class="gate-archive-hero"><div><span class="gate-archive-kicker">Historical Operations Repository</span><h1>Receiving Archives</h1><p>Closed Week Groups are presented from retained D1 archive records. Historical source snapshots remain untouched.</p></div><div class="gate-archive-hero-actions"><div class="gate-archive-current-report-row"><button id="print-current-summary-btn" type="button" class="gate-archive-current-report" ${activeGroup ? '' : 'disabled'}>PRINT CURRENT SUMMARY</button><button id="print-tags-btn" type="button" class="gate-archive-current-report" title="Generate 3 × 2 inch folder tags for the current live Week Group" ${activeGroup ? '' : 'disabled'}>PRINT TAGS</button><button id="print-matrix-btn" type="button" class="gate-archive-current-report gate-archive-matrix-action" title="Generate the landscape receiving matrix for the active Week Group" ${activeGroup ? '' : 'disabled'}>PRINT MATRIX</button></div><span class="gate-archive-current-context">${activeGroup ? `Active: ${esc(activeGroup)}` : 'No active Week Group'}</span></div></section>`;
-    const toolbar = `<section class="gate-archive-toolbar"><div class="gate-archive-toolbar-summary"><span class="gate-archive-toolbar-title">${visible.length} of ${archiveIndex.length} Archived Week Groups</span><span class="gate-archive-toolbar-copy">${totals.arrived} arrived · ${totals.expected} expected · ${totals.dorms} dorm snapshots · ${totals.buses} movement records</span></div><label class="gate-archive-search-wrap" for="gate-archive-search"><span class="gate-archive-search-label">Search Week Group</span><input id="gate-archive-search" type="search" value="${esc(archiveSearchTerm)}" placeholder="Search archives…"></label><label class="gate-archive-year-wrap" for="gate-archive-year-filter"><span class="gate-archive-search-label">Year</span><select id="gate-archive-year-filter"><option value="all">All years</option>${years.map(year => `<option value="${esc(year)}" ${archiveYearFilter === year ? 'selected' : ''}>${esc(year)}</option>`).join('')}</select></label><button id="gate-archive-clear-search" type="button" class="gate-archive-clear-search" ${archiveSearchTerm || archiveYearFilter !== 'all' ? '' : 'disabled'}>Clear</button></section>`;
-    let browser;
-    if (!archiveIndex.length) browser = '<div class="gate-archive-empty"><span><span class="gate-archive-empty-title">No Archived Week Groups</span><span class="gate-archive-empty-copy">Closed Week Groups will appear here without changing or rewriting their retained D1 data.</span></span></div>';
-    else if (!visible.length) browser = '<div class="gate-archive-empty"><span><span class="gate-archive-empty-title">No Matching Archives</span><span class="gate-archive-empty-copy">Clear the filters or search a different Week Group.</span></span></div>';
-    else browser = groupedArchiveHtml(visible);
+    // Preserve the established header, controls, active Week Group context, and printing.
+    const hero = '<section class="gate-archive-hero"><div><span class="gate-archive-kicker">Historical Operations Repository</span><h1>Receiving Archives</h1><p>Closed Week Groups are presented from retained D1 archive records. Historical source snapshots remain untouched.</p></div><div class="gate-archive-hero-actions"><div class="gate-archive-current-report-row"><button id="print-current-summary-btn" type="button" class="gate-archive-current-report" ' +
+      (activeGroup ? '' : 'disabled') + '>PRINT CURRENT SUMMARY</button><button id="print-tags-btn" type="button" class="gate-archive-current-report" title="Generate 3 × 2 inch folder tags for the current live Week Group" ' +
+      (activeGroup ? '' : 'disabled') + '>PRINT TAGS</button><button id="print-matrix-btn" type="button" class="gate-archive-current-report gate-archive-matrix-action" title="Generate the landscape receiving matrix for the active Week Group" ' +
+      (activeGroup ? '' : 'disabled') + '>PRINT MATRIX</button></div><span class="gate-archive-current-context">' +
+      (activeGroup ? 'Active: ' + esc(activeGroup) : 'No active Week Group') + '</span></div></section>';
 
-    container.className = 'gate-archive-manager';
-    container.dataset.owner = 'gate-archive-controller';
-    container.innerHTML = hero + toolbar + `<div class="gate-archive-layout"><aside class="gate-archive-browser" aria-label="Archived Week Groups">${browser}</aside>${archiveInspectorHtml()}</div>`;
-    bindArchiveSearchControls();
+    if (selectedArchiveId) {
+      container.className = 'gate-archive-manager gate-archive-detail-mode';
+      container.dataset.owner = 'gate-archive-controller';
+      container.innerHTML = hero + archiveInspectorHtml(openPanels);
+    } else {
+      const toolbar = '<section class="gate-archive-toolbar gate-archive-toolbar-simple">' +
+        '<div class="gate-archive-toolbar-summary"><span class="gate-archive-toolbar-title">Archived Week Groups</span>' +
+        '<span class="gate-archive-toolbar-copy">' + visible.length + ' of ' + archiveIndex.length + ' records</span></div>' +
+        '<div class="gate-archive-library-filters">' +
+        '<label class="gate-archive-search-wrap" for="gate-archive-search"><span class="gate-archive-search-label">Search Week Group</span>' +
+        '<input id="gate-archive-search" type="search" value="' + esc(archiveSearchTerm) + '" placeholder="Search Week Group…"></label>' +
+        '<label class="gate-archive-year-wrap" for="gate-archive-year-filter"><span class="gate-archive-search-label">Year</span>' +
+        '<select id="gate-archive-year-filter"><option value="all">All years</option>' +
+        years.map(year => '<option value="' + esc(year) + '"' +
+          (archiveYearFilter === year ? ' selected' : '') + '>' + esc(year) + '</option>').join('') +
+        '</select></label></div></section>';
+      const library = !archiveIndex.length
+        ? '<div class="gate-archive-empty"><span><strong>No Archived Week Groups</strong><span>Closed receiving records will appear here.</span></span></div>'
+        : !visible.length
+          ? '<div class="gate-archive-empty"><span><strong>No matching Week Groups</strong><span>Adjust the search or year filter.</span></span></div>'
+          : groupedArchiveHtml(visible);
+      container.className = 'gate-archive-manager gate-archive-library-mode';
+      container.dataset.owner = 'gate-archive-controller';
+      container.innerHTML = hero + toolbar +
+        '<section class="gate-archive-library" aria-label="Archived Week Groups">' + library + '</section>';
+      bindArchiveSearchControls();
+    }
 
-    if (focus) {
+    if (searchFocused) {
       const next = document.getElementById('gate-archive-search');
       next?.focus({ preventScroll: true });
       try { next?.setSelectionRange(selectionStart ?? next.value.length, selectionStart ?? next.value.length); } catch (_) {}
@@ -851,12 +917,20 @@
     }
   }
 
+
   function selectArchive(id) {
     const next = String(id || '');
     if (!next) return;
     selectedArchiveId = next;
     renderArchiveManagementView();
+    document.getElementById('archive-history')?.scrollIntoView({ block: 'start' });
     void loadArchiveDetail(next);
+  }
+
+  function showArchiveLibrary() {
+    selectedArchiveId = '';
+    renderArchiveManagementView();
+    document.getElementById('archive-history')?.scrollIntoView({ block: 'start' });
   }
 
   function rows(items, mapper, colspan) {
@@ -1164,6 +1238,12 @@
   }
 
   function handleClick(event) {
+    const archiveBack = event.target?.closest?.('#gate-archive-back');
+    if (archiveBack) {
+      event.preventDefault();
+      showArchiveLibrary();
+      return;
+    }
     const matrixPrint = event.target?.closest?.('#print-matrix-btn');
     if (matrixPrint) {
       openMatrixDialog(event);

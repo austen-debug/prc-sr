@@ -1,7 +1,7 @@
 /** GATE Input enhancement: Flight Alert import changes draft rows only, never operational records. */
 import './week-group-action-placement.mjs';
-import { parseFlightAlertText, validateFlightAlertRows, normalizeSquadron, orderFlightAlertRows, prepareFlightAlertReviewRows } from './flight-alert-parser.mjs?v=flight-alert-parser-20261013-no-rows';
-import { extractFlightAlertPdf } from './flight-alert-pdf.mjs?v=flight-alert-pdf-20261013-no-rows';
+import { parseFlightAlertText, validateFlightAlertRows, normalizeSquadron, orderFlightAlertRows, prepareFlightAlertReviewRows } from './flight-alert-parser.mjs?v=flight-alert-parser-20261013-pdfjs';
+import { extractFlightAlertPdf } from './flight-alert-pdf.mjs?v=flight-alert-pdf-20261013-pdfjs';
 
 const $ = id => document.getElementById(id);
 const esc = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
@@ -9,6 +9,35 @@ const state = { imported: false, published: null, sourcePublished: null, bandDec
 const CLASSES = 'rounded-lg border px-3 py-2 text-sm font-semibold focus-visible:outline focus-visible:outline-2';
 const BTN = `${CLASSES} min-h-[44px]`;
 const COLORS = { border: 'var(--border)', text:'var(--text)', surface:'var(--surface)', raised:'var(--surface-alt)' };
+
+// Load the pinned, same-origin PDF.js engine only when a user imports a PDF.
+// The PDF and its extracted text never leave the browser.
+let pdfJsPromise = null;
+function loadPdfJsEngine() {
+  if (window.pdfjsLib?.getDocument) return Promise.resolve(window.pdfjsLib);
+  if (!pdfJsPromise) {
+    pdfJsPromise = new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = '/vendor/pdfjs/pdf.min.js?v=3.2.146';
+      script.async = true;
+      script.onload = () => {
+        const engine = window.pdfjsLib;
+        if (!engine?.getDocument || !engine?.GlobalWorkerOptions) {
+          reject(new Error('The local PDF reader could not initialize. Reload GATE and retry.'));
+          return;
+        }
+        engine.GlobalWorkerOptions.workerSrc = '/vendor/pdfjs/pdf.worker.min.js?v=3.2.146';
+        resolve(engine);
+      };
+      script.onerror = () => reject(new Error('The local PDF reader could not load. Check the GATE connection and retry.'));
+      document.head.appendChild(script);
+    }).catch(error => {
+      pdfJsPromise = null; // Permit a subsequent retry after transient network errors.
+      throw error;
+    });
+  }
+  return pdfJsPromise;
+}
 
 function owner() { return window.GateInputPageController; }
 function rows() { return owner()?.getRows?.() || []; }
@@ -222,7 +251,7 @@ function drawImportForm() {
       const label=element('label','grid gap-2 text-sm font-semibold','Select Flight Alert PDF');
       const input=element('input','rounded-lg border p-3'); input.type='file'; input.accept='.pdf,application/pdf';input.style.borderColor=COLORS.border;
       label.append(input);
-      area.append(label,element('p','text-xs text-muted','Text-based PDFs only. PDF extraction stays in this browser. Blank SEC / INTER/SEC fields can be reviewed before import, without copying PDF text.'));
+      area.append(label,element('p','text-xs text-muted','PDF import uses GATE’s local, self-hosted PDF reader. The file stays in your browser. Blank or zero-valued SEC fields are preserved for review; no copy and paste required.'));
       if (state.selectedPdf) {
         const retry = element('button',BTN,'Retry selected PDF: ' + state.selectedPdf.name);
         retry.type = 'button'; retry.style.borderColor = COLORS.border;
@@ -255,7 +284,8 @@ async function processPdfFile(file) {
   clearError();
   state.busy=true;
   try {
-    const extracted=await extractFlightAlertPdf(file,window.pdfjsLib||null);
+    const engine=await loadPdfJsEngine();
+    const extracted=await extractFlightAlertPdf(file,engine);
     processText(extracted);
   } catch (error) {
     modalError(error?.message || 'PDF extraction failed. Select a different PDF or retry the same file.');

@@ -279,7 +279,9 @@ export async function extractFlightAlertPdf(file, pdfEngine = null) {
   const bytes = new Uint8Array(await file.arrayBuffer());
   if (latin1(bytes.subarray(0, 8)).slice(0, 5) !== '%PDF-') throw new Error('Selected file is not a valid PDF.');
   if (pdfEngine && typeof pdfEngine.getDocument === 'function') {
-    const task = pdfEngine.getDocument({ data: bytes, useSystemFonts: true });
+    // Parse only; do not evaluate PDF-provided JavaScript-like font programs.
+    // isEvalSupported=false is essential for older PDF.js 3.x runtimes.
+    const task = pdfEngine.getDocument({ data: bytes, useSystemFonts: true, isEvalSupported: false, enableXfa: false });
     let doc;
     try {
       doc = await task.promise;

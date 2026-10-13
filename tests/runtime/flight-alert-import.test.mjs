@@ -46,6 +46,47 @@ test('local text PDF extraction feeds structured parser',async()=>{
  const text=await extractFlightAlertPdf(fixture(`%PDF-1.4\n1 0 obj << /Length ${content.length} >> stream\n${content}\nendstream\nendobj\n%%EOF`));
  const parsed=parseFlightAlertText(text);assert.equal(parsed.ok,true);assert.equal(parsed.rows.length,2);assert.equal(parsed.variance,0);
 });
+test('a PDF with one combined header and detached merged SQD labels still yields all numbered dorm rows',async()=>{
+  // Reproduces the path that previously returned "No flight rows matched":
+  // the structured geometry recognizer sees no six separate header objects,
+  // while the generic text reader prints each merged squadron separately.
+  const cells=[['SQD SEC INTER/SECT DORM SEX LOAD',40,710],
+    ['TOTAL FLTS - 16',40,300],['AAFES: 898',40,270]];
+  const names=['3A1','3A2','2D2','2D1','A06','B07','A07','2A1','2A2','4A2','4A1','A03','B03','A06','B07','A07'];
+  const loads=[60,60,60,47,60,46,59,59,59,59,56,59,59,59,46,59];
+  const groups=[[321,0],[322,4],[323,7],[324,11],[326,13]];
+  for (const [sq,first] of groups) cells.push([String(sq),68,650-first*12]);
+  for(let i=0;i<16;i++){
+    const sex=[3,5,10,14].includes(i)?'F':'M';
+    cells.push([`${i+1} ${names[i]} ${sex} ${loads[i]}`,210,640-i*12]);
+  }
+  const commands=cells.map(([value,x,y])=>`BT /F1 12 Tf 1 0 0 1 ${x} ${y} Tm (${value}) Tj ET`).join('\n');
+  const source=`%PDF-1.4
+1 0 obj << /Length ${commands.length} >> stream
+${commands}
+endstream
+endobj
+%%EOF`;
+  const extracted=await extractFlightAlertPdf(fixture(source));
+  const parsed=parseFlightAlertText(extracted);
+  assert.equal(parsed.rows.length,16,JSON.stringify({extracted,issues:parsed.issues}));
+  assert.equal(parsed.ok,true,JSON.stringify(parsed.issues));
+  assert.equal(parsed.rows[6].inter_sec,'7');
+  assert.equal(parsed.rows[6].dorm_name,'A07');
+  assert.equal(parsed.rows[6].sdq,'322 TRS');
+});
+
+test('unresolved SQD cells produce recoverable review rows rather than a zero-row error',()=>{
+  const input=['SQD SEC INTER/SECT DORM SEX LOAD','1 3A1 M 60','2 3A2 M 60',
+    '321','3 2D2 M 60','4 2D1 F 47','TOTAL FLTS - 4','AAFES: 227'].join('\n');
+  const parsed=parseFlightAlertText(input);
+  assert.equal(parsed.rows.length,4);
+  assert.equal(parsed.ok,false);
+  assert.equal(parsed.recoverable,true);
+  assert.deepEqual(parsed.rows.slice(0,2).map(row=>row.sdq),['','']);
+  assert.deepEqual(parsed.rows.slice(2).map(row=>row.sdq),['321 TRS','321 TRS']);
+});
+
 test('unsupported PDF fails closed',async()=>{
  await assert.rejects(extractFlightAlertPdf(fixture('%PDF-1.4\n%%EOF')),/extract/);
  await assert.rejects(extractFlightAlertPdf({name:'other.txt',size:100,arrayBuffer:async()=>new ArrayBuffer(100)}),/PDF/);

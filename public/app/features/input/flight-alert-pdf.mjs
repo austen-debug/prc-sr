@@ -145,7 +145,7 @@ function flightAlertTableText(items) {
     item => nearestField(item.x, headers) === field && predicate(compact(item.text))
   );
   const squadrons = candidates('sdq', value => /^\d{3}$/.test(value));
-  const sections = candidates('sec', value => /^[1-4]$/.test(value));
+  const sections = candidates('sec', value => /^[0-4]$/.test(value));
   const inters = candidates('inter', value => /^\d{1,3}$/.test(value));
   const sexes = candidates('sex', value => /^(?:M|F|MALE|FEMALE)$/.test(value));
   const loads = candidates('load', value => /^\d{1,3}$/.test(value) && Number(value) >= 1 && Number(value) <= 100);

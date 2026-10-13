@@ -128,7 +128,7 @@ test('Closeout displays a blocking modal with an accessible spinner through arch
   h.setPendingRefresh();
   h.resolveCreate({ isOk: true, data: { __backendId: 'arch-123' } });
   // Wait for sequential awaits to finish and reach the intentionally pending archive-list refresh.
-  for (let i = 0; i < 12; i++) await Promise.resolve();
+  await new Promise(resolve => setImmediate(resolve));
   assert.equal(dialog.open, true, 'the overlay must remain through the last archive refresh');
   assert.ok(h.stages.includes('Verifying archive record…'));
   assert.ok(h.stages.includes('Archive verified. Clearing live records…'));

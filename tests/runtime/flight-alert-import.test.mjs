@@ -147,7 +147,7 @@ test('row 7 survives offset PDF LOAD text, merged 322 squadron, and source order
 
 test('INTER numbers 1-6, 8-16 recover a blank seventh source-ordered slot without inventing a dorm',()=>{
   const rows=Array.from({length:16},(_,i)=>i+1).filter(n=>n!==7)
-    .map(i=>`322||${i}|${i===16?'A07':'A'+String(i).padStart(2,'0')}|M|59`);
+    .map(i=>`${i===16?'326':'322'}||${i}|${i===16?'A07':'A'+String(i).padStart(2,'0')}|M|59`);
   const parsed=parseFlightAlertText(['SQD SEC INTER/SECT DORM SEX LOAD',...rows,'TOTAL FLTS - 16','AAFES: 944'].join('\n'));
   assert.equal(parsed.ok,false);
   assert.equal(parsed.recoverable,true);

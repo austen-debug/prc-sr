@@ -17,7 +17,7 @@ export function normalizeDorm(value) {
 }
 export function normalizeSection(value) {
   const section = String(value ?? '').trim();
-  return /^[1-4]$/.test(section) ? section : '';
+  return /^[0-4]$/.test(section) ? section : '';
 }
 function diagnostic(code, message, line = null, level = 'error') {
   return Object.freeze({ code, message, line, level });

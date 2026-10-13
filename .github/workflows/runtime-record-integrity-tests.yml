@@ -71,6 +71,9 @@ jobs:
       - name: Flight Alert parser and extraction
         run: node --test tests/runtime/flight-alert-import.test.mjs
 
+      - name: PDF.js encoded-font text extraction and roster integrity
+        run: node --test tests/runtime/flight-alert-pdfjs-engine.test.mjs
+
       - name: Record display integrity
         run: node --test tests/runtime/record-display-integrity.test.mjs
 

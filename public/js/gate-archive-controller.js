@@ -30,6 +30,7 @@
   const archiveDetailPromises = new Map();
   let closeoutPatchAttempts = 0;
   let closeoutPatchTimer = null;
+  let closeoutInProgress = false;
 
   function n(value) {
     const parsed = Number(value || 0);
@@ -211,6 +212,46 @@
     el.style.color = isError ? 'var(--red)' : 'var(--green)';
   }
 
+  // Native modal stays above every page re-render while the canonical closeout runs.
+  // It owns no operational records, timers, or persistence; confirmation remains separate.
+  function showCloseoutProgress(weekGroup) {
+    let dialog = document.getElementById('gate-closeout-progress');
+    if (!dialog) {
+      dialog = document.createElement('dialog');
+      dialog.id = 'gate-closeout-progress';
+      dialog.className = 'gate-closeout-progress';
+      dialog.setAttribute('aria-labelledby', 'gate-closeout-progress-title');
+      dialog.setAttribute('aria-describedby', 'gate-closeout-progress-stage');
+      dialog.setAttribute('aria-modal', 'true');
+      dialog.innerHTML = [
+        '<div class="gate-closeout-progress-panel">',
+        '<span class="gate-closeout-progress-spinner" aria-hidden="true"></span>',
+        '<h2 id="gate-closeout-progress-title">ARCHIVING WEEK GROUP</h2>',
+        '<p id="gate-closeout-progress-week"></p>',
+        '<p id="gate-closeout-progress-stage" role="status" aria-live="polite" aria-atomic="true"></p>',
+        '</div>'
+      ].join('');
+      // Escape must not cancel the server-side closeout after it has begun.
+      dialog.addEventListener('cancel', event => event.preventDefault());
+      document.body.appendChild(dialog);
+    }
+    dialog.querySelector('#gate-closeout-progress-week').textContent = 'Week Group: ' + weekGroup;
+    updateCloseoutProgress('Creating archive record…');
+    if (!dialog.open) dialog.showModal();
+  }
+
+  function updateCloseoutProgress(message) {
+    const stage = document.getElementById('gate-closeout-progress-stage');
+    if (stage) stage.textContent = message;
+  }
+
+  function hideCloseoutProgress() {
+    const dialog = document.getElementById('gate-closeout-progress');
+    if (!dialog) return;
+    if (dialog.open) dialog.close();
+    dialog.remove();
+  }
+
   function showArchiveMessage(message, isError = true) {
     const msg = document.getElementById('archive-edit-msg');
     if (!msg) {
@@ -356,6 +397,7 @@
   }
 
   async function runSafeCloseout() {
+    if (closeoutInProgress) return;
     if (!isInstructor()) {
       showCloseoutMessage('Instructor access required to close out week group.', true);
       return;
@@ -374,43 +416,49 @@
     }
 
     const btn = document.getElementById('closeout-btn');
-    const oldText = btn?.textContent || 'CLOSE OUT WEEK GROUP';
+    closeoutInProgress = true;
     try {
-      if (btn) {
-        btn.disabled = true;
-        btn.textContent = 'ARCHIVING...';
-      }
+      if (btn) btn.disabled = true;
+      showCloseoutProgress(weekGroup);
       showCloseoutMessage('Creating archive record...');
+      // Give the browser an opportunity to display the spinner before network work.
+      await new Promise(resolve => requestAnimationFrame(resolve));
       const payload = buildArchivePayload(weekGroup, dorms, buses);
       const result = await window.dataSdk.create(payload);
       if (!result?.isOk || !result.data?.__backendId) throw new Error(result?.error || 'Archive creation failed. Live records were not cleared.');
       syncLocalRecord(result.data || payload);
 
       showCloseoutMessage('Verifying archive record...');
+      updateCloseoutProgress('Verifying archive record…');
       const verified = await verifyArchiveCreated(result.data.__backendId, weekGroup);
       if (!verified) throw new Error('Archive verification failed. Live records were not cleared.');
 
       showCloseoutMessage('Archive verified. Clearing live records...');
+      updateCloseoutProgress('Archive verified. Clearing live records…');
       await deleteRecordsSafely([...dorms, ...buses, ...soundEvents]);
       await clearConfig('last_airport', 'last airport arrival');
       await clearConfig('week_group', 'active week group');
       resetInputAfterCloseout();
+      updateCloseoutProgress('Finalizing Week Group…');
 
       try { if (typeof renderAll === 'function') renderAll(); } catch (_) {}
       try { window.runGateHooks?.('afterCloseout', { weekGroup, archiveId: result.data.__backendId, source: 'gate-archive-controller' }); } catch (_) {}
       try { window.runGateHooks?.('afterDataChanged', { weekGroup, archiveId: result.data.__backendId, source: 'gate-archive-controller' }); } catch (_) {}
       renderArchiveManagementView();
+      // The closeout hook refreshes the archive list asynchronously. Keep the
+      // overlay in place through that final refresh rather than exposing a flash.
+      if (archiveIndexPromise) await archiveIndexPromise;
       showCloseoutMessage(`Week group ${weekGroup} archived and cleared.`);
       window.setTimeout(() => showCloseoutMessage(''), 6000);
     } catch (error) {
       console.error('GATE closeout failed:', error);
       showCloseoutMessage(error?.message || 'Closeout failed. Live records were not cleared.', true);
+      hideCloseoutProgress();
       window.alert(error?.message || 'Closeout failed. Live records were not cleared.');
     } finally {
-      if (btn) {
-        btn.disabled = false;
-        btn.textContent = oldText;
-      }
+      hideCloseoutProgress();
+      closeoutInProgress = false;
+      if (btn) btn.disabled = false;
     }
   }
 

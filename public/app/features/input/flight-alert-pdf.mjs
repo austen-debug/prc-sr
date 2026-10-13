@@ -102,8 +102,8 @@ function nearestY(candidates, y, maxDistance) {
 
 /**
  * Convert a positioned six-column dorm table into canonical parser text.
- * This specifically preserves merged SQD/SEC values by assigning each dorm row
- * to the nearest merged-cell center rather than relying on visual line breaks.
+ * SQD can be merged vertically; blank SEC / INTER/SEC remain explicitly empty
+ * rather than shifting one column to the left or inventing a section value.
  */
 function flightAlertTableText(items) {
   if (!Array.isArray(items) || !items.length) return '';
@@ -135,16 +135,18 @@ function flightAlertTableText(items) {
   const seen = new Set();
   for (const dorm of dorms) {
     const squadron = nearestY(squadrons, dorm.y, 20);
-    const section = nearestY(sections, dorm.y, 15);
+    // SEC and INTER/SEC are optional. An SEC label on a different row is not
+    // proof of a merged cell; leave it blank and request human validation.
+    const section = nearestY(sections, dorm.y, 2);
     const inter = nearestY(inters, dorm.y, 2);
     const sex = nearestY(sexes, dorm.y, 2);
     const load = nearestY(loads, dorm.y, 2);
-    if (!squadron || !section || !inter || !sex || !load) return '';
+    if (!squadron || !sex || !load) return '';
     const dormName = compact(dorm.text);
     const key = `${compact(squadron.text)}::${dormName}`;
     if (seen.has(key)) return '';
     seen.add(key);
-    rows.push(`${compact(squadron.text)} ${compact(section.text)} ${compact(inter.text)} ${dormName} ${compact(sex.text)} ${Number(compact(load.text))}`);
+    rows.push([compact(squadron.text), section ? compact(section.text) : '', inter ? compact(inter.text) : '', dormName, compact(sex.text), Number(compact(load.text))].join('|'));
   }
 
   let publishedTotal = null;

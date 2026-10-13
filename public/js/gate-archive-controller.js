@@ -421,8 +421,9 @@
       if (btn) btn.disabled = true;
       showCloseoutProgress(weekGroup);
       showCloseoutMessage('Creating archive record...');
-      // Give the browser an opportunity to display the spinner before network work.
-      await new Promise(resolve => requestAnimationFrame(resolve));
+      // Yield one task so the overlay can paint; unlike requestAnimationFrame,
+      // the closeout is not suspended indefinitely if this tab is backgrounded.
+      await new Promise(resolve => window.setTimeout(resolve, 0));
       const payload = buildArchivePayload(weekGroup, dorms, buses);
       const result = await window.dataSdk.create(payload);
       if (!result?.isOk || !result.data?.__backendId) throw new Error(result?.error || 'Archive creation failed. Live records were not cleared.');

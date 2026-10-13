@@ -1,6 +1,6 @@
 /** GATE Input enhancement: Flight Alert import changes draft rows only, never operational records. */
 import './week-group-action-placement.mjs';
-import { parseFlightAlertText, validateFlightAlertRows, normalizeSquadron } from './flight-alert-parser.mjs';
+import { parseFlightAlertText, validateFlightAlertRows, normalizeSquadron, orderFlightAlertRows, prepareFlightAlertReviewRows } from './flight-alert-parser.mjs';
 import { extractFlightAlertPdf } from './flight-alert-pdf.mjs?v=flight-alert-pdf-20260928-wg26052';
 
 const $ = id => document.getElementById(id);
@@ -157,7 +157,8 @@ function applyCandidate(candidate) {
   }
   const defects = validateFlightAlertRows(candidate.rows,candidate.publishedTotal).issues.filter(issue=>issue.level==='error');
   if (defects.length) { modalError(defects.slice(0,4).map(issue=>issue.message).join(' ')); return; }
-  const draft = candidate.rows.map((item,index)=>({ rowIndex:index, sdq:item.sdq, sec:item.sec || '', inter_sec:item.inter_sec || '', dorm_name:item.dorm_name, sex:item.sex, band:false, space_force:item.space_force, load:item.load }));
+  const sourceOrdered = orderFlightAlertRows(candidate.rows, candidate.declaredRowCount ?? null);
+  const draft = sourceOrdered.map((item,index)=>({ rowIndex:index, sdq:item.sdq, sec:item.sec || '', inter_sec:item.inter_sec || '', dorm_name:item.dorm_name, sex:item.sex, band:false, space_force:item.space_force, load:item.load }));
   const count = Math.max(25,draft.length);
   const empty = index=>({rowIndex:index,sdq:'',sec:'',inter_sec:'',dorm_name:'',sex:'male',band:false,space_force:false,load:''});
   while (draft.length<count) draft.push(empty(draft.length));
@@ -281,7 +282,7 @@ function processText(text) {
 function drawImportReview(parsed) {
   const main=$('gate-import-dialog-main');main.replaceChildren();clearError();
   const existing=activeRows();
-  const incoming=parsed.rows.map(row=>({...row}));
+  const incoming=prepareFlightAlertReviewRows(parsed);
   const expected=Number.isSafeInteger(parsed.declaredRowCount)?parsed.declaredRowCount:null;
   const root=element('div','grid gap-3');
   main.append(root);
@@ -310,7 +311,7 @@ function drawImportReview(parsed) {
   const checkbox=element('input');
   checkbox.type='checkbox';checkbox.id='gate-import-validated';checkbox.className='mt-1';
   acknowledgment.append(checkbox,document.createTextNode(
-    'I compared these rows with the Flight Alert and verified the total flight count. Any blank SEC or INTER/SEC entries are intentional.'
+    'I verified all required flight information, preserved source order, and reviewed intentional SEC / INTER/SEC blanks.'
   ));
   root.append(acknowledgment);
   const actions=element('div','flex flex-wrap justify-end gap-2');
@@ -326,9 +327,12 @@ function drawImportReview(parsed) {
     const missing=expected===null?0:Math.max(0,expected-incoming.length);
     const blankSec=incoming.filter(row=>!String(row.sec||'').trim()).length;
     const blankInter=incoming.filter(row=>!String(row.inter_sec||'').trim()).length;
-    status.textContent=`${incoming.length} extracted/reviewed${expected===null?'':' of '+expected+' declared'} flights. ${blankSec} blank SEC; ${blankInter} blank INTER/SEC.` +
-      (missing?` ${missing} flight${missing===1?' is':'s are'} missing. Use the PDF to insert and complete ${missing===1?'it':'them'} below.`:'');
-    status.style.color=missing?'var(--yellow)':'var(--text)';
+    const awaiting=incoming.filter(row=>row.needsReview || !String(row.sdq||'').trim() ||
+      !String(row.dorm_name||'').trim() || !String(row.sex||'').trim() || !String(row.load||'').trim()).length;
+    status.textContent=`${parsed.rows.length} extracted from PDF; ${incoming.length} reviewed${expected===null?'':' of '+expected+' declared'} flights. ${blankSec} blank SEC; ${blankInter} blank INTER/SEC.` +
+      (missing?` ${missing} flight${missing===1?' is':'s are'} missing. Add and complete ${missing===1?'it':'them'} below.`:'') +
+      (awaiting?` ${awaiting} row${awaiting===1?' needs':'s need'} required-field verification.`:'');
+    status.style.color=(missing||awaiting)?'var(--yellow)':'var(--text)';
     const check=validateFlightAlertRows(incoming,parsed.publishedTotal);
     totals.textContent=`Calculated load: ${check.calculated}. Published: ${parsed.publishedTotal??'not found'}. ${check.variance===null?'':'Difference: '+check.variance+'. '}` +
       (missing?'The Input draft remains unchanged until all flights are accounted for.':'Review all values before applying the draft.');
@@ -343,7 +347,7 @@ function drawImportReview(parsed) {
           const width=field==='sdq'?'w-24':field==='dorm_name'?'w-20':'w-16';
           return `<td class="p-1"><input type="text" class="${width} border rounded px-2 py-1" style="border-color:var(--border);background:var(--surface-alt);color:var(--text)" data-review-index="${index}" data-review-field="${field}" aria-label="Flight ${index+1} ${label}" maxlength="${maxLength}" placeholder="—" value="${esc(row[field]||'')}"></td>`;
         }).join('');
-        return `<tr class="border-t" style="border-color:var(--border)"><th scope="row" class="p-2">${index+1}</th>${cells}</tr>`;
+        return `<tr class="border-t" style="border-color:var(--border);${row.needsReview?'background:color-mix(in srgb, var(--yellow) 12%, transparent)':''}"><th scope="row" class="p-2">${index+1}${row.needsReview?' · CHECK':''}</th>${cells}</tr>`;
       }).join('') + '</tbody>';
     const selected=where.value;
     where.innerHTML='<option value="0">At beginning</option>' +
@@ -355,16 +359,23 @@ function drawImportReview(parsed) {
     // Every structural edit resets the acknowledgment so it cannot be reused.
     checkbox.checked=false;
     table.querySelectorAll('[data-review-index]').forEach(input=>{
-      input.addEventListener('change',()=>{
+      input.addEventListener('input',()=>{
         const row=incoming[Number(input.dataset.reviewIndex)];
         if(!row)return;
         const field=input.dataset.reviewField;
         row[field]=input.value.trim();
-        if(field==='sdq')row.sdq=normalizeSquadron(row.sdq)||row.sdq;
-        if(field==='dorm_name')row.dorm_name=row.dorm_name.toUpperCase();
-        // Preserve classification consistency when editing an extracted squadron.
-        if(field==='sdq')row.space_force=row.sdq==='535 TRS';
-        refresh();
+        if(field==='sdq')row.space_force=normalizeSquadron(row.sdq)==='535 TRS';
+        // Keep the editor stable while typing: re-rendering the table on
+        // every field change destroys focus, caret and scroll position.
+        checkbox.checked=false;
+      });
+      input.addEventListener('change',()=>{
+        const row=incoming[Number(input.dataset.reviewIndex)];
+        if(!row)return;
+        if(input.dataset.reviewField==='sdq')row.sdq=normalizeSquadron(row.sdq)||row.sdq;
+        if(input.dataset.reviewField==='dorm_name')row.dorm_name=row.dorm_name.toUpperCase();
+        // Do not rebuild the entire table on blur; validation runs on submit.
+        checkbox.checked=false;
       });
     });
   }
@@ -374,7 +385,7 @@ function drawImportReview(parsed) {
     const index=Number(where.value);
     incoming.splice(index,0,{
       sourceLine:null,sdq:'',sec:'',inter_sec:'',dorm_name:'',sex:'',load:'',
-      space_force:false,band:false
+      space_force:false,band:false,needsReview:true
     });
     refresh();
     const input=table.querySelector(`[data-review-index="${index}"][data-review-field="sdq"]`);
@@ -393,7 +404,7 @@ function drawImportReview(parsed) {
       modalError('Review the extracted flights and acknowledge any remaining blank SEC or INTER/SEC values before importing.');
       return;
     }
-    applyCandidate({...parsed,rows:incoming});
+    applyCandidate({...parsed,rows:orderFlightAlertRows(incoming,expected)});
   });
   refresh();
 }

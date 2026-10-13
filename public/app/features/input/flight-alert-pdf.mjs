@@ -131,13 +131,37 @@ function flightAlertTableText(items) {
   const sexes = candidates('sex', value => /^(?:M|F|MALE|FEMALE)$/.test(value));
   const loads = candidates('load', value => /^\d{1,3}$/.test(value) && Number(value) >= 1 && Number(value) <= 100);
 
+  // Associate each dorm with the printed (potentially merged) SQD cell.
+  // A SEC value centered within that SQD group's rows can represent a merged
+  // cell; a lone SEC aligned to the group's first/last row is not inherited.
+  const groupRows = new Map();
+  const assigned = dorms.map(dorm => {
+    const squadron = nearestY(squadrons, dorm.y, 20);
+    if (squadron) {
+      const group = groupRows.get(squadron.order) || [];
+      group.push(dorm.y);
+      groupRows.set(squadron.order, group);
+    }
+    return { dorm, squadron };
+  });
+  const sectionFor = (dorm, squadron) => {
+    const ys = groupRows.get(squadron.order) || [dorm.y];
+    const top = Math.max(...ys), bottom = Math.min(...ys);
+    const groupSections = sections.filter(item => item.y <= top + 3 && item.y >= bottom - 3);
+    if (!groupSections.length) return null;
+    const nearest = nearestY(groupSections, dorm.y, 15);
+    if (!nearest) return null;
+    if (groupSections.length > 1) return nearest;
+    const midpoint = (top + bottom) / 2;
+    return Math.abs(nearest.y - dorm.y) <= 2 ||
+      (ys.length > 1 && Math.abs(nearest.y - midpoint) <= 7) ? nearest : null;
+  };
+
   const rows = [];
   const seen = new Set();
-  for (const dorm of dorms) {
-    const squadron = nearestY(squadrons, dorm.y, 20);
-    // SEC and INTER/SEC are optional. An SEC label on a different row is not
-    // proof of a merged cell; leave it blank and request human validation.
-    const section = nearestY(sections, dorm.y, 2);
+  for (const { dorm, squadron } of assigned) {
+    if (!squadron) return '';
+    const section = sectionFor(dorm, squadron);
     const inter = nearestY(inters, dorm.y, 2);
     const sex = nearestY(sexes, dorm.y, 2);
     const load = nearestY(loads, dorm.y, 2);

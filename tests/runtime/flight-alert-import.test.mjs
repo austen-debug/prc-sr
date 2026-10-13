@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { parseFlightAlertText, validateFlightAlertRows, normalizeDorm, normalizeSection, normalizeSquadron } from '../../public/app/features/input/flight-alert-parser.mjs';
+import { parseFlightAlertText, validateFlightAlertRows, normalizeDorm, normalizeSection, normalizeSquadron, orderFlightAlertRows, prepareFlightAlertReviewRows } from '../../public/app/features/input/flight-alert-parser.mjs';
 import { extractFlightAlertPdf } from '../../public/app/features/input/flight-alert-pdf.mjs';
 import { relocateWeekGroupActions } from '../../public/app/features/input/week-group-action-placement.mjs';
 const sample = 'SQUADRON SECTION DORM SEX LOAD\n535 TRS 1 4A1 MALE 48\n321 TRS 2 A01 FEMALE 42\n324 TRS 3 4B2 M 45\nTOTAL EXPECTED LOAD: 135';
@@ -50,7 +50,7 @@ test('unsupported PDF fails closed',async()=>{
 });
 
 
-function syntheticAlertPdf({ withSection = false, omitDormAt = -1 } = {}) {
+function syntheticAlertPdf({ withSection = false, omitDormAt = -1, offsetLoadAt = -1 } = {}) {
   // Coordinate-based text PDF: 16 flights, merged SQD, intentionally empty SEC,
   // separate right-hand schedule, and numeric INTER/SECT values 1–16.
   const items = [];
@@ -74,7 +74,7 @@ function syntheticAlertPdf({ withSection = false, omitDormAt = -1 } = {}) {
     put(194,y,String(i+1));
     if(i!==omitDormAt)put(298,y,names[i]);
     put(374,y,females.has(i)?'F':'M');
-    put(442,y,String(loads[i]));
+    put(442,i===offsetLoadAt ? y + 3.5 : y,String(loads[i]));
     put(625,y,'01/7/321'); // Must not contaminate the dorm column.
   }
   put(50,390,'AAFES: 898');
@@ -114,15 +114,50 @@ test('a populated SEC on one PDF row is not copied into adjacent blank rows',asy
 });
 
 
-test('a damaged 16-flight PDF recovering only 15 dorms opens repair review instead of silently applying',async()=>{
+test('damaged dorm text retains all 16 numbered row slots and asks for repair',async()=>{
   const extracted=await extractFlightAlertPdf(syntheticAlertPdf({omitDormAt:9}));
   const parsed=parseFlightAlertText(extracted);
-  assert.equal(parsed.ok,false,'partial import must remain unapproved');
+  assert.equal(parsed.ok,false,'incomplete row must remain unapproved');
   assert.equal(parsed.recoverable,true,JSON.stringify(parsed.issues));
   assert.equal(parsed.declaredRowCount,16);
-  assert.equal(parsed.rows.length,15);
-  assert.ok(parsed.issues.some(issue=>issue.code==='row_count'));
-  assert.equal(parsed.rows.some(row=>row.dorm_name==='4A2'),false);
+  assert.equal(parsed.rows.length,16,'INTER numbering must preserve the row despite missing dorm text');
+  assert.equal(parsed.rows[9].inter_sec,'10');
+  assert.equal(parsed.rows[9].dorm_name,'','source dorm must not be invented');
+  assert.equal(parsed.rows[10].inter_sec,'11');
+});
+
+
+test('row 7 survives offset PDF LOAD text, merged 322 squadron, and source order end-to-end',async()=>{
+  const text=await extractFlightAlertPdf(syntheticAlertPdf({offsetLoadAt:6}));
+  const parsed=parseFlightAlertText(text);
+  assert.equal(parsed.ok,true,JSON.stringify(parsed.issues));
+  assert.equal(parsed.rows.length,16);
+  assert.deepEqual(parsed.rows.map(row=>Number(row.inter_sec)),Array.from({length:16},(_,i)=>i+1));
+  assert.deepEqual([parsed.rows[6].sdq,parsed.rows[6].dorm_name,parsed.rows[6].sex,parsed.rows[6].load],
+    ['322 TRS','A07','male','59']);
+  assert.deepEqual([parsed.rows[15].sdq,parsed.rows[15].dorm_name,parsed.rows[15].sex,parsed.rows[15].load],
+    ['326 TRS','A07','male','59']);
+  const identities=new Set(parsed.rows.map(row=>row.sdq+'::'+row.dorm_name));
+  assert.equal(identities.size,16,'A07 exists in different squadrons and must not deduplicate');
+  assert.deepEqual(prepareFlightAlertReviewRows(parsed).map(row=>row.dorm_name),
+    parsed.rows.map(row=>row.dorm_name));
+});
+
+test('INTER numbers 1-6, 8-16 recover a blank seventh source-ordered slot without inventing a dorm',()=>{
+  const rows=Array.from({length:16},(_,i)=>i+1).filter(n=>n!==7)
+    .map(i=>`322||${i}|${i===16?'A07':'A'+String(i).padStart(2,'0')}|M|59`);
+  const parsed=parseFlightAlertText(['SQD SEC INTER/SECT DORM SEX LOAD',...rows,'TOTAL FLTS - 16','AAFES: 944'].join('\n'));
+  assert.equal(parsed.ok,false);
+  assert.equal(parsed.recoverable,true);
+  const review=prepareFlightAlertReviewRows(parsed);
+  assert.equal(review.length,16);
+  assert.equal(review[6].inter_sec,'7');
+  assert.equal(review[6].dorm_name,'');
+  assert.equal(review[6].needsReview,true);
+  assert.equal(review[7].inter_sec,'8');
+  review[6].sdq='322 TRS';review[6].dorm_name='A07';review[6].sex='male';review[6].load='59';
+  assert.equal(validateFlightAlertRows(review,944).issues.some(x=>x.level==='error'),false);
+  assert.equal(orderFlightAlertRows([review[15],...review.slice(0,15)],16)[6].inter_sec,'7');
 });
 
 test('source-delimited blank section cells are review warnings, but nonblank invalid fields still fail',()=>{
@@ -172,6 +207,8 @@ test('recoverable review allows inserting a manually completed row but forbids a
   assert.doesNotMatch(ui,/input\.value\s*=\s*''/,'selection must not be erased after an error');
   assert.match(ui,/Add missing flight/);
   assert.match(ui,/incoming\.splice\(index,0/);
+  assert.match(ui,/prepareFlightAlertReviewRows\(parsed\)/);
+  assert.match(ui,/orderFlightAlertRows\(candidate\.rows/);
   assert.match(ui,/if\(expected!==null && incoming\.length!==expected\)/);
   assert.match(ui,/candidate\.rows\.length !== candidate\.declaredRowCount/);
   assert.match(ui,/validateFlightAlertRows\(incoming,parsed\.publishedTotal\)/);

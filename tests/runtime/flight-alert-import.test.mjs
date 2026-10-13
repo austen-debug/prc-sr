@@ -246,7 +246,7 @@ test('canonical Input preflight catches incomplete draft rows that LOAD-only fil
   assert.equal(preflight().ok,true);
   rows[1].dorm_name='';
   assert.equal(preflight().ok,false,'a blank dorm must never become Dorm 2');
-  assert.doesNotMatch(code,/\\x60Dorm \\$\\{Number\\(row\\.rowIndex/);
+  assert.equal(code.includes('Dorm ${Number(row.rowIndex'),false);
 });
 
 test('persisted dorm ordering follows normalized source sequence rather than review insertion order',async()=>{

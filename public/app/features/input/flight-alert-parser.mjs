@@ -30,16 +30,19 @@ function parseDelimitedLine(line, sourceLine, context) {
   const [rawSq, sec, interSec, dorm, sex, load] = cells;
   const sqMatch = rawSq ? rawSq.match(SQUADRON) : null;
   const squadron = sqMatch?.[1] || (rawSq ? '' : context.squadron);
-  if (!squadron || !DORM.test(dorm) || !/^(?:MALE|FEMALE|M|F)$/.test(sex) ||
-      !/^\d{1,3}$/.test(load) ||
+  // Explicitly empty PDF cells are retained for review. Invalid non-empty
+  // values still fail parsing rather than being silently "corrected".
+  if ((rawSq && !sqMatch) || (dorm && !DORM.test(dorm)) ||
+      (sex && !/^(?:MALE|FEMALE|M|F)$/.test(sex)) ||
+      (load && !/^\d{1,3}$/.test(load)) ||
       (sec && !normalizeSection(sec)) || (interSec && !/^\d{1,3}$/.test(interSec))) return null;
   context.squadron = squadron;
   context.section = sec; // Blank SEC remains blank; do not inherit or guess it.
   return {
     sourceLine, sdq: squadron + ' TRS', sec, inter_sec: interSec,
     dorm_name: dorm, sex: sex === 'FEMALE' || sex === 'F' ? 'female' : 'male',
-    load: String(Number(load)), band: false,
-    space_force: squadron === '535', capacity: Number(load)
+    load: load ? String(Number(load)) : '', band: false,
+    space_force: squadron === '535', capacity: load ? Number(load) : null
   };
 }
 
@@ -127,6 +130,43 @@ export function validateFlightAlertRows(rows, publishedTotal) {
   else if (variance !== 0) issues.push(diagnostic('variance', `Dorm loads ${calculated} differ from published total ${total} by ${variance > 0 ? '+' : ''}${variance}.`, null, 'warning'));
   return Object.freeze({ calculated, published: hasTotal ? total : null, variance, issues: Object.freeze(issues) });
 }
+/**
+ * INTER/SECT is the source flight sequence when every surviving row has a
+ * unique positive value. Never use squadron/dorm alphabetical order.
+ */
+export function orderFlightAlertRows(rows = [], declaredCount = null) {
+  const sequence = (Array.isArray(rows) ? rows : []).map(row => Number(String(row.inter_sec ?? '').trim()));
+  const allValid = sequence.every((number, index) =>
+    String(rows[index].inter_sec ?? '').trim() !== '' &&
+    Number.isSafeInteger(number) && number >= 1 &&
+    (declaredCount === null || number <= declaredCount));
+  if (!allValid || new Set(sequence).size !== sequence.length) return [...rows];
+  return [...rows].sort((a, b) => Number(a.inter_sec) - Number(b.inter_sec));
+}
+
+/**
+ * When count and the surviving numeric flight identifiers agree, recover a
+ * missing row as an EMPTY, explicitly unverified slot at its source position.
+ * The operator must fill all required cells before the draft may be applied.
+ */
+export function prepareFlightAlertReviewRows(parsed) {
+  const rows = (parsed?.rows || []).map(row => ({ ...row }));
+  const expected = parsed?.declaredRowCount;
+  const ordered = orderFlightAlertRows(rows, Number.isSafeInteger(expected) ? expected : null);
+  if (!Number.isSafeInteger(expected) || expected < 1 || ordered.length >= expected) return ordered;
+  const numbers = ordered.map(row => Number(String(row.inter_sec ?? '').trim()));
+  if (numbers.some((number, index) =>
+    !String(ordered[index].inter_sec ?? '').trim() ||
+    !Number.isSafeInteger(number) || number < 1 || number > expected
+  ) || new Set(numbers).size !== numbers.length) return ordered;
+  const byNumber = new Map(ordered.map(row => [Number(row.inter_sec), row]));
+  return Array.from({ length: expected }, (_, i) => byNumber.get(i + 1) || {
+    sourceLine: null, sdq: '', sec: '', inter_sec: String(i + 1),
+    dorm_name: '', sex: '', load: '', space_force: false, band: false,
+    needsReview: true
+  });
+}
+
 export function parseFlightAlertText(text) {
   if (typeof text !== 'string' || !text.trim()) return Object.freeze({ ok: false, rows: [], publishedTotal: null, issues: [diagnostic('empty', 'No Flight Alert text was provided.')] });
   if (text.length > 250_000) return Object.freeze({ ok: false, rows: [], publishedTotal: null, issues: [diagnostic('size', 'Flight Alert text exceeds the processing limit.')] });
@@ -163,16 +203,22 @@ export function parseFlightAlertText(text) {
   const auditErrors = audit.issues.filter(issue => issue.level === 'error');
   // An incomplete, count-verified PDF is recoverable in the REVIEW UI only.
   // Do not mark parsing successful; never apply fewer rows than declared.
+  const missingFieldError = issue => {
+    const match = issue.message.match(/^Row (\d+):/);
+    const row = match ? rows[Number(match[1]) - 1] : null;
+    const field = { squadron: 'sdq', dorm: 'dorm_name', load: 'load', sex: 'sex' }[issue.code];
+    return !!(row && field && !String(row[field] ?? '').trim());
+  };
   const recoverable = Number.isSafeInteger(declaredRowCount) &&
-    declaredRowCount > rows.length && rows.length > 0 && declaredRowCount <= 100 &&
-    parserErrors.length > 0 &&
+    rows.length > 0 && declaredRowCount <= 100 && rows.length <= declaredRowCount &&
+    (parserErrors.length > 0 || auditErrors.length > 0) &&
     parserErrors.every(issue => issue.code === 'row_count' || issue.code === 'unparsed_row') &&
-    auditErrors.length === 0;
+    auditErrors.every(missingFieldError);
   return Object.freeze({
     ok: rows.length > 0 && parserErrors.length === 0 && auditErrors.length === 0,
     recoverable,
     declaredRowCount,
-    rows: Object.freeze(rows.map(row => Object.freeze(row))),
+    rows: Object.freeze(orderFlightAlertRows(rows, declaredRowCount).map(row => Object.freeze(row))),
     publishedTotal,
     issues: Object.freeze([...issues, ...audit.issues]),
     calculatedTotal: audit.calculated,

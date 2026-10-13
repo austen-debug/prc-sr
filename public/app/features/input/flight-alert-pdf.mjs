@@ -120,57 +120,80 @@ function flightAlertTableText(items) {
   const dorms = left
     .filter(item => nearestField(item.x, headers) === 'dorm' && DORM_CELL.test(compact(item.text)))
     .sort((a, b) => b.y - a.y || a.order - b.order);
-  if (!dorms.length) return '';
+  const allInter = left
+    .filter(item => nearestField(item.x, headers) === 'inter' && /^\d{1,3}$/.test(compact(item.text)))
+    .sort((a, b) => b.y - a.y || a.order - b.order);
+  if (!dorms.length && !allInter.length) return '';
 
-  const minDormY = dorms.at(-1).y;
-  const region = left.filter(item => item.y >= minDormY - 20);
-  const candidates = (field, predicate) => region.filter(item => nearestField(item.x, headers) === field && predicate(compact(item.text)));
+  // A dorm label is not the only reliable row anchor: INTER/SECT cells are
+  // individually numbered even when a dorm's PDF text is mispositioned.
+  // Prefer that numbered spine only if it is unambiguous (unique positive IDs).
+  const distinctInter = new Set(allInter.map(item => Number(compact(item.text))));
+  const interSpine = allInter.length >= dorms.length &&
+    distinctInter.size === allInter.length &&
+    allInter.every(item => Number(compact(item.text)) >= 1 && Number(compact(item.text)) <= 100);
+  const anchors = interSpine ? allInter : dorms;
+  if (!anchors.length) return '';
+  const gaps = anchors.slice(1).map((item, index) => anchors[index].y - item.y).filter(gap => gap > 0.1).sort((a,b)=>a-b);
+  const medianGap = gaps.length ? gaps[Math.floor(gaps.length / 2)] : 10;
+  // Row-boundary tolerance follows the actual PDF row pitch instead of a
+  // hard-coded two-point text-baseline match.
+  const rowTolerance = Math.max(2, medianGap * 0.46);
+  const minY = anchors.at(-1).y;
+  const region = left.filter(item => item.y >= minY - Math.max(20, medianGap * 1.5));
+  const candidates = (field, predicate) => region.filter(
+    item => nearestField(item.x, headers) === field && predicate(compact(item.text))
+  );
   const squadrons = candidates('sdq', value => /^\d{3}$/.test(value));
   const sections = candidates('sec', value => /^[1-4]$/.test(value));
   const inters = candidates('inter', value => /^\d{1,3}$/.test(value));
   const sexes = candidates('sex', value => /^(?:M|F|MALE|FEMALE)$/.test(value));
   const loads = candidates('load', value => /^\d{1,3}$/.test(value) && Number(value) >= 1 && Number(value) <= 100);
+  if (!squadrons.length) return '';
 
-  // Associate each dorm with the printed (potentially merged) SQD cell.
-  // A SEC value centered within that SQD group's rows can represent a merged
-  // cell; a lone SEC aligned to the group's first/last row is not inherited.
+  // A vertically merged squadron is valid across a flight block. Its center
+  // need not be within 20 PDF points of the first or last row.
+  const assigned = anchors.map(anchor => ({
+    anchor,
+    squadron: nearestY(squadrons, anchor.y, Infinity)
+  }));
   const groupRows = new Map();
-  const assigned = dorms.map(dorm => {
-    const squadron = nearestY(squadrons, dorm.y, 20);
-    if (squadron) {
-      const group = groupRows.get(squadron.order) || [];
-      group.push(dorm.y);
-      groupRows.set(squadron.order, group);
-    }
-    return { dorm, squadron };
-  });
-  const sectionFor = (dorm, squadron) => {
-    const ys = groupRows.get(squadron.order) || [dorm.y];
+  for (const { anchor, squadron } of assigned) {
+    if (!squadron) continue;
+    const group = groupRows.get(squadron.order) || [];
+    group.push(anchor.y);
+    groupRows.set(squadron.order, group);
+  }
+  const sectionFor = (anchor, squadron) => {
+    const ys = groupRows.get(squadron.order) || [anchor.y];
     const top = Math.max(...ys), bottom = Math.min(...ys);
-    const groupSections = sections.filter(item => item.y <= top + 3 && item.y >= bottom - 3);
+    const groupSections = sections.filter(item => item.y <= top + rowTolerance && item.y >= bottom - rowTolerance);
     if (!groupSections.length) return null;
-    const nearest = nearestY(groupSections, dorm.y, 15);
+    const nearest = nearestY(groupSections, anchor.y, Math.max(15, medianGap * 2));
     if (!nearest) return null;
     if (groupSections.length > 1) return nearest;
     const midpoint = (top + bottom) / 2;
-    return Math.abs(nearest.y - dorm.y) <= 2 ||
-      (ys.length > 1 && Math.abs(nearest.y - midpoint) <= 7) ? nearest : null;
+    return Math.abs(nearest.y - anchor.y) <= rowTolerance ||
+      (ys.length > 1 && Math.abs(nearest.y - midpoint) <= medianGap * 0.6) ? nearest : null;
   };
 
   const rows = [];
-  const seen = new Set();
-  for (const { dorm, squadron } of assigned) {
-    if (!squadron) return '';
-    const section = sectionFor(dorm, squadron);
-    const inter = nearestY(inters, dorm.y, 2);
-    const sex = nearestY(sexes, dorm.y, 2);
-    const load = nearestY(loads, dorm.y, 2);
-    if (!squadron || !sex || !load) return '';
-    const dormName = compact(dorm.text);
-    const key = `${compact(squadron.text)}::${dormName}`;
-    if (seen.has(key)) return '';
-    seen.add(key);
-    rows.push([compact(squadron.text), section ? compact(section.text) : '', inter ? compact(inter.text) : '', dormName, compact(sex.text), Number(compact(load.text))].join('|'));
+  for (const { anchor, squadron } of assigned) {
+    const dorm = interSpine ? nearestY(dorms, anchor.y, rowTolerance) : anchor;
+    const inter = interSpine ? anchor : nearestY(inters, anchor.y, rowTolerance);
+    const sex = nearestY(sexes, anchor.y, rowTolerance);
+    const load = nearestY(loads, anchor.y, rowTolerance);
+    const section = sectionFor(anchor, squadron);
+    // Preserve a source row even if its DORM, SEX or LOAD is unreadable. The
+    // review screen will require correction; no partial draft can initialize.
+    rows.push([
+      squadron ? compact(squadron.text) : '',
+      section ? compact(section.text) : '',
+      inter ? compact(inter.text) : '',
+      dorm ? compact(dorm.text) : '',
+      sex ? compact(sex.text) : '',
+      load ? Number(compact(load.text)) : ''
+    ].join('|'));
   }
 
   let publishedTotal = null;

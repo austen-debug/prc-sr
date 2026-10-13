@@ -99,6 +99,7 @@ function plausibleRow(line) {
 export function validateFlightAlertRows(rows, publishedTotal) {
   const issues = [];
   const seen = new Set();
+  const seenFlightNumbers = new Set();
   let calculated = 0;
   rows.forEach((row, index) => {
     const location = row.sourceLine ?? index + 1;
@@ -122,6 +123,12 @@ export function validateFlightAlertRows(rows, publishedTotal) {
     if (row.band && row.space_force) issues.push(diagnostic('classification', `Row ${index + 1}: Band and Space Force conflict.`, location));
     if (!String(row.inter_sec ?? '').trim()) issues.push(diagnostic('inter_sec', `Row ${index + 1}: INTER/SEC is blank; review before importing.`, location, 'warning'));
     else if (!/^\d{1,3}$/.test(String(row.inter_sec).trim())) issues.push(diagnostic('inter_sec_invalid', `Row ${index + 1}: INTER/SEC must be numeric if supplied.`, location));
+    else {
+      const flightNo = Number(String(row.inter_sec).trim());
+      if (flightNo < 1) issues.push(diagnostic('inter_sec_invalid', `Row ${index + 1}: flight number must be positive.`, location));
+      else if (seenFlightNumbers.has(flightNo)) issues.push(diagnostic('duplicate_flight_number', `Row ${index + 1}: duplicate INTER/SEC flight number ${flightNo}.`, location));
+      seenFlightNumbers.add(flightNo);
+    }
   });
   const total = Number(publishedTotal);
   const hasTotal = publishedTotal !== '' && publishedTotal !== null && publishedTotal !== undefined && Number.isInteger(total) && total >= 0;

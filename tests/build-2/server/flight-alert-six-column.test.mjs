@@ -74,7 +74,7 @@ test('Input import preserves intentional section blanks and requires operator re
   assert.doesNotMatch(code, /prior\?\.inter_sec/, 'existing manual section values must not be silently substituted for reviewed PDF blanks');
   assert.match(code, /Review SEC \/ INTER\/SEC/);
   assert.match(code, /gate-import-validated/);
-  assert.match(code, /if \(!checkbox\.checked\)/);
+  assert.match(code, /if\(!checkbox\.checked\)/);
 });
 
 test('WG26052 Excel/Acrobat layout reconstructs all merged SQD/SEC rows and reconciles AAFES 697', async () => {

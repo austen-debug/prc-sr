@@ -39,7 +39,7 @@ function parseDelimitedLine(line, sourceLine, context) {
   context.squadron = squadron;
   context.section = sec; // Blank SEC remains blank; do not inherit or guess it.
   return {
-    sourceLine, sdq: squadron + ' TRS', sec, inter_sec: interSec,
+    sourceLine, sdq: squadron ? squadron + ' TRS' : '', sec, inter_sec: interSec,
     dorm_name: dorm, sex: sex === 'FEMALE' || sex === 'F' ? 'female' : 'male',
     load: load ? String(Number(load)) : '', band: false,
     space_force: squadron === '535', capacity: load ? Number(load) : null
@@ -80,12 +80,15 @@ function parseLine(line, sourceLine, context, sixColumns) {
   } else {
     return null;
   }
-  if (!squadron || (section && !normalizeSection(section))) return null;
+  if (section && !normalizeSection(section)) return null;
+  // Keep recognizable flight rows even when the PDF encoded the merged SQD
+  // separately. The missing squadron is a required-field review error, not a
+  // reason to discard every dorm row as "unsupported layout".
   context.squadron = squadron;
   context.section = section;
   return {
     sourceLine,
-    sdq: `${squadron} TRS`, sec: section, inter_sec: interSec,
+    sdq: squadron ? `${squadron} TRS` : '', sec: section, inter_sec: interSec,
     dorm_name: dormToken,
     sex: sexToken === 'FEMALE' || sexToken === 'F' ? 'female' : 'male',
     load: String(Number(loadToken)), band: false,
@@ -195,6 +198,15 @@ export function parseFlightAlertText(text) {
     const countMatch = line.match(ROW_COUNT);
     if (countMatch) { declaredRows.push(Number(countMatch[1])); continue; }
     if (HEADERS.test(line) || line.split(/[\s|,;\/]+/).every(token => HEADER_FIELD.test(token))) continue;
+    // Some PDF producers print merged squadron cells as standalone text
+    // operators rather than including SQD on any physical dorm row.
+    // Recognize a standalone squadron label only inside a six-column alert.
+    const soloSquadron = sixColumns ? line.match(/^(\d{3})(?:\s*TRS)?$/i) : null;
+    if (soloSquadron) {
+      context.squadron = soloSquadron[1];
+      context.section = '';
+      continue;
+    }
     const parsed = parseLine(line, i + 1, context, sixColumns);
     if (parsed) rows.push(parsed);
     else if (plausibleRow(line)) issues.push(diagnostic('unparsed_row', `Line ${i + 1} resembles a flight row but could not be safely parsed. Check its column order or merged squadron/section cells.`, i + 1));
@@ -203,7 +215,8 @@ export function parseFlightAlertText(text) {
   const publishedTotal = totals.length === 1 ? totals[0] : null;
   if (declaredRows.length > 1 && new Set(declaredRows).size > 1) issues.push(diagnostic('ambiguous_row_count', 'Conflicting flight counts were found.'));
   else if (declaredRows.length && declaredRows[0] !== rows.length) issues.push(diagnostic('row_count', `Flight Alert declares ${declaredRows[0]} flights, but only ${rows.length} dorm rows were extracted. No draft was changed.`));
-  if (!rows.length) issues.push(diagnostic('no_rows', 'No flight rows matched the supported layout. Keep your existing Input draft and use pasted text or manual entry.'));
+  if (!rows.length) issues.push(diagnostic('no_rows',
+    'The PDF text did not contain recognizable dorm rows. The Input draft was not changed. Reopen the PDF or provide the original file for a text-layer compatibility check.'));
   const audit = validateFlightAlertRows(rows, publishedTotal);
   const declaredRowCount = declaredRows.length && new Set(declaredRows).size === 1 ? declaredRows[0] : null;
   const parserErrors = issues.filter(issue => issue.level === 'error');

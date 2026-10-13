@@ -1,7 +1,7 @@
 /** GATE Input enhancement: Flight Alert import changes draft rows only, never operational records. */
 import './week-group-action-placement.mjs';
-import { parseFlightAlertText, validateFlightAlertRows, normalizeSquadron, orderFlightAlertRows, prepareFlightAlertReviewRows } from './flight-alert-parser.mjs';
-import { extractFlightAlertPdf } from './flight-alert-pdf.mjs?v=flight-alert-pdf-20260928-wg26052';
+import { parseFlightAlertText, validateFlightAlertRows, normalizeSquadron, orderFlightAlertRows, prepareFlightAlertReviewRows } from './flight-alert-parser.mjs?v=flight-alert-parser-20261013-no-rows';
+import { extractFlightAlertPdf } from './flight-alert-pdf.mjs?v=flight-alert-pdf-20261013-no-rows';
 
 const $ = id => document.getElementById(id);
 const esc = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
@@ -269,7 +269,14 @@ async function processPdfFile(file) {
 function processText(text) {
   const parsed=parseFlightAlertText(text);
   if (!parsed.ok && !parsed.recoverable) {
-    modalError(parsed.issues.filter(issue=>issue.level==='error').map(issue=>issue.message).join(' ')||'Flight Alert extraction failed.');
+    const errors = parsed.issues.filter(issue=>issue.level==='error').map(issue=>issue.message);
+    if (parsed.issues.some(issue=>issue.code==='no_rows')) {
+      const lines = String(text || '').split(/\r?\n/).filter(line=>line.trim());
+      const headerRecognized = /SQD|SQUADRON|SDQ/i.test(text) &&
+        /DORM/i.test(text) && /LOAD/i.test(text);
+      errors.push(`Diagnostic: ${lines.length} extracted text lines; roster headers ${headerRecognized ? 'detected' : 'not detected'}. The chosen PDF is retained for retry. A PDF without a usable text layer requires a different extraction method; it cannot be safely guessed from the image.`);
+    }
+    modalError(errors.join(' ')||'Flight Alert extraction failed.');
     return;
   }
   if (disabledReason()) { modalError(disabledReason()); return; }

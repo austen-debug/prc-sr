@@ -69,7 +69,8 @@ function parseLine(line, sourceLine, context, sixColumns) {
     section = leading[0]; // Legacy five-column layout has no INTER/SEC.
   } else if (sixColumns) {
     if (leading.length === 2) [section, interSec] = leading;
-    else if (leading.length === 1) interSec = leading[0];
+    else if (leading.length === 1) { interSec = leading[0]; section = rawSq ? '' : context.section; }
+    else if (!rawSq) section = context.section;
     // Only delimiter-preserved coordinate extraction unambiguously identifies
     // a blank SEC/INTER cell. A single numeric token is treated as INTER/SEC
     // for six-column text fallback, and the resulting draft requires review.

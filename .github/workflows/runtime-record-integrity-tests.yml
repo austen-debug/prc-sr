@@ -59,6 +59,9 @@ jobs:
       - name: Full system integrity
         run: node --test tests/runtime/full-system-integrity.test.mjs
 
+      - name: Week Group closeout overlay and archive safety
+        run: node --test tests/runtime/week-group-closeout-overlay.test.mjs
+
       - name: Archive library UX and navigation integrity
         run: node --test tests/runtime/archive-library-ui.test.mjs
 

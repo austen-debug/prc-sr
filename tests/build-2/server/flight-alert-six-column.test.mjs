@@ -67,11 +67,14 @@ test('positioned PDF cell extraction restores row order and excludes the neighbo
   assert.equal(result.publishedTotal, 112);
 });
 
-test('Input import retains extracted INTER/SEC and falls back to existing manual values only when missing', async () => {
+test('Input import preserves intentional section blanks and requires operator review before draft replacement', async () => {
   const code = await readFile(new URL('../../../public/app/features/input/flight-alert-import.mjs', import.meta.url), 'utf8');
-  assert.match(code, /inter_sec:item\.inter_sec\s*\|\|\s*prior\?\.inter_sec\s*\|\|\s*''/);
-  assert.match(code, /Review INTER\/SEC/);
-  assert.doesNotMatch(code, /inter_sec:prior\?\.inter_sec\|\|''/);
+  assert.match(code, /inter_sec:item\.inter_sec\s*\|\|\s*''/);
+  assert.match(code, /sec:item\.sec\s*\|\|\s*''/);
+  assert.doesNotMatch(code, /prior\?\.inter_sec/, 'existing manual section values must not be silently substituted for reviewed PDF blanks');
+  assert.match(code, /Review SEC \/ INTER\/SEC/);
+  assert.match(code, /gate-import-validated/);
+  assert.match(code, /if \(!checkbox\.checked\)/);
 });
 
 test('WG26052 Excel/Acrobat layout reconstructs all merged SQD/SEC rows and reconciles AAFES 697', async () => {

@@ -49,6 +49,93 @@ test('unsupported PDF fails closed',async()=>{
  await assert.rejects(extractFlightAlertPdf({name:'other.txt',size:100,arrayBuffer:async()=>new ArrayBuffer(100)}),/PDF/);
 });
 
+
+function syntheticAlertPdf({ withSection = false } = {}) {
+  // Coordinate-based text PDF: 16 flights, merged SQD, intentionally empty SEC,
+  // separate right-hand schedule, and numeric INTER/SECT values 1–16.
+  const items = [];
+  const put = (x,y,value) => items.push(`BT /F1 10 Tf 1 0 0 1 ${x} ${y} Tm (${value}) Tj ET`);
+  [['SQD',40],['SEC',120],['INTER/SECT',185],['DORM',290],['SEX',366],['LOAD',436]]
+    .forEach(([label,x])=>put(x,685,label));
+  // These columns are unrelated to the dorm roster and must be ignored.
+  put(620,685,'FLT/SQUADRON');put(710,685,'PROC DAY');
+  const names=['3A1','3A2','2D2','2D1','A06','B07','A07','2A1','2A2','4A2','4A1','A03','B03','A06','B07','A07'];
+  const sqGroups=[{sdq:321,first:0,count:4},{sdq:322,first:4,count:3},
+    {sdq:323,first:7,count:4},{sdq:324,first:11,count:2},{sdq:326,first:13,count:3}];
+  const loads=[60,60,60,47,60,46,59,59,59,59,56,59,59,59,46,59];
+  const females=new Set([3,5,10,14]);
+  for(const group of sqGroups) {
+    const middle=650-(group.first+(group.count-1)/2)*12;
+    put(44,middle,group.sdq);
+  }
+  for(let i=0;i<16;i++) {
+    const y=650-i*12;
+    if(withSection && i===0)put(127,y,'2');
+    put(194,y,String(i+1));
+    put(298,y,names[i]);
+    put(374,y,females.has(i)?'F':'M');
+    put(442,y,String(loads[i]));
+    put(625,y,'01/7/321'); // Must not contaminate the dorm column.
+  }
+  put(50,390,'AAFES: 898');
+  put(620,375,'TOTAL FLTS - 16');
+  const content=items.join('\n');
+  return fixture(`%PDF-1.4
+1 0 obj << /Length ${content.length} >> stream
+${content}
+endstream
+endobj
+%%EOF`);
+}
+
+test('header-aligned PDF import preserves all 16 flights with blank SEC and numbered INTER/SECT',async()=>{
+  const extracted=await extractFlightAlertPdf(syntheticAlertPdf());
+  const parsed=parseFlightAlertText(extracted);
+  assert.equal(parsed.ok,true,JSON.stringify(parsed.issues));
+  assert.equal(parsed.rows.length,16);
+  assert.equal(parsed.rows[0].sdq,'321 TRS');
+  assert.equal(parsed.rows[0].dorm_name,'3A1');
+  assert.equal(parsed.rows[3].sex,'female');
+  assert.equal(parsed.rows[15].sdq,'326 TRS');
+  assert.equal(parsed.rows[15].inter_sec,'16');
+  assert.ok(parsed.rows.every(row=>row.sec===''), 'blank SEC must never be invented');
+  assert.deepEqual(parsed.rows.map(row=>row.inter_sec),Array.from({length:16},(_,i)=>String(i+1)));
+  assert.equal(parsed.publishedTotal,898);
+  assert.equal(parsed.issues.filter(issue=>issue.code==='section'&&issue.level==='warning').length,16);
+  assert.equal(parsed.issues.some(issue=>issue.code==='row_count'),false);
+});
+
+test('a populated SEC on one PDF row is not copied into adjacent blank rows',async()=>{
+  const extracted=await extractFlightAlertPdf(syntheticAlertPdf({withSection:true}));
+  const parsed=parseFlightAlertText(extracted);
+  assert.equal(parsed.ok,true,JSON.stringify(parsed.issues));
+  assert.equal(parsed.rows[0].sec,'2');
+  assert.ok(parsed.rows.slice(1).every(row=>row.sec===''));
+});
+
+test('source-delimited blank section cells are review warnings, but nonblank invalid fields still fail',()=>{
+  const source='SQD SEC INTER/SECT DORM SEX LOAD\n321||15|3A1|M|60\n|2||3A2|F|46\nAAFES: 106';
+  const result=parseFlightAlertText(source);
+  assert.equal(result.ok,true,JSON.stringify(result.issues));
+  assert.deepEqual(result.rows.map(row=>[row.sec,row.inter_sec]),[['','15'],['2','']]);
+  assert.equal(result.issues.some(issue=>issue.code==='section'&&issue.level==='warning'),true);
+  assert.equal(result.issues.some(issue=>issue.code==='inter_sec'&&issue.level==='warning'),true);
+  const invalid=validateFlightAlertRows([{...result.rows[0],sec:'9'}],60);
+  assert.equal(invalid.issues.some(issue=>issue.code==='section'&&issue.level==='error'),true);
+});
+
+test('the Flight Alert UI requires explicit review before an incomplete draft can be imported',async()=>{
+  const ui=await (await import('node:fs/promises')).readFile(new URL('../../public/app/features/input/flight-alert-import.mjs',import.meta.url),'utf8');
+  assert.match(ui,/function drawImportReview\(parsed\)/);
+  assert.match(ui,/gate-import-validated/);
+  assert.match(ui,/if \(!checkbox\.checked\)/);
+  assert.match(ui,/validateFlightAlertRows\(candidateRows,parsed\.publishedTotal\)/);
+  assert.match(ui,/sec:item\.sec \|\| ''/);
+  assert.match(ui,/inter_sec:item\.inter_sec \|\| ''/);
+  assert.doesNotMatch(ui,/if\(!existing\.length\)\{applyCandidate\(parsed\);return;\}/);
+  assert.match(ui,/Validate & add to draft/);
+});
+
 // Simulate native DOM reparenting: the original live node and its onclick survive the move.
 class ElementStub {
  constructor(tag, id = '') { this.tagName = tag.toUpperCase(); this.id = id; this.className = ''; this.dataset = {}; this.style = {}; this.attributes = {}; this.parentElement = null; this.nodes = []; this.ownText = ''; }

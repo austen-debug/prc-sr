@@ -102,8 +102,8 @@ function nearestY(candidates, y, maxDistance) {
 
 /**
  * Convert a positioned six-column dorm table into canonical parser text.
- * This specifically preserves merged SQD/SEC values by assigning each dorm row
- * to the nearest merged-cell center rather than relying on visual line breaks.
+ * SQD can be merged vertically; blank SEC / INTER/SEC remain explicitly empty
+ * rather than shifting one column to the left or inventing a section value.
  */
 function flightAlertTableText(items) {
   if (!Array.isArray(items) || !items.length) return '';
@@ -131,20 +131,46 @@ function flightAlertTableText(items) {
   const sexes = candidates('sex', value => /^(?:M|F|MALE|FEMALE)$/.test(value));
   const loads = candidates('load', value => /^\d{1,3}$/.test(value) && Number(value) >= 1 && Number(value) <= 100);
 
+  // Associate each dorm with the printed (potentially merged) SQD cell.
+  // A SEC value centered within that SQD group's rows can represent a merged
+  // cell; a lone SEC aligned to the group's first/last row is not inherited.
+  const groupRows = new Map();
+  const assigned = dorms.map(dorm => {
+    const squadron = nearestY(squadrons, dorm.y, 20);
+    if (squadron) {
+      const group = groupRows.get(squadron.order) || [];
+      group.push(dorm.y);
+      groupRows.set(squadron.order, group);
+    }
+    return { dorm, squadron };
+  });
+  const sectionFor = (dorm, squadron) => {
+    const ys = groupRows.get(squadron.order) || [dorm.y];
+    const top = Math.max(...ys), bottom = Math.min(...ys);
+    const groupSections = sections.filter(item => item.y <= top + 3 && item.y >= bottom - 3);
+    if (!groupSections.length) return null;
+    const nearest = nearestY(groupSections, dorm.y, 15);
+    if (!nearest) return null;
+    if (groupSections.length > 1) return nearest;
+    const midpoint = (top + bottom) / 2;
+    return Math.abs(nearest.y - dorm.y) <= 2 ||
+      (ys.length > 1 && Math.abs(nearest.y - midpoint) <= 7) ? nearest : null;
+  };
+
   const rows = [];
   const seen = new Set();
-  for (const dorm of dorms) {
-    const squadron = nearestY(squadrons, dorm.y, 20);
-    const section = nearestY(sections, dorm.y, 15);
+  for (const { dorm, squadron } of assigned) {
+    if (!squadron) return '';
+    const section = sectionFor(dorm, squadron);
     const inter = nearestY(inters, dorm.y, 2);
     const sex = nearestY(sexes, dorm.y, 2);
     const load = nearestY(loads, dorm.y, 2);
-    if (!squadron || !section || !inter || !sex || !load) return '';
+    if (!squadron || !sex || !load) return '';
     const dormName = compact(dorm.text);
     const key = `${compact(squadron.text)}::${dormName}`;
     if (seen.has(key)) return '';
     seen.add(key);
-    rows.push(`${compact(squadron.text)} ${compact(section.text)} ${compact(inter.text)} ${dormName} ${compact(sex.text)} ${Number(compact(load.text))}`);
+    rows.push([compact(squadron.text), section ? compact(section.text) : '', inter ? compact(inter.text) : '', dormName, compact(sex.text), Number(compact(load.text))].join('|'));
   }
 
   let publishedTotal = null;

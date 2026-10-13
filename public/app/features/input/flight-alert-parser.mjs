@@ -158,8 +158,20 @@ export function parseFlightAlertText(text) {
   else if (declaredRows.length && declaredRows[0] !== rows.length) issues.push(diagnostic('row_count', `Flight Alert declares ${declaredRows[0]} flights, but only ${rows.length} dorm rows were extracted. No draft was changed.`));
   if (!rows.length) issues.push(diagnostic('no_rows', 'No flight rows matched the supported layout. Keep your existing Input draft and use pasted text or manual entry.'));
   const audit = validateFlightAlertRows(rows, publishedTotal);
+  const declaredRowCount = declaredRows.length && new Set(declaredRows).size === 1 ? declaredRows[0] : null;
+  const parserErrors = issues.filter(issue => issue.level === 'error');
+  const auditErrors = audit.issues.filter(issue => issue.level === 'error');
+  // An incomplete, count-verified PDF is recoverable in the REVIEW UI only.
+  // Do not mark parsing successful; never apply fewer rows than declared.
+  const recoverable = Number.isSafeInteger(declaredRowCount) &&
+    declaredRowCount > rows.length && rows.length > 0 && declaredRowCount <= 100 &&
+    parserErrors.length > 0 &&
+    parserErrors.every(issue => issue.code === 'row_count' || issue.code === 'unparsed_row') &&
+    auditErrors.length === 0;
   return Object.freeze({
-    ok: rows.length > 0 && !issues.some(issue => issue.level === 'error') && !audit.issues.some(issue => issue.level === 'error'),
+    ok: rows.length > 0 && parserErrors.length === 0 && auditErrors.length === 0,
+    recoverable,
+    declaredRowCount,
     rows: Object.freeze(rows.map(row => Object.freeze(row))),
     publishedTotal,
     issues: Object.freeze([...issues, ...audit.issues]),

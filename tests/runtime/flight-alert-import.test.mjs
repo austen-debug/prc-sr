@@ -50,7 +50,7 @@ test('unsupported PDF fails closed',async()=>{
 });
 
 
-function syntheticAlertPdf({ withSection = false } = {}) {
+function syntheticAlertPdf({ withSection = false, omitDormAt = -1 } = {}) {
   // Coordinate-based text PDF: 16 flights, merged SQD, intentionally empty SEC,
   // separate right-hand schedule, and numeric INTER/SECT values 1–16.
   const items = [];
@@ -72,7 +72,7 @@ function syntheticAlertPdf({ withSection = false } = {}) {
     const y=650-i*12;
     if(withSection && i===0)put(127,y,'2');
     put(194,y,String(i+1));
-    put(298,y,names[i]);
+    if(i!==omitDormAt)put(298,y,names[i]);
     put(374,y,females.has(i)?'F':'M');
     put(442,y,String(loads[i]));
     put(625,y,'01/7/321'); // Must not contaminate the dorm column.
@@ -113,6 +113,18 @@ test('a populated SEC on one PDF row is not copied into adjacent blank rows',asy
   assert.ok(parsed.rows.slice(1).every(row=>row.sec===''));
 });
 
+
+test('a damaged 16-flight PDF recovering only 15 dorms opens repair review instead of silently applying',async()=>{
+  const extracted=await extractFlightAlertPdf(syntheticAlertPdf({omitDormAt:9}));
+  const parsed=parseFlightAlertText(extracted);
+  assert.equal(parsed.ok,false,'partial import must remain unapproved');
+  assert.equal(parsed.recoverable,true,JSON.stringify(parsed.issues));
+  assert.equal(parsed.declaredRowCount,16);
+  assert.equal(parsed.rows.length,15);
+  assert.ok(parsed.issues.some(issue=>issue.code==='row_count'));
+  assert.equal(parsed.rows.some(row=>row.dorm_name==='4A2'),false);
+});
+
 test('source-delimited blank section cells are review warnings, but nonblank invalid fields still fail',()=>{
   const source='SQD SEC INTER/SECT DORM SEX LOAD\n321||15|3A1|M|60\n|2||3A2|F|46\nAAFES: 106';
   const result=parseFlightAlertText(source);
@@ -128,12 +140,42 @@ test('the Flight Alert UI requires explicit review before an incomplete draft ca
   const ui=await (await import('node:fs/promises')).readFile(new URL('../../public/app/features/input/flight-alert-import.mjs',import.meta.url),'utf8');
   assert.match(ui,/function drawImportReview\(parsed\)/);
   assert.match(ui,/gate-import-validated/);
-  assert.match(ui,/if \(!checkbox\.checked\)/);
-  assert.match(ui,/validateFlightAlertRows\(candidateRows,parsed\.publishedTotal\)/);
+  assert.match(ui,/if\(!checkbox\.checked\)/);
+  assert.match(ui,/validateFlightAlertRows\(incoming,parsed\.publishedTotal\)/);
   assert.match(ui,/sec:item\.sec \|\| ''/);
   assert.match(ui,/inter_sec:item\.inter_sec \|\| ''/);
   assert.doesNotMatch(ui,/if\(!existing\.length\)\{applyCandidate\(parsed\);return;\}/);
   assert.match(ui,/Validate & add to draft/);
+});
+
+
+test('15 of 16 PDF rows are recoverable for review, but parsing does not report success',()=>{
+  const lines=['SQD SEC INTER/SECT DORM SEX LOAD'];
+  for(let i=1;i<=15;i++)lines.push(`321||${i}|A${String(i).padStart(2,'0')}|M|56`);
+  lines.push("TOTAL FLTS - 16", "AAFES: 898");
+  const parsed=parseFlightAlertText(lines.join('\n'));
+  assert.equal(parsed.ok,false,'a partial extraction must not silently succeed');
+  assert.equal(parsed.recoverable,true,'show review instead of a blocking error');
+  assert.equal(parsed.declaredRowCount,16);
+  assert.equal(parsed.rows.length,15);
+  assert.equal(parsed.issues.some(issue=>issue.code==='row_count'),true);
+  const fatal=parseFlightAlertText(lines.join('\n').replace('321||1|A01|M|56','321||1|A01|M|125'));
+  assert.equal(fatal.recoverable,false,'invalid required values must not be accepted as recoverable');
+});
+
+test('recoverable review allows inserting a manually completed row but forbids a partial draft write',async()=>{
+  const ui=await (await import('node:fs/promises')).readFile(new URL('../../public/app/features/input/flight-alert-import.mjs',import.meta.url),'utf8');
+  assert.match(ui,/!parsed\.ok && !parsed\.recoverable/);
+  assert.match(ui,/function processPdfFile\(file\)/);
+  assert.match(ui,/state\.selectedPdf=file/);
+  assert.match(ui,/Retry selected PDF/);
+  assert.doesNotMatch(ui,/input\.value\s*=\s*''/,'selection must not be erased after an error');
+  assert.match(ui,/Add missing flight/);
+  assert.match(ui,/incoming\.splice\(index,0/);
+  assert.match(ui,/if\(expected!==null && incoming\.length!==expected\)/);
+  assert.match(ui,/candidate\.rows\.length !== candidate\.declaredRowCount/);
+  assert.match(ui,/validateFlightAlertRows\(incoming,parsed\.publishedTotal\)/);
+  assert.match(ui,/state\.selectedPdf=null/);
 });
 
 // Simulate native DOM reparenting: the original live node and its onclick survive the move.

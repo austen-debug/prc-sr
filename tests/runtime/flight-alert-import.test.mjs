@@ -50,7 +50,7 @@ test('unsupported PDF fails closed',async()=>{
 });
 
 
-function syntheticAlertPdf({ withSection = false } = {}) {
+function syntheticAlertPdf({ withSection = false, omitDormAt = -1 } = {}) {
   // Coordinate-based text PDF: 16 flights, merged SQD, intentionally empty SEC,
   // separate right-hand schedule, and numeric INTER/SECT values 1–16.
   const items = [];
@@ -72,7 +72,7 @@ function syntheticAlertPdf({ withSection = false } = {}) {
     const y=650-i*12;
     if(withSection && i===0)put(127,y,'2');
     put(194,y,String(i+1));
-    put(298,y,names[i]);
+    if(i!==omitDormAt)put(298,y,names[i]);
     put(374,y,females.has(i)?'F':'M');
     put(442,y,String(loads[i]));
     put(625,y,'01/7/321'); // Must not contaminate the dorm column.
@@ -111,6 +111,18 @@ test('a populated SEC on one PDF row is not copied into adjacent blank rows',asy
   assert.equal(parsed.ok,true,JSON.stringify(parsed.issues));
   assert.equal(parsed.rows[0].sec,'2');
   assert.ok(parsed.rows.slice(1).every(row=>row.sec===''));
+});
+
+
+test('a damaged 16-flight PDF recovering only 15 dorms opens repair review instead of silently applying',async()=>{
+  const extracted=await extractFlightAlertPdf(syntheticAlertPdf({omitDormAt:9}));
+  const parsed=parseFlightAlertText(extracted);
+  assert.equal(parsed.ok,false,'partial import must remain unapproved');
+  assert.equal(parsed.recoverable,true,JSON.stringify(parsed.issues));
+  assert.equal(parsed.declaredRowCount,16);
+  assert.equal(parsed.rows.length,15);
+  assert.ok(parsed.issues.some(issue=>issue.code==='row_count'));
+  assert.equal(parsed.rows.some(row=>row.dorm_name==='4A2'),false);
 });
 
 test('source-delimited blank section cells are review warnings, but nonblank invalid fields still fail',()=>{

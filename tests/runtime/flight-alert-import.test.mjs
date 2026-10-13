@@ -173,6 +173,19 @@ test('source-delimited blank section cells are review warnings, but nonblank inv
   assert.equal(invalid.issues.some(issue=>issue.code==='section'&&issue.level==='error'),true);
 });
 
+test('duplicate INTER flight numbers are rejected rather than mis-ordering the Input draft',()=>{
+  const parsed=parseFlightAlertText([
+    'SQD SEC INTER/SECT DORM SEX LOAD',
+    '322||7|A07|M|59',
+    '322||7|B07|F|46',
+    'TOTAL FLTS - 2',
+    'AAFES: 105'
+  ].join('\n'));
+  assert.equal(parsed.ok,false);
+  assert.equal(parsed.recoverable,false);
+  assert.equal(parsed.issues.some(issue=>issue.code==='duplicate_flight_number'),true);
+});
+
 test('the Flight Alert UI requires explicit review before an incomplete draft can be imported',async()=>{
   const ui=await (await import('node:fs/promises')).readFile(new URL('../../public/app/features/input/flight-alert-import.mjs',import.meta.url),'utf8');
   assert.match(ui,/function drawImportReview\(parsed\)/);

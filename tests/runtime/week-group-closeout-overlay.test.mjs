@@ -71,7 +71,10 @@ async function harness(options = {}) {
     requestAnimationFrame(callback) { callback(); },
     window: {
       alert(message) { alerts.push(message); },
-      setTimeout() { calls.push('scheduleMessageClear'); },
+      setTimeout(callback, delay) {
+        if (delay === 0) Promise.resolve().then(callback);
+        else calls.push('scheduleMessageClear');
+      },
       dataSdk: {
         create() { calls.push('createArchive'); return pendingCreate; }
       },

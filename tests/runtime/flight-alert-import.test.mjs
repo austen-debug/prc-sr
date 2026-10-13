@@ -1,5 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { Script } from 'node:vm';
+import { readFile } from 'node:fs/promises';
 import { parseFlightAlertText, validateFlightAlertRows, normalizeDorm, normalizeSection, normalizeSquadron, orderFlightAlertRows, prepareFlightAlertReviewRows } from '../../public/app/features/input/flight-alert-parser.mjs';
 import { extractFlightAlertPdf } from '../../public/app/features/input/flight-alert-pdf.mjs';
 import { relocateWeekGroupActions } from '../../public/app/features/input/week-group-action-placement.mjs';
@@ -213,6 +215,63 @@ test('recoverable review allows inserting a manually completed row but forbids a
   assert.match(ui,/candidate\.rows\.length !== candidate\.declaredRowCount/);
   assert.match(ui,/validateFlightAlertRows\(incoming,parsed\.publishedTotal\)/);
   assert.match(ui,/state\.selectedPdf=null/);
+});
+
+
+test('canonical Input preflight catches incomplete draft rows that LOAD-only filtering would skip',async()=>{
+  const code=await readFile(new URL('../../public/js/gate-input-page-controller.js',import.meta.url),'utf8');
+  const from=code.indexOf('  function preflightInitialization() {');
+  const to=code.indexOf('  function syncLocalRecord(',from);
+  assert.ok(from>0&&to>from);
+  const rows=[
+    {rowIndex:0,sdq:'322 TRS',sec:'',inter_sec:'6',dorm_name:'B07',sex:'female',load:'46'},
+    {rowIndex:1,sdq:'322 TRS',sec:'',inter_sec:'7',dorm_name:'A07',sex:'male',load:''},
+    {rowIndex:2,sdq:'323 TRS',sec:'',inter_sec:'8',dorm_name:'2A1',sex:'male',load:'59'}
+  ];
+  const context={
+    getWeekGroupInputValue:()=> 'WG27002',
+    validateReceivingWindows:()=> '',
+    batchRowsSafe:()=>rows,
+    filledRows:()=>rows.filter(row=>Number(row.load)>0),
+    n:value=>Number(value)||0,
+    findDuplicateDormIdentity:()=>null,
+    allDataSafe:()=>[],
+  };
+  const preflight=new Script('(function(){'+code.slice(from,to)+'return preflightInitialization;})()')
+    .runInNewContext(context);
+  const incomplete=preflight();
+  assert.equal(incomplete.ok,false);
+  assert.match(incomplete.message,/Input row 2 is incomplete/);
+  rows[1].load='59';
+  assert.equal(preflight().ok,true);
+  rows[1].dorm_name='';
+  assert.equal(preflight().ok,false,'a blank dorm must never become Dorm 2');
+  assert.doesNotMatch(code,/\\x60Dorm \\$\\{Number\\(row\\.rowIndex/);
+});
+
+test('persisted dorm ordering follows normalized source sequence rather than review insertion order',async()=>{
+  const code=await readFile(new URL('../../public/js/gate-input-page-controller.js',import.meta.url),'utf8');
+  const from=code.indexOf('  function buildDormPayload(');
+  const to=code.indexOf('  async function initializeWeekGroupCanonical(',from);
+  assert.ok(from>0&&to>from);
+  const context={
+    normalizedDormName:row=>row.dorm_name,
+    normalizeDormIdentityPart:value=>String(value||'').toUpperCase(),
+    recordDisplay:()=>null,
+    n:value=>Number(value)||0
+  };
+  const build=new Script('(function(){'+code.slice(from,to)+'return buildDormPayload;})()')
+    .runInNewContext(context);
+  const unsorted=[{inter_sec:'8',sdq:'323 TRS',dorm_name:'2A1',sex:'male',load:'59'},
+    {inter_sec:'7',sdq:'322 TRS',dorm_name:'A07',sex:'male',load:'59'},
+    {inter_sec:'6',sdq:'322 TRS',dorm_name:'B07',sex:'female',load:'46'}];
+  const ordered=orderFlightAlertRows(unsorted);
+  const payloads=ordered.map((row,index)=>build({...row,rowIndex:index},'WG27002',{}));
+  assert.deepEqual(payloads.map(p=>p.inter_sec),['6','7','8']);
+  assert.deepEqual(payloads.map(p=>p.display_order),[1,2,3]);
+  assert.deepEqual(payloads.map(p=>p.input_order),[1,2,3]);
+  assert.deepEqual(payloads.map(p=>p.source_row_index),[0,1,2]);
+  assert.equal(payloads[1].dorm_name,'A07');
 });
 
 // Simulate native DOM reparenting: the original live node and its onclick survive the move.

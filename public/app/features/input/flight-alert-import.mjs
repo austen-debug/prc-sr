@@ -282,23 +282,32 @@ function drawImportReview(parsed) {
 function drawInterForm() {
   const main=$('gate-import-dialog-main');main.replaceChildren();
   const active=rows().map((row,index)=>({row,index})).filter(({row})=>row.sdq||row.dorm_name||row.load);
-  const intro=element('p','text-sm text-muted','Review INTER/SEC values extracted from the Flight Alert, or complete missing values from a separate source. Values remain in the Input draft until initialization.');
+  const intro=element('p','text-sm text-muted','Review SEC and INTER/SEC values against the Flight Alert. Blank source cells may remain blank; do not guess. Nothing is saved to operational records until initialization.');
   const form=element('form','grid gap-3');
-  active.forEach(({row,index})=>{
-    const label=element('label','grid sm:grid-cols-[1fr_1fr] gap-2 items-center text-sm');
-    const span=element('span','font-semibold',`${row.sdq} / Sec ${row.sec} / ${row.dorm_name}`);
-    const input=element('input','border rounded-lg px-3 py-2');input.name=String(index);input.value=row.inter_sec||'';input.required=true;input.style.cssText='border-color:var(--border);background:var(--surface-alt);color:var(--text)';
-    input.setAttribute('aria-label',`INTER/SEC for ${row.sdq} dorm ${row.dorm_name}`);
-    label.append(span,input);form.append(label);
+  const editing = active.map(({row,index})=>({index,row:{...row}}));
+  editing.forEach(({row,index})=>{
+    const wrapper=element('div','grid gap-2 sm:grid-cols-[minmax(0,1fr)_5rem_6rem] items-center');
+    wrapper.append(element('span','text-sm font-semibold',`${row.sdq} / ${row.dorm_name}`));
+    for(const [field,label,size] of [['sec','SEC',1],['inter_sec','INTER/SEC',3]]) {
+      const input=element('input','border rounded-lg px-2 py-2 text-sm');
+      input.value=row[field]||'';input.maxLength=size;input.placeholder=label;
+      input.setAttribute('aria-label',`${label} for ${row.sdq} dorm ${row.dorm_name}`);
+      input.style.cssText='border-color:var(--border);background:var(--surface-alt);color:var(--text)';
+      input.addEventListener('input',()=>{row[field]=input.value.trim();});
+      wrapper.append(input);
+    }
+    form.append(wrapper);
   });
-  const save=element('button',BTN,'Apply INTER/SEC to Input');save.type='submit';save.style.borderColor=COLORS.border;
+  const save=element('button',BTN,'Validate section changes');save.type='submit';save.style.borderColor=COLORS.border;
   form.append(save);
   form.addEventListener('submit',event=>{
-    event.preventDefault();
-    const inputs=form.querySelectorAll('input');
-    for(const input of inputs){if(!input.value.trim()){input.focus();modalError('Complete all INTER/SEC entries before applying.');return;}}
-    for(const input of inputs) rows()[Number(input.name)].inter_sec=input.value.trim();
-    owner().renderBatchGrid();closeModal();renderState();notice('INTER/SEC values applied to the draft. Initialize Week Group separately.');
+    event.preventDefault();clearError();
+    const adjusted=editing.map(({row})=>row);
+    const invalid=validateFlightAlertRows(adjusted,state.published).issues.filter(issue=>issue.level==='error');
+    if(invalid.length) {modalError(invalid.slice(0,3).map(issue=>issue.message).join(' '));return;}
+    for(const {index,row} of editing) {rows()[index].sec=row.sec;rows()[index].inter_sec=row.inter_sec;}
+    owner().renderBatchGrid();closeModal();renderState();
+    notice('Section changes applied to the Input draft. Any reviewed blanks remain blank.');
   });
   main.append(intro,form);
 }

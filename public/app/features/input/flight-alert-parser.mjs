@@ -22,8 +22,30 @@ export function normalizeSection(value) {
 function diagnostic(code, message, line = null, level = 'error') {
   return Object.freeze({ code, message, line, level });
 }
+
+/** Delimiter-preserved, coordinate-extracted PDF rows keep empty fields empty. */
+function parseDelimitedLine(line, sourceLine, context) {
+  const cells = line.split('|').map(value => value.trim().toUpperCase());
+  if (cells.length !== 6) return null;
+  const [rawSq, sec, interSec, dorm, sex, load] = cells;
+  const sqMatch = rawSq ? rawSq.match(SQUADRON) : null;
+  const squadron = sqMatch?.[1] || (rawSq ? '' : context.squadron);
+  if (!squadron || !DORM.test(dorm) || !/^(?:MALE|FEMALE|M|F)$/.test(sex) ||
+      !/^\d{1,3}$/.test(load) ||
+      (sec && !normalizeSection(sec)) || (interSec && !/^\d{1,3}$/.test(interSec))) return null;
+  context.squadron = squadron;
+  context.section = sec; // Blank SEC remains blank; do not inherit or guess it.
+  return {
+    sourceLine, sdq: squadron + ' TRS', sec, inter_sec: interSec,
+    dorm_name: dorm, sex: sex === 'FEMALE' || sex === 'F' ? 'female' : 'male',
+    load: String(Number(load)), band: false,
+    space_force: squadron === '535', capacity: Number(load)
+  };
+}
+
 /** Supports both legacy five-column rows and six-column alerts with merged SQD/SEC cells. */
 function parseLine(line, sourceLine, context, sixColumns) {
+  if (line.includes('|')) return parseDelimitedLine(line, sourceLine, context);
   const tokens = line.toUpperCase().replace(/[|,;\t]+/g, ' ').trim().split(/\s+/);
   if (tokens.length < 3) return null;
   const loadToken = tokens.at(-1);
@@ -41,28 +63,20 @@ function parseLine(line, sourceLine, context, sixColumns) {
 
   let section = '';
   let interSec = '';
-  let squadron = rawSq;
-  const rowHasInter = leading.length === 2;
-  const isSixColumn = sixColumns || rowHasInter;
-  if (rawSq) {
-    // The first row for a new squadron must name its section; do not guess from the previous squadron.
-    if (!leading.length) return null;
-    section = leading[0];
-    interSec = leading[1] || '';
-  } else if (isSixColumn && context.squadron && context.section) {
-    squadron = context.squadron;
-    if (leading.length === 2) {
-      [section, interSec] = leading;
-    } else if (leading.length === 1) {
-      section = context.section;
-      interSec = leading[0];
-    } else {
-      section = context.section;
-    }
+  let squadron = rawSq || context.squadron;
+  if (rawSq && !sixColumns) {
+    if (leading.length !== 1) return null;
+    section = leading[0]; // Legacy five-column layout has no INTER/SEC.
+  } else if (sixColumns) {
+    if (leading.length === 2) [section, interSec] = leading;
+    else if (leading.length === 1) interSec = leading[0];
+    // Only delimiter-preserved coordinate extraction unambiguously identifies
+    // a blank SEC/INTER cell. A single numeric token is treated as INTER/SEC
+    // for six-column text fallback, and the resulting draft requires review.
   } else {
     return null;
   }
-  if (!normalizeSection(section) || !squadron) return null;
+  if (!squadron || (section && !normalizeSection(section))) return null;
   context.squadron = squadron;
   context.section = section;
   return {
@@ -89,7 +103,8 @@ export function validateFlightAlertRows(rows, publishedTotal) {
     const dorm = normalizeDorm(row.dorm_name);
     const load = Number(row.load);
     if (!squadron) issues.push(diagnostic('squadron', `Row ${index + 1}: unrecognized squadron.`, location));
-    if (!section) issues.push(diagnostic('section', `Row ${index + 1}: section must be 1–4.`, location));
+    if (!String(row.sec ?? '').trim()) issues.push(diagnostic('section', `Row ${index + 1}: SEC is blank; review before importing.`, location, 'warning'));
+    else if (!section) issues.push(diagnostic('section', `Row ${index + 1}: section must be 1–4 if supplied.`, location));
     if (!dorm) issues.push(diagnostic('dorm', `Row ${index + 1}: invalid dorm identifier.`, location));
     if (!Number.isInteger(load) || load < 1 || load > 100) issues.push(diagnostic('load', `Row ${index + 1}: load must be 1–100.`, location));
     else calculated += load;
@@ -101,7 +116,8 @@ export function validateFlightAlertRows(rows, publishedTotal) {
     }
     if (row.band && squadron !== '321 TRS') issues.push(diagnostic('band', `Row ${index + 1}: Band requires 321 TRS.`, location));
     if (row.band && row.space_force) issues.push(diagnostic('classification', `Row ${index + 1}: Band and Space Force conflict.`, location));
-    if (!String(row.inter_sec ?? '').trim()) issues.push(diagnostic('inter_sec', `Row ${index + 1}: enter INTER/SEC from the Flight Alert or separate system.`, location));
+    if (!String(row.inter_sec ?? '').trim()) issues.push(diagnostic('inter_sec', `Row ${index + 1}: INTER/SEC is blank; review before importing.`, location, 'warning'));
+    else if (!/^\d{1,3}$/.test(String(row.inter_sec).trim())) issues.push(diagnostic('inter_sec_invalid', `Row ${index + 1}: INTER/SEC must be numeric if supplied.`, location));
   });
   const total = Number(publishedTotal);
   const hasTotal = publishedTotal !== '' && publishedTotal !== null && publishedTotal !== undefined && Number.isInteger(total) && total >= 0;
@@ -142,7 +158,7 @@ export function parseFlightAlertText(text) {
   if (!rows.length) issues.push(diagnostic('no_rows', 'No flight rows matched the supported layout. Keep your existing Input draft and use pasted text or manual entry.'));
   const audit = validateFlightAlertRows(rows, publishedTotal);
   return Object.freeze({
-    ok: rows.length > 0 && !issues.some(issue => issue.level === 'error') && !audit.issues.some(issue => issue.level === 'error' && issue.code !== 'inter_sec'),
+    ok: rows.length > 0 && !issues.some(issue => issue.level === 'error') && !audit.issues.some(issue => issue.level === 'error'),
     rows: Object.freeze(rows.map(row => Object.freeze(row))),
     publishedTotal,
     issues: Object.freeze([...issues, ...audit.issues]),

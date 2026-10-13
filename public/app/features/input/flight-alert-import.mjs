@@ -249,7 +249,7 @@ function drawImportReview(parsed) {
   const blankInter = candidateRows.filter(row => !row.inter_sec).length;
   main.append(element('h3','text-base font-bold','Validate extracted Flight Alert'));
   main.append(element('p','text-sm',`${candidateRows.length} flights extracted. ${blankSec} blank SEC and ${blankInter} blank INTER/SEC fields. Review the values below; empty section cells are never guessed.`));
-  const total = element('p','text-xs text-muted',`Calculated load: ${parsed.calculatedTotal}. Published total: ${parsed.publishedTotal ?? 'not found'}. ${existing.length ? '${diff.added} added, ${diff.changed} changed, ${diff.removed} removed.' : ''}`);
+  const total = element('p','text-xs text-muted',`Calculated load: ${parsed.calculatedTotal}. Published total: ${parsed.publishedTotal ?? 'not found'}. ${existing.length ? `${diff.added} added, ${diff.changed} changed, ${diff.removed} removed.` : ''}`);
   main.append(total);
   const scroll = element('div','overflow-x-auto rounded-lg border'); scroll.style.borderColor = COLORS.border;
   const table = element('table','w-full text-xs text-left'); table.style.minWidth = '590px';

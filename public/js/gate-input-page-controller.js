@@ -373,7 +373,9 @@
   }
 
   function normalizedDormName(row) {
-    return String(row.dorm_name || '').trim() || `Dorm ${Number(row.rowIndex || 0) + 1}`;
+    // Never manufacture identities for missing Flight Alert dorm cells.
+    // preflightInitialization rejects blank/invalid dorms before persistence.
+    return String(row.dorm_name || '').trim();
   }
 
   function normalizeDormIdentityPart(value) {
@@ -407,6 +409,21 @@
     const windowError = validateReceivingWindows();
     if (windowError) return { ok: false, message: windowError };
 
+    // Validate EVERY populated Input row, not only those with a positive LOAD.
+    // Otherwise a partially parsed flight can silently disappear at initialize.
+    const populated = batchRowsSafe().filter(row =>
+      ['sdq','sec','inter_sec','dorm_name','load'].some(field => String(row[field] ?? '').trim()) ||
+      row.band || row.space_force
+    );
+    const incomplete = populated.find(row =>
+      !String(row.sdq ?? '').trim() || !String(row.dorm_name ?? '').trim() ||
+      !/^(?:[0-9][A-Za-z][0-9]|[A-Za-z][0-9]{2})$/.test(String(row.dorm_name ?? '').trim()) ||
+      !['male','female'].includes(row.sex) ||
+      !/^\d{1,3}$/.test(String(row.load ?? '').trim()) ||
+      Number(row.load) < 1 || Number(row.load) > 100
+    );
+    if (incomplete) return { ok: false, message:
+      `Input row ${Number(incomplete.rowIndex) + 1} is incomplete: SQD, valid DORM, SEX and LOAD (1–100) are required. Blank SEC / INTER/SECT are allowed.` };
     const rows = filledRows();
     if (rows.length === 0) return { ok: false, message: 'At least one row with Load required.' };
 

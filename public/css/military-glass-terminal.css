@@ -1391,6 +1391,12 @@ tbody tr:hover {
   border-radius: var(--mg-radius-lg);
 }
 
+/* Explicit Day Command plane for the reference tile: the rendered board must
+   remain light even if the page's dark board surface is otherwise inherited. */
+body.theme-light #page-board .gate-dorm-card.gate-board-card--reference {
+  background: var(--mg-board-card);
+}
+
 #page-board .gate-board-card--reference .gate-board-card__header {
   grid-area: header;
   display: grid;

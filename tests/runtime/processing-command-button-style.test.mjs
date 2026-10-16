@@ -44,8 +44,8 @@ test('Assignment adapter updates nested label without replacing live save button
 
 test('Button styling is scoped to existing stylesheet and respects theme, focus and motion', async () => {
   const css = await source('public/css/military-glass-terminal.css');
-  assert.match(css, /#dorm-modal \.gate-processing-command \{/);
-  assert.match(css, /#dorm-modal \.gate-processing-command::before \{/);
+  assert.match(css, /#dorm-modal \.gate-processing-command,\s*#page-processing #processing-add-local-bus \{/);
+  assert.match(css, /#dorm-modal \.gate-processing-command::before,\s*#page-processing #processing-add-local-bus::before \{/);
   for (const variant of ['commit', 'shortcut', 'reopen', 'secondary']) {
     assert.ok(css.includes('#dorm-modal .gate-processing-command--' + variant));
   }

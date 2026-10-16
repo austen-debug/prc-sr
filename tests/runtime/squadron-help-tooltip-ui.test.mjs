@@ -22,7 +22,7 @@ function chromium() {
   return null;
 }
 
-const template = section(js,'  // Compact, decorative icon;', '  function ensureDocumentIdentity()');
+const template = section(js,'  // Optical-center, high-contrast plain 'i';', '  function ensureDocumentIdentity()');
 const binder = section(js,'  // One floating tooltip keeps long descriptions', '  function bindSquadronControls(page)');
 const escaped = text => String(text).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;');
 const tooltipFactory = new Function('esc', template + '\nreturn tooltip;')(escaped);
@@ -63,8 +63,8 @@ test('the standalone Squadron page and app shell use the same fresh tooltip CSS/
   const standalone = await source('public/squadron/index.html');
   const budget = JSON.parse(await source('docs/build-2/ACTIVE_RUNTIME_BUDGET.json'));
   for (const uri of [
-    '/css/military-glass-terminal.css?v=squadron-help-blue-20261016-v1',
-    '/js/prc-dash-final-audit.js?v=squadron-help-blue-20261016-v1'
+    '/css/military-glass-terminal.css?v=squadron-help-centered-20261016-v2',
+    '/js/prc-dash-final-audit.js?v=squadron-help-centered-20261016-v2'
   ]) {
     assert.ok(mw.includes(uri), 'Middleware lacks latest Squadron UI asset ' + uri);
     assert.ok(standalone.includes(uri), 'Standalone Squadron route lacks latest UI asset ' + uri);
@@ -112,7 +112,7 @@ test('real Chromium renders compact blue info icon with animated tooltip above/b
     '  result.themes[theme]={initial,open,focused,escaped,tapped};',
     '  b.dispatchEvent(new Event("mouseleave"));',
     ' }',
-    ' result.allButtons=[...page.querySelectorAll(".gate-info")].every(x=>getComputedStyle(x).width==="22px");',
+    ' result.allButtons=[...page.querySelectorAll(".gate-info")].every(x=>getComputedStyle(x).width==="18px");',
     ' document.getElementById("results").textContent=JSON.stringify(result);',
     '})();'
   ].join('\n');
@@ -143,8 +143,8 @@ test('real Chromium renders compact blue info icon with animated tooltip above/b
       for(const [theme,s] of Object.entries(data.themes)){
         const label=mode+'/'+theme;
         assert.equal(s.initial.hidden,true,label+' tooltip visible at rest');
-        assert.equal(s.initial.button.width,22,label+' icon width changed');
-        assert.equal(s.initial.button.height,22,label+' icon height changed');
+        assert.equal(s.initial.button.width,18,label+' icon width changed');
+        assert.equal(s.initial.button.height,18,label+' icon height changed');
         assert.match(s.initial.gradient,/linear-gradient/i,label+' blue gradient button missing');
         assert.equal(s.open.open,'true',label+' hover did not open tooltip');
         assert.equal(s.open.aria,'squadron-tooltip',label+' aria-describedby missing');

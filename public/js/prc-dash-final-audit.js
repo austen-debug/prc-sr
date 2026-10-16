@@ -30,7 +30,8 @@
   const standalone = () => document.body.classList.contains('gate-squadron-standalone');
   const esc = value => String(value ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#039;');
   function setText(element, value) { if (element && element.textContent !== String(value)) element.textContent = String(value); }
-  const tooltip = (label, description) => `<button type="button" class="gate-info" data-squadron-tip="${esc(description)}" aria-label="About ${esc(label)}">ⓘ</button>`;
+  // Compact, decorative icon; the button's accessible name remains contextual.
+  const tooltip = (label, description) => `<button type="button" class="gate-info" data-squadron-tip="${esc(description)}" aria-label="About ${esc(label)}"><svg class="gate-info__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 7.5h.01"/></svg></button>`;
 
   function ensureDocumentIdentity() {
     document.title = standalone() ? 'Squadron Board · GATE' : 'GATE — Gateway Arrival Tracking Environment | Pfingston Reception Center';
@@ -287,6 +288,66 @@
     } finally { polling = false; }
   }
 
+  // One floating tooltip keeps long descriptions outside the narrow metric
+  // headings. Its entrance/exit and icon motion are presentation-only.
+  function bindSquadronTooltips(page) {
+    const tip = byId('squadron-tooltip');
+    if (!tip) return;
+    let activeButton = null;
+    let hideTimer = null;
+    const hideTip = button => {
+      if (button && button !== activeButton) return;
+      if (activeButton) activeButton.removeAttribute('aria-describedby');
+      activeButton = null;
+      tip.dataset.open = 'false';
+      window.clearTimeout(hideTimer);
+      hideTimer = window.setTimeout(() => { if (!activeButton) tip.hidden = true; }, 220);
+    };
+    const showTip = button => {
+      if (!button) return;
+      window.clearTimeout(hideTimer);
+      if (activeButton && activeButton !== button) activeButton.removeAttribute('aria-describedby');
+      activeButton = button;
+      tip.dataset.open = 'false';
+      tip.textContent = button.dataset.squadronTip || '';
+      tip.hidden = false;
+      const bounds = button.getBoundingClientRect();
+      const tipRect = tip.getBoundingClientRect();
+      const width = tipRect.width;
+      const height = tipRect.height;
+      const left = Math.max(12, Math.min(bounds.left + bounds.width / 2 - width / 2, window.innerWidth - width - 12));
+      const arrow = Math.max(14, Math.min(bounds.left + bounds.width / 2 - left, width - 14));
+      const above = bounds.top >= height + 18;
+      const top = above ? bounds.top - height - 11 : Math.min(window.innerHeight - height - 8, bounds.bottom + 11);
+      tip.style.left = `${left}px`;
+      tip.style.top = `${Math.max(8, top)}px`;
+      tip.style.setProperty('--gate-squadron-tooltip-arrow-x', `${arrow}px`);
+      tip.dataset.placement = above ? 'above' : 'below';
+      button.setAttribute('aria-describedby', 'squadron-tooltip');
+      window.requestAnimationFrame(() => {
+        if (activeButton === button) tip.dataset.open = 'true';
+      });
+    };
+    page.querySelectorAll('[data-squadron-tip]').forEach(button => {
+      button.addEventListener('mouseenter', () => showTip(button));
+      button.addEventListener('mouseleave', () => hideTip(button));
+      button.addEventListener('focus', () => showTip(button));
+      button.addEventListener('blur', () => hideTip(button));
+      // A touch-generated focus event can precede click. Always show on click
+      // rather than immediately closing the tooltip on the same tap.
+      button.addEventListener('click', () => showTip(button));
+    });
+    page.addEventListener('pointerdown', event => {
+      if (!event.target.closest('[data-squadron-tip]')) hideTip();
+    });
+    page.addEventListener('keydown', event => {
+      if (event.key === 'Escape') {
+        hideTip();
+        event.stopPropagation();
+      }
+    });
+  }
+
   function bindSquadronControls(page) {
     const dialog = byId('squadron-info-dialog');
     const opener = byId('squadron-information');
@@ -303,28 +364,7 @@
     });
     byId('squadron-info-close')?.addEventListener('click', () => dialog.close());
     dialog?.addEventListener('close', () => opener?.focus());
-    const tip = byId('squadron-tooltip');
-    const showTip = button => {
-      if (!tip) return;
-      tip.textContent = button.dataset.squadronTip || '';
-      tip.hidden = false;
-      const bounds = button.getBoundingClientRect();
-      const width = tip.getBoundingClientRect().width;
-      const height = tip.getBoundingClientRect().height;
-      tip.style.left = `${Math.max(12, Math.min(bounds.left, window.innerWidth - width - 12))}px`;
-      tip.style.top = `${bounds.bottom + height + 12 < window.innerHeight ? bounds.bottom + 8 : Math.max(8, bounds.top - height - 8)}px`;
-      button.setAttribute('aria-describedby', 'squadron-tooltip');
-    };
-    const hideTip = button => { if (tip) tip.hidden = true; button?.removeAttribute('aria-describedby'); };
-    page.querySelectorAll('[data-squadron-tip]').forEach(button => {
-      button.addEventListener('mouseenter', () => showTip(button));
-      button.addEventListener('mouseleave', () => hideTip(button));
-      button.addEventListener('focus', () => showTip(button));
-      button.addEventListener('blur', () => hideTip(button));
-      button.addEventListener('click', () => tip.hidden ? showTip(button) : hideTip(button));
-      button.addEventListener('keydown', event => { if (event.key === 'Escape') { hideTip(button); event.stopPropagation(); } });
-    });
-    page.addEventListener('keydown', event => { if (event.key === 'Escape') page.querySelectorAll('[data-squadron-tip]').forEach(hideTip); });
+    bindSquadronTooltips(page);
     byId('squadron-enable-sound')?.addEventListener('click', () => {
       alertSound = alertSound || new Audio('/assets/sounds/gate_bus_sound.mp3');
       alertSound.preload = 'auto';

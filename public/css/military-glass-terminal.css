@@ -1371,11 +1371,14 @@ tbody tr:hover {
     var(--mg-shadow-soft);
 }
 
-/* Status Board reference card — deliberately isolated from Squadron,
+/* Responsive type scales with individual card width (cqw), not browser width;
+   this prevents narrow three-column tiles from inheriting huge wall-display text.
+ * Status Board reference card — deliberately isolated from Squadron,
    Processing and the original GateComponents card layout. Three regions:
    header (dorm, identity, operational state), centered timer, footer
    (auditorium, load) and full-width load progress. */
 #page-board .gate-dorm-card.gate-board-card--reference {
+  container-type: inline-size;
   display: grid;
   grid-template-columns: minmax(0,1fr);
   grid-template-rows: auto minmax(2.7rem,1fr) auto 6px;
@@ -1409,7 +1412,7 @@ tbody tr:hover {
   grid-area: auto;
   max-width: 100%;
   color: var(--mg-text);
-  font-size: clamp(1.4rem,1.5vw,2rem);
+  font-size: clamp(1.55rem,8cqw,2.3rem);
   font-weight: 850;
   letter-spacing: -.05em;
   line-height: 1;
@@ -1425,14 +1428,14 @@ tbody tr:hover {
   color: var(--mg-text-soft);
   font-family: var(--mg-font-sans);
   font-weight: 780;
-  font-size: clamp(.7rem,.78vw,.98rem);
+  font-size: clamp(.7rem,3.4cqw,.98rem);
   line-height: 1.15;
   overflow-wrap: anywhere;
 }
 
 #page-board .gate-board-card--reference .gate-board-card__section {
   color: var(--mg-text-muted);
-  font-size: clamp(.69rem,.7vw,.9rem);
+  font-size: clamp(.69rem,3cqw,.9rem);
 }
 
 #page-board .gate-board-card--reference .gate-board-card__identity {
@@ -1442,7 +1445,7 @@ tbody tr:hover {
   min-width: 0;
   padding-top: .16rem;
   font-family: var(--mg-font-sans);
-  font-size: clamp(.68rem,.78vw,1.04rem);
+  font-size: clamp(.68rem,3.35cqw,1.04rem);
   font-weight: 850;
   letter-spacing: -.02em;
   line-height: 1.12;
@@ -1492,7 +1495,7 @@ tbody tr:hover {
   background: var(--mg-surface-muted);
   color: var(--mg-text);
   font-family: var(--mg-font-sans);
-  font-size: clamp(.62rem,.68vw,.85rem);
+  font-size: clamp(.62rem,2.8cqw,.85rem);
   font-weight: 850;
   letter-spacing: .015em;
   line-height: 1.15;
@@ -1521,7 +1524,7 @@ tbody tr:hover {
   min-width: 0;
   color: var(--mg-text-soft);
   font-family: var(--mg-font-sans);
-  font-size: clamp(.62rem,.68vw,.82rem);
+  font-size: clamp(.62rem,3cqw,.82rem);
   font-weight: 750;
   letter-spacing: 0;
   line-height: 1.16;
@@ -1550,7 +1553,7 @@ tbody tr:hover {
   min-width: 6.35ch;
   max-width: 100%;
   height: auto;
-  font-size: clamp(1.45rem,1.85vw,2.35rem);
+  font-size: clamp(1.45rem,7.5cqw,2.35rem);
   font-weight: 820;
   line-height: 1.08;
   text-align: center;
@@ -1564,7 +1567,7 @@ tbody tr:hover {
   max-width: 100%;
   min-width: 0;
   font-family: var(--mg-font-sans);
-  font-size: clamp(.58rem,.62vw,.78rem);
+  font-size: clamp(.58rem,2.6cqw,.78rem);
   font-weight: 700;
   line-height: 1.2;
   letter-spacing: .03em;
@@ -1601,7 +1604,7 @@ tbody tr:hover {
   color: var(--mg-text);
   font-family: var(--mg-font-sans);
   font-weight: 780;
-  font-size: clamp(.7rem,.77vw,1rem);
+  font-size: clamp(.7rem,3.2cqw,1rem);
   line-height: 1.12;
   letter-spacing: 0;
   white-space: normal;
@@ -1617,7 +1620,7 @@ tbody tr:hover {
   max-width: 100%;
   color: var(--mg-text);
   font-family: var(--mg-font-sans);
-  font-size: clamp(1.05rem,1.3vw,1.65rem);
+  font-size: clamp(1.05rem,5.8cqw,1.65rem);
   font-weight: 830;
   letter-spacing: -.04em;
   line-height: 1.08;

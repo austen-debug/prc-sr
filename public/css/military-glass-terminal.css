@@ -1513,6 +1513,13 @@ body.theme-light #page-board .gate-dorm-card.gate-board-card--reference {
   display: none;
 }
 
+/* Neutral, opaque EMPTY treatment avoids text contrast depending on the
+   underlying translucent board plane in either theme. */
+#page-board .gate-board-card--reference .gate-dorm-status[data-state="empty"] {
+  background: var(--mg-text-muted);
+  color: var(--mg-bg);
+}
+
 #page-board .gate-board-card--reference .gate-dorm-status[data-state="open"] {
   background: var(--mg-ok);
   color: #092619;

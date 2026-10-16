@@ -93,7 +93,7 @@ test('Processing controllers retain their coordinated release and the shared CSS
   const middleware = await source('functions/_middleware.js');
   for (const file of ['js/gate-processing-controller.js', 'js/prc-dash-auditorium-location.js'])
     assert.ok(middleware.includes('/' + file + '?v=processing-dorm-cards-20261016-v2'), 'Processing controller version mismatch: ' + file);
-  assert.ok(middleware.includes('/css/military-glass-terminal.css?v=squadron-help-centered-20261016-v2'));
+  assert.ok(middleware.includes('/css/military-glass-terminal.css?v=processing-bus-command-sweep-20261016-v1'));
   assert.ok(middleware.includes('/js/gate-status-board-controller.js?v=status-board-alert-banding-20261016-v1'));
   assert.doesNotMatch(middleware, /military-glass-terminal-20260929-tablet-menu/);
 });

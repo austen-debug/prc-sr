@@ -92,7 +92,7 @@ test('explicit logout ends a tracked session and clears its cookie',async()=>{
  assert.equal(await verifyRequestSession(new Request('https://gate.example/api/session',{headers:{Cookie:airman.cookie}}),env),null);
 });
 test('diagnostic event storage omits sensitive content, enforces role, and reports server errors',async()=>{
- const {db,DB}=fixture(),env={...credentials,DB};
+ const {db,DB}=fixture(),env={...credentials,DB,GATE_TEST_DEBUG:'true'};
  const good={env,data:{session:{role:'airman'}},request:new Request('https://gate.example/api/client-diagnostics',{method:'POST',
   headers:{Origin:'https://gate.example','Content-Type':'application/json'},
   body:JSON.stringify({category:'runtime',code:'UNCAUGHT_SCRIPT_ERROR',route:'/processing/',status:0,

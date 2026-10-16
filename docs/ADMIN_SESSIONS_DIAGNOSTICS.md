@@ -36,3 +36,6 @@ The Admin workspace gains two independently useful sections:
   their corresponding additive migrations.
 - Shared-role credentials cannot distinguish people who use the same role; devices
   and roles are therefore not claims of unique personal identity.
+
+## Runtime budget
+Client-side reporting is integrated into the existing canonical `gate-app-shell-controller.js` so the app's governed active asset inventory is unchanged. The Administration page also loads the standalone reporter for errors within that workspace.

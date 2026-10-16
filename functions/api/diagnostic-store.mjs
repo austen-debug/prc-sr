@@ -22,5 +22,5 @@ export async function recordDiagnostic(env,input){
    .bind(crypto.randomUUID(),source,category,/^[A-Z0-9_]{2,48}$/.test(code)?code:'UNKNOWN',
     safeRoute(input.route),detail,Number.isSafeInteger(input.status)?input.status:0,Date.now()).run();
   return true;
- }catch{return false;}
+ }catch(error){if(env?.GATE_TEST_DEBUG==='true')console.warn('DIAGNOSTIC_SQL_TEST_ERROR:',error?.message);return false;}
 }

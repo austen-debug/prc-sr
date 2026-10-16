@@ -92,6 +92,9 @@ jobs:
       - name: Processing button release and functional writes
         run: node --test tests/runtime/processing-command-release-integrity.test.mjs
 
+      - name: Processing computed button styles in Chrome
+        run: node --test tests/runtime/processing-command-browser-style.test.mjs
+
       - name: Fullscreen command-board readability
         run: node --test tests/runtime/fullscreen-command-board-readability.test.mjs
 

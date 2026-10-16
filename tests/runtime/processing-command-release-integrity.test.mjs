@@ -163,3 +163,27 @@ test('Airman SAVE remains bound to the active dorm and displays failures in a li
   for (const id of ['modal-assignment-feedback', 'modal-load-feedback', 'modal-action-feedback'])
     assert.ok(html.includes('id="' + id + '"'));
 });
+
+test('EDIT RECORD button dispatches to the existing instructor-gated editor with the exact dorm ID', () => {
+  const calls = [];
+  const handlerSource = part(controller, '  function handleProcessingClick(', '  function handleProcessingContext(');
+  const handler = new Function(
+    'setPhaseCanonical', 'openDormCanonical', 'closeDormCanonical',
+    'reopenDormCanonical', 'openDormEditModalCanonical', 'activeModalDormId',
+    handlerSource + '\nreturn handleProcessingClick;'
+  )(
+    () => {}, () => {}, () => {}, () => {},
+    (event, id) => calls.push({ event, id }),
+    () => 'wrong-dorm'
+  );
+  const action = { dataset: { processingAction: 'edit-record', dormId: '3A2' } };
+  let prevented = false;
+  const event = {
+    preventDefault() { prevented = true; },
+    target: { closest(selector) { return selector === '[data-processing-action]' ? action : null; } }
+  };
+  handler(event);
+  assert.equal(prevented, true);
+  assert.deepEqual(calls, [{ event, id: '3A2' }]);
+  assert.match(controller, /function openDormEditModalCanonical\(event, id\) \{[\s\S]*?if \(!isInstructor\(\)\) return;/);
+});

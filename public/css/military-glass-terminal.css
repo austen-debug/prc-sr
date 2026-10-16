@@ -1371,6 +1371,98 @@ tbody tr:hover {
     var(--mg-shadow-soft);
 }
 
+/*
+ * STATUS BOARD ONLY: inset elapsed-time alert orbit.
+ * The card's native border, box-shadow, identity classes, grid, and padding
+ * remain untouched. This pseudo-element paints only a 2px ring, 6px inside
+ * the existing outline (including the permanent female-dorm red outer ring).
+ * Processing and Squadron deliberately have no matching selectors.
+ */
+@property --gate-board-alert-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+#page-board #col-open .gate-dorm-card[data-gate-time-alert="warning"] {
+  --gate-board-alert-color: var(--mg-yellow);
+}
+
+#page-board #col-open .gate-dorm-card:is(
+  [data-gate-time-alert="critical"],
+  [data-gate-time-alert="overtime"]
+) {
+  --gate-board-alert-color: var(--mg-red);
+}
+
+/* Static inset-band fallback if masked conic gradients are unavailable. */
+#page-board #col-open .gate-dorm-card:is(
+  [data-gate-time-alert="warning"],
+  [data-gate-time-alert="critical"],
+  [data-gate-time-alert="overtime"]
+)::after {
+  content: "";
+  position: absolute;
+  inset: 6px;
+  z-index: 2;
+  box-sizing: border-box;
+  border: 2px solid var(--gate-board-alert-color);
+  border-radius: var(--gate-board-alert-radius, calc(var(--mg-radius-lg) - 6px));
+  pointer-events: none;
+}
+
+@supports ((-webkit-mask-composite: xor) or (mask-composite: exclude)) {
+  #page-board #col-open .gate-dorm-card:is(
+    [data-gate-time-alert="warning"],
+    [data-gate-time-alert="critical"],
+    [data-gate-time-alert="overtime"]
+  )::after {
+    border: 0;
+    padding: 2px;
+    background: conic-gradient(
+      from var(--gate-board-alert-angle),
+      color-mix(in srgb, var(--gate-board-alert-color) 24%, transparent) 0deg,
+      color-mix(in srgb, var(--gate-board-alert-color) 28%, transparent) 210deg,
+      var(--gate-board-alert-color) 270deg,
+      color-mix(in srgb, white 28%, var(--gate-board-alert-color)) 294deg,
+      var(--gate-board-alert-color) 314deg,
+      color-mix(in srgb, var(--gate-board-alert-color) 24%, transparent) 360deg
+    );
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+    animation: gate-board-alert-orbit 4.5s linear infinite;
+  }
+}
+
+@keyframes gate-board-alert-orbit {
+  to { --gate-board-alert-angle: 360deg; }
+}
+
+/* Compact board card geometry changes at this existing shell breakpoint.
+   Adjust only the overlay radius, never the underlying card sizing. */
+@media (max-width: 767px), (pointer: coarse) and (max-width: 1024px) and (max-height: 560px) {
+  #page-board #col-open .gate-dorm-card {
+    --gate-board-alert-radius: calc(var(--mg-radius-md) - 6px);
+  }
+}
+
+/* Operational legibility: retain the band as a steady signal when the
+   operator requests reduced motion. */
+@media (prefers-reduced-motion: reduce) {
+  #page-board #col-open .gate-dorm-card::after {
+    animation: none !important;
+  }
+}
+
+/* Print outputs do not carry ornamental timer motion/banding. */
+@media print {
+  #page-board #col-open .gate-dorm-card::after {
+    display: none;
+  }
+}
+
 /* Timer states. Only the critical state moves: the halo breathes, text stays legible. */
 .timer-display,
 .gate-dorm-timer {

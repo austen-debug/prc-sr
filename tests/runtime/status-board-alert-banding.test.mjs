@@ -106,11 +106,11 @@ test('new asset revisions load together while Processing and Squadron keep their
   const middleware = await source('functions/_middleware.js');
   const inventory = JSON.parse(await source('docs/build-2/ACTIVE_RUNTIME_BUDGET.json'));
   const standalone = await source('public/squadron/index.html');
-  const cssUrl = '/css/military-glass-terminal.css?v=processing-local-bus-orbit-20261016-v1';
+  const cssUrl = '/css/military-glass-terminal.css?v=squadron-help-blue-20261016-v1';
   const jsUrl = '/js/gate-status-board-controller.js?v=status-board-alert-banding-20261016-v1';
   for (const asset of [cssUrl, jsUrl]) {
     assert.ok(middleware.includes(asset), 'Middleware missing ' + asset);
-    assert.ok(asset.endsWith('.css?v=processing-local-bus-orbit-20261016-v1')
+    assert.ok(asset.endsWith('.css?v=squadron-help-blue-20261016-v1')
       ? inventory.currentDirectStyles.includes(asset)
       : inventory.currentDirectScripts.includes(asset));
   }

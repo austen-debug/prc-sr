@@ -415,16 +415,16 @@ test('Processing BAND uses its existing green token in the lower-right card foot
 test('middleware delivers one canonical stylesheet and no retired CSS assets', async () => {
   const middleware = await source('functions/_middleware.js');
 
-  assert.match(middleware, /military-glass-terminal\.css\?v=processing-local-bus-orbit-20261016-v1/);
+  assert.match(middleware, /military-glass-terminal\.css\?v=squadron-help-blue-20261016-v1/);
   assert.equal((middleware.match(/<link rel="stylesheet"/g) || []).length, 1);
   assert.doesNotMatch(middleware, /gate-ui-ownership-correction\.css|gate-fullscreen-board-contract\.css|gate-tablet-shell\.css|gate-mobile-corrective\.css/);
 });
 
 
 test('Squadron SITREP ships current canonical assets and preserves lightweight communication UI', async () => {
-  const version = 'processing-local-bus-orbit-20261016-v1';
+  const version = 'squadron-help-blue-20261016-v1';
   const url = `/css/military-glass-terminal.css?v=${version}`;
-  const scriptUrl = '/js/prc-dash-final-audit.js?v=squadron-popup-sounds-20260928';
+  const scriptUrl = '/js/prc-dash-final-audit.js?v=squadron-help-blue-20261016-v1';
   const [middleware, standalone, budgetText, stack, css, controller, index] = await Promise.all([
     source('functions/_middleware.js'), source('public/squadron/index.html'),
     source('docs/build-2/ACTIVE_RUNTIME_BUDGET.json'), source('docs/ACTIVE_RUNTIME_STACK.md'),
@@ -449,9 +449,12 @@ test('Squadron SITREP ships current canonical assets and preserves lightweight c
   assert.match(squadronCss, /#page-squadron \.gate-squadron-tempo-options\s*\{[^}]*grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
   assert.match(squadronCss, /#page-squadron \.gate-squadron-columns\s*\{[^}]*grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
   assert.match(squadronCss, /#page-squadron \.gate-squadron-dorm\s*\{[^}]*background:var\(--mg-surface-strong\)/);
-  assert.match(squadronCss, /#page-squadron \.gate-info\s*\{[^}]*border:0;[^}]*font-size:17px/);
+  assert.match(squadronCss, /#page-squadron \.gate-info\s*\{[^}]*width:22px;[^}]*height:22px;[^}]*border:1px solid var\(--mg-accent-deep\)/);
+  assert.match(squadronCss, /@keyframes gate-squadron-info-jello/);
+  assert.match(squadronCss, /#page-squadron \.gate-squadron-tooltip\[data-open="true"\]/);
 
-  assert.ok(controller.includes('>ⓘ</button>'), 'tooltips use the requested information glyph');
+  assert.ok(controller.includes('class="gate-info__icon"'), 'tooltip buttons use an accessible compact SVG glyph');
+  assert.ok(controller.includes('aria-label="About ${esc(label)}"'), 'tooltip buttons retain contextual accessible names');
   assert.ok(controller.includes('id="squadron-metric-local" class="gate-squadron-value">--:--:--</div>'));
   assert.ok(!controller.includes('id="squadron-metric-local" class="gate-squadron-value is-time"'));
   assert.ok(squadronCss.includes('display:flex; flex-direction:column; align-items:center;'), 'metric cards share one vertical layout');

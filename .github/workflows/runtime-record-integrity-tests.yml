@@ -110,6 +110,9 @@ jobs:
       - name: Processing Add Local Bus orbit and Input-only Close Week Group
         run: node --test tests/runtime/processing-local-bus-action-ui.test.mjs
 
+      - name: Squadron blue help tooltip interaction and browser visual contract
+        run: node --test tests/runtime/squadron-help-tooltip-ui.test.mjs
+
       - name: Fullscreen command-board readability
         run: node --test tests/runtime/fullscreen-command-board-readability.test.mjs
 

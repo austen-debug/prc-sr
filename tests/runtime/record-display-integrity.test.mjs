@@ -172,7 +172,7 @@ test('Status Board uses one canonical timer and direct-surface integrity owner',
   assert.match(status, /renderStatusBoard\(\{ force: true \}\)/);
   assert.doesNotMatch(status, /activeBusObserver|bodyObserver|boardObserver/);
   assert.doesNotMatch(middleware, /gate-status-board-timer-visual-stability\.js/);
-  assert.match(middleware, /gate-status-board-controller\.js\?v=dorm-timer-record-lifecycle-20260722/);
+  assert.match(middleware, /gate-status-board-controller\.js\?v=status-board-alert-banding-20261016-v1/);
 });
 
 test('shared overtime controller only paints Squadron timers and delegates styling to canonical CSS', async () => {

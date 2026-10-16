@@ -52,7 +52,7 @@ test('all seven existing Squadron contextual explanations are preserved with com
   assert.match(js, /button\.setAttribute\('aria-describedby', 'squadron-tooltip'\)/);
   assert.match(js, /if \(event\.key === 'Escape'\)/);
   assert.match(js, /button\.addEventListener\('click', \(\) => showTip\(button\)\)/);
-  assert.match(js, /window\.requestAnimationFrame/);
+  assert.match(js, /tip\.dataset\.open = 'true'/);
   assert.match(css, /@keyframes gate-squadron-info-jello/);
   assert.doesNotMatch(template, /squadron-information/);
   assert.match(css, /@media \(prefers-reduced-motion:reduce\)/);
@@ -89,24 +89,23 @@ test('real Chromium renders compact blue info icon with animated tooltip above/b
     ' const icon=b.querySelector(".gate-info__icon");',
     ' const tip=byId("squadron-tooltip");',
     ' const row=b.closest(".gate-squadron-metric-head");',
-    ' const frame=()=>new Promise(resolve=>requestAnimationFrame(resolve));',
+
     ' const dims=e=>{const r=e.getBoundingClientRect();return{x:r.x,y:r.y,width:r.width,height:r.height,right:r.right,bottom:r.bottom}};',
     ' const result={count:page.querySelectorAll(".gate-info").length,themes:{}};',
     ' for(const theme of ["night","day"]){',
     '  document.body.classList.toggle("theme-light",theme==="day");',
     '  const initial={button:dims(b),row:dims(row),gradient:getComputedStyle(b).backgroundImage,iconColor:getComputedStyle(icon).color,hidden:tip.hidden};',
     '  b.dispatchEvent(new Event("mouseenter"));',
-    '  await frame();await frame();',
     '  const style=getComputedStyle(tip);',
     '  const open={button:dims(b),row:dims(row),tip:dims(tip),text:tip.textContent,open:tip.dataset.open,',
     '    aria:b.getAttribute("aria-describedby"),background:style.backgroundImage,opacity:style.opacity,',
     '    placement:tip.dataset.placement,transform:style.transform,events:style.pointerEvents};',
     '  b.dispatchEvent(new Event("mouseleave"));',
-    '  b.focus();await frame();await frame();',
+    '  b.focus();',
     '  const focused={aria:b.getAttribute("aria-describedby"),open:tip.dataset.open,iconAnimation:getComputedStyle(icon).animationName};',
     '  b.dispatchEvent(new KeyboardEvent("keydown",{key:"Escape",bubbles:true}));',
     '  const escaped={aria:b.getAttribute("aria-describedby"),open:tip.dataset.open};',
-    '  b.click();await frame();await frame();',
+    '  b.click();',
     '  const tapped={open:tip.dataset.open,aria:b.getAttribute("aria-describedby")};',
     '  result.themes[theme]={initial,open,focused,escaped,tapped};',
     '  b.dispatchEvent(new Event("mouseleave"));',

@@ -200,8 +200,11 @@ test('Chromium card geometry avoids overlap and clipping at 260–420px, themes 
         assert.equal(c.text.statusWeight,'700',context+' state label should be bold');
         const badgeSurface=composite(c.text.stateBackground,
           composite(c.text.cardBackground,c.text.bodyBackground));
-        assert.ok(contrast(c.text.stateForeground,badgeSurface)>=4.5,
-          context+' badge state text contrast below 4.5:1');
+        const badgeContrast=contrast(c.text.stateForeground,badgeSurface);
+        assert.ok(badgeContrast>=4.5,
+          context+' badge state text contrast below 4.5:1: '+JSON.stringify({badgeContrast,
+            foreground:c.text.stateForeground,state:c.text.stateBackground,
+            card:c.text.cardBackground,body:c.text.bodyBackground,resolved:badgeSurface}));
       }
       const female=results.night.find(x=>x.id==='2D1'),space=results.night.find(x=>x.id==='2D2');
       assert.notEqual(female.outerBorder,space.outerBorder,'Female outer red identity border lost');

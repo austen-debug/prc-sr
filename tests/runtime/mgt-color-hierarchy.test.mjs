@@ -75,7 +75,7 @@ test('Processing save commitments use amber while routine open and nominal statu
   assert.match(css, /#dorm-modal \.gate-processing-command--commit \{[\s\S]*?--gate-command-bg:\s*var\(--mg-yellow\)/);
   assert.match(processing, /data-processing-action="open-dorm"[\s\S]*?style="background:var\(--blue\);">OPEN DORM/);
 
-  assert.match(processing, />OPEN<\/span>/);
+  assert.match(processing, /const label = state === 'open' \? 'OPEN'/);
   assert.match(processing, /gate-processing-card__state--/);
   assert.match(css, /#page-processing \.gate-processing-card__state--open \{[\s\S]*?background:\s*var\(--mg-ok\)/);
 });

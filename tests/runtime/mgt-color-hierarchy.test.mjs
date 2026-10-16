@@ -69,9 +69,10 @@ test('primary telemetry typography uses text tokens while status indicators rema
   assert.match(css, /--mg-ok-ink:\s*#3fd08c/);
 });
 
-test('committed workflow actions use blue while semantic status badges remain green', () => {
-  assert.match(indexHtml, /onclick="saveAssignedAirman\(\)"[\s\S]*?style="background:var\(--blue\);"/);
-  assert.match(indexHtml, /onclick="saveLoad\(\)"[\s\S]*?style="background:var\(--blue\);"/);
+test('Processing save commitments use amber while routine open and nominal status remain distinct', () => {
+  assert.match(indexHtml, /onclick="saveAssignedAirman\(\)"[\s\S]*?class="gate-processing-command gate-processing-command--commit"/);
+  assert.match(indexHtml, /onclick="saveLoad\(\)" class="gate-processing-command gate-processing-command--commit"/);
+  assert.match(css, /#dorm-modal \.gate-processing-command--commit \{[\s\S]*?--gate-command-bg:\s*var\(--mg-yellow\)/);
   assert.match(processing, /data-processing-action="open-dorm"[\s\S]*?style="background:var\(--blue\);">OPEN DORM/);
 
   assert.match(processing, />OPEN<\/span>/);

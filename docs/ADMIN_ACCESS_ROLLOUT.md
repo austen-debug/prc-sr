@@ -34,3 +34,8 @@ The original record deletion trigger remains an unverified `system` observation.
 - Admin-only `/api/admin?mode=integrity` checks source/mirror parity and the six expected mirror/audit triggers without applying repairs.
 - Admin-only `/api/admin?mode=security` reports role-binding presence and control flags but never transmits secret values.
 - The schema migration retains the AUTOINCREMENT `sqlite_sequence` high-water marks for both Squadron revision/notice tables.
+
+## Server-owned Admin command boundaries
+- Generic audit-event creation rejects reserved event names `archive_withdrawn`, `archive_restored` and `record_delete_authorized`; authoritative equivalents must commit through their server-owned Admin commands.
+- Admin direct `PUT /api/records` archive modification is rejected. Instructor legacy operational behavior is intentionally not altered by this additional Admin restriction. Append-only archive amendments remain available through the dedicated persistence workflow.
+- Before Admin mutations, runtime verifies the four actor table constraints plus mirror and audit triggers, and the append-only disposition schema. This is a structural check; D1 parity and backup verification are still mandatory operator checks before feature-flag activation.

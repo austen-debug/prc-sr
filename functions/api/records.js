@@ -344,6 +344,11 @@ export async function onRequestPost({ request, env, data }) {
     if (!type) return jsonResponse({ isOk: false, code: 'validation', error: 'Record type is required.' }, 400);
 
     if (type === 'audit_event') {
+      // Administrative event names are reserved to server-owned D1 transactions.
+      // Legacy operational event types and their existing authorship stay unchanged.
+      const reserved = new Set(['archive_withdrawn','archive_restored','record_delete_authorized']);
+      if (reserved.has(String(record.event_type || '').trim().toLowerCase()))
+        return jsonResponse({isOk:false,code:'server_audit_required',error:'Administrative events require server transaction provenance.'},403);
       const validation = validateAuditEvent(record);
       if (!validation.valid) {
         return jsonResponse({ isOk: false, code: 'validation', error: validation.errors.join(' ') }, 400);
@@ -398,6 +403,8 @@ export async function onRequestPut({ request, env, data }) {
     if (!existingRow) return jsonResponse({ isOk: false, code: 'not_found', error: 'Record not found.' }, 404);
 
     const existingRecord = parseStoredRecord(existingRow);
+    if (existingRecord?.type === 'archive' && role === 'admin')
+      return jsonResponse({isOk:false,code:'immutable_archive',error:'Archive snapshots require an append-only amendment, not a direct update.'},405);
     if (existingRecord?.type === 'archive' && role === 'instructor' &&
         (await withdrawnArchiveIds(env)).has(String(id))) {
       return jsonResponse({ isOk: false, code: 'archive_withdrawn', error: 'This archive is no longer in the operational archive library.' }, 403);
@@ -520,7 +527,7 @@ export async function onRequestDelete({ request, env, data }) {
         env.DB.prepare("SELECT CASE WHEN changes()=1 THEN 1 ELSE json_extract('invalid-json','$') END"),
         env.DB.prepare(`INSERT INTO gate_audit_events
           (event_id,cycle_id,entity_type,entity_id,event_type,actor_role,prior_version,resulting_version,metadata_json,occurred_at)
-          VALUES (?,(SELECT cycle_id FROM gate_week_groups WHERE week_group=? ORDER BY created_at DESC LIMIT 1),?,?,'record_delete_authorized','admin',?,?,?,?)`)
+          VALUES (?,(SELECT cycle_id FROM gate_week_groups WHERE state='active' AND week_group=? LIMIT 1),?,?,'record_delete_authorized','admin',?,?,?,?)`)
           .bind(eventId, String(existingRow.week_group || ''), String(existingRecord.type || ''), id,
             currentVersion, currentVersion, metadata, now)
       ];

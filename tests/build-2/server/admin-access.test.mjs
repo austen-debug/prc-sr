@@ -181,3 +181,22 @@ test('Admin mutations fail closed while existing Instructor writes retain middle
   assert.equal((await guarded('admin')).status,503);
   assert.equal((await guarded('instructor')).status,209);
 });
+
+// Administrative events are authoritative server transactions, not user-supplied audit records.
+test('Direct API cannot forge administrative audit events or overwrite snapshots as Admin',async()=>{
+  const db=fixture();const id=seedArchive(db);db.exec(sql('0007_gate_admin_provenance.sql'));
+  const env={DB:cloudflare(db)};
+  const {onRequestPost:post,onRequestPut:put}=await import('../../../functions/api/records.js');
+  const fake=await post({env,data:{session:{role:'admin'}},request:new Request('https://gate.example/api/records',
+    {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+      type:'audit_event',event_type:'archive_withdrawn',entity_type:'archive',entity_id:id,
+      prior_version:0,resulting_version:1
+    })})});
+  assert.equal(fake.status,403);
+  const change=await put({env,data:{session:{role:'admin'}},request:new Request('https://gate.example/api/records',
+    {method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+      __backendId:id,type:'archive',week_group:'WG26100',total_arrived:300
+    })})});
+  assert.equal(change.status,405);
+  assert.equal(JSON.parse(db.prepare('SELECT data FROM records WHERE id=?').get(id).data).total_arrived,undefined);
+});

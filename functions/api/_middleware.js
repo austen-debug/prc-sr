@@ -85,15 +85,17 @@ async function requireAdminWriteCompatibility(context,session) {
   if(!context.env?.DB)return restricted('Admin database is unavailable.','admin_schema_required',503);
   try {
     const schema=await context.env.DB.prepare(
-      "SELECT name,sql FROM sqlite_master WHERE (type='table' AND name IN ('gate_audit_events','gate_archive_amendments','gate_squadron_notices','gate_squadron_information_revisions','gate_admin_archive_dispositions')) OR (type='trigger' AND name IN ('gate_record_audit_insert','gate_record_audit_update','trg_gate_admin_dispositions_no_delete','trg_gate_admin_dispositions_no_update'))"
+      "SELECT name,sql FROM sqlite_master WHERE (type='table' AND name IN ('gate_audit_events','gate_archive_amendments','gate_squadron_notices','gate_squadron_information_revisions','gate_admin_archive_dispositions')) OR (type='trigger' AND name IN ('gate_record_audit_insert','gate_record_audit_update','gate_record_audit_delete','gate_mirror_records_insert','gate_mirror_records_update','gate_mirror_records_delete','trg_gate_admin_dispositions_no_delete','trg_gate_admin_dispositions_no_update'))"
     ).all();
     const found=new Map((schema.results||[]).map(row=>[row.name,String(row.sql||'')]));
     const roleTables=['gate_audit_events','gate_archive_amendments','gate_squadron_notices','gate_squadron_information_revisions'];
     const auditTriggers=['gate_record_audit_insert','gate_record_audit_update'];
     const dispositions=['gate_admin_archive_dispositions','trg_gate_admin_dispositions_no_delete','trg_gate_admin_dispositions_no_update'];
+    const mirrorNames=['gate_mirror_records_insert','gate_mirror_records_update','gate_mirror_records_delete','gate_record_audit_delete'];
     if(!roleTables.every(name=>found.get(name)?.includes("'admin'"))||
        !auditTriggers.every(name=>found.get(name)?.includes("'admin'"))||
-       !dispositions.every(name=>found.has(name)))
+       !dispositions.every(name=>found.has(name))||
+       !mirrorNames.every(name=>found.has(name)))
       return restricted('Admin provenance schema is not ready.','admin_schema_required',503);
   }catch{return restricted('Admin provenance verification failed.','admin_schema_required',503);}
   return null;

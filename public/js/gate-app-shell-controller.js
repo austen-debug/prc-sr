@@ -4,6 +4,7 @@
   'use strict';
 
   const ROLE_PAGES = Object.freeze({
+    admin: ['board', 'airport', 'input', 'processing', 'archives', 'squadron'],
     instructor: ['board', 'airport', 'input', 'processing', 'archives', 'squadron'],
     airman: ['board', 'processing'],
     squadron: ['squadron']
@@ -429,7 +430,7 @@
     const sheet = ensureMobileSheet();
     const routeList = sheet.querySelector('#gate-mobile-sheet-routes');
     if (!routeList) return;
-    routeList.innerHTML = pages.map(page => navButton(page, true)).join('');
+    routeList.innerHTML = pages.map(page => navButton(page, true)).join('') + (role() === 'admin' ? '<a class="nav-btn nav-link-item gate-component-nav-button" href="/administration/">Administration</a>' : '');
     sheet.dataset.role = role();
   }
 
@@ -443,7 +444,7 @@
     const pages = allowedPages();
     menu.querySelectorAll('[data-gate-nav-button="true"]').forEach(button => button.remove());
     const panel = document.getElementById('gate-shell-system-panel');
-    const html = pages.map(page => navButton(page)).join('');
+    const html = pages.map(page => navButton(page)).join('') + (role() === 'admin' ? '<a class="nav-btn nav-link-item gate-component-nav-button" href="/administration/">Administration</a>' : '');
     if (panel && panel.parentNode === menu) panel.insertAdjacentHTML('beforebegin', html);
     else menu.innerHTML = html;
 
@@ -454,7 +455,7 @@
 
     const roleButton = document.getElementById('role-toggle');
     if (roleButton) {
-      const label = role() === 'instructor' ? 'INSTRUCTOR / LOGOUT' : (role() === 'squadron' ? 'SQUADRON / LOGOUT' : 'AIRMAN / LOGOUT');
+      const label = role() === 'admin' ? 'ADMIN / LOGOUT' : (role() === 'instructor' ? 'INSTRUCTOR / LOGOUT' : (role() === 'squadron' ? 'SQUADRON / LOGOUT' : 'AIRMAN / LOGOUT'));
       roleButton.textContent = label;
       roleButton.setAttribute('aria-label', label);
     }

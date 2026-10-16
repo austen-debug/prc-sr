@@ -68,8 +68,8 @@
 
   function isInstructor() {
     const serverRole = document.body?.dataset.gateSessionRole || '';
-    if (serverRole) return serverRole === 'instructor';
-    try { return currentRole === 'instructor'; } catch (_) { return false; }
+    if (serverRole) return ['instructor','admin'].includes(serverRole);
+    try { return ['instructor','admin'].includes(currentRole); } catch (_) { return false; }
   }
 
   function setEditArchiveId(id) {

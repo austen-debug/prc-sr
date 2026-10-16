@@ -4,6 +4,7 @@
   'use strict';
 
   const ROLE_PAGES = Object.freeze({
+    admin: ['board', 'airport', 'input', 'processing', 'archives', 'squadron'],
     instructor: ['board', 'airport', 'input', 'processing', 'archives', 'squadron'],
     airman: ['board', 'processing'],
     squadron: ['squadron']
@@ -49,11 +50,11 @@
   let roleVisibilityPatched = false;
 
   function role() {
-    try { return currentRole || 'airman'; } catch (_) { return 'airman'; }
+    try { return document.body?.dataset.gateSessionRole || currentRole || 'airman'; } catch (_) { return 'airman'; }
   }
 
   function isInstructor() {
-    return role() === 'instructor';
+    return ['instructor', 'admin'].includes(role());
   }
 
   function allowedPagesForRole(current = role()) {
@@ -113,7 +114,7 @@
   function setBodyRoleState() {
     const current = role();
     document.body.dataset.gateRole = current;
-    document.body.classList.toggle('gate-instructor-role', current === 'instructor');
+    document.body.classList.toggle('gate-instructor-role', ['instructor','admin'].includes(current));
     document.body.classList.toggle('gate-airman-role', current === 'airman');
     document.body.classList.toggle('gate-squadron-role', current === 'squadron');
   }
@@ -149,7 +150,7 @@
 
     const roleButton = document.getElementById('role-toggle');
     if (roleButton) {
-      const label = role() === 'instructor' ? 'INSTRUCTOR / LOGOUT' : (role() === 'squadron' ? 'SQUADRON / LOGOUT' : 'AIRMAN / LOGOUT');
+      const label = role() === 'admin' ? 'ADMIN / LOGOUT' : (role() === 'instructor' ? 'INSTRUCTOR / LOGOUT' : (role() === 'squadron' ? 'SQUADRON / LOGOUT' : 'AIRMAN / LOGOUT'));
       roleButton.textContent = label;
       roleButton.setAttribute('aria-label', label);
       roleButton.dataset.owner = 'gate-access-control-controller';
@@ -364,7 +365,7 @@
       card.dataset.access = instructor ? 'editable' : 'read-only';
     });
 
-    if (current !== 'instructor') closeProtectedSurfaces();
+    if (!['instructor','admin'].includes(current)) closeProtectedSurfaces();
   }
 
   function enforceAccess() {

@@ -891,7 +891,7 @@ async function logout() {
 }
 
     function buildNav() {
-      const pages = currentRole === 'instructor' ? PAGES_INSTRUCTOR : PAGES_AIRMAN;
+      const pages = ['instructor','admin'].includes(currentRole) ? PAGES_INSTRUCTOR : PAGES_AIRMAN;
       const container = document.getElementById('nav-links');
       const activePage = document.querySelector('.page.active');
       const activeId = activePage ? activePage.id.replace('page-','') : 'board';

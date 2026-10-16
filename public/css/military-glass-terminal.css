@@ -1715,7 +1715,7 @@ tbody tr:hover {
 #page-processing .gate-processing-card__identity {
   min-width: 0;
   align-self: end;
-  font-size: clamp(1.25rem, 1.5vw, 1.9rem);
+  font-size: clamp(1.3rem, 1.7vw, 2.05rem);
   font-weight: 850;
   letter-spacing: -.035em;
   line-height: 1.05;

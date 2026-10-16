@@ -68,8 +68,8 @@ function sqliteFixture(){
 
 test('Processing shows specific Admin and Week Group errors without exposing raw database exceptions',()=>{
  const message=processingErrorMessage();
- assert.match(message({code:'admin_writes_disabled'}),/Admin operational changes.*disabled/);
- assert.match(message({code:'admin_schema_required'}),/Admin provenance schema/);
+ assert.match(message({code:'admin_writes_disabled'}),/Privileged Admin changes remain disabled/);
+ assert.match(message({code:'admin_schema_required'}),/Admin actor provenance schema/);
  assert.match(message({code:'lifecycle_required',error:'Register an active Week Group before changing operational records.'}),/active Week Group/);
  assert.match(message({code:'lifecycle_required',error:'Only records in the active Week Group can be modified.'}),/does not belong to the active Week Group/);
  assert.match(message({code:'integrity_error'}),/Week Group configuration and lifecycle records/);
@@ -124,7 +124,7 @@ test('Admin writes remain fail-closed pending verified migration; Instructor req
   request:new Request('https://gate.example/api/records',{method:'PUT',headers:{'Content-Type':'application/json'},body}),
   next:async()=>new Response('bypassed security',{status:209})});
  const admin=await make('admin');
- assert.equal(admin.status,503);assert.equal((await admin.json()).code,'admin_writes_disabled');
+ assert.equal(admin.status,503);assert.equal((await admin.json()).code,'admin_schema_required');
  const instructor=await make('instructor');
  assert.equal(instructor.status,409);assert.equal((await instructor.json()).code,'lifecycle_required');
 });

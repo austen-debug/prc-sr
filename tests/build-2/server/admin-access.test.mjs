@@ -224,3 +224,65 @@ test('Admin interface route protects direct physical index document and all non-
   }
   assert.equal((await request('/administration/internal.html',cookies.admin)).status,404);
 });
+
+test('Admin operational inheritance is independent from privileged archive flag after 0007',async()=>{
+ const native=fixture();
+ const env={DB:cloudflare(native),AUTH_SECRET:'test-secret',GATE_PERSISTENCE_ENABLED:'true',GATE_ADMIN_WRITES_ENABLED:'false'};
+ const data={session:{role:'admin'}};
+ const run=async(path,method='POST',body={})=>apiMiddleware({
+   request:new Request('https://gate.example'+path,{method,headers:{Origin:'https://gate.example','Content-Type':'application/json'},body:JSON.stringify(body)}),
+   env,data,next:async()=>new Response('routed',{status:209})
+ });
+ const before=await run('/api/persistence');
+ assert.equal(before.status,503);
+ assert.equal((await before.json()).code,'admin_schema_required');
+ native.exec(sql('0007_gate_admin_provenance.sql'));
+ for(const path of ['/api/persistence','/api/squadron-board'])
+   assert.equal((await run(path)).status,209,path);
+ const archive=await run('/api/admin-archives');
+ assert.equal(archive.status,503);
+ assert.equal((await archive.json()).code,'admin_writes_disabled');
+ env.GATE_ADMIN_WRITES_ENABLED='true';
+ assert.equal((await run('/api/admin-archives')).status,209);
+});
+
+test('Admin can reopen a closed dorm as ADMIN with a verified audit actor and the existing Week Group guards',async()=>{
+ const native=fixture(),now='2026-10-16T17:00:00.000Z',wg='WG26103';
+ native.exec(sql('0007_gate_admin_provenance.sql'));
+ native.prepare("INSERT INTO gate_week_groups(cycle_id,week_group,state) VALUES('cycle-admin-inherit',?,'active')").run(wg);
+ const config={type:'config',key:'week_group',value:wg,week_group:wg,record_version:1,created_by_role:'instructor'};
+ const dorm={type:'dorm',state:'closed',phase:'Closed',closed_timer:'11:00',closed_at:now,opened_at:now,
+   week_group:wg,record_version:1,created_by_role:'instructor',current_load:15,max_load:42,dorm_name:'DORM TEST'};
+ const add=native.prepare('INSERT INTO records(id,type,week_group,data,created_at,updated_at) VALUES(?,?,?,?,?,?)');
+ add.run('weekgroup-config','config',wg,JSON.stringify(config),now,now);
+ add.run('admin-dorm-fixture','dorm',wg,JSON.stringify(dorm),now,now);
+ const env={DB:cloudflare(native),AUTH_SECRET:'test-secret',GATE_PERSISTENCE_ENABLED:'true',GATE_ADMIN_WRITES_ENABLED:'false'};
+ const request=new Request('https://gate.example/api/records',{method:'PUT',headers:{'Content-Type':'application/json'},
+   body:JSON.stringify({__backendId:'admin-dorm-fixture',type:'dorm',week_group:wg,state:'open',phase:'OPEN',
+     closed_at:'',closed_timer:'',manual_reopen_override:'true',current_load:15,max_load:42})});
+ const {onRequestPut}=await import('../../../functions/api/records.js');
+ const data={session:{role:'admin'}};
+ const response=await apiMiddleware({request,env,data,next:()=>onRequestPut({request,env,data})});
+ assert.equal(response.status,200,JSON.stringify(await response.clone().json()));
+ const result=await response.json();
+ assert.equal(result.data.state,'open');
+ assert.equal(result.data.current_load,15);
+ assert.equal(result.data.max_load,42);
+ assert.equal(result.data.updated_by_role,'admin');
+ assert.equal(result.data.record_version,2);
+ assert.equal(native.prepare("SELECT actor_role FROM gate_audit_events WHERE entity_id='admin-dorm-fixture' AND event_type='record_updated' ORDER BY occurred_at DESC LIMIT 1").get().actor_role,'admin');
+ // Even an Administrator cannot mutate a dorm from another Week Group.
+ const blockedRequest=new Request('https://gate.example/api/records',{method:'PUT',headers:{'Content-Type':'application/json'},
+   body:JSON.stringify({__backendId:'admin-dorm-fixture',type:'dorm',week_group:'WG99999',phase:'LOBBY'})});
+ const denial=await apiMiddleware({request:blockedRequest,env,data,next:()=>new Response('unsafe',{status:209})});
+ assert.equal(denial.status,409);
+ assert.equal((await denial.json()).code,'lifecycle_required');
+});
+
+test('Admin role without 0007 cannot silently bypass the audit constraint by enabling the privileged flag',async()=>{
+ const native=fixture(),env={DB:cloudflare(native),AUTH_SECRET:'test-secret',GATE_ADMIN_WRITES_ENABLED:'true'};
+ const request=new Request('https://gate.example/api/squadron-board',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
+ const denied=await apiMiddleware({request,env,data:{session:{role:'admin'}},next:async()=>new Response('bad',{status:209})});
+ assert.equal(denied.status,503);
+ assert.equal((await denied.json()).code,'admin_schema_required');
+});

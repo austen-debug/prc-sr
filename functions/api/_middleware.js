@@ -75,15 +75,24 @@ async function guardPersistence(context) {
 }
 
 
-// Admin mutations are intentionally dormant until the operator has verified the
-// versioned D1 provenance migration. Existing three-role writes are unaffected.
+// Admin inherits Instructor operational capabilities when D1 can retain the
+// authenticated Admin role in audit history. The separate privileged Admin
+// switch controls archive dispositions and future administration, not ordinary
+// Receiving operations. Both classes fail closed until 0007 role provenance
+// constraints and audit triggers have been verified against the live schema.
+const INHERITED_ADMIN_WRITES = Object.freeze({
+  '/api/records': new Set(['POST','PUT','DELETE']),
+  '/api/persistence': new Set(['POST']),
+  '/api/squadron-board': new Set(['POST'])
+});
 async function requireAdminWriteCompatibility(context,session) {
   if(session?.role!=='admin'||!['POST','PUT','PATCH','DELETE'].includes(context.request.method))return null;
   const path=new URL(context.request.url).pathname;
   // Identity revocation and sanitized issue reporting are independent of archive migration.
   if(['/api/logout','/api/admin-sessions','/api/admin-session-label','/api/client-diagnostics'].includes(path))return null;
-  if(context.env?.GATE_ADMIN_WRITES_ENABLED!=='true')
-    return restricted('Admin writes have not been enabled after D1 migration validation.','admin_writes_disabled',503);
+  const inheritedOperationalWrite=INHERITED_ADMIN_WRITES[path]?.has(context.request.method)===true;
+  if(!inheritedOperationalWrite && context.env?.GATE_ADMIN_WRITES_ENABLED!=='true')
+    return restricted('Privileged Admin actions are disabled pending authorization.','admin_writes_disabled',503);
   if(!context.env?.DB)return restricted('Admin database is unavailable.','admin_schema_required',503);
   try {
     const schema=await context.env.DB.prepare(
@@ -94,11 +103,12 @@ async function requireAdminWriteCompatibility(context,session) {
     const auditTriggers=['gate_record_audit_insert','gate_record_audit_update'];
     const dispositions=['gate_admin_archive_dispositions','trg_gate_admin_dispositions_no_delete','trg_gate_admin_dispositions_no_update'];
     const mirrorNames=['gate_mirror_records_insert','gate_mirror_records_update','gate_mirror_records_delete','gate_record_audit_delete'];
-    if(!roleTables.every(name=>found.get(name)?.includes("'admin'"))||
-       !auditTriggers.every(name=>found.get(name)?.includes("'admin'"))||
-       !dispositions.every(name=>found.has(name))||
-       !mirrorNames.every(name=>found.has(name)))
-      return restricted('Admin provenance schema is not ready.','admin_schema_required',503);
+    const actorProvenanceReady=roleTables.every(name=>found.get(name)?.includes("'admin'")) &&
+      auditTriggers.every(name=>found.get(name)?.includes("'admin'")) &&
+      mirrorNames.every(name=>found.has(name));
+    const privilegedDispositionReady=dispositions.every(name=>found.has(name));
+    if(!actorProvenanceReady || (!inheritedOperationalWrite && !privilegedDispositionReady))
+      return restricted('Authenticated Admin operational audit provenance is not ready. Migration 0007 must be validated before writing.','admin_schema_required',503);
   }catch{return restricted('Admin provenance verification failed.','admin_schema_required',503);}
   return null;
 }

@@ -526,10 +526,10 @@
     const code = String(result?.code || '').trim();
     const detail = String(result?.error || '');
     if (code === 'admin_writes_disabled') {
-      return 'Admin operational changes are currently disabled pending the separate provenance migration. Sign in as Instructor to reopen this dorm; do not change D1 settings.';
+      return 'Privileged Admin changes remain disabled. Ordinary dorm operations require a validated Admin actor audit schema; contact the GATE administrator rather than changing security settings.';
     }
     if (code === 'admin_schema_required') {
-      return 'Admin operational changes are blocked because the verified Admin provenance schema is not installed. Sign in as Instructor or contact the system administrator.';
+      return 'Admin writes cannot be correctly attributed until the verified Admin actor provenance schema (migration 0007) is installed. No records were changed.';
     }
     if (code === 'lifecycle_required') {
       if (detail === 'Only records in the active Week Group can be modified.') {

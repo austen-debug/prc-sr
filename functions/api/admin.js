@@ -21,7 +21,8 @@ export async function onRequestGet({env,data,request}){
         {role:'airman',permissions:'Existing authorized board and processing',configured:configured('AIRMAN_USERNAME')&&configured('AIRMAN_PASSWORD')},
         {role:'squadron',permissions:'Existing restricted Squadron Board',configured:configured('SQUADRON_USERNAME')&&configured('SQUADRON_PASSWORD')}
       ],adminWritesEnabled:env.GATE_ADMIN_WRITES_ENABLED==='true',persistenceEnabled:env.GATE_PERSISTENCE_ENABLED==='true',
-      sessionExpiresAt:Number(data?.session?.exp||0)});
+      sessionExpiresAt:Number(data?.session?.exp||0),
+      operationalRule:'Admin inherits Instructor operations after authenticated actor audit provenance is installed; privileged archive actions additionally require the Admin write switch.'});
     }
     if(mode==='integrity'){
       const counts=await env.DB.prepare(`WITH mirrored AS (
@@ -54,8 +55,11 @@ export async function onRequestGet({env,data,request}){
       env.DB.prepare("SELECT COUNT(*) AS n FROM gate_audit_events").first()
     ]);
     const definitions=new Map((tables.results||[]).map(row=>[row.name,String(row.sql||'')]));
-    const schemaReady=['gate_audit_events','gate_archive_amendments','gate_squadron_notices','gate_squadron_information_revisions','gate_record_audit_insert','gate_record_audit_update'].every(name=>definitions.get(name)?.includes("'admin'")) && ['gate_admin_archive_dispositions','trg_gate_admin_dispositions_no_update','trg_gate_admin_dispositions_no_delete'].every(name=>definitions.has(name));
-    return response({isOk:true,adminSchemaReady:schemaReady,writesEnabled:schemaReady&&env.GATE_ADMIN_WRITES_ENABLED==='true',
+    const operationalSchemaReady=['gate_audit_events','gate_archive_amendments','gate_squadron_notices','gate_squadron_information_revisions','gate_record_audit_insert','gate_record_audit_update'].every(name=>definitions.get(name)?.includes("'admin'"));
+    const archiveSchemaReady=['gate_admin_archive_dispositions','trg_gate_admin_dispositions_no_update','trg_gate_admin_dispositions_no_delete'].every(name=>definitions.has(name));
+    const schemaReady=operationalSchemaReady&&archiveSchemaReady;
+    return response({isOk:true,adminSchemaReady:schemaReady,operationalWritesReady:operationalSchemaReady,
+      writesEnabled:schemaReady&&env.GATE_ADMIN_WRITES_ENABLED==='true',
       activeCycle:cycle||null,unresolvedOperations:Number(operations?.n||0),archiveCount:Number(archives?.n||0),auditEventCount:Number(audit?.n||0)});
   }catch{ return response({isOk:false,code:'admin_health_unavailable',error:'Authoritative diagnostics unavailable.'},503);}
 }

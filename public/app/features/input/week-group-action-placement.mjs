@@ -1,4 +1,4 @@
-/** Presentation-only placement: retain original action nodes, IDs and canonical handlers. */
+/** Input-only action placement. Both original buttons start in Input markup; preserve IDs and canonical handlers. */
 const byId = (doc, id) => doc.getElementById(id);
 
 function actionPanel(doc, id, heading, description, destructive = false) {
@@ -59,12 +59,14 @@ function styleActionButton(button, descriptionId) {
 export function relocateWeekGroupActions(doc = globalThis.document) {
   if (!doc) return false;
   const page = byId(doc, 'page-input');
-  const processing = byId(doc, 'page-processing');
   const weekGroupInput = byId(doc, 'wg-batch-input');
   const header = weekGroupInput?.closest('.flex-shrink-0');
   const initialize = byId(doc, 'init-wg-btn');
   const closeout = byId(doc, 'closeout-btn');
-  if (!page || !processing || !header || !page.contains(header) || !initialize || !closeout) return false;
+  // Both actions originate in Input markup, including the first painted
+  // frame. Never relocate a closeout control from the Processing page.
+  if (!page || !header || !page.contains(header) || !initialize || !closeout ||
+      !page.contains(initialize) || !page.contains(closeout)) return false;
 
   let section = byId(doc, 'gate-week-group-actions');
   if (!section) {

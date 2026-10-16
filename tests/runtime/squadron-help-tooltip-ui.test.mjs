@@ -94,6 +94,7 @@ test('real Chromium renders compact blue info icon with animated tooltip above/b
     ' const result={count:page.querySelectorAll(".gate-info").length,themes:{}};',
     ' for(const theme of ["night","day"]){',
     '  document.body.classList.toggle("theme-light",theme==="day");',
+    '  tip.hidden=true;tip.dataset.open="false";',
     '  const initial={button:dims(b),row:dims(row),gradient:getComputedStyle(b).backgroundImage,iconColor:getComputedStyle(icon).color,hidden:tip.hidden};',
     '  b.dispatchEvent(new Event("mouseenter"));',
     '  const style=getComputedStyle(tip);',

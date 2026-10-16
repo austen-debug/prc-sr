@@ -87,7 +87,9 @@ test('Status Board only: masked inner band never mutates female identity rules o
   assert.match(femaleBoard, /var\(--mg-shadow-soft\)/);
   assert.match(css, /#page-processing #proc-dorm-grid \.proc-card\.border-female \{/);
   assert.match(css, /--gate-female-halo/);
-  assert.doesNotMatch(processing, /data-gate-time-alert|gate-board-alert-angle/);
+  assert.match(processing, /data-gate-time-alert/);
+  assert.doesNotMatch(processing, /gate-board-alert-angle/);
+  assert.match(css, /#page-processing #proc-dorm-grid \.gate-processing-card\[data-state="open"\]/);
 });
 
 test('audio persistence remains in the existing overtime controller at 60 minutes', () => {
@@ -104,15 +106,15 @@ test('new asset revisions load together while Processing and Squadron keep their
   const middleware = await source('functions/_middleware.js');
   const inventory = JSON.parse(await source('docs/build-2/ACTIVE_RUNTIME_BUDGET.json'));
   const standalone = await source('public/squadron/index.html');
-  const cssUrl = '/css/military-glass-terminal.css?v=status-board-alert-banding-20261016-v1';
+  const cssUrl = '/css/military-glass-terminal.css?v=processing-dorm-cards-20261016-v1';
   const jsUrl = '/js/gate-status-board-controller.js?v=status-board-alert-banding-20261016-v1';
   for (const asset of [cssUrl, jsUrl]) {
     assert.ok(middleware.includes(asset), 'Middleware missing ' + asset);
-    assert.ok(asset.endsWith('.css?v=status-board-alert-banding-20261016-v1')
+    assert.ok(asset.endsWith('.css?v=processing-dorm-cards-20261016-v1')
       ? inventory.currentDirectStyles.includes(asset)
       : inventory.currentDirectScripts.includes(asset));
   }
   assert.ok(standalone.includes(cssUrl), 'Squadron requires the same single canonical stylesheet URL');
-  assert.ok(middleware.includes('/js/gate-processing-controller.js?v=processing-commands-20261016-v2'));
+  assert.ok(middleware.includes('/js/gate-processing-controller.js?v=processing-dorm-cards-20261016-v1'));
   assert.ok(middleware.includes('/js/prc-dash-overtime-audit.js'));
 });

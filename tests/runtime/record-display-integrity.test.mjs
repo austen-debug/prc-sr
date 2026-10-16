@@ -87,8 +87,10 @@ test('Processing Space Force marker is bound to the canonical persistent card cl
 
   assert.match(processing, /const spaceForce = normalizedFlags \? normalizedFlags\.spaceForce/);
   assert.match(processing, /spaceForce \? 'border-space-force'/);
-  assert.match(css, /#page-processing \.proc-card\.border-space-force > \.text-xl\.font-black\.font-tabular::before/);
-  assert.match(css, /content:\s*["']SPACE FORCE["']/);
+  assert.match(processing, /gate-processing-card__identity--space/);
+  assert.match(processing, /aria-label="Space Force dorm">SPACE<\/span>/);
+  assert.match(css, /#page-processing \.gate-processing-card__identity--space[\s\S]*?color:\s*var\(--gate-flag-space-force-bluebird\)/);
+  assert.doesNotMatch(css, /\.proc-card\.border-space-force > \.text-xl\.font-black\.font-tabular::before/);
   assert.match(css, /#page-processing \.proc-card\.border-space-force \.gate-dorm-flags\s*\{[\s\S]*?display:\s*none/);
 });
 
@@ -102,7 +104,7 @@ test('Processing emits combined designation classes without a post-render repair
   assert.match(card, /female \? 'border-female' : ''/);
   assert.match(card, /spaceForce \? 'border-space-force' : ''/);
   assert.match(card, /!spaceForce && band \? 'border-band' : ''/);
-  assert.match(card, /proc-card \$\{borderClasses\} \$\{closedClass\}/);
+  assert.match(card, /proc-card gate-processing-card \$\{borderClasses\} \$\{closedClass\}/);
   assert.doesNotMatch(card, /const borderClass = female \? 'border-female' : \(spaceForce/);
 });
 

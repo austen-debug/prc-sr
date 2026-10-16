@@ -95,6 +95,12 @@ jobs:
       - name: Processing command button styling
         run: node --test tests/runtime/processing-command-button-style.test.mjs
 
+      - name: Processing card layout and elapsed alert functional contract
+        run: node --test tests/runtime/processing-dorm-card-ui.test.mjs
+
+      - name: Processing card browser geometry, identity, and alert layer
+        run: node --test tests/runtime/processing-dorm-card-browser.test.mjs
+
       - name: Processing button release and functional writes
         run: node --test tests/runtime/processing-command-release-integrity.test.mjs
 

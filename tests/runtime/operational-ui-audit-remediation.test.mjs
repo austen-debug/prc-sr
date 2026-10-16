@@ -402,26 +402,27 @@ test('fullscreen Active Bus cards remain bounded non-stretching tiles', async ()
   assert.match(css, /gate-component-active-bus-card[\s\S]*max-width:\s*clamp\(280px,\s*17vw,\s*320px\)/);
 });
 
-test('Processing BAND designator uses rounded-rectangle geometry', async () => {
+test('Processing BAND uses its existing green token in the lower-right card footer', async () => {
   const css = await source('public/css/military-glass-terminal.css');
-  const marker = css.match(/#page-processing \.proc-card\.border-band > \.text-xl\.font-black\.font-tabular::before\s*\{([\s\S]*?)\}/);
-  assert.ok(marker, 'Processing BAND marker selector must exist');
-  assert.match(marker[1], /content:\s*\"BAND\"/);
-  assert.match(marker[1], /border-radius:\s*var\(--mg-radius-sm\)/);
-  assert.doesNotMatch(marker[1], /border-radius:\s*var\(--mg-radius-pill\)/);
+  const processing = await source('public/js/gate-processing-controller.js');
+  assert.match(processing, /gate-processing-card__identity--band/);
+  assert.match(processing, /aria-label="Band dorm">BAND<\/span>/);
+  assert.match(css, /#page-processing \.gate-processing-card__identity--band \{\s*color:\s*var\(--gate-flag-band-green\)/);
+  assert.match(css, /#page-processing \.gate-processing-card__footer \{[\s\S]*grid-template-columns:\s*minmax\(0, 1fr\) auto/);
+  assert.doesNotMatch(css, /\.proc-card\.border-band > \.text-xl\.font-black\.font-tabular::before/);
 });
 
 test('middleware delivers one canonical stylesheet and no retired CSS assets', async () => {
   const middleware = await source('functions/_middleware.js');
 
-  assert.match(middleware, /military-glass-terminal\.css\?v=status-board-alert-banding-20261016-v1/);
+  assert.match(middleware, /military-glass-terminal\.css\?v=processing-dorm-cards-20261016-v1/);
   assert.equal((middleware.match(/<link rel="stylesheet"/g) || []).length, 1);
   assert.doesNotMatch(middleware, /gate-ui-ownership-correction\.css|gate-fullscreen-board-contract\.css|gate-tablet-shell\.css|gate-mobile-corrective\.css/);
 });
 
 
 test('Squadron SITREP ships current canonical assets and preserves lightweight communication UI', async () => {
-  const version = 'status-board-alert-banding-20261016-v1';
+  const version = 'processing-dorm-cards-20261016-v1';
   const url = `/css/military-glass-terminal.css?v=${version}`;
   const scriptUrl = '/js/prc-dash-final-audit.js?v=squadron-popup-sounds-20260928';
   const [middleware, standalone, budgetText, stack, css, controller, index] = await Promise.all([

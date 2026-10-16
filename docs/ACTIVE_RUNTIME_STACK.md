@@ -23,7 +23,7 @@ The machine-readable inventory and ceilings are governed by `docs/build-2/ACTIVE
 
 Middleware now injects one stylesheet and no stylesheet imports:
 
-1. `/css/military-glass-terminal.css?v=status-board-alert-banding-20261016-v1`
+1. `/css/military-glass-terminal.css?v=processing-dorm-cards-20261016-v1`
 
 `public/css/military-glass-terminal.css` is the production visual source of truth for tokens, light/dark themes, shell geometry, page spacing, Status/Squadron boards, Processing, Airport, Input, Archives, login, modal geometry, responsive behavior, fullscreen behavior, skeleton geometry, z-index bands, and interaction motion.
 
@@ -43,9 +43,9 @@ Injected by middleware in current order on the Flight Alert feature branch:
 8. `/js/prc-dash-dorm-reopen.js?v=popup-plop-sounds-20260928`
 9. `/js/prc-dash-final-audit.js?v=record-display-integrity-20260714`
 10. `/js/gate-status-board-controller.js?v=status-board-alert-banding-20261016-v1`
-11. `/js/gate-processing-controller.js?v=processing-commands-20261016-v2`
+11. `/js/gate-processing-controller.js?v=processing-dorm-cards-20261016-v1`
 12. `/js/prc-dash-dorm-flag-validation.js?v=processing-band-designator-20260915`
-13. `/js/prc-dash-auditorium-location.js?v=processing-commands-20261016-v2`
+13. `/js/prc-dash-auditorium-location.js?v=processing-dorm-cards-20261016-v1`
 14. `/js/gate-bus-workflow-controller.js?v=phase-3-bus-workflow-20260709`
 15. `/js/gate-airport-bus-delete-controller.js?v=airport-bus-delete-20260714`
 16. `/js/gate-input-page-controller.js?v=record-display-integrity-20260714`
@@ -68,7 +68,7 @@ Injected by middleware in current order on the Flight Alert feature branch:
 - `GatePermissionGuard` owns client-side action protection; server authorization remains authoritative.
 - `GateStatusBoardController` owns the visible Status Board dorm columns, dorm cards, active-bus panel, elapsed-time calculation, record-bound timer text, 40/50/60-minute warning/critical/overtime visual states, inset alert-band attributes, direct-surface integrity repair, and per-column incremental rendering. The alert band is CSS-only, inside the existing card outline, and never overrides Female/Band/Space Force identity styling, padding, records, or sound-event persistence. It rebinds every open timer to the current dorm record before each second-aligned tick and publishes the same elapsed-time function to the Processing open/close workflow.
 - `GatePremiumMetricsController` owns change-only synchronization of Arrived, Expected, Last, and Local values. The Local clock is second-aligned, displays `HH:MM:SS`, resumes immediately after visibility/focus/fullscreen transitions, and updates only the `#stat-local` text node.
-- `GateProcessingController` owns Processing page rendering, dorm-modal lifecycle, and all dorm-record mutations. Open writes `opened_at`; Close derives `closed_timer` from that timestamp through the canonical elapsed-time function; Reopen reconstructs `opened_at` from the retained final time.
+- `GateProcessingController` owns Processing page rendering, the reference-layout Processing dorm cards (header identification/status, centered load/auditorium location, accessible phase, footer timer and BAND/SPACE), 40/50/60-minute visual-only alert states, dorm-modal lifecycle, and all existing dorm-record mutations. The same CSS-only conic orbit keyframes as Status Board paint within a masked inset perimeter; Processing and Status Board retain separate card renderers. Female outer red ring/glow, sound persistence, existing card actions, and Squadron display remain unchanged. Open writes `opened_at`; Close derives `closed_timer` from that timestamp through the canonical elapsed-time function; Reopen reconstructs `opened_at` from the retained final time.
 - `GateAuditoriumLocationController` owns field hydration and card augmentation for Auditorium Location. It binds the modal field to the active dorm ID and delegates persistence through `GateProcessingController.updateDorm`; it does not call the Data SDK directly.
 - `GateBusWorkflowController` owns airport and local-arrival bus workflows.
 - `GateInputPageController` owns Input and Week Group initialization presentation.

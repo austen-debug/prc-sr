@@ -125,25 +125,50 @@
     scheduleRender({ force: true });
   }
 
+  // Presentation only. No overtime persistence or sound ownership is transferred
+  // to Processing; the existing audio auditor retains that responsibility.
+  function processingAlertState(dormState, openedAt, elapsed) {
+    if (String(dormState || '').toLowerCase() !== 'open' ||
+        !openedAt || !Number.isFinite(new Date(openedAt).getTime()) ||
+        elapsed?.valid === false || !Number.isFinite(Number(elapsed?.minutes))) return 'normal';
+    const minutes = Number(elapsed.minutes);
+    if (minutes >= 60) return 'overtime';
+    if (minutes >= 50) return 'critical';
+    if (minutes >= 40) return 'warning';
+    return 'normal';
+  }
+
   function stateLabelHtml(dorm) {
     const state = String(dorm?.state || 'empty').toLowerCase();
-    if (state === 'empty') return '<span class="text-xs font-bold uppercase px-2 py-1 rounded" style="background:var(--surface-alt);">EMPTY</span>';
-    if (state === 'open') return '<span class="text-xs font-bold uppercase px-2 py-1 rounded text-white" style="background:var(--green);">OPEN</span>';
-    return '<span class="text-xs font-bold uppercase px-2 py-1 rounded text-white" style="background:var(--red);">CLOSED</span>';
+    const label = state === 'open' ? 'OPEN' : (state === 'closed' ? 'CLOSED' : 'EMPTY');
+    return '<span class="gate-processing-card__state gate-processing-card__state--' +
+      label.toLowerCase() + '">' + label + '</span>';
   }
 
   function timerHtml(dorm) {
     const state = String(dorm?.state || 'empty').toLowerCase();
     if (state === 'open' && dorm.opened_at && typeof getElapsedTimer === 'function') {
       const timer = getElapsedTimer(dorm.opened_at);
-      return `<div class="text-2xl font-mono font-black font-tabular timer-display" data-opened="${esc(dorm.opened_at)}" data-dorm-id="${esc(dorm.__backendId)}">${esc(timer.text || '00:00')}</div>`;
+      const alert = processingAlertState(state, dorm.opened_at, timer);
+      const classes = [
+        'gate-processing-card__timer', 'text-2xl', 'font-mono',
+        'font-black', 'font-tabular', 'timer-display',
+        alert === 'warning' ? 'timer-yellow' : '',
+        alert === 'critical' || alert === 'overtime' ? 'timer-red' : '',
+        alert === 'overtime' ? 'timer-flash' : ''
+      ].filter(Boolean).join(' ');
+      return `<div class="${classes}" data-opened="${esc(dorm.opened_at)}" data-dorm-id="${esc(dorm.__backendId)}" aria-live="off">${esc(timer?.text || '00:00')}</div>`;
     }
-    if (state === 'closed' && dorm.closed_timer) return `<div class="text-2xl font-mono font-black font-tabular text-muted">${esc(dorm.closed_timer)}</div>`;
-    return '';
+    if (state === 'closed' && dorm.closed_timer) {
+      return `<div class="gate-processing-card__timer gate-processing-card__timer--final text-2xl font-mono font-black font-tabular text-muted">${esc(dorm.closed_timer)}</div>`;
+    }
+    return '<div class="gate-processing-card__timer gate-processing-card__timer--empty" aria-hidden="true"></div>';
   }
 
   function processingCard(dorm) {
-    const female = String(dorm?.sex || '').toLowerCase() === 'female';
+    const state = String(dorm?.state || 'empty').toLowerCase();
+    const sex = String(dorm?.sex || '').trim().toLowerCase();
+    const female = sex === 'female' || sex === 'f';
     const normalizedFlags = recordDisplay()?.normalizeDormFlags?.(dorm);
     const band = normalizedFlags ? normalizedFlags.band : (dorm?.band === true || dorm?.band === 'true');
     const spaceForce = normalizedFlags ? normalizedFlags.spaceForce : (dorm?.space_force === true || dorm?.space_force === 'true' || dorm?.is_space_force === true || dorm?.is_space_force === 'true');
@@ -152,27 +177,45 @@
       spaceForce ? 'border-space-force' : '',
       !spaceForce && band ? 'border-band' : ''
     ].filter(Boolean).join(' ');
-    const closedClass = dorm.state === 'closed' ? 'dorm-closed' : '';
-    const assignedAirmanHtml = dorm.assigned_airman
-      ? `<div class="text-[10px] font-black uppercase tracking-wider text-muted mt-1 text-right">${esc(dorm.assigned_airman)}</div>`
+    const currentTimer = state === 'open' && dorm.opened_at && typeof getElapsedTimer === 'function'
+      ? getElapsedTimer(dorm.opened_at)
+      : null;
+    const alertState = processingAlertState(state, dorm.opened_at, currentTimer);
+    const closedClass = state === 'closed' ? 'dorm-closed' : '';
+    const assignment = String(dorm.assigned_airman || '').trim();
+    const assignedAirmanHtml = assignment
+      ? `<div class="gate-processing-card__airman" title="${esc(assignment)}">${esc(assignment)}</div>`
       : '';
-    const phaseHtml = dorm.state === 'closed'
-      ? '<div class="text-sm font-bold mt-1" style="color:var(--text-muted);">CLOSED</div>'
-      : (dorm.phase ? `<div class="text-sm font-bold mt-1" style="color:var(--green);">${esc(dorm.phase)}</div>` : '');
+    const phase = String(dorm.phase || (state === 'closed' ? 'CLOSED' : '')).trim();
+    const phaseHtml = phase
+      ? `<div class="gate-processing-card__phase" title="Processing phase: ${esc(phase)}">PHASE · ${esc(phase)}</div>`
+      : '';
+    const identityHtml = spaceForce
+      ? '<span class="gate-processing-card__identity gate-processing-card__identity--space" aria-label="Space Force dorm">SPACE</span>'
+      : (band
+        ? '<span class="gate-processing-card__identity gate-processing-card__identity--band" aria-label="Band dorm">BAND</span>'
+        : '');
     const info = [esc(dorm.sdq), esc(dorm.section), esc(dorm.inter_sec)].filter(Boolean).join(' · ');
-
-    return `<div class="proc-card ${borderClasses} ${closedClass}" data-component="processing-dorm-card" data-owner="gate-processing-controller" data-dorm-id="${esc(dorm.__backendId)}" data-state="${esc(dorm.state || 'empty')}" tabindex="0" role="button" aria-label="Open Processing controls for ${esc(dorm.dorm_name || 'dorm')}">
-      <div class="flex justify-between items-start mb-2 gap-3">
-        <div class="font-black text-3xl">${esc(dorm.dorm_name || '')}</div>
-        <div class="flex flex-col items-end">
+    return `<div class="proc-card gate-processing-card ${borderClasses} ${closedClass}" data-component="processing-dorm-card" data-owner="gate-processing-controller" data-dorm-id="${esc(dorm.__backendId)}" data-state="${esc(state)}" data-gate-time-alert="${alertState}" tabindex="0" role="button" aria-label="Open Processing controls for ${esc(dorm.dorm_name || 'dorm')}">
+      <div class="gate-processing-card__header">
+        <div class="gate-processing-card__identification">
+          <div class="gate-processing-card__name">${esc(dorm.dorm_name || '')}</div>
+          <div class="gate-processing-card__meta">${info}</div>
+        </div>
+        <div class="gate-processing-card__status-group">
           ${stateLabelHtml(dorm)}
           ${assignedAirmanHtml}
         </div>
       </div>
-      <div class="text-xs text-muted font-bold uppercase">${info}</div>
-      <div class="text-xl font-black font-tabular mt-2">${n(dorm.current_load)} / ${n(dorm.max_load)}</div>
-      ${phaseHtml}
-      ${timerHtml(dorm)}
+      <div class="gate-processing-card__center">
+        <div class="gate-processing-card__load text-xl font-black font-tabular">${n(dorm.current_load)} / ${n(dorm.max_load)}</div>
+        <div class="gate-processing-card__location-slot" data-processing-location-slot></div>
+        ${phaseHtml}
+      </div>
+      <div class="gate-processing-card__footer">
+        ${timerHtml(dorm)}
+        ${identityHtml}
+      </div>
     </div>`;
   }
 
@@ -201,13 +244,17 @@
   function updateProcessingTimers() {
     const page = document.getElementById('page-processing');
     if (!page) return;
-    page.querySelectorAll('.timer-display[data-opened]').forEach(timer => {
-      if (!timer.dataset.opened || typeof getElapsedTimer !== 'function') return;
+    page.querySelectorAll('#proc-dorm-grid .proc-card[data-state="open"] .timer-display[data-opened]').forEach(timer => {
+      const card = timer.closest('.proc-card[data-dorm-id]');
+      if (!card || !timer.dataset.opened || typeof getElapsedTimer !== 'function') return;
       const elapsed = getElapsedTimer(timer.dataset.opened);
-      if (elapsed?.text) timer.textContent = elapsed.text;
-      timer.classList.toggle('timer-yellow', elapsed?.minutes >= 45 && elapsed?.minutes < 60);
-      timer.classList.toggle('timer-red', elapsed?.minutes >= 60);
-      timer.classList.toggle('timer-flash', elapsed?.minutes >= 60);
+      const alert = processingAlertState(card.dataset.state, timer.dataset.opened, elapsed);
+      if (elapsed?.text && timer.textContent !== elapsed.text) timer.textContent = elapsed.text;
+      timer.classList.toggle('timer-yellow', alert === 'warning');
+      timer.classList.toggle('timer-red', alert === 'critical' || alert === 'overtime');
+      timer.classList.toggle('timer-flash', alert === 'overtime');
+      // Only update on a transition; do not rerender the card or restart its orbit.
+      if (card.dataset.gateTimeAlert !== alert) card.dataset.gateTimeAlert = alert;
     });
   }
 

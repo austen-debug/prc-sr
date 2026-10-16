@@ -314,9 +314,15 @@
     }
 
     const html = `<div class="gate-auditorium-location" title="${esc(title)}">${esc(text)}</div>`;
+    // Processing owns the center load/location stack. Keep augmentation inside
+    // its explicit location slot; Status Board retains its existing placement.
+    const processingSlot = card.closest('#page-processing')
+      ? card.querySelector('[data-processing-location-slot]')
+      : null;
     const flags = card.querySelector('.gate-dorm-flags');
     const info = card.querySelector('.gate-dorm-info') || card.querySelector('.text-xs.text-muted.font-bold.uppercase') || card.querySelector('.text-xl.font-black.font-tabular');
-    if (flags && card.closest('#page-board')) flags.insertAdjacentHTML('afterend', html);
+    if (processingSlot) processingSlot.insertAdjacentHTML('beforeend', html);
+    else if (flags && card.closest('#page-board')) flags.insertAdjacentHTML('afterend', html);
     else if (info) info.insertAdjacentHTML('afterend', html);
     else card.insertAdjacentHTML('beforeend', html);
   }

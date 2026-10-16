@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {DatabaseSync} from 'node:sqlite';
+import {Script} from 'node:vm';
 import {onRequestPost as login} from '../../../functions/api/login.js';
 import {onRequestPost as logout} from '../../../functions/api/logout.js';
 import {verifyRequestSession} from '../../../functions/api/session-contract.mjs';
@@ -133,4 +134,9 @@ test('Admin page exposes both session management and issue investigation',()=>{
  const source=readFileSync(new URL('../../../public/administration/index.html',import.meta.url),'utf8');
  for(const id of ['panel-sessions','session-revoke','session-list','panel-issues','issue-dialog','issue-details'])
   assert.match(source,new RegExp(id));
+ const inline=source.match(/<script>([\s\S]*?)<\/script>/);
+ assert.ok(inline,'Admin inline controller is present');
+ assert.doesNotThrow(()=>new Script(inline[1]),'Admin controller JavaScript syntax must remain valid');
+ const reporter=readFileSync(new URL('../../../public/js/gate-issue-reporter.js',import.meta.url),'utf8');
+ assert.doesNotThrow(()=>new Script(reporter),'Browser issue reporter JavaScript must parse');
 });

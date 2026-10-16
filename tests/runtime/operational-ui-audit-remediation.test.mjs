@@ -414,16 +414,15 @@ test('Processing BAND uses its existing green token in the lower-right card foot
 
 test('middleware delivers one canonical stylesheet and no retired CSS assets', async () => {
   const middleware = await source('functions/_middleware.js');
-
-  assert.match(middleware, /military-glass-terminal\.css\?v=status-board-reference-20261016-v1/);
+  const budget = JSON.parse(await source('docs/build-2/ACTIVE_RUNTIME_BUDGET.json'));
+  const url = budget.currentDirectStyles.find(asset => asset.startsWith('/css/military-glass-terminal.css?v='));
+  assert.ok(url && middleware.includes(url), 'Middleware must serve the manifest-owned CSS version');
   assert.equal((middleware.match(/<link rel="stylesheet"/g) || []).length, 1);
   assert.doesNotMatch(middleware, /gate-ui-ownership-correction\.css|gate-fullscreen-board-contract\.css|gate-tablet-shell\.css|gate-mobile-corrective\.css/);
 });
 
 
 test('Squadron SITREP ships current canonical assets and preserves lightweight communication UI', async () => {
-  const version = 'status-board-reference-20261016-v1';
-  const url = `/css/military-glass-terminal.css?v=${version}`;
   const scriptUrl = '/js/prc-dash-final-audit.js?v=squadron-help-centered-20261016-v2';
   const [middleware, standalone, budgetText, stack, css, controller, index] = await Promise.all([
     source('functions/_middleware.js'), source('public/squadron/index.html'),
@@ -432,7 +431,8 @@ test('Squadron SITREP ships current canonical assets and preserves lightweight c
     source('public/index.html')
   ]);
   const budget = JSON.parse(budgetText);
-  assert.ok(middleware.includes(url), 'instructor middleware must reference fresh CSS');
+  const url = budget.currentDirectStyles.find(asset => asset.startsWith('/css/military-glass-terminal.css?v='));
+  assert.ok(url && middleware.includes(url), 'instructor middleware must reference the manifest-owned CSS');
   assert.ok(standalone.includes(url), 'standalone must use the same CSS version');
   assert.ok(middleware.includes(scriptUrl), 'instructor middleware must reference fresh Squadron controller');
   assert.ok(standalone.includes(scriptUrl), 'standalone must use the same Squadron controller version');

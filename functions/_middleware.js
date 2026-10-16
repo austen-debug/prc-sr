@@ -19,7 +19,7 @@ const ROLE_HOME = Object.freeze({
 });
 
 const UI_STYLESHEETS = [
-  '<link rel="stylesheet" href="/css/military-glass-terminal.css?v=status-board-reference-20261016-v1">'
+  '<link rel="stylesheet" href="/css/military-glass-terminal.css?v=status-board-type-audit-20261016-v2">'
 ];
 
 const UI_INLINE_ASSETS = [];

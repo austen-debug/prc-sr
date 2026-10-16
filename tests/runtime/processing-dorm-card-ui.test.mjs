@@ -99,7 +99,7 @@ test('all three revised asset references remain coordinated across middleware, b
   const squadron = await source('public/squadron/index.html');
   const budget = JSON.parse(await source('docs/build-2/ACTIVE_RUNTIME_BUDGET.json'));
   const assets = [
-    '/css/military-glass-terminal.css?v=status-board-reference-20261016-v1',
+    budget.currentDirectStyles.find(url => url.startsWith('/css/military-glass-terminal.css?v=')),
     '/js/gate-processing-controller.js?v=processing-dorm-cards-20261016-v2',
     '/js/prc-dash-auditorium-location.js?v=status-board-reference-20261016-v1'
   ];

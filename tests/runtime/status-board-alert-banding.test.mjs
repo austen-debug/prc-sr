@@ -106,11 +106,12 @@ test('new asset revisions load together while Processing and Squadron keep their
   const middleware = await source('functions/_middleware.js');
   const inventory = JSON.parse(await source('docs/build-2/ACTIVE_RUNTIME_BUDGET.json'));
   const standalone = await source('public/squadron/index.html');
-  const cssUrl = '/css/military-glass-terminal.css?v=status-board-reference-20261016-v1';
+  const cssUrl = inventory.currentDirectStyles.find(url => url.startsWith('/css/military-glass-terminal.css?v='));
+  assert.ok(cssUrl, 'Canonical stylesheet absent from active runtime inventory');
   const jsUrl = '/js/gate-status-board-controller.js?v=status-board-reference-20261016-v1';
   for (const asset of [cssUrl, jsUrl]) {
     assert.ok(middleware.includes(asset), 'Middleware missing ' + asset);
-    assert.ok(asset.endsWith('.css?v=status-board-reference-20261016-v1')
+    assert.ok(asset === cssUrl
       ? inventory.currentDirectStyles.includes(asset)
       : inventory.currentDirectScripts.includes(asset));
   }

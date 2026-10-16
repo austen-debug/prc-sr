@@ -130,6 +130,7 @@ test('Chromium card geometry avoids overlap and clipping at 260–420px, themes 
     ' timer:parseFloat(cs(timer).fontSize),loadFamily:cs(load).fontFamily,',
     ' loadWeight:cs(load).fontWeight,statusWeight:cs(state).fontWeight,',
     ' stateForeground:cs(state).color,stateBackground:cs(state).backgroundColor,',
+    ' cardBackground:base.backgroundColor,bodyBackground:cs(document.body).backgroundColor,',
     ' paddingLeft:parseFloat(base.paddingLeft),paddingRight:parseFloat(base.paddingRight)},',
     ' identityOver:overflow(ident),timerOver:overflow(timer),loadOver:overflow(load),statusOver:overflow(state),',
     ' outerBorder:base.borderLeftColor,shadow:base.boxShadow,alertContent:ps.content,alertPointer:ps.pointerEvents,',
@@ -162,10 +163,15 @@ test('Chromium card geometry avoids overlap and clipping at 260–420px, themes 
       const results=JSON.parse(match[1].replaceAll('&quot;','"').replaceAll('&amp;','&'));
       const intersects=(a,b)=>a.x<b.right-1&&b.x<a.right-1&&a.y<b.bottom-1&&b.y<a.bottom-1;
       const luminance=value=>{
-        const channels=value.match(/[\\d.]+/g).slice(0,3).map(Number).map(n=>{
+        const channels=value.match(/[0-9.]+/g).slice(0,3).map(Number).map(n=>{
           const v=n/255;return v<=0.04045?v/12.92:((v+0.055)/1.055)**2.4;
         });
         return channels[0]*0.2126+channels[1]*0.7152+channels[2]*0.0722;
+      };
+      const composite=(foreground,background)=>{
+        const fg=foreground.match(/[0-9.]+/g).map(Number),bg=background.match(/[0-9.]+/g).map(Number);
+        const a=fg.length>3?fg[3]:1;
+        return 'rgb('+fg.slice(0,3).map((v,i)=>Math.round(v*a+bg[i]*(1-a))).join(', ')+')';
       };
       const contrast=(a,b)=>{const [hi,lo]=[luminance(a),luminance(b)].sort((x,y)=>y-x);return (hi+0.05)/(lo+0.05);};
       for(const [theme,cards] of Object.entries(results))for(const c of cards){
@@ -192,7 +198,9 @@ test('Chromium card geometry avoids overlap and clipping at 260–420px, themes 
         assert.match(c.text.loadFamily,/Mono|mono/i,context+' load counts not in mono/tabular type');
         assert.equal(c.text.loadWeight,'700',context+' load weight should be bold');
         assert.equal(c.text.statusWeight,'700',context+' state label should be bold');
-        assert.ok(contrast(c.text.stateForeground,c.text.stateBackground)>=4.5,
+        const badgeSurface=composite(c.text.stateBackground,
+          composite(c.text.cardBackground,c.text.bodyBackground));
+        assert.ok(contrast(c.text.stateForeground,badgeSurface)>=4.5,
           context+' badge state text contrast below 4.5:1');
       }
       const female=results.night.find(x=>x.id==='2D1'),space=results.night.find(x=>x.id==='2D2');

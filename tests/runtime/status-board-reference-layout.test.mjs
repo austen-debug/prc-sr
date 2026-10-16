@@ -118,10 +118,19 @@ test('Chromium card geometry avoids overlap and clipping at 260–420px, themes 
     ' center=q(".gate-board-card__center"),footer=q(".gate-board-card__footer"),',
     ' timer=q(".gate-dorm-timer"),load=q(".gate-dorm-load"),aud=q(".gate-auditorium-location"),',
     ' track=q(".gate-dorm-progress"),name=q(".gate-dorm-name"),state=q(".gate-dorm-status");',
-    ' const ps=getComputedStyle(e,"::after"),base=getComputedStyle(e);',
+    ' const ps=getComputedStyle(e,"::after"),base=getComputedStyle(e),cs=x=>getComputedStyle(x);',
     ' return {id:e.dataset.dormId,card:rect(e),header:rect(h),left:rect(left),ident:rect(ident),right:rect(right),',
     ' center:rect(center),footer:rect(footer),timer:rect(timer),load:rect(load),aud:aud?rect(aud):null,',
     ' track:rect(track),name:rect(name),status:rect(state),scroll:overflow(e),nameOver:overflow(name),',
+    ' text:{name:parseFloat(cs(name).fontSize),squadron:parseFloat(cs(q(".gate-board-card__squadron")).fontSize),',
+    ' section:parseFloat(cs(q(".gate-board-card__section")).fontSize),identity:parseFloat(cs(ident).fontSize),',
+    ' status:parseFloat(cs(state).fontSize),airman:parseFloat(cs(q(".gate-dorm-airman")).fontSize),',
+    ' phase:q(".gate-board-card__phase")?parseFloat(cs(q(".gate-board-card__phase")).fontSize):null,',
+    ' auditorium:aud?parseFloat(cs(aud).fontSize):null,load:parseFloat(cs(load).fontSize),',
+    ' timer:parseFloat(cs(timer).fontSize),loadFamily:cs(load).fontFamily,',
+    ' loadWeight:cs(load).fontWeight,statusWeight:cs(state).fontWeight,',
+    ' stateForeground:cs(state).color,stateBackground:cs(state).backgroundColor,',
+    ' paddingLeft:parseFloat(base.paddingLeft),paddingRight:parseFloat(base.paddingRight)},',
     ' identityOver:overflow(ident),timerOver:overflow(timer),loadOver:overflow(load),statusOver:overflow(state),',
     ' outerBorder:base.borderLeftColor,shadow:base.boxShadow,alertContent:ps.content,alertPointer:ps.pointerEvents,',
     ' alertAnim:ps.animationName,alertInset:ps.top,progressWidth:getComputedStyle(track).width};',
@@ -151,11 +160,20 @@ test('Chromium card geometry avoids overlap and clipping at 260–420px, themes 
       const match=run.stdout.match(/<pre id="results">([^<]+)<\/pre>/);
       assert.ok(match,width+'px missing computed geometry');
       const results=JSON.parse(match[1].replaceAll('&quot;','"').replaceAll('&amp;','&'));
+      const intersects=(a,b)=>a.x<b.right-1&&b.x<a.right-1&&a.y<b.bottom-1&&b.y<a.bottom-1;
+      const luminance=value=>{
+        const channels=value.match(/[\\d.]+/g).slice(0,3).map(Number).map(n=>{
+          const v=n/255;return v<=0.04045?v/12.92:((v+0.055)/1.055)**2.4;
+        });
+        return channels[0]*0.2126+channels[1]*0.7152+channels[2]*0.0722;
+      };
+      const contrast=(a,b)=>{const [hi,lo]=[luminance(a),luminance(b)].sort((x,y)=>y-x);return (hi+0.05)/(lo+0.05);};
       for(const [theme,cards] of Object.entries(results))for(const c of cards){
         const context=width+'px/'+theme+'/'+c.id;
         assert.ok(Math.abs(c.card.w-width)<2,context+' card not within specified width');
-        assert.ok(c.left.right<=c.ident.x+1,context+' identity intersects dorm name');
-        assert.ok(c.ident.right<=c.right.x+1,context+' identity intersects status');
+        assert.ok(!intersects(c.left,c.ident),context+' identity intersects dorm name');
+        assert.ok(!intersects(c.ident,c.right),context+' identity intersects status');
+        assert.ok(!intersects(c.left,c.right),context+' name intersects status');
         assert.ok(c.header.bottom<=c.center.y+1,context+' header overlaps timer');
         assert.ok(c.center.bottom<=c.footer.y+1,context+' timer overlaps footer');
         assert.ok(c.footer.bottom<=c.track.y+1,context+' footer overlaps progress');
@@ -166,6 +184,16 @@ test('Chromium card geometry avoids overlap and clipping at 260–420px, themes 
         assert.ok(c.nameOver<=1&&c.identityOver<=1&&c.statusOver<=1,context+' header glyph overflow');
         assert.ok(c.timerOver<=1&&c.loadOver<=1,context+' timer/load glyph overflow');
         assert.ok(c.scroll<=1,context+' card horizontal overflow');
+        for(const [label,px] of Object.entries(c.text)){
+          if(typeof px==='number'&&px!==null&&label!=='paddingLeft'&&label!=='paddingRight')
+            assert.ok(px>=12,context+' '+label+' font below 12px: '+px);
+        }
+        assert.ok(c.text.paddingLeft>=12&&c.text.paddingRight>=12,context+' card padding below 12px');
+        assert.match(c.text.loadFamily,/Mono|mono/i,context+' load counts not in mono/tabular type');
+        assert.equal(c.text.loadWeight,'700',context+' load weight should be bold');
+        assert.equal(c.text.statusWeight,'700',context+' state label should be bold');
+        assert.ok(contrast(c.text.stateForeground,c.text.stateBackground)>=4.5,
+          context+' badge state text contrast below 4.5:1');
       }
       const female=results.night.find(x=>x.id==='2D1'),space=results.night.find(x=>x.id==='2D2');
       assert.notEqual(female.outerBorder,space.outerBorder,'Female outer red identity border lost');

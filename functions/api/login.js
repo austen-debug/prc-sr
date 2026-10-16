@@ -110,7 +110,7 @@ export async function onRequestPost({ request, env }) {
     }, signingSecret);
     if(sid) await registerSession(env,{
       sessionId:sid,username,role,issuedAt:now,expiresAt:now+maxAge*1000,
-      userAgent:request.headers.get('User-Agent')||''
+      userAgent:request.headers.get('User-Agent')||'',request
     });
 
     return jsonResponse({ isOk: true, role }, 200, {

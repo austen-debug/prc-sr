@@ -120,6 +120,20 @@ dl{display:grid;grid-template-columns:135px 1fr;gap:.8rem}dt{color:var(--muted)}
 <p>Credentials remain in Cloudflare environment bindings. This interface does not expose secret values or unrestricted database operations.</p>
 </section>
 </main>
+<dialog id="session-details-dialog" aria-labelledby="session-details-title">
+<div class="toolbar"><h2 id="session-details-title">Session Details</h2><button id="session-details-close" type="button">Close</button></div>
+<p class="small">Identity and location are inferred from the session's network and browser at login. Location is approximate, not GPS. Labels are manually assigned; they are not verified hostnames.</p>
+<dl id="session-details-fields"></dl>
+<div class="notice" id="session-details-status">Device and network details are collected for new logins after the session-context migration.</div>
+<form id="session-label-form" autocomplete="off">
+<h3>Administrative device label</h3>
+<label>Nickname (up to 60 characters; leave blank to clear)<input name="nickname" maxlength="60" autocomplete="off" placeholder="e.g. PRC Operations iPad"></label>
+<label>Reason for labeling (10–300 characters)<textarea name="reason" minlength="10" maxlength="300" required placeholder="Identify the operational purpose of this device label."></textarea></label>
+<button id="session-label-save" type="submit">Save nickname</button>
+<p class="small">An Admin sign-in less than five minutes old is required to change a label. Changes are recorded in an append-only journal.</p>
+<div id="session-label-status" role="status"></div>
+</form>
+</dialog>
 <dialog id="issue-dialog" aria-label="Diagnostic detail">
 <div class="toolbar"><h2>Issue details</h2><button type="button" id="issue-close">Close</button></div>
 <dl id="issue-details"></dl>
@@ -165,24 +179,62 @@ async function loadSecurity(){
 }
 async function loadAudit(){const t=byId('audit-list');try{const x=await api('/api/admin?mode=audit');t.replaceChildren();if(!x.events?.length)empty(t,5,'No audit events.');for(const e of x.events||[])row(t,[asDate(e.occurred_at),e.actor_role,e.event_type,e.entity_type+': '+e.entity_id,e.prior_version+' → '+e.resulting_version]);}catch(e){empty(t,5,e.message);}}
 
+let sessionDetailEnabled=false,inspectedSessionId=null;
 function displaySessions(){
  const target=byId('session-list'),role=byId('session-role').value,term=byId('session-search').value.toLowerCase().trim();
- const rows=sessionRows.filter(s=>(!role||s.role===role)&&(!term||[s.role,s.device,s.browser,s.id].join(' ').toLowerCase().includes(term)));
+ const rows=sessionRows.filter(s=>(!role||s.role===role)&&(!term||[s.role,s.device,s.browser,s.id,s.nickname,s.city,s.region,s.country].join(' ').toLowerCase().includes(term)));
  target.replaceChildren();if(!rows.length)empty(target,6,'No matching tracked sessions.');
  for(const s of rows){
-  const btn=node('button',s.current?'Current session':'Revoke');btn.type='button';btn.disabled=Boolean(s.current);
-  btn.addEventListener('click',()=>{sessionTarget=s;byId('session-revoke').classList.remove('hidden');byId('session-revoke').reset();
+  const controls=document.createElement('div');controls.className='toolbar';
+  const detail=node('button','Details');detail.type='button';detail.addEventListener('click',()=>openSessionDetails(s));
+  controls.append(detail);
+  const revoke=node('button',s.current?'Current session':'Revoke');revoke.type='button';revoke.disabled=Boolean(s.current);
+  revoke.addEventListener('click',()=>{sessionTarget=s;byId('session-revoke').classList.remove('hidden');byId('session-revoke').reset();
    byId('session-target').textContent=s.role+' · '+s.device+' / '+s.browser+' · '+s.id;byId('session-revoke-status').textContent='';
    byId('session-revoke').scrollIntoView({block:'nearest'});});
-  row(target,[s.role+(s.current?' (you)':''),s.device+' / '+s.browser,s.recentlyActive?'Recently active':'Not recently active',
-   asDate(s.issuedAt),asDate(s.expiresAt)],btn);
+  controls.append(revoke);
+  row(target,[s.role+(s.current?' (you)':''),(s.nickname?s.nickname+' · ':'')+s.device+' / '+s.browser,
+   s.recentlyActive?'Recently active':'Not recently active',asDate(s.issuedAt),asDate(s.expiresAt)],controls);
  }
 }
+function openSessionDetails(s){
+ inspectedSessionId=s.id;
+ const dlg=byId('session-details-dialog'),fields=byId('session-details-fields');fields.replaceChildren();
+ const location=[s.city,s.region,s.country].filter(Boolean).join(', ')||'Unavailable';
+ const entries=[['Session ID',s.id],['Account role',s.role],['Device category',s.device],
+  ['Browser',s.browser+(s.browserVersion?' '+s.browserVersion:'')],
+  ['Operating system',s.os||'Unavailable'],['Approximate network location',location],
+  ['Network organization',s.organization||'Unavailable'],
+  ['Device nickname',s.nickname||'Unlabeled'],['Last observed request',asDate(s.lastSeenAt)],
+  ['Signed in',asDate(s.issuedAt)],['Expires',asDate(s.expiresAt)]];
+ for(const [label,value] of entries)fields.append(node('dt',label),node('dd',value));
+ byId('session-details-status').textContent=sessionDetailEnabled
+  ?'Network details are captured only at sign-in. Device name cannot be read automatically.'
+  :'Session context migration 0010 is not installed. This view displays existing basic session data.';
+ const form=byId('session-label-form');form.reset();form.elements.nickname.value=s.nickname||'';
+ byId('session-label-save').disabled=!sessionDetailEnabled;
+ byId('session-label-status').textContent='';
+ if(!dlg.open)dlg.showModal();
+}
+byId('session-details-close').addEventListener('click',()=>byId('session-details-dialog').close());
+byId('session-label-form').addEventListener('submit',async event=>{
+ event.preventDefault();const f=event.currentTarget,status=byId('session-label-status');
+ if(!inspectedSessionId||!sessionDetailEnabled)return;
+ const save=byId('session-label-save');save.disabled=true;status.textContent='Saving audited nickname…';
+ try{
+  await api('/api/admin-session-label',{method:'POST',headers:{'Content-Type':'application/json'},
+   body:JSON.stringify({sessionId:inspectedSessionId,nickname:f.elements.nickname.value.trim(),reason:f.elements.reason.value.trim()})});
+  const id=inspectedSessionId;await loadSessions();
+  const updated=sessionRows.find(row=>row.id===id);
+  if(updated)openSessionDetails(updated);
+  status.textContent='Nickname updated and audit event recorded.';
+ }catch(err){status.textContent='Update not confirmed: '+err.message;}finally{save.disabled=!sessionDetailEnabled;}
+});
 async function loadSessions(){
  const status=byId('session-status'),history=byId('session-events');status.textContent='Loading authenticated sessions…';
  try{
-  const data=await api('/api/admin-sessions');sessionRows=data.sessions||[];
-  status.textContent=sessionRows.length+' registered unexpired sessions. '+data.legacyNotice;status.classList.remove('warning');
+  const data=await api('/api/admin-sessions');sessionRows=data.sessions||[];sessionDetailEnabled=Boolean(data.sessionDetailsReady);
+  status.textContent=sessionRows.length+' registered unexpired sessions. '+data.legacyNotice+(sessionDetailEnabled?' Session details enabled.':' Device metadata awaits migration 0010.');status.classList.remove('warning');
   displaySessions();history.replaceChildren();
   if(!data.events?.length)empty(history,5,'No recorded session events.');
   for(const e of data.events||[])row(history,[asDate(e.at),e.action,e.role,e.by,e.reason||'—']);

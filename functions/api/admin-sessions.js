@@ -1,6 +1,6 @@
 // Admin-only session registry inspection and immediate per-session revocation.
 // Independent of archive migration and GATE_ADMIN_WRITES_ENABLED.
-import {registryReady} from './session-registry.mjs';
+import {registryReady,sessionDetailsReady} from './session-registry.mjs';
 const json=(body,status=200)=>new Response(JSON.stringify(body),{status,headers:{'Content-Type':'application/json','Cache-Control':'private, no-store'}});
 const isAdmin=data=>data?.session?.role==='admin';
 export async function onRequestGet({env,data}){
@@ -8,16 +8,26 @@ export async function onRequestGet({env,data}){
  try{
   if(!(await registryReady(env)))return json({isOk:false,code:'session_registry_not_installed',error:'Install additive migration 0008 before listing devices.'},503);
   const now=Date.now();
-  const [active,history]=await Promise.all([
-   env.DB.prepare('SELECT session_id,role,device_label,browser_label,issued_at,expires_at,last_seen_at FROM gate_auth_sessions WHERE revoked_at IS NULL AND expires_at>? ORDER BY last_seen_at DESC LIMIT 200').bind(now).all(),
-   env.DB.prepare('SELECT session_id,event_type,target_role,actor_role,reason,occurred_at FROM gate_auth_session_events ORDER BY occurred_at DESC LIMIT 60').all()
+  const extended=await sessionDetailsReady(env);
+  const columns='session_id,role,device_label,browser_label,issued_at,expires_at,last_seen_at'
+   +(extended?',os_label,browser_version,city,region,country,network_organization,device_nickname':'');
+  const [active,history,labels]=await Promise.all([
+   env.DB.prepare('SELECT '+columns+' FROM gate_auth_sessions WHERE revoked_at IS NULL AND expires_at>? ORDER BY last_seen_at DESC LIMIT 200').bind(now).all(),
+   env.DB.prepare('SELECT session_id,event_type,target_role,actor_role,reason,occurred_at FROM gate_auth_session_events ORDER BY occurred_at DESC LIMIT 60').all(),
+   extended?env.DB.prepare('SELECT session_id,actor_role,reason,occurred_at FROM gate_auth_session_label_events ORDER BY occurred_at DESC LIMIT 60').all():Promise.resolve({results:[]})
   ]);
   return json({isOk:true,registryReady:true,sessions:(active.results||[]).map(r=>({
    id:r.session_id,role:r.role,device:r.device_label,browser:r.browser_label,
    issuedAt:Number(r.issued_at),expiresAt:Number(r.expires_at),lastSeenAt:Number(r.last_seen_at),
    current:r.session_id===data.session.sid,
-   recentlyActive:Number(r.last_seen_at)>now-5*60*1000
-  })),events:(history.results||[]).map(e=>({id:e.session_id,action:e.event_type,role:e.target_role,by:e.actor_role,reason:e.reason,at:Number(e.occurred_at)})),
+   recentlyActive:Number(r.last_seen_at)>now-5*60*1000,
+   os:r.os_label||'',browserVersion:r.browser_version||'',
+   city:r.city||'',region:r.region||'',country:r.country||'',
+   organization:r.network_organization||'',nickname:r.device_nickname||''
+  })),sessionDetailsReady:extended,
+   events:[...(history.results||[]).map(e=>({id:e.session_id,action:e.event_type,role:e.target_role,by:e.actor_role,reason:e.reason,at:Number(e.occurred_at)})),
+    ...(labels.results||[]).map(e=>({id:e.session_id,action:'device_label',role:'admin',by:e.actor_role,reason:e.reason,at:Number(e.occurred_at)}))]
+    .sort((a,b)=>b.at-a.at).slice(0,60),
    legacyNotice:'Only sessions created after registry installation can be listed or individually revoked; earlier signed cookies expire naturally.'});
  }catch{return json({isOk:false,code:'session_registry_unavailable'},503);}
 }

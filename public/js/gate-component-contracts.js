@@ -82,7 +82,71 @@
     return '';
   }
 
+  // Status Board alone opts into this reference hierarchy. Other consumers
+  // retain their established GateComponents.dormCard output.
+  function statusBoardReferenceDormCard(dorm, options = {}) {
+    const load = dormLoad(dorm);
+    const state = String(dorm?.state || 'empty').toLowerCase();
+    const flagsState = effectiveDormFlags(dorm);
+    const component = flagsState.spaceForce ? 'space-force' : 'air-force';
+    const classes = [
+      flagsState.female ? 'border-female' : '',
+      flagsState.band ? 'border-band' : '',
+      flagsState.spaceForce ? 'border-space-force' : '',
+      flagsState.hasBanner ? 'gate-dorm-has-banner' : '',
+      state === 'closed' ? 'dorm-closed' : '',
+      load.isOver ? 'is-over' : (load.isFull ? 'is-full' : '')
+    ].filter(Boolean).join(' ');
+    const assignment = options.hideAirman ? '' : String(dorm?.assigned_airman || '').trim();
+    const location = String(dorm?.auditorium_location || '').trim().toUpperCase();
+    const squadron = String(dorm?.sdq || '').trim();
+    const segment = [dorm?.section, dorm?.inter_sec]
+      .map(value => String(value ?? '').trim()).filter(Boolean).join(' - ');
+    const identity = flagsState.spaceForce
+      ? '<span class="gate-board-card__identity gate-board-card__identity--space">SPACE FORCE</span>'
+      : (flagsState.band
+        ? '<span class="gate-board-card__identity gate-board-card__identity--band">BAND</span>'
+        : '<span class="gate-board-card__identity gate-board-card__identity--none" aria-hidden="true"></span>');
+    const status = state === 'closed' ? 'CLOSED' : (state === 'open' ? 'OPEN' : 'EMPTY');
+    const phase = String(dorm?.phase || '').trim();
+    const phaseNote = state === 'open' && phase && phase.toUpperCase() !== 'OPEN'
+      ? `<div class="gate-board-card__phase" title="Processing phase: ${esc(phase)}">PHASE: ${esc(phase)}</div>`
+      : '';
+    const auditorium = options.showAuditorium && location
+      ? `<div class="gate-auditorium-location" title="Auditorium Location: ${esc(location)}">AUD: ${esc(location)}</div>`
+      : '';
+
+    return `
+      <div class="dorm-card tactical-glass-card gate-dorm-card gate-component-dorm-card gate-board-card--reference gate-dorm-state-${esc(state)} ${classes}" data-component="dorm-card" data-dorm-id="${esc(dorm?.__backendId || '')}" data-state="${esc(state)}" data-gate-board-layout="reference-v2" data-component-type="${esc(component)}" data-female-dorm="${flagsState.female ? 'true' : 'false'}" data-band-dorm="${flagsState.band ? 'true' : 'false'}" data-space-force="${flagsState.spaceForce ? 'true' : 'false'}" data-has-banner="${flagsState.hasBanner ? 'true' : 'false'}">
+        <div class="gate-board-card__header">
+          <div class="gate-board-card__identification">
+            <div class="gate-dorm-name" title="${esc(dorm?.dorm_name || '')}">${esc(dorm?.dorm_name || '')}</div>
+            <div class="gate-board-card__squadron" title="${esc(squadron)}">${esc(squadron)}</div>
+            <div class="gate-board-card__section">${esc(segment)}</div>
+          </div>
+          ${identity}
+          <div class="gate-board-card__state-group">
+            <div class="gate-dorm-status-wrap"><span class="gate-dorm-status" data-state="${esc(state)}" title="${esc(phase ? 'Processing phase: ' + phase : status)}">${status}</span></div>
+            <div class="gate-dorm-airman" title="${esc(assignment)}">${esc(assignment)}</div>
+          </div>
+        </div>
+        <div class="gate-board-card__center">
+          ${dormTimerHtml(dorm)}
+          ${phaseNote}
+        </div>
+        <div class="gate-board-card__footer">
+          <div class="gate-board-card__auditorium-slot" data-board-auditorium-slot>${auditorium}</div>
+          <div class="gate-dorm-load">${load.current} / ${load.max}</div>
+        </div>
+        <div class="gate-dorm-progress" aria-hidden="true">
+          <div class="gate-dorm-progress-fill" style="width:${load.width.toFixed(1)}%;"></div>
+        </div>
+      </div>
+    `;
+  }
+
   function dormCard(dorm, options = {}) {
+    if (options.statusBoardLayout === true) return statusBoardReferenceDormCard(dorm, options);
     const load = dormLoad(dorm);
     const state = String(dorm?.state || 'empty').toLowerCase();
     const status = dormStatusLabel(dorm);

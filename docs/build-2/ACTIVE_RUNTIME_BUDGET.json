@@ -16,7 +16,7 @@
     "middlewareStatusBoardSourceRewriteRemoved": true
   },
   "currentDirectStyles": [
-    "/css/military-glass-terminal.css?v=squadron-help-blue-20261016-v1"
+    "/css/military-glass-terminal.css?v=squadron-help-centered-20261016-v2"
   ],
   "currentImportedStyles": [],
   "currentDirectScripts": [
@@ -28,7 +28,7 @@
     "/js/prc-dash-sat-arrivals.js",
     "/js/prc-dash-space-force.js",
     "/js/prc-dash-dorm-reopen.js?v=popup-plop-sounds-20260928",
-    "/js/prc-dash-final-audit.js?v=squadron-help-blue-20261016-v1",
+    "/js/prc-dash-final-audit.js?v=squadron-help-centered-20261016-v2",
     "/js/gate-status-board-controller.js?v=status-board-alert-banding-20261016-v1",
     "/js/gate-processing-controller.js?v=processing-dorm-cards-20261016-v2",
     "/js/prc-dash-dorm-flag-validation.js?v=processing-band-designator-20260915",

@@ -30,7 +30,9 @@ export async function onRequestPost({request,env,data}){
   if(env?.GATE_ADMIN_WRITES_ENABLED!=='true')return json({isOk:false,code:'admin_writes_disabled'},503);
   if(request.headers.get('Origin')!==new URL(request.url).origin)return json({isOk:false,code:'origin_required'},403);
   if(!/^application\/json(?:\s*;|$)/i.test(request.headers.get('Content-Type')||''))return json({isOk:false,code:'content_type'},415);
-  if(Date.now()-Number(data.session.iat)>5*60*1000)return json({isOk:false,code:'reauthentication_required'},403);
+  const sessionAge=Date.now()-Number(data?.session?.iat);
+  if(!Number.isFinite(sessionAge)||sessionAge<0||sessionAge>5*60*1000)
+    return json({isOk:false,code:'reauthentication_required'},403);
   let input;
   try{const raw=await request.text();if(raw.length>4096)throw Error();input=JSON.parse(raw);}catch{return json({isOk:false,code:'invalid_payload'},400);}
   const {archiveId,action,reason,expectedRevision,operationId,confirmArchiveId}=input||{};
@@ -39,8 +41,8 @@ export async function onRequestPost({request,env,data}){
     return json({isOk:false,code:'validation',error:'A valid archive, reason, revision, operation and exact confirmation are required.'},400);
   try{
     if(!(await ready(env)))return json({isOk:false,code:'admin_schema_required'},503);
-    const priorOp=await env.DB.prepare('SELECT operation_id,archive_id,revision,action FROM gate_admin_archive_dispositions WHERE operation_id=?').bind(operationId).first();
-    if(priorOp)return priorOp.archive_id===archiveId&&priorOp.action===action?json({isOk:true,idempotent:true,operationId,revision:priorOp.revision}):json({isOk:false,code:'operation_conflict'},409);
+    const priorOp=await env.DB.prepare('SELECT operation_id,archive_id,revision,action,reason FROM gate_admin_archive_dispositions WHERE operation_id=?').bind(operationId).first();
+    if(priorOp)return priorOp.archive_id===archiveId&&priorOp.action===action&&priorOp.reason===reason.trim()&&priorOp.revision===expectedRevision+1?json({isOk:true,idempotent:true,operationId,revision:priorOp.revision}):json({isOk:false,code:'operation_conflict'},409);
     const row=await env.DB.prepare("SELECT id FROM records WHERE id=? AND type='archive'").bind(archiveId).first();
     if(!row)return json({isOk:false,code:'archive_not_found'},404);
     const current=await latest(env,archiveId);

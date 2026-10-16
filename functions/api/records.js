@@ -1,3 +1,4 @@
+import { withdrawnArchiveIds } from './archive-dispositions.mjs';
 import {
   RECORDS_API_CAPABILITIES,
   conflictResponseBody,
@@ -310,8 +311,15 @@ export async function onRequestGet({ request, env, data }) {
            ORDER BY created_at ASC`
     ).all();
 
+    // A withdrawn archive must not remain visible through the legacy all-records
+    // read path after it has been removed from the canonical archive library.
+    // The live-only path is untouched for existing operational workflows.
+    const withdrawn = role === 'instructor' && !liveOnly
+      ? await withdrawnArchiveIds(env)
+      : new Set();
     const records = (result.results || [])
       .map(safeParseRecord)
+      .filter(record => !(record?.type === 'archive' && withdrawn.has(String(record.__backendId || record.id || ''))))
       .map(record => sanitizeRecordForRole(record, role))
       .filter(Boolean);
 
@@ -390,6 +398,10 @@ export async function onRequestPut({ request, env, data }) {
     if (!existingRow) return jsonResponse({ isOk: false, code: 'not_found', error: 'Record not found.' }, 404);
 
     const existingRecord = parseStoredRecord(existingRow);
+    if (existingRecord?.type === 'archive' && role === 'instructor' &&
+        (await withdrawnArchiveIds(env)).has(String(id))) {
+      return jsonResponse({ isOk: false, code: 'archive_withdrawn', error: 'This archive is no longer in the operational archive library.' }, 403);
+    }
     if (isAuditEvent(existingRecord)) {
       return jsonResponse({ isOk: false, code: 'append_only', error: 'Audit events are append-only.' }, 405);
     }

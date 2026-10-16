@@ -1,3 +1,4 @@
+import { withdrawnArchiveIds } from './archive-dispositions.mjs';
 import { PersistenceValidationError, normalizeDraft, validateInitialization, buildDormRows, parseOperationalRow, buildArchivePayload } from './persistence-core.mjs';
 
 const WINDOWS = ['receiving_day_one_start','receiving_day_one_end','receiving_day_two_start','receiving_day_two_end'];
@@ -222,6 +223,8 @@ async function amendArchive(env,payload,actor) {
   const id=String(payload.archive_id||''),reason=String(payload.reason||'').trim(),changes=payload.changes;
   const allowed=new Set(['week_group','archived_at','total_arrived','total_expected','total_loaded','female_total','nat_total','space_force_total','arrived_space_force_total',...WINDOWS]);
   if (!id||reason.length<5||reason.length>2000||!changes||typeof changes!=='object'||Array.isArray(changes)||!Object.keys(changes).length||Object.keys(changes).some(key=>!allowed.has(key))) return error('validation','Archive ID, documented reason and supported correction fields are required.',400);
+  if (actor === 'instructor' && (await withdrawnArchiveIds(env)).has(id))
+    return error('archive_withdrawn','The historical archive is unavailable for operational amendment.',403);
   const archive=await env.DB.prepare("SELECT id FROM records WHERE id=? AND type='archive'").bind(id).first();
   if (!archive) return error('not_found','Archive not found.',404);
   const last=await env.DB.prepare('SELECT MAX(amendment_number) AS n FROM gate_archive_amendments WHERE archive_id=?').bind(id).first();
@@ -247,6 +250,8 @@ export async function onRequestGet({request,env,data}) {
     if (mode==='amendments') {
       const id=new URL(request.url).searchParams.get('id')||'';
       if (!id) return error('validation','Archive ID is required.',400);
+      if (role(data) === 'instructor' && (await withdrawnArchiveIds(env)).has(id))
+        return error('archive_withdrawn','Archive is unavailable.',403);
       const rows=await env.DB.prepare('SELECT * FROM gate_archive_amendments WHERE archive_id=? ORDER BY amendment_number ASC').bind(id).all();
       return reply({isOk:true,amendments:rows.results||[]});
     }

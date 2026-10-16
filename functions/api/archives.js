@@ -1,3 +1,4 @@
+import { withdrawnArchiveIds } from './archive-dispositions.mjs';
 function jsonResponse(body, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
@@ -72,15 +73,6 @@ function archiveSummary(row, amendments = []) {
   };
 }
 
-async function withdrawnArchiveIds(env) {
-  try {
-    const rows=await env.DB.prepare("SELECT d.archive_id,d.action FROM gate_admin_archive_dispositions d WHERE d.revision=(SELECT MAX(revision) FROM gate_admin_archive_dispositions WHERE archive_id=d.archive_id)").all();
-    return new Set((rows.results||[]).filter(row=>row.action==='withdraw').map(row=>String(row.archive_id)));
-  } catch(error) {
-    if(/no such table/i.test(String(error?.message||'')))return new Set();
-    throw error;
-  }
-}
 async function archiveRows(env) {
   const result = await env.DB.prepare(
     `SELECT id, week_group, data, created_at, updated_at

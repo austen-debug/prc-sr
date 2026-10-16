@@ -472,6 +472,7 @@ export async function onRequestDelete({ request, env, data }) {
     const existingRow = await getRecordRow(env, id);
     if (!existingRow) return jsonResponse({ isOk: false, code: 'not_found', error: 'Record not found.' }, 404);
     const existingRecord = parseStoredRecord(existingRow);
+    if (existingRecord?.type === 'archive') return jsonResponse({isOk:false,code:'archive_admin_required',error:'Historical archives cannot be physically deleted.'},403);
     if (isAuditEvent(existingRecord)) {
       return jsonResponse({ isOk: false, code: 'append_only', error: 'Audit events are append-only.' }, 405);
     }

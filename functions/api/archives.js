@@ -72,6 +72,15 @@ function archiveSummary(row, amendments = []) {
   };
 }
 
+async function withdrawnArchiveIds(env) {
+  try {
+    const rows=await env.DB.prepare("SELECT d.archive_id,d.action FROM gate_admin_archive_dispositions d WHERE d.revision=(SELECT MAX(revision) FROM gate_admin_archive_dispositions WHERE archive_id=d.archive_id)").all();
+    return new Set((rows.results||[]).filter(row=>row.action==='withdraw').map(row=>String(row.archive_id)));
+  } catch(error) {
+    if(/no such table/i.test(String(error?.message||'')))return new Set();
+    throw error;
+  }
+}
 async function archiveRows(env) {
   const result = await env.DB.prepare(
     `SELECT id, week_group, data, created_at, updated_at
@@ -211,7 +220,9 @@ export async function onRequestGet({ request, env, data }) {
       const amendmentsByArchive = new Map(
         [...rawByArchive.entries()].map(([archiveId, rowsForArchive]) => [archiveId, presentAmendments(rowsForArchive)])
       );
+      const withdrawn = await withdrawnArchiveIds(env);
       const archives = rows
+        .filter(row => !withdrawn.has(String(row.id || '')))
         .map(row => archiveSummary(row, amendmentsByArchive.get(String(row.id || '')) || []))
         .sort((a, b) => timestamp(b.archived_at) - timestamp(a.archived_at) || b.id.localeCompare(a.id));
       return jsonResponse({ isOk: true, archives, count: archives.length });
@@ -225,6 +236,7 @@ export async function onRequestGet({ request, env, data }) {
     ).bind(id).first();
 
     if (!row) return jsonResponse({ isOk: false, code: 'not_found', error: 'Archive not found.' }, 404);
+    if (roleOf(data) !== 'admin' && (await withdrawnArchiveIds(env)).has(String(id))) return jsonResponse({ isOk:false,code:'not_found',error:'Archive not found.' },404);
 
     const amendments = presentAmendments(await amendmentRows(env, id));
     const lifecycle = await lifecycleForArchive(env, id);

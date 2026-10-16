@@ -7,6 +7,10 @@
 <style>
 :root{color-scheme:dark;font-family:system-ui,-apple-system,Segoe UI,sans-serif;--background:#111924;--panel:#202d3e;--border:#43536a;--text:#eef3fa;--muted:#b5c5d5;--accent:#81b3df;--danger:#f2aaa2}
 *{box-sizing:border-box}body{background:var(--background);color:var(--text);margin:0}header{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:1rem 1.5rem;border-bottom:1px solid var(--border);background:#192637}header a{color:var(--text);text-decoration:none;border:1px solid var(--border);padding:.55rem .8rem;border-radius:.5rem}main{max-width:1300px;margin:auto;padding:1.5rem}h1{font-size:1.6rem;margin:0 0 .25rem}h2{font-size:1.18rem;margin:0 0 .8rem}h3{font-size:1rem;margin:.2rem 0 .7rem}p{color:var(--muted);margin:.25rem 0 .8rem}button,select,input,textarea{font:inherit}button{cursor:pointer;background:#355777;color:#fff;border:1px solid #6987a0;padding:.52rem .8rem;border-radius:.4rem}button:disabled{opacity:.45;cursor:not-allowed}button.danger{border-color:#a45b5b;background:#733f40}a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:3px solid var(--accent);outline-offset:3px}.tabs{display:flex;gap:.45rem;flex-wrap:wrap;margin:1rem 0}.tabs button[aria-selected=true]{background:#577c9b}.panel{border:1px solid var(--border);background:var(--panel);border-radius:.7rem;padding:1rem;margin-bottom:1rem}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:.8rem}.data{font-size:1.4rem;font-variant-numeric:tabular-nums;color:white}.muted{color:var(--muted)}.small{font-size:.85rem}.status{min-height:1.4rem;margin:.5rem 0}.table-scroll{overflow-x:auto}table{border-collapse:collapse;width:100%;text-align:left}th,td{padding:.55rem .6rem;border-bottom:1px solid var(--border);font-size:.87rem;vertical-align:top}th{color:var(--muted)}.hidden{display:none!important}.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:.75rem}label{display:flex;flex-direction:column;gap:.3rem;font-size:.9rem}input,select,textarea{background:#101b28;color:var(--text);padding:.55rem;border:1px solid #63748a;border-radius:.35rem;width:100%}textarea{min-height:5rem;resize:vertical}.notice{border-left:3px solid var(--accent);padding:.8rem;background:#1b3449;margin:.7rem 0}.warning{border-left-color:var(--danger)}.pill{display:inline-block;padding:.18rem .4rem;border-radius:.3rem;background:#30485c;font-size:.72rem}.empty{padding:1rem;color:var(--muted)}footer{padding:1rem 1.5rem;color:var(--muted);font-size:.8rem}#command-status[data-error=true]{color:var(--danger)}
+.toolbar{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;margin:.75rem 0}
+dialog{max-width:720px;width:calc(100vw - 2rem);max-height:85vh;overflow:auto;border:1px solid var(--border);background:var(--panel);color:var(--text);border-radius:.7rem;padding:1.3rem}
+dialog::backdrop{background:rgba(0,0,0,.75)}
+dl{display:grid;grid-template-columns:135px 1fr;gap:.8rem}dt{color:var(--muted)}dd{margin:0;overflow-wrap:anywhere}
 </style>
 </head>
 <body>
@@ -18,6 +22,8 @@
 <nav class="tabs" aria-label="Administration sections">
 <button data-tab="overview" aria-selected="true">Overview</button>
 <button data-tab="archives" aria-selected="false">Archive Administration</button>
+<button data-tab="sessions" aria-selected="false">Live Sessions &amp; Devices</button>
+<button data-tab="issues" aria-selected="false">System Issues &amp; Debugging</button>
 <button data-tab="integrity" aria-selected="false">Data Integrity</button>
 <button data-tab="lifecycle" aria-selected="false">Lifecycle</button>
 <button data-tab="audit" aria-selected="false">Audit History</button>
@@ -50,6 +56,43 @@
 <div id="command-status" class="status" role="status" aria-live="polite"></div>
 </form>
 </section>
+<section id="panel-sessions" class="panel hidden">
+<h2>Live Sessions &amp; Devices</h2>
+<p>Lists registered, unexpired sessions. A device is marked recently active after a request within five minutes; this is not continuous online presence. Browser and device types are approximate, and shared credentials do not identify individuals.</p>
+<div id="session-status" class="notice" role="status">Load sessions to view authenticated devices.</div>
+<div class="form-grid">
+<label>Role <select id="session-role"><option value="">All roles</option><option value="admin">Admin</option><option value="instructor">Instructor</option><option value="airman">Airman</option><option value="squadron">Squadron</option></select></label>
+<label>Find session <input type="search" id="session-search" placeholder="Filter by role, device, browser or ID"></label>
+</div>
+<div class="table-scroll"><table><thead><tr><th>Role</th><th>Device</th><th>Last activity</th><th>Login</th><th>Expires</th><th>Control</th></tr></thead><tbody id="session-list"></tbody></table></div>
+<button id="session-refresh" type="button">Refresh sessions</button>
+<h3 style="margin-top:1rem">Session history</h3>
+<div class="table-scroll"><table><thead><tr><th>When</th><th>Action</th><th>Target role</th><th>Actor</th><th>Reason</th></tr></thead><tbody id="session-events"></tbody></table></div>
+<form id="session-revoke" class="panel hidden" autocomplete="off">
+<h3>Revoke selected session</h3>
+<p id="session-target"></p>
+<p>Revocation takes effect on the session's next request. A user with valid shared credentials can sign in again.</p>
+<label>Reason (10–300 characters) <textarea name="reason" required minlength="10" maxlength="300"></textarea></label>
+<label>Confirm by entering the complete session ID <input name="confirmation" autocomplete="off" required></label>
+<div class="toolbar"><button class="danger" type="submit">Revoke session</button><button id="session-cancel" type="button">Cancel</button></div>
+<p id="session-revoke-status" role="status"></p>
+</form>
+</section>
+<section id="panel-issues" class="panel hidden">
+<h2>System Issues &amp; Debugging</h2>
+<p>Inspect live service checks and observed errors. An event is historical evidence, not a claim that the fault remains active. Diagnostic reporting excludes passwords, request bodies, raw stack traces and personal identifiers.</p>
+<div id="issue-status" class="notice" role="status">Run checks to inspect current health and error reports.</div>
+<div class="grid" id="issue-checks"></div>
+<div class="toolbar"><button id="issue-refresh" type="button">Refresh issues</button><button id="issue-integrity" type="button">View data integrity</button></div>
+<h3>Observed error events</h3>
+<div class="form-grid">
+<label>Category <select id="issue-category"><option value="">All categories</option><option value="api">API</option><option value="connectivity">Connectivity</option><option value="runtime">Runtime</option><option value="ui">UI / assets</option></select></label>
+<label>Severity <select id="issue-severity"><option value="">All severities</option><option value="error">Error</option><option value="warning">Warning</option></select></label>
+<label>Search <input type="search" id="issue-search" placeholder="Error code or endpoint"></label>
+</div>
+<div class="table-scroll"><table><thead><tr><th>When</th><th>Severity</th><th>Category</th><th>Code and route</th><th>Detail</th></tr></thead><tbody id="issue-list"></tbody></table></div>
+<p id="issue-caveat" class="small"></p>
+</section>
 <section id="panel-integrity" class="panel hidden">
 <h2>Authoritative Record Integrity</h2>
 <p>Read-only parity inspection of operational records and typed mirrors. This is an inspection tool, not an automatic repair or reset mechanism.</p>
@@ -77,18 +120,24 @@
 <p>Credentials remain in Cloudflare environment bindings. This interface does not expose secret values or unrestricted database operations.</p>
 </section>
 </main>
+<dialog id="issue-dialog" aria-label="Diagnostic detail">
+<div class="toolbar"><h2>Issue details</h2><button type="button" id="issue-close">Close</button></div>
+<dl id="issue-details"></dl>
+<div class="notice" id="issue-guidance"></div>
+</dialog>
 <footer>GATE Admin access is server-authorized. This interface does not provide general database edit or SQL capabilities.</footer>
+<script src="/js/gate-issue-reporter.js" defer></script>
 <script>
 'use strict';
 const byId=id=>document.getElementById(id);
 const node=(tag,text)=>{const el=document.createElement(tag);el.textContent=String(text??'—');return el;};
 const asDate=s=>{const d=new Date(s);return Number.isNaN(d.getTime())?'—':d.toLocaleString();};
 const escapeCell=s=>String(s??'—');
-let health=null, archiveRevisions=new Map();
+let health=null, archiveRevisions=new Map(),sessionRows=[],issueRows=[],sessionTarget=null;
 async function api(path,opts={}){const response=await fetch(path,{credentials:'same-origin',cache:'no-store',...opts});const body=await response.json().catch(()=>({isOk:false,code:'invalid_response'}));if(!response.ok||!body.isOk)throw new Error(body.error||body.code||'Request failed');return body;}
 function row(tbody,values,action){const tr=document.createElement('tr');values.forEach(value=>{const td=node('td',value);tr.append(td)});if(action){const td=document.createElement('td');td.append(action);tr.append(td)}tbody.append(tr);}
 function empty(tbody,count,text){tbody.replaceChildren();const tr=document.createElement('tr'),td=node('td',text);td.colSpan=count;tr.append(td);tbody.append(tr);}
-function section(name){document.querySelectorAll('[data-tab]').forEach(btn=>btn.setAttribute('aria-selected',String(btn.dataset.tab===name)));document.querySelectorAll('main > section[id^="panel-"]').forEach(el=>el.classList.toggle('hidden',el.id!=='panel-'+name));if(name==='archives')loadArchives();if(name==='integrity')loadIntegrity();if(name==='lifecycle')loadCycles();if(name==='audit')loadAudit();if(name==='future')loadSecurity();}
+function section(name){document.querySelectorAll('[data-tab]').forEach(btn=>btn.setAttribute('aria-selected',String(btn.dataset.tab===name)));document.querySelectorAll('main > section[id^="panel-"]').forEach(el=>el.classList.toggle('hidden',el.id!=='panel-'+name));if(name==='archives')loadArchives();if(name==='sessions')loadSessions();if(name==='issues')loadIssues();if(name==='integrity')loadIntegrity();if(name==='lifecycle')loadCycles();if(name==='audit')loadAudit();if(name==='future')loadSecurity();}
 document.querySelectorAll('[data-tab]').forEach(btn=>btn.addEventListener('click',()=>section(btn.dataset.tab)));
 function fillForm(archiveId,action,revision){const form=byId('archive-action-form');form.elements.archiveId.value=archiveId;form.elements.action.value=action;form.elements.expectedRevision.value=revision;form.elements.confirmArchiveId.value='';form.elements.reason.value='';form.elements.confirmArchiveId.focus();}
 async function loadHealth(){try{health=await api('/api/admin');const readiness=byId('readiness');readiness.textContent=health.adminSchemaReady?'Admin schema verified. '+(health.writesEnabled?'Controlled archive actions enabled.':'Administrative writes are disabled pending controlled activation.'):'Admin data schema is not installed; historical write controls are unavailable.';readiness.classList.toggle('warning',!health.writesEnabled);byId('submit-action').disabled=!health.writesEnabled;const grid=byId('health-grid');grid.replaceChildren();for(const [label,value] of [['Active Week Group',health.activeCycle?.week_group||'None'],['Lifecycle State',health.activeCycle?.state||'No active cycle'],['Historical Archives',health.archiveCount],['Open Recovery Conditions',health.unresolvedOperations],['Audit Events',health.auditEventCount],['Admin Data Schema',health.adminSchemaReady?'Verified':'Unavailable']]){const box=node('div','');box.className='panel';const caption=node('p',label),stat=node('div',value);stat.className='data';box.append(caption,stat);grid.append(box);}}catch(e){byId('readiness').textContent=e.message;byId('readiness').classList.add('warning');byId('submit-action').disabled=true;}}
@@ -115,6 +164,91 @@ async function loadSecurity(){
   }catch(error){empty(table,3,'Security configuration unavailable: '+error.message);}
 }
 async function loadAudit(){const t=byId('audit-list');try{const x=await api('/api/admin?mode=audit');t.replaceChildren();if(!x.events?.length)empty(t,5,'No audit events.');for(const e of x.events||[])row(t,[asDate(e.occurred_at),e.actor_role,e.event_type,e.entity_type+': '+e.entity_id,e.prior_version+' → '+e.resulting_version]);}catch(e){empty(t,5,e.message);}}
+
+function displaySessions(){
+ const target=byId('session-list'),role=byId('session-role').value,term=byId('session-search').value.toLowerCase().trim();
+ const rows=sessionRows.filter(s=>(!role||s.role===role)&&(!term||[s.role,s.device,s.browser,s.id].join(' ').toLowerCase().includes(term)));
+ target.replaceChildren();if(!rows.length)empty(target,6,'No matching tracked sessions.');
+ for(const s of rows){
+  const btn=node('button',s.current?'Current session':'Revoke');btn.type='button';btn.disabled=Boolean(s.current);
+  btn.addEventListener('click',()=>{sessionTarget=s;byId('session-revoke').classList.remove('hidden');byId('session-revoke').reset();
+   byId('session-target').textContent=s.role+' · '+s.device+' / '+s.browser+' · '+s.id;byId('session-revoke-status').textContent='';
+   byId('session-revoke').scrollIntoView({block:'nearest'});});
+  row(target,[s.role+(s.current?' (you)':''),s.device+' / '+s.browser,s.recentlyActive?'Recently active':'Not recently active',
+   asDate(s.issuedAt),asDate(s.expiresAt)],btn);
+ }
+}
+async function loadSessions(){
+ const status=byId('session-status'),history=byId('session-events');status.textContent='Loading authenticated sessions…';
+ try{
+  const data=await api('/api/admin-sessions');sessionRows=data.sessions||[];
+  status.textContent=sessionRows.length+' registered unexpired sessions. '+data.legacyNotice;status.classList.remove('warning');
+  displaySessions();history.replaceChildren();
+  if(!data.events?.length)empty(history,5,'No recorded session events.');
+  for(const e of data.events||[])row(history,[asDate(e.at),e.action,e.role,e.by,e.reason||'—']);
+ }catch(err){sessionRows=[];empty(byId('session-list'),6,'Session registry unavailable.');
+  empty(history,5,'No session history available.');
+  status.textContent='Session registry unavailable: '+err.message;status.classList.add('warning');}
+}
+byId('session-role').addEventListener('change',displaySessions);
+byId('session-search').addEventListener('input',displaySessions);
+byId('session-refresh').addEventListener('click',loadSessions);
+byId('session-cancel').addEventListener('click',()=>{sessionTarget=null;byId('session-revoke').classList.add('hidden');});
+byId('session-revoke').addEventListener('submit',async event=>{
+ event.preventDefault();const form=event.currentTarget,s=sessionTarget,notice=byId('session-revoke-status');
+ if(!s)return;
+ if(form.elements.confirmation.value.trim()!==s.id){notice.textContent='Session ID confirmation does not match.';return;}
+ const submit=form.querySelector('[type=submit]');submit.disabled=true;notice.textContent='Submitting revocation…';
+ try{
+  await api('/api/admin-sessions',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+   sessionId:s.id,confirmSessionId:s.id,reason:form.elements.reason.value.trim()})});
+  sessionTarget=null;form.classList.add('hidden');await loadSessions();
+  byId('session-status').textContent='Session revoked. Its next authenticated request will be rejected.';
+ }catch(err){notice.textContent='Revocation not confirmed: '+err.message;}finally{submit.disabled=false;}
+});
+function displayIssues(){
+ const t=byId('issue-list'),cat=byId('issue-category').value,sev=byId('issue-severity').value,term=byId('issue-search').value.toLowerCase().trim();
+ const entries=issueRows.filter(x=>(!cat||x.category===cat)&&(!sev||x.severity===sev)&&(!term||[x.code,x.route,x.source].join(' ').toLowerCase().includes(term)));
+ t.replaceChildren();if(!entries.length)empty(t,5,'No matching recorded issues.');
+ for(const issue of entries){
+  const btn=node('button','Inspect');btn.type='button';btn.addEventListener('click',()=>showIssue(issue));
+  row(t,[asDate(issue.at),issue.severity,issue.category,issue.code+' · '+issue.route],btn);
+ }
+}
+function showIssue(issue){
+ const t=byId('issue-details');t.replaceChildren();
+ for(const [label,value] of [['Observed',asDate(issue.at)],['Source',issue.source],['Category',issue.category],
+  ['Severity',issue.severity],['Code',issue.code],['Endpoint',issue.route],
+  ['HTTP status',issue.status||'Not supplied'],['Detail',issue.detail]]){
+  t.append(node('dt',label),node('dd',value));
+ }
+ byId('issue-guidance').textContent=issue.category==='connectivity'?'Check network reachability and retry the affected endpoint.':
+  issue.category==='api'?'Inspect the endpoint response and Cloudflare service health.':
+  'Reproduce the affected workflow; raw browser stack traces are not uploaded to GATE.';
+ byId('issue-dialog').showModal();
+}
+byId('issue-close').addEventListener('click',()=>byId('issue-dialog').close());
+for(const id of ['issue-category','issue-severity','issue-search'])
+ byId(id).addEventListener(id==='issue-search'?'input':'change',displayIssues);
+async function loadIssues(){
+ const status=byId('issue-status'),cards=byId('issue-checks');status.textContent='Running health probes…';cards.replaceChildren();
+ const [issues,parity]=await Promise.allSettled([api('/api/admin-diagnostics'),api('/api/admin?mode=integrity')]);
+ issueRows=issues.status==='fulfilled'?issues.value.events||[]:[];
+ const checks=issues.status==='fulfilled'?[...issues.value.checks]:[
+  {code:'DIAGNOSTICS_API',ok:false,description:'Unable to retrieve issues: '+issues.reason.message}];
+ checks.push(parity.status==='fulfilled'?{code:'RECORD_PARITY',ok:Boolean(parity.value.integrityReady),
+  description:parity.value.integrityReady?'Original and typed mirror records agree.':'Record parity requires inspection.'}:
+  {code:'RECORD_PARITY',ok:false,description:'Data integrity query unavailable.'});
+ const failures=checks.filter(c=>!c.ok);
+ for(const check of checks){const card=document.createElement('div');card.className='panel';
+  card.append(node('strong',(check.ok?'PASS · ':'CHECK · ')+check.code),node('p',check.description));cards.append(card);}
+ status.textContent=failures.length?failures.length+' diagnostic checks require attention.':'All available live checks passed.';
+ status.classList.toggle('warning',Boolean(failures.length));displayIssues();
+ byId('issue-caveat').textContent=issues.status==='fulfilled'?issues.value.note:'Incident history currently unavailable.';
+}
+byId('issue-refresh').addEventListener('click',loadIssues);
+byId('issue-integrity').addEventListener('click',()=>section('integrity'));
+
 byId('refresh-health').addEventListener('click',loadHealth);
 byId('refresh-integrity').addEventListener('click',loadIntegrity);
 byId('archive-action-form').addEventListener('submit',async(event)=>{event.preventDefault();const f=event.currentTarget,el=f.elements,status=byId('command-status');status.textContent='Submitting authenticated operation…';status.dataset.error='false';const payload={archiveId:el.archiveId.value.trim(),action:el.action.value,reason:el.reason.value.trim(),expectedRevision:Number(el.expectedRevision.value),confirmArchiveId:el.confirmArchiveId.value.trim(),operationId:crypto.randomUUID()};const button=byId('submit-action');button.disabled=true;try{const r=await api('/api/admin-archives',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});status.textContent='Verified '+r.action+' (revision '+r.revision+').';await loadArchives();}catch(e){status.textContent=e.message;status.dataset.error='true';}finally{button.disabled=!health?.writesEnabled;}});

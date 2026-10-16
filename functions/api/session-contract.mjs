@@ -1,3 +1,4 @@
+import {checkTrackedSession} from './session-registry.mjs';
 const COOKIE_NAME = 'prc_sr_session';
 const SESSION_MAX_AGE_MS = 12 * 60 * 60 * 1000;
 const ADMIN_MAX_AGE_MS = 30 * 60 * 1000;
@@ -80,10 +81,12 @@ export async function verifyRequestSession(request, env) {
     if (!Number.isSafeInteger(payload.iat) || !Number.isSafeInteger(payload.exp)) return null;
     if (payload.iat > now + 60000 || payload.iat <= 0) return null;
     if (payload.exp <= now || payload.exp <= payload.iat || payload.exp - payload.iat > (role === 'admin' ? ADMIN_MAX_AGE_MS : SESSION_MAX_AGE_MS)) return null;
+    if (payload.sid !== undefined && !(await checkTrackedSession(env,payload))) return null;
 
     return Object.freeze({
       username: payload.username,
       role,
+      sid: payload.sid || null,
       iat: payload.iat,
       exp: payload.exp
     });

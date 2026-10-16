@@ -1,4 +1,5 @@
 import { roleSigningSecret } from './session-contract.mjs';
+import { registryReady, registerSession } from './session-registry.mjs';
 
 const COOKIE_NAME = 'prc_sr_session';
 const SESSION_MAX_AGE_SECONDS = 12 * 60 * 60;
@@ -99,12 +100,18 @@ export async function onRequestPost({ request, env }) {
     if (!signingSecret) return jsonResponse({ isOk: false, code: 'configuration_required', error: 'Authentication is not configured.' }, 503);
     const now = Date.now();
     const maxAge = role === 'admin' ? ADMIN_MAX_AGE_SECONDS : SESSION_MAX_AGE_SECONDS;
+    // Install independently of the archive migration: until schema 0008 exists,
+    // legacy signed sessions continue to work and cannot be listed or revoked.
+    const tracked = await registryReady(env);
+    const sid = tracked ? crypto.randomUUID() : null;
     const token = await createSession({
-      username,
-      role,
-      iat: now,
-      exp: now + (maxAge * 1000)
+      username, role, iat: now, exp: now + maxAge*1000,
+      ...(sid ? {sid} : {})
     }, signingSecret);
+    if(sid) await registerSession(env,{
+      sessionId:sid,username,role,issuedAt:now,expiresAt:now+maxAge*1000,
+      userAgent:request.headers.get('User-Agent')||''
+    });
 
     return jsonResponse({ isOk: true, role }, 200, {
       'Set-Cookie': `${COOKIE_NAME}=${token}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=${maxAge}`

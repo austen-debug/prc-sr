@@ -1,3 +1,4 @@
+import { withdrawnArchiveIds } from './archive-dispositions.mjs';
 import {
   RECORDS_API_CAPABILITIES,
   conflictResponseBody,
@@ -310,8 +311,15 @@ export async function onRequestGet({ request, env, data }) {
            ORDER BY created_at ASC`
     ).all();
 
+    // A withdrawn archive must not remain visible through the legacy all-records
+    // read path after it has been removed from the canonical archive library.
+    // The live-only path is untouched for existing operational workflows.
+    const withdrawn = role === 'instructor' && !liveOnly
+      ? await withdrawnArchiveIds(env)
+      : new Set();
     const records = (result.results || [])
       .map(safeParseRecord)
+      .filter(record => !(record?.type === 'archive' && withdrawn.has(String(record.__backendId || record.id || ''))))
       .map(record => sanitizeRecordForRole(record, role))
       .filter(Boolean);
 
@@ -336,6 +344,11 @@ export async function onRequestPost({ request, env, data }) {
     if (!type) return jsonResponse({ isOk: false, code: 'validation', error: 'Record type is required.' }, 400);
 
     if (type === 'audit_event') {
+      // Administrative event names are reserved to server-owned D1 transactions.
+      // Legacy operational event types and their existing authorship stay unchanged.
+      const reserved = new Set(['archive_withdrawn','archive_restored','record_delete_authorized']);
+      if (reserved.has(String(record.event_type || '').trim().toLowerCase()))
+        return jsonResponse({isOk:false,code:'server_audit_required',error:'Administrative events require server transaction provenance.'},403);
       const validation = validateAuditEvent(record);
       if (!validation.valid) {
         return jsonResponse({ isOk: false, code: 'validation', error: validation.errors.join(' ') }, 400);
@@ -390,6 +403,12 @@ export async function onRequestPut({ request, env, data }) {
     if (!existingRow) return jsonResponse({ isOk: false, code: 'not_found', error: 'Record not found.' }, 404);
 
     const existingRecord = parseStoredRecord(existingRow);
+    if (existingRecord?.type === 'archive' && role === 'admin')
+      return jsonResponse({isOk:false,code:'immutable_archive',error:'Archive snapshots require an append-only amendment, not a direct update.'},405);
+    if (existingRecord?.type === 'archive' && role === 'instructor' &&
+        (await withdrawnArchiveIds(env)).has(String(id))) {
+      return jsonResponse({ isOk: false, code: 'archive_withdrawn', error: 'This archive is no longer in the operational archive library.' }, 403);
+    }
     if (isAuditEvent(existingRecord)) {
       return jsonResponse({ isOk: false, code: 'append_only', error: 'Audit events are append-only.' }, 405);
     }
@@ -472,6 +491,7 @@ export async function onRequestDelete({ request, env, data }) {
     const existingRow = await getRecordRow(env, id);
     if (!existingRow) return jsonResponse({ isOk: false, code: 'not_found', error: 'Record not found.' }, 404);
     const existingRecord = parseStoredRecord(existingRow);
+    if (existingRecord?.type === 'archive') return jsonResponse({isOk:false,code:'archive_admin_required',error:'Historical archives cannot be physically deleted.'},403);
     if (isAuditEvent(existingRecord)) {
       return jsonResponse({ isOk: false, code: 'append_only', error: 'Audit events are append-only.' }, 405);
     }
@@ -494,7 +514,28 @@ export async function onRequestDelete({ request, env, data }) {
       ).bind(id, currentVersion)
       : env.DB.prepare('DELETE FROM records WHERE id = ?').bind(id);
 
-    const result = await statement.run();
+    // The existing delete trigger records a SYSTEM observation without authenticated attribution.
+    // For Admin, the verified actor audit must be in the same transaction as the delete.
+    let result;
+    if (role === 'admin') {
+      const eventId = crypto.randomUUID();
+      const operationId = crypto.randomUUID();
+      const now = new Date().toISOString();
+      const metadata = JSON.stringify({ operation_id: operationId, authenticated_actor: true });
+      const statements = [
+        statement,
+        env.DB.prepare("SELECT CASE WHEN changes()=1 THEN 1 ELSE json_extract('invalid-json','$') END"),
+        env.DB.prepare(`INSERT INTO gate_audit_events
+          (event_id,cycle_id,entity_type,entity_id,event_type,actor_role,prior_version,resulting_version,metadata_json,occurred_at)
+          VALUES (?,(SELECT cycle_id FROM gate_week_groups WHERE state='active' AND week_group=? LIMIT 1),?,?,'record_delete_authorized','admin',?,?,?,?)`)
+          .bind(eventId, String(existingRow.week_group || ''), String(existingRecord.type || ''), id,
+            currentVersion, currentVersion, metadata, now)
+      ];
+      const batch = await env.DB.batch(statements);
+      result = batch?.[0];
+    } else {
+      result = await statement.run();
+    }
     if (expected.supplied && changedRows(result) !== 1) {
       const currentRow = await getRecordRow(env, id);
       const latestVersion = recordVersionOf(parseStoredRecord(currentRow) || {});

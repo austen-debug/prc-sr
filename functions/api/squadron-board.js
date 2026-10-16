@@ -2,7 +2,7 @@ import { calculatePhysicalArrivalTotals } from '../../public/app/domain/operatio
 import { normalizePersistedRecords } from '../../public/app/data/record-normalizer.mjs';
 
 // Single Squadron read contract. Only an authenticated instructor can publish a notice.
-const READ_ROLES = new Set(['squadron', 'instructor']);
+const READ_ROLES = new Set(['squadron', 'instructor', 'admin']);
 const DORM_STATES = new Set(['empty', 'open', 'closed']);
 const CLEARED_NOTICE = '__GATE_NOTICE_CLEARED__';
 const DEFAULT_INFORMATION = Object.freeze([
@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS gate_squadron_notices (
   week_group TEXT NOT NULL,
   message TEXT NOT NULL CHECK (length(trim(message)) BETWEEN 1 AND 1000),
   published_at TEXT NOT NULL,
-  published_by_role TEXT NOT NULL CHECK (published_by_role = 'instructor')
+  published_by_role TEXT NOT NULL CHECK (published_by_role IN ('instructor','admin'))
 );
 CREATE INDEX IF NOT EXISTS idx_gate_squadron_notices_week_latest
   ON gate_squadron_notices(week_group, id DESC);
@@ -39,7 +39,7 @@ CREATE TABLE IF NOT EXISTS gate_squadron_information_revisions (
     AND length(instructions_json) <= 4096
   ),
   published_at TEXT NOT NULL,
-  published_by_role TEXT NOT NULL CHECK (published_by_role = 'instructor')
+  published_by_role TEXT NOT NULL CHECK (published_by_role IN ('instructor','admin'))
 );
 CREATE TRIGGER IF NOT EXISTS trg_gate_squadron_information_no_update
 BEFORE UPDATE ON gate_squadron_information_revisions
@@ -258,14 +258,15 @@ export async function onRequestGet({ env, data }) {
   const role = String(data?.session?.role || '').toLowerCase();
   if (!READ_ROLES.has(role)) return reply({ isOk: false, code: 'forbidden', error: 'Forbidden.' }, 403);
   try {
-    return reply({ isOk: true, editor: role === 'instructor', board: await readBoard(env) });
+    return reply({ isOk: true, editor: ['admin','instructor'].includes(role), board: await readBoard(env) });
   } catch (error) {
     return reply({ isOk: false, code: error?.code || 'squadron_board_failed', error: error?.code === 'integrity_error' ? error.message : 'Squadron data unavailable.' }, error?.code === 'integrity_error' ? 503 : 500);
   }
 }
 
 export async function onRequestPost({ request, env, data }) {
-  if (data?.session?.role !== 'instructor') return reply({ isOk: false, code: 'forbidden', error: 'Instructor access required.' }, 403);
+  const actor = String(data?.session?.role || '');
+  if (!['admin','instructor'].includes(actor)) return reply({ isOk: false, code: 'forbidden', error: 'Instructor access required.' }, 403);
   const origin = request.headers.get('Origin');
   const noticeMode = String(request.headers.get('X-Gate-Notice') || '').toLowerCase();
   const noticeAction = noticeMode === 'publish' || noticeMode === 'clear';
@@ -299,9 +300,9 @@ export async function onRequestPost({ request, env, data }) {
       if (!weekGroup) return reply({ isOk: false, code: 'lifecycle_required', error: 'No active Week Group.' }, 409);
       const publishedAt = new Date().toISOString();
       const result = await env.DB.prepare(`INSERT INTO gate_squadron_notices (week_group,message,published_at,published_by_role)
-        SELECT ?, ?, ?, 'instructor'
+        SELECT ?, ?, ?, ?
         WHERE COALESCE((SELECT MAX(id) FROM gate_squadron_notices WHERE week_group=?),0)=?`)
-        .bind(weekGroup, message, publishedAt, weekGroup, expectedRevision).run();
+        .bind(weekGroup, message, publishedAt, actor, weekGroup, expectedRevision).run();
       if (result.meta?.changes !== 1) return reply({ isOk: false, code: 'conflict', error: 'The active group or notice changed. Refresh before publishing.' }, 409);
       const revision = result.meta?.last_row_id;
       if (!Number.isSafeInteger(revision) || revision < 1) return reply({ isOk: false, code: 'publication_unconfirmed', error: 'Check the published notice before retrying.' }, 503);
@@ -326,9 +327,9 @@ export async function onRequestPost({ request, env, data }) {
     const publishedAt = new Date().toISOString();
     const serialized = JSON.stringify(instructions);
     const result = await env.DB.prepare(`INSERT INTO gate_squadron_information_revisions (instructions_json,published_at,published_by_role)
-      SELECT ?, ?, 'instructor'
+      SELECT ?, ?, ?
       WHERE COALESCE((SELECT MAX(id) FROM gate_squadron_information_revisions),0)=?`)
-      .bind(serialized, publishedAt, expectedRevision).run();
+      .bind(serialized, publishedAt, actor, expectedRevision).run();
     if (result.meta?.changes !== 1) return reply({ isOk: false, code: 'conflict', error: 'Squadron information changed. Refresh before saving.' }, 409);
     const revision = result.meta?.last_row_id;
     if (!Number.isSafeInteger(revision) || revision < 1) return reply({ isOk: false, code: 'publication_unconfirmed', error: 'Check Squadron information before retrying.' }, 503);

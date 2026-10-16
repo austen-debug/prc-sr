@@ -1,3 +1,4 @@
+import { withdrawnArchiveIds } from './archive-dispositions.mjs';
 function jsonResponse(body, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
@@ -193,7 +194,7 @@ function archiveDetail(row, amendments, lifecycle) {
 }
 
 export async function onRequestGet({ request, env, data }) {
-  if (roleOf(data) !== 'instructor') return forbidden();
+  if (!['instructor','admin'].includes(roleOf(data))) return forbidden();
 
   try {
     const url = new URL(request.url);
@@ -211,7 +212,9 @@ export async function onRequestGet({ request, env, data }) {
       const amendmentsByArchive = new Map(
         [...rawByArchive.entries()].map(([archiveId, rowsForArchive]) => [archiveId, presentAmendments(rowsForArchive)])
       );
+      const withdrawn = await withdrawnArchiveIds(env);
       const archives = rows
+        .filter(row => !withdrawn.has(String(row.id || '')))
         .map(row => archiveSummary(row, amendmentsByArchive.get(String(row.id || '')) || []))
         .sort((a, b) => timestamp(b.archived_at) - timestamp(a.archived_at) || b.id.localeCompare(a.id));
       return jsonResponse({ isOk: true, archives, count: archives.length });
@@ -225,6 +228,7 @@ export async function onRequestGet({ request, env, data }) {
     ).bind(id).first();
 
     if (!row) return jsonResponse({ isOk: false, code: 'not_found', error: 'Archive not found.' }, 404);
+    if (roleOf(data) !== 'admin' && (await withdrawnArchiveIds(env)).has(String(id))) return jsonResponse({ isOk:false,code:'not_found',error:'Archive not found.' },404);
 
     const amendments = presentAmendments(await amendmentRows(env, id));
     const lifecycle = await lifecycleForArchive(env, id);

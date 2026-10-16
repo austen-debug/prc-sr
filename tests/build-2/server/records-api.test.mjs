@@ -41,6 +41,9 @@ function createD1(seed = []) {
         return { results: clone(rows) };
       },
       async first() {
+        // Pre-migration D1 contains no Admin disposition table. Model that
+        // catalog lookup without changing existing record fixture semantics.
+        if (normalized.includes('FROM sqlite_master')) return null;
         if (!normalized.startsWith('SELECT') || !normalized.includes('WHERE id = ?')) {
           throw new Error(`Unsupported first SQL: ${normalized}`);
         }

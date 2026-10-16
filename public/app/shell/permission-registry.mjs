@@ -17,10 +17,11 @@ export const SHELL_CONTROL_IDS = Object.freeze([
 ]);
 
 export const roleRegistry = Object.freeze({
+  admin: Object.freeze({ id: 'admin', label: 'Admin', description: 'Instructor operations with separately authorized administration.' }),
   instructor: Object.freeze({
     id: 'instructor',
     label: 'Instructor',
-    description: 'Full operational and administrative access within the authenticated application boundary.'
+    description: 'Full approved operational access within the authenticated application boundary.'
   }),
   airman: Object.freeze({
     id: 'airman',

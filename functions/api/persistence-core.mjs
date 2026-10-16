@@ -77,7 +77,7 @@ export function validateInitialization(draft) {
   }
   return populated;
 }
-export function buildDormRows(draft, cycleId, now, makeId) {
+export function buildDormRows(draft, cycleId, now, makeId, actorRole = 'instructor') {
   return validateInitialization(draft).map(row => {
     const name = row.dorm_name || `Dorm ${row.rowIndex + 1}`;
     const order = row.rowIndex + 1;
@@ -91,7 +91,7 @@ export function buildDormRows(draft, cycleId, now, makeId) {
       dorm_identity:`${draft.proposed_week_group}::${row.sdq.toUpperCase()}::${name.toUpperCase()}`,
       state:'empty', phase:'', opened_at:'', closed_timer:'', closed_at:'', notes:'', assigned_airman:'', auditorium_location:'',
       overtime_sound_sent:'false', overtime_sound_at:'', destination:'', bus_type:'',
-      __backendId:id, record_version:1, created_by_role:'instructor', updated_by_role:'instructor', created_at:now, updated_at:now
+      __backendId:id, record_version:1, created_by_role:actorRole, updated_by_role:actorRole, created_at:now, updated_at:now
     };
     return { id, type:'dorm', week_group:draft.proposed_week_group, data:JSON.stringify(data), created_at:now, updated_at:now };
   });
@@ -113,7 +113,7 @@ export function serializeSourceRecords(sourceRecords, weekGroup) {
     return { id:row.id, type:row.type, week_group:row.week_group, data:row.data, created_at:row.created_at, updated_at:row.updated_at };
   }));
 }
-export function buildArchivePayload({ cycleId, weekGroup, dorms, buses, sourceRecords, windows = {}, now }) {
+export function buildArchivePayload({ cycleId, weekGroup, dorms, buses, sourceRecords, windows = {}, now, actorRole = 'instructor' }) {
   const sourceJson = serializeSourceRecords(sourceRecords, weekGroup);
   if (sourceRecords.filter(row => row.type === 'dorm').length !== dorms.length || sourceRecords.filter(row => row.type === 'bus').length !== buses.length) throw new PersistenceValidationError('Source snapshot and reporting rows do not agree.');
   const arrived = buses.filter(bus => bus.status === 'arrived');
@@ -139,6 +139,6 @@ export function buildArchivePayload({ cycleId, weekGroup, dorms, buses, sourceRe
     dorm_data:JSON.stringify(dormHistory), bus_data:JSON.stringify(busHistory),
     source_records_json:sourceJson, source_record_count:sourceRecords.length, source_snapshot_format:'lossless-record-rows-v1',
     archive_schema_version:'gate-archive-schema-v3-canonical', closeout_safety_version:'archive-verified-before-clear-v3',
-    record_version:1, created_by_role:'instructor', updated_by_role:'instructor', created_at:now, updated_at:now
+    record_version:1, created_by_role:actorRole, updated_by_role:actorRole, created_at:now, updated_at:now
   };
 }

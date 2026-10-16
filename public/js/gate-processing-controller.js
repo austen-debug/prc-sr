@@ -40,7 +40,7 @@
   }
 
   function isInstructor() {
-    try { return currentRole === 'instructor'; } catch (_) { return false; }
+    try { return ['instructor','admin'].includes(currentRole); } catch (_) { return false; }
   }
 
   function dormById(id) {

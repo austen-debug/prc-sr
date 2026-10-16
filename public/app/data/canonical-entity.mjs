@@ -6,7 +6,7 @@ import {
 } from '../domain/normalization.mjs';
 
 export const CANONICAL_ENTITY_CONTRACT_VERSION = 'B.1.0';
-export const CANONICAL_ACTOR_ROLES = Object.freeze(['instructor', 'airman', 'squadron', 'system', 'unknown']);
+export const CANONICAL_ACTOR_ROLES = Object.freeze(['admin', 'instructor', 'airman', 'squadron', 'system', 'unknown']);
 
 function cloneJson(value) {
   if (value === undefined) return undefined;

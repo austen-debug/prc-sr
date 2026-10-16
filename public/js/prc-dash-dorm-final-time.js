@@ -122,7 +122,7 @@
   }
 
   async function reopenDormFromEditModal() {
-    if (typeof currentRole !== 'undefined' && currentRole !== 'instructor') return;
+    if (typeof currentRole !== 'undefined' && !['instructor','admin'].includes(currentRole)) return;
 
     const dorm = getEditDorm();
     if (!dorm) return;
@@ -185,7 +185,7 @@
       event.preventDefault();
       event.stopImmediatePropagation();
 
-      if (typeof currentRole !== 'undefined' && currentRole !== 'instructor') return;
+      if (typeof currentRole !== 'undefined' && !['instructor','admin'].includes(currentRole)) return;
       if (typeof editDormId === 'undefined' || !editDormId || typeof allData === 'undefined') return;
 
       const dorm = allData.find(record => record.__backendId === editDormId && record.type === 'dorm');

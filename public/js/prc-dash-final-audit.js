@@ -451,7 +451,7 @@
     try {
       if (closeDormPatched || typeof closeDorm !== 'function') return;
       const gateCloseDorm = async function gateCloseDorm(id) {
-        if (typeof currentRole !== 'undefined' && currentRole !== 'instructor') return;
+        if (typeof currentRole !== 'undefined' && !['instructor','admin'].includes(currentRole)) return;
         const dorm = Array.isArray(allData) ? allData.find(record => record.__backendId === id) : null;
         if (!dorm) return;
         const finalTime = computeDormElapsedTimer(dorm);

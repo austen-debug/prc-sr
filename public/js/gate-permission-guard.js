@@ -4,6 +4,7 @@
   'use strict';
 
   const ROLE_PAGES = Object.freeze({
+    admin: ['board', 'airport', 'input', 'processing', 'archives', 'squadron'],
     instructor: ['board', 'airport', 'input', 'processing', 'archives', 'squadron'],
     airman: ['board', 'processing'],
     squadron: ['squadron']
@@ -44,7 +45,7 @@
   }
 
   function isInstructor() {
-    return currentRoleSafe() === 'instructor';
+    return ['instructor', 'admin'].includes(currentRoleSafe());
   }
 
   function allowedPagesForRole(role = currentRoleSafe()) {
@@ -97,7 +98,7 @@
   function setBodyRoleState() {
     const role = currentRoleSafe();
     document.body.dataset.gateRole = role;
-    document.body.classList.toggle('gate-instructor-role', role === 'instructor');
+    document.body.classList.toggle('gate-instructor-role', ['instructor','admin'].includes(role));
     document.body.classList.toggle('gate-airman-role', role === 'airman');
     document.body.classList.toggle('gate-squadron-role', role === 'squadron');
   }

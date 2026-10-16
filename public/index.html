@@ -891,25 +891,25 @@ async function logout() {
 }
 
     function buildNav() {
-      const pages = currentRole === 'instructor' ? PAGES_INSTRUCTOR : PAGES_AIRMAN;
+      const pages = ['instructor','admin'].includes(currentRole) ? PAGES_INSTRUCTOR : PAGES_AIRMAN;
       const container = document.getElementById('nav-links');
       const activePage = document.querySelector('.page.active');
       const activeId = activePage ? activePage.id.replace('page-','') : 'board';
       container.innerHTML = pages.map(p => `<button class="nav-btn ${p===activeId?'active':''}" onclick="showPage('${p}')">${PAGE_LABELS[p]}</button>`).join('');
      document.getElementById('role-toggle').textContent =
-       currentRole === 'instructor' ? 'INSTRUCTOR / LOGOUT' : 'AIRMAN / LOGOUT';
+       ['instructor','admin'].includes(currentRole) ? 'INSTRUCTOR / LOGOUT' : 'AIRMAN / LOGOUT';
       updateRoleVisibility();
     }
 
     function updateRoleVisibility() {
   const closeoutBtn = document.getElementById('closeout-btn');
   if (closeoutBtn) {
-    closeoutBtn.style.display = currentRole === 'instructor' ? '' : 'none';
+    closeoutBtn.style.display = ['instructor','admin'].includes(currentRole) ? '' : 'none';
   }
 
   const processingEditHint = document.getElementById('processing-edit-hint');
   if (processingEditHint) {
-    processingEditHint.classList.toggle('hidden', currentRole !== 'instructor');
+    processingEditHint.classList.toggle('hidden', !['instructor','admin'].includes(currentRole));
   }
 }
 
@@ -1310,7 +1310,7 @@ const assignedAirmanHtml = d.assigned_airman
   ? `<div class="text-[10px] font-black uppercase tracking-wider text-muted mt-1 text-right">${escapeHtml(d.assigned_airman)}</div>`
   : '';
      
-      const editHandler = currentRole === 'instructor'
+      const editHandler = ['instructor','admin'].includes(currentRole)
   ? `oncontextmenu="openDormEditModal(event, '${d.__backendId}')"`
   : '';
 
@@ -1362,7 +1362,7 @@ return `<div class="proc-card ${borderClass} ${closedClass}" onclick="openDormMo
             // Actions
       const actionEl = document.getElementById('modal-action-section');
 
-      if (currentRole !== 'instructor') {
+      if (!['instructor','admin'].includes(currentRole)) {
         if (d.state === 'closed') {
           actionEl.innerHTML = `<div class="text-muted font-bold">DORM CLOSED</div>`;
         } else {
@@ -1433,7 +1433,7 @@ function openDormEditModal(event, id) {
   event.preventDefault();
   event.stopPropagation();
 
-  if (currentRole !== 'instructor') {
+  if (!['instructor','admin'].includes(currentRole)) {
     return;
   }
 
@@ -1471,7 +1471,7 @@ function closeDormEditModal() {
 document.getElementById('dorm-edit-form').addEventListener('submit', async (e) => {
   e.preventDefault();
 
-  if (currentRole !== 'instructor' || !editDormId) {
+  if (!['instructor','admin'].includes(currentRole) || !editDormId) {
     return;
   }
 
@@ -1535,7 +1535,7 @@ closed_timer: d.state === 'closed'
     }
 
     async function openDorm(id) {
-  if (currentRole !== 'instructor') {
+  if (!['instructor','admin'].includes(currentRole)) {
     return;
   }
 
@@ -1565,7 +1565,7 @@ closed_timer: d.state === 'closed'
 }
 
    async function deleteDormitoryFromEditModal() {
-  if (currentRole !== 'instructor' || !editDormId) {
+  if (!['instructor','admin'].includes(currentRole) || !editDormId) {
     return;
   }
 
@@ -1594,7 +1594,7 @@ closed_timer: d.state === 'closed'
 }
    
    async function closeDorm(id) {
-  if (currentRole !== 'instructor') {
+  if (!['instructor','admin'].includes(currentRole)) {
     return;
   }
 
@@ -2187,7 +2187,7 @@ function openArchiveEditModal(event, id) {
   event.preventDefault();
   event.stopPropagation();
 
-  if (currentRole !== 'instructor') {
+  if (!['instructor','admin'].includes(currentRole)) {
     return;
   }
 
@@ -2224,7 +2224,7 @@ function closeArchiveEditModal() {
 document.getElementById('archive-edit-form').addEventListener('submit', async (e) => {
   e.preventDefault();
 
-  if (currentRole !== 'instructor' || !editArchiveId) {
+  if (!['instructor','admin'].includes(currentRole) || !editArchiveId) {
     return;
   }
 

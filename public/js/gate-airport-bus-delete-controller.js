@@ -20,7 +20,7 @@
       if (typeof window.GatePermissionGuard?.isInstructor === 'function') {
         return window.GatePermissionGuard.isInstructor();
       }
-      return currentRole === 'instructor';
+      return ['instructor','admin'].includes(currentRole);
     } catch (_) {
       return false;
     }

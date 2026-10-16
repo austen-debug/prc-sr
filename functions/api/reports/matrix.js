@@ -47,7 +47,7 @@ async function dormsForWeekGroup(DB, weekGroup) {
 }
 
 export async function onRequestPost({ request, env, data }) {
-  if (String(data?.session?.role || '').trim().toLowerCase() !== 'instructor') {
+  if (!['instructor','admin'].includes(String(data?.session?.role || '').trim().toLowerCase())) {
     return jsonResponse({ isOk: false, code: 'forbidden', error: 'Instructor access required.' }, 403);
   }
 

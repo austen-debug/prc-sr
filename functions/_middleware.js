@@ -1,17 +1,18 @@
 import { verifyRequestSession } from './api/session-contract.mjs';
 
 const APP_ROUTES = Object.freeze({
-  '/board/': Object.freeze({ page: 'board', roles: Object.freeze(['instructor', 'airman']) }),
-  '/airport/': Object.freeze({ page: 'airport', roles: Object.freeze(['instructor']) }),
-  '/input/': Object.freeze({ page: 'input', roles: Object.freeze(['instructor']) }),
-  '/processing/': Object.freeze({ page: 'processing', roles: Object.freeze(['instructor', 'airman']) }),
-  '/archives/': Object.freeze({ page: 'archives', roles: Object.freeze(['instructor']) }),
-  '/squadron-board/': Object.freeze({ page: 'squadron', roles: Object.freeze(['instructor']) })
+  '/board/': Object.freeze({ page: 'board', roles: Object.freeze(['admin', 'instructor', 'airman']) }),
+  '/airport/': Object.freeze({ page: 'airport', roles: Object.freeze(['admin', 'instructor']) }),
+  '/input/': Object.freeze({ page: 'input', roles: Object.freeze(['admin', 'instructor']) }),
+  '/processing/': Object.freeze({ page: 'processing', roles: Object.freeze(['admin', 'instructor', 'airman']) }),
+  '/archives/': Object.freeze({ page: 'archives', roles: Object.freeze(['admin', 'instructor']) }),
+  '/squadron-board/': Object.freeze({ page: 'squadron', roles: Object.freeze(['admin', 'instructor']) })
 });
 const APP_ROUTE_ALIASES = Object.freeze(Object.fromEntries(
   Object.keys(APP_ROUTES).map(path => [path.slice(0, -1), path])
 ));
 const ROLE_HOME = Object.freeze({
+  admin: '/board/',
   instructor: '/board/',
   airman: '/board/',
   squadron: '/squadron/'
@@ -377,7 +378,9 @@ export async function onRequest(context) {
   const session = await verifyRequestSession(context.request, context.env);
   if (!session) {
     if (pathname.startsWith('/api/')) return jsonResponse({ isOk: false, code: 'unauthorized', error: 'Unauthorized.' }, 401);
-    if (APP_ROUTES[pathname] || pathname === '/squadron/') return redirectToLogin(url, pathname);
+    if (APP_ROUTES[pathname] || pathname === '/squadron/' ||
+        pathname === '/administration' || pathname.startsWith('/administration/'))
+      return redirectToLogin(url, pathname);
     return redirectToLogin(url);
   }
 
@@ -391,10 +394,19 @@ export async function onRequest(context) {
   }
 
   if (pathname.startsWith('/api/')) return context.next();
+  // Protect every route spelling of the static Administration document, including
+  // direct /index.html access and unrecognized assets beneath the admin prefix.
+  if (pathname === '/administration' || pathname.startsWith('/administration/')) {
+    if (session.role !== 'admin') return redirectTo(url, homeForRole(session.role));
+    if (pathname === '/administration') return redirectTo(url, '/administration/');
+    if (pathname !== '/administration/' && pathname !== '/administration/index.html')
+      return jsonResponse({isOk:false,code:'not_found',error:'Not found.'},404);
+    return context.next();
+  }
   if (pathname === '/') return redirectTo(url, homeForRole(session.role));
 
   if (pathname === '/squadron/') {
-    return redirectTo(url, session.role === 'instructor' ? '/squadron-board/' : homeForRole(session.role));
+    return redirectTo(url, (session.role === 'instructor' || session.role === 'admin') ? '/squadron-board/' : homeForRole(session.role));
   }
 
   const route = APP_ROUTES[pathname];

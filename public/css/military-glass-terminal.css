@@ -1556,7 +1556,7 @@ tbody tr:hover {
 
 #page-processing .gate-processing-card__name {
   color: var(--mg-text);
-  font-size: clamp(1.8rem, 2.9vw, 3.65rem);
+  font-size: clamp(1.65rem, 2.2vw, 2.65rem);
   line-height: .99;
   font-weight: 850;
   letter-spacing: -.055em;
@@ -1633,7 +1633,7 @@ tbody tr:hover {
 #page-processing .gate-processing-card__load {
   max-width: 100%;
   color: var(--mg-text);
-  font-size: clamp(1.95rem, 3vw, 3.55rem);
+  font-size: clamp(1.85rem, 2.25vw, 2.75rem);
   font-weight: 850;
   letter-spacing: -.045em;
   line-height: 1.06;
@@ -1676,10 +1676,14 @@ tbody tr:hover {
   overflow-wrap: anywhere;
 }
 
+/* The active Processing grid can render six ~280px cards at wide
+   desktop widths. Size these three display tiers for CARD width rather than
+   allowing their previous viewport-based values to collide in the footer.
+   Keep existing card padding, border, geometry and click surface intact. */
 #page-processing .gate-processing-card__footer {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  gap: .35rem;
+  gap: .5rem;
   align-items: end;
   min-width: 0;
 }
@@ -1687,7 +1691,7 @@ tbody tr:hover {
 #page-processing .gate-processing-card__timer {
   min-width: 0;
   color: var(--mg-text);
-  font-size: clamp(1.55rem, 2.6vw, 3.15rem);
+  font-size: clamp(1.55rem, 1.85vw, 2.25rem);
   font-weight: 850;
   letter-spacing: -.04em;
   line-height: 1.05;
@@ -1711,7 +1715,7 @@ tbody tr:hover {
 #page-processing .gate-processing-card__identity {
   min-width: 0;
   align-self: end;
-  font-size: clamp(1.45rem, 2.5vw, 3.05rem);
+  font-size: clamp(1.25rem, 1.5vw, 1.9rem);
   font-weight: 850;
   letter-spacing: -.035em;
   line-height: 1.05;

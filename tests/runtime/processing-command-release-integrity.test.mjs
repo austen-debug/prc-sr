@@ -106,7 +106,7 @@ test('five requested buttons retain action binding and semantic theme styles', (
   assert.match(controller, /data-processing-action="edit-record"[\s\S]*?gate-processing-command--secondary/);
   for (const kind of ['commit', 'shortcut', 'reopen', 'secondary'])
     assert.ok(css.includes('#dorm-modal .gate-processing-command--' + kind));
-  assert.match(css, /#dorm-modal \.gate-processing-command \{[\s\S]*?background: var\(--gate-command-bg\)/);
+  assert.match(css, /#dorm-modal \.gate-processing-command,\s*#page-processing #processing-add-local-bus \{[\s\S]*?background: var\(--gate-command-bg\)/);
   assert.match(controller, /if \(action\.dataset\.processingAction === 'edit-record'\) openDormEditModalCanonical\(event, id\)/);
 });
 

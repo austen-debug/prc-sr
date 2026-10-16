@@ -1451,8 +1451,12 @@ tbody tr:hover {
 /* Operational legibility: retain the band as a steady signal when the
    operator requests reduced motion. */
 @media (prefers-reduced-motion: reduce) {
-  #page-board #col-open .gate-dorm-card::after {
-    animation: none !important;
+  #page-board #col-open .gate-dorm-card:is(
+    [data-gate-time-alert="warning"],
+    [data-gate-time-alert="critical"],
+    [data-gate-time-alert="overtime"]
+  )::after {
+    animation: none;
   }
 }
 

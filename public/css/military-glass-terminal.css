@@ -1531,37 +1531,292 @@ tbody tr:hover {
   box-shadow: var(--mg-inset-edge), var(--gate-female-halo), var(--mg-shadow-soft);
 }
 
-#page-processing .proc-card.border-space-force > .text-xl.font-black.font-tabular::before {
-  content: "SPACE FORCE";
-  display: inline-flex;
-  align-items: center;
-  margin-right: .4rem;
-  padding: .22rem .42rem;
-  border: 1px solid color-mix(in srgb, var(--gate-flag-space-force-bluebird) 44%, transparent);
-  border-radius: var(--mg-radius-pill);
-  background: color-mix(in srgb, var(--gate-flag-space-force-bluebird) 12%, transparent);
-  color: var(--gate-flag-space-force-bluebird);
-  font-family: var(--mg-font-mono);
-  font-size: .58rem;
-  font-weight: 700;
-  letter-spacing: .07em;
-  vertical-align: middle;
+/* Processing identity now sits in the footer; load numerals own no ::before
+   decoration. Female identity is solely the permanent outer border/glow. */
+#page-processing #proc-dorm-grid .gate-processing-card {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: .35rem;
+  min-height: clamp(205px, 15vw, 265px);
+  isolation: isolate;
 }
 
-#page-processing .proc-card.border-band > .text-xl.font-black.font-tabular::before {
-  content: "BAND";
+#page-processing .gate-processing-card__header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, auto);
+  align-items: start;
+  column-gap: .6rem;
+  min-width: 0;
+}
+
+#page-processing .gate-processing-card__identification,
+#page-processing .gate-processing-card__status-group {
+  min-width: 0;
+}
+
+#page-processing .gate-processing-card__name {
+  color: var(--mg-text);
+  font-size: clamp(1.8rem, 2.9vw, 3.65rem);
+  line-height: .99;
+  font-weight: 850;
+  letter-spacing: -.055em;
+  overflow-wrap: anywhere;
+}
+
+#page-processing .gate-processing-card__meta {
+  margin-top: .3rem;
+  color: var(--mg-text-soft);
+  font-size: clamp(.68rem, .85vw, .88rem);
+  font-weight: 750;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+#page-processing .gate-processing-card__status-group {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: .3rem;
+  max-width: min(45%, 12.5rem);
+}
+
+#page-processing .gate-processing-card__state {
   display: inline-flex;
   align-items: center;
-  margin-right: .4rem;
-  padding: .22rem .42rem;
-  border: 1px solid color-mix(in srgb, var(--gate-flag-band-green) 44%, transparent);
+  justify-content: center;
+  min-width: 4.8rem;
+  min-height: 1.85rem;
+  padding: .28rem .68rem;
   border-radius: var(--mg-radius-sm);
+  background: var(--mg-surface-muted);
+  color: var(--mg-text);
+  font-size: clamp(.68rem, .85vw, .92rem);
+  font-weight: 850;
+  line-height: 1.1;
+  letter-spacing: .025em;
+  white-space: nowrap;
+}
+
+#page-processing .gate-processing-card__state--open {
+  background: var(--mg-ok);
+  color: #0b241a;
+}
+
+#page-processing .gate-processing-card__state--closed {
+  background: var(--mg-red);
+  color: #fff;
+}
+
+#page-processing .gate-processing-card__airman {
+  width: 100%;
+  color: var(--mg-text-soft);
+  font-size: clamp(.65rem, .85vw, .9rem);
+  font-weight: 750;
+  line-height: 1.16;
+  text-align: right;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+#page-processing .gate-processing-card__center {
+  min-width: 0;
+  min-height: 0;
+  align-self: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: .15rem;
+  text-align: center;
+}
+
+#page-processing .gate-processing-card__load {
+  max-width: 100%;
+  color: var(--mg-text);
+  font-size: clamp(1.95rem, 3vw, 3.55rem);
+  font-weight: 850;
+  letter-spacing: -.045em;
+  line-height: 1.06;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+#page-processing .gate-processing-card__location-slot {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  min-width: 0;
+}
+
+#page-processing .gate-processing-card__location-slot .gate-auditorium-location {
+  grid-area: auto;
+  justify-self: auto;
+  align-self: center;
+  max-width: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--mg-text-soft);
+  font-size: clamp(.72rem, .93vw, 1rem);
+  font-weight: 780;
+  line-height: 1.24;
+  text-align: center;
+}
+
+#page-processing .gate-processing-card__phase {
+  max-width: 100%;
+  color: var(--mg-text-muted);
+  font-size: clamp(.62rem, .7vw, .76rem);
+  font-weight: 650;
+  letter-spacing: .04em;
+  line-height: 1.2;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+#page-processing .gate-processing-card__footer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: .35rem;
+  align-items: end;
+  min-width: 0;
+}
+
+#page-processing .gate-processing-card__timer {
+  min-width: 0;
+  color: var(--mg-text);
+  font-size: clamp(1.55rem, 2.6vw, 3.15rem);
+  font-weight: 850;
+  letter-spacing: -.04em;
+  line-height: 1.05;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+#page-processing .gate-processing-card__timer.timer-yellow {
+  color: var(--mg-yellow);
+}
+
+#page-processing .gate-processing-card__timer.timer-red,
+#page-processing .gate-processing-card__timer.timer-flash {
+  color: var(--mg-red);
+}
+
+#page-processing .gate-processing-card__timer--final {
+  color: var(--mg-text);
+}
+
+#page-processing .gate-processing-card__identity {
+  min-width: 0;
+  align-self: end;
+  font-size: clamp(1.45rem, 2.5vw, 3.05rem);
+  font-weight: 850;
+  letter-spacing: -.035em;
+  line-height: 1.05;
+  white-space: nowrap;
+}
+
+#page-processing .gate-processing-card__identity--band {
   color: var(--gate-flag-band-green);
-  font-family: var(--mg-font-mono);
-  font-size: .58rem;
-  font-weight: 700;
-  letter-spacing: .07em;
-  vertical-align: middle;
+}
+
+#page-processing .gate-processing-card__identity--space {
+  color: var(--gate-flag-space-force-bluebird);
+}
+
+/* Exactly the Status Board's single conic-gradient orbit engine, but scoped
+   to Processing's existing interactive card. No wrapper, layout shift, or
+   additional JS animation loop. The female exterior never changes. */
+#page-processing #proc-dorm-grid .gate-processing-card[data-state="open"][data-gate-time-alert="warning"] {
+  --gate-processing-alert-color: var(--mg-yellow);
+}
+
+#page-processing #proc-dorm-grid .gate-processing-card[data-state="open"]:is(
+  [data-gate-time-alert="critical"],
+  [data-gate-time-alert="overtime"]
+) {
+  --gate-processing-alert-color: var(--mg-red);
+}
+
+#page-processing #proc-dorm-grid .gate-processing-card[data-state="open"]:is(
+  [data-gate-time-alert="warning"],
+  [data-gate-time-alert="critical"],
+  [data-gate-time-alert="overtime"]
+)::after {
+  content: "";
+  position: absolute;
+  inset: 6px;
+  z-index: 2;
+  box-sizing: border-box;
+  border: 2px solid var(--gate-processing-alert-color);
+  border-radius: calc(var(--mg-radius-lg) - 6px);
+  pointer-events: none;
+}
+
+@supports ((-webkit-mask-composite: xor) or (mask-composite: exclude)) {
+  #page-processing #proc-dorm-grid .gate-processing-card[data-state="open"]:is(
+    [data-gate-time-alert="warning"],
+    [data-gate-time-alert="critical"],
+    [data-gate-time-alert="overtime"]
+  )::after {
+    border: 0;
+    padding: 2px;
+    background: conic-gradient(
+      from var(--gate-board-alert-angle),
+      color-mix(in srgb, var(--gate-processing-alert-color) 24%, transparent) 0deg,
+      color-mix(in srgb, var(--gate-processing-alert-color) 28%, transparent) 210deg,
+      var(--gate-processing-alert-color) 270deg,
+      color-mix(in srgb, white 28%, var(--gate-processing-alert-color)) 294deg,
+      var(--gate-processing-alert-color) 314deg,
+      color-mix(in srgb, var(--gate-processing-alert-color) 24%, transparent) 360deg
+    );
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+    animation: gate-board-alert-orbit 4.5s linear infinite;
+  }
+}
+
+/* Compact Processing cards keep their native rounded rectangle; no padding
+   or card-size override is needed to accommodate the inset alert ring. */
+@media (max-width: 767px) {
+  #page-processing #proc-dorm-grid .gate-processing-card[data-state="open"]::after {
+    border-radius: calc(var(--mg-radius-md) - 6px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #page-processing #proc-dorm-grid .gate-processing-card[data-state="open"]:is(
+    [data-gate-time-alert="warning"],
+    [data-gate-time-alert="critical"],
+    [data-gate-time-alert="overtime"]
+  )::after,
+  #page-processing .gate-processing-card__timer.timer-flash {
+    animation: none;
+  }
+}
+
+@media (forced-colors: active) {
+  #page-processing #proc-dorm-grid .gate-processing-card[data-state="open"]:is(
+    [data-gate-time-alert="warning"],
+    [data-gate-time-alert="critical"],
+    [data-gate-time-alert="overtime"]
+  )::after {
+    border: 2px solid CanvasText;
+    background: none;
+    -webkit-mask: none;
+    mask: none;
+    animation: none;
+  }
+}
+
+@media print {
+  #page-processing #proc-dorm-grid .gate-processing-card::after {
+    display: none;
+  }
 }
 
 #page-processing .proc-card.border-space-force .gate-dorm-flags {

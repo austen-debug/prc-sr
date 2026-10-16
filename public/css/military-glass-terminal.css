@@ -2607,6 +2607,173 @@ body.gate-modal-open {
   padding-top: .15rem;
 }
 
+/*
+ * Processing command buttons: restrained gradient-sweep treatment.
+ * Scope deliberately excludes phase selectors, load steppers and other dialogs.
+ * Button semantics and persistence remain with existing Processing owners.
+ */
+#dorm-modal .gate-processing-command {
+  --gate-command-bg: var(--mg-surface-soft);
+  --gate-command-edge: var(--mg-border-strong);
+  --gate-command-ink: var(--mg-text);
+  --gate-command-sweep: linear-gradient(100deg,
+    color-mix(in srgb, var(--mg-accent) 12%, var(--mg-surface-soft)),
+    color-mix(in srgb, var(--mg-accent) 23%, var(--mg-surface-soft))
+  );
+  position: relative;
+  isolation: isolate;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  box-sizing: border-box;
+  min-height: 44px;
+  min-width: 0;
+  padding: .6rem .9rem;
+  border: 1px solid var(--gate-command-edge);
+  border-radius: var(--mg-radius-sm);
+  background: var(--gate-command-bg);
+  color: var(--gate-command-ink);
+  font-family: var(--mg-font-sans);
+  font-size: .78rem;
+  font-weight: 750;
+  line-height: 1.2;
+  letter-spacing: .025em;
+  text-align: center;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: border-color 180ms ease, box-shadow 180ms ease, transform 120ms ease;
+}
+
+#dorm-modal .gate-processing-command::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  background: var(--gate-command-sweep);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 180ms ease;
+  pointer-events: none;
+}
+
+#dorm-modal .gate-processing-command__label {
+  position: relative;
+  z-index: 1;
+  pointer-events: none;
+}
+
+#dorm-modal .gate-processing-command--commit {
+  --gate-command-bg: var(--mg-yellow);
+  --gate-command-edge: var(--mg-yellow);
+  --gate-command-ink: var(--mg-carbon);
+  --gate-command-sweep: linear-gradient(100deg,
+    color-mix(in srgb, var(--mg-yellow) 80%, white),
+    var(--mg-yellow)
+  );
+}
+
+body.theme-light #dorm-modal .gate-processing-command--commit {
+  --gate-command-ink: var(--mg-bg-elevated);
+  --gate-command-sweep: linear-gradient(100deg,
+    color-mix(in srgb, var(--mg-yellow) 82%, var(--mg-carbon)),
+    var(--mg-yellow)
+  );
+}
+
+#dorm-modal .gate-processing-command--shortcut {
+  --gate-command-bg: var(--mg-surface-soft);
+  --gate-command-edge: var(--mg-border-strong);
+  --gate-command-ink: var(--mg-text);
+}
+
+#dorm-modal .gate-processing-command--reopen {
+  --gate-command-bg: var(--mg-accent-deep);
+  --gate-command-edge: var(--mg-accent);
+  --gate-command-ink: #fff;
+  --gate-command-sweep: linear-gradient(100deg,
+    color-mix(in srgb, var(--mg-accent-deep) 77%, var(--mg-carbon)),
+    var(--mg-accent-deep)
+  );
+}
+
+#dorm-modal .gate-processing-command--secondary {
+  --gate-command-bg: var(--mg-surface-soft);
+  --gate-command-edge: var(--mg-border-glass);
+  --gate-command-ink: var(--mg-text);
+  --gate-command-sweep: linear-gradient(100deg,
+    color-mix(in srgb, var(--mg-accent-deep) 12%, var(--mg-surface-soft)),
+    color-mix(in srgb, var(--mg-accent-deep) 24%, var(--mg-surface-soft))
+  );
+}
+
+@media (hover: hover) {
+  #dorm-modal .gate-processing-command:not(:disabled):hover::before {
+    transform: scaleX(1);
+  }
+
+  #dorm-modal .gate-processing-command:not(:disabled):hover {
+    border-color: var(--mg-accent);
+  }
+}
+
+#dorm-modal .gate-processing-command:focus-visible {
+  outline: 2px solid var(--mg-accent);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 2px var(--mg-surface-strong);
+}
+
+#dorm-modal .gate-processing-command:focus-visible::before {
+  transform: scaleX(1);
+}
+
+#dorm-modal .gate-processing-command:not(:disabled):active {
+  transform: scale(.99);
+}
+
+#dorm-modal .gate-processing-command:disabled,
+#dorm-modal .gate-processing-command[aria-busy="true"] {
+  cursor: wait;
+  opacity: .74;
+  box-shadow: none;
+  transform: none;
+}
+
+#dorm-modal .gate-processing-command:disabled::before,
+#dorm-modal .gate-processing-command[aria-busy="true"]::before {
+  transform: scaleX(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #dorm-modal .gate-processing-command,
+  #dorm-modal .gate-processing-command::before {
+    transition: none;
+  }
+
+  #dorm-modal .gate-processing-command:not(:disabled):active {
+    transform: none;
+  }
+}
+
+@media (forced-colors: active) {
+  #dorm-modal .gate-processing-command {
+    background: ButtonFace;
+    color: ButtonText;
+    border-color: ButtonText;
+  }
+
+  #dorm-modal .gate-processing-command::before {
+    display: none;
+  }
+
+  #dorm-modal .gate-processing-command:focus-visible {
+    outline-color: Highlight;
+  }
+}
+
 #dorm-edit-modal .gate-processing-edit-workspace,
 #archive-edit-modal .modal-content {
   width: min(calc(100vw - 2rem), 880px);

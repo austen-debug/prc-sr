@@ -16,7 +16,9 @@ test('Processing assignment Save button has a contained two-state presentation w
  assert.match(presentation,/saveButton\.style\.minHeight = '44px'/);
  assert.match(presentation,/saveButton\.style\.fontSize = '\.69rem'/);
  assert.match(presentation,/saveButton\.style\.whiteSpace = 'nowrap'/);
- assert.match(source,/button\.textContent = 'SAVING\.\.\.'/);
+ assert.match(source,/setAssignmentSaveLabel\(button, 'SAVING\.\.\.'\)/);
+ assert.match(source,/setAssignmentSaveLabel\(button, originalText\)/);
+ assert.match(source,/button\.setAttribute\('aria-busy', 'true'\)/);
  assert.match(source,/window\.saveAssignedAirman = saveProcessingAssignmentAndLocation/);
  assert.match(source,/controller\.updateDorm\(payload, \{ source: 'processing-assignment-location-update' \}\)/);
  assert.match(source,/if \(getModalDormIdSafe\(\) === boundId\) controller\.closeDormModal\?\.\(\)/);

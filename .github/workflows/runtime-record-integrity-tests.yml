@@ -86,6 +86,9 @@ jobs:
       - name: Processing assignment Save button containment
         run: node --test tests/runtime/processing-save-button-layout.test.mjs
 
+      - name: Processing command button styling
+        run: node --test tests/runtime/processing-command-button-style.test.mjs
+
       - name: Fullscreen command-board readability
         run: node --test tests/runtime/fullscreen-command-board-readability.test.mjs
 

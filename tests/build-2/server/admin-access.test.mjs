@@ -6,6 +6,7 @@ import { onRequestPost as login } from '../../../functions/api/login.js';
 import { verifyRequestSession } from '../../../functions/api/session-contract.mjs';
 import { onRequestPost as dispose, onRequestGet as dispositionHistory } from '../../../functions/api/admin-archives.js';
 import { onRequestPost as retiredArchiveDelete } from '../../../functions/api/archive-delete.js';
+import { onRequestDelete as deleteRecord } from '../../../functions/api/records.js';
 import { normalizeActorRole } from '../../../public/app/data/canonical-entity.mjs';
 import { stampUpdatedRecord } from '../../../functions/api/records-contract.mjs';
 
@@ -24,7 +25,7 @@ function cloudflare(native){
       bind(...values){args=values;return this;},
       async first(){return prepared.get(...args)||null;},
       async all(){return {results:prepared.all(...args)};},
-      async run(){const result=prepared.run(...args);return {meta:{changes:result.changes,last_row_id:Number(result.lastInsertRowid||0)}};}
+      async run(){if(prepared.columns().length)return {results:prepared.all(...args),meta:{changes:0}};const result=prepared.run(...args);return {meta:{changes:result.changes,last_row_id:Number(result.lastInsertRowid||0)}};}
     };
   }
   return {prepare:statement,async batch(statements){
@@ -106,4 +107,17 @@ test('Archive withdrawal and restoration preserve original bytes and are Admin-o
   const history=await dispositionHistory({env,data:{session:{role:'admin'}},request:new Request('https://gate.example/api/admin-archives?archive_id='+id)});
   assert.equal((await history.json()).dispositions.length,2);
   assert.equal((await retiredArchiveDelete()).status,410);
+});
+
+test('Admin operational deletions retain database SYSTEM observation plus verified authenticated actor',async()=>{
+  const db=fixture();db.exec(sql('0007_gate_admin_provenance.sql'));
+  const timestamp='2026-10-15T11:00:00Z';
+  db.prepare('INSERT INTO records(id,type,week_group,data,created_at,updated_at) VALUES(?,?,?,?,?,?)').run('config-delete-1','config','',JSON.stringify({type:'config',key:'last_airport',value:'',record_version:1,created_by_role:'instructor',updated_by_role:'instructor'}),timestamp,timestamp);
+  const result=await deleteRecord({env:{DB:cloudflare(db)},data:{session:{role:'admin'}},
+    request:new Request('https://gate.example/api/records',{method:'DELETE',headers:{'Content-Type':'application/json','If-Match':'"1"'},body:JSON.stringify({id:'config-delete-1'})})});
+  assert.equal(result.status,200,JSON.stringify(await result.clone().json()));
+  assert.equal(db.prepare("SELECT COUNT(*) AS n FROM records WHERE id='config-delete-1'").get().n,0);
+  const events=db.prepare("SELECT event_type,actor_role FROM gate_audit_events WHERE entity_id='config-delete-1' ORDER BY rowid").all();
+  assert.equal(events.filter(row=>row.event_type==='record_deleted'&&row.actor_role==='system').length,1);
+  assert.equal(events.filter(row=>row.event_type==='record_delete_authorized'&&row.actor_role==='admin').length,1);
 });

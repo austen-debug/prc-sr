@@ -25,3 +25,6 @@ If Admin mutations fail, disable GATE_ADMIN_WRITES_ENABLED first and return to t
 - Exceptional live lifecycle recovery, raw data repair, global configuration editing and user administration remain disabled and are represented only as future administrative surfaces.
 - D1 source migration alone cannot establish production readiness; runtime gate validates deployed actor CHECK SQL, audit trigger SQL and disposition immutability markers before any Admin mutation.
 - Existing legacy closeout path remains in place for current operations; no speculative operational workflow replacement is part of this PR.
+
+## Deletion provenance
+The original record deletion trigger remains an unverified `system` observation. Admin-initiated operational record deletes additionally commit a verified `record_delete_authorized` audit event with role `admin` in the same D1 batch. This does not modify the existing Instructor/Airman delete command or mislabel a database trigger as the authenticated actor.

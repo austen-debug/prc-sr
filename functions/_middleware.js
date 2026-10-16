@@ -19,7 +19,7 @@ const ROLE_HOME = Object.freeze({
 });
 
 const UI_STYLESHEETS = [
-  '<link rel="stylesheet" href="/css/military-glass-terminal.css?v=processing-commands-20261016-v2">'
+  '<link rel="stylesheet" href="/css/military-glass-terminal.css?v=status-board-alert-banding-20261016-v1">'
 ];
 
 const UI_INLINE_ASSETS = [];
@@ -34,7 +34,7 @@ const UI_HEAD_SCRIPTS = [
   '<script src="/js/prc-dash-space-force.js" defer></script>',
   '<script src="/js/prc-dash-dorm-reopen.js?v=popup-plop-sounds-20260928" defer></script>',
   '<script src="/js/prc-dash-final-audit.js?v=squadron-popup-sounds-20260928" defer></script>',
-  '<script src="/js/gate-status-board-controller.js?v=dorm-timer-record-lifecycle-20260722" defer></script>',
+  '<script src="/js/gate-status-board-controller.js?v=status-board-alert-banding-20261016-v1" defer></script>',
   '<script src="/js/gate-processing-controller.js?v=processing-commands-20261016-v2" defer></script>',
   '<script src="/js/prc-dash-dorm-flag-validation.js?v=processing-band-designator-20260915" defer></script>',
   '<script src="/js/prc-dash-auditorium-location.js?v=processing-commands-20261016-v2" defer></script>',

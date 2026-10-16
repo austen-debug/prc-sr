@@ -80,6 +80,12 @@ jobs:
       - name: Dorm timer record lifecycle
         run: node --test tests/runtime/dorm-timer-record-lifecycle.test.mjs
 
+      - name: Status Board alert threshold and non-persistence contracts
+        run: node --test tests/runtime/status-board-alert-banding.test.mjs
+
+      - name: Status Board alert band computed styles in Chromium
+        run: node --test tests/runtime/status-board-alert-browser.test.mjs
+
       - name: Processing modal record persistence
         run: node --test tests/runtime/processing-modal-record-persistence.test.mjs
 

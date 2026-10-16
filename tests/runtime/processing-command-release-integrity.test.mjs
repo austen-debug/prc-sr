@@ -78,10 +78,12 @@ function harness(record, accounting, write, role = 'instructor') {
   };
 }
 
-test('Processing CSS, controller, and field adapter all have the same fresh asset revision', async () => {
+test('Processing controllers retain their coordinated release and the shared CSS receives a fresh Status Board revision', async () => {
   const middleware = await source('functions/_middleware.js');
-  for (const file of ['css/military-glass-terminal.css', 'js/gate-processing-controller.js', 'js/prc-dash-auditorium-location.js'])
-    assert.ok(middleware.includes('/' + file + '?v=processing-commands-20261016-v2'), 'Version mismatch: ' + file);
+  for (const file of ['js/gate-processing-controller.js', 'js/prc-dash-auditorium-location.js'])
+    assert.ok(middleware.includes('/' + file + '?v=processing-commands-20261016-v2'), 'Processing controller version mismatch: ' + file);
+  assert.ok(middleware.includes('/css/military-glass-terminal.css?v=status-board-alert-banding-20261016-v1'));
+  assert.ok(middleware.includes('/js/gate-status-board-controller.js?v=status-board-alert-banding-20261016-v1'));
   assert.doesNotMatch(middleware, /military-glass-terminal-20260929-tablet-menu/);
 });
 

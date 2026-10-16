@@ -39,10 +39,10 @@ function makeCards(controller) {
     opened_at:new Date(now-minutes*60000-10000).toISOString(),closed_timer:'45:40',...extra
   });
   const dorms = [
-    d('F-WARNING','open',45,{}),
-    d('M-SPACE','open',55,{sex:'male',band:'false',space_force:'true',current_load:60,max_load:60}),
-    d('F-OVERTIME','open',65,{}),
-    d('F-CLOSED','closed',45,{})
+    d('3A1','open',45,{}),
+    d('2D2','open',55,{sex:'male',band:'false',space_force:'true',current_load:60,max_load:60}),
+    d('2D1','open',65,{}),
+    d('3A2','closed',45,{})
   ];
   return {dorms, markup:dorms.map(render.processingCard).join('')};
 }
@@ -69,20 +69,24 @@ test('real Chromium validates Processing reference hierarchy, inset band, female
     ' const css=getComputedStyle(card),pseudo=getComputedStyle(card,"::after");',
     ' const timer=card.querySelector(".gate-processing-card__timer");',
     ' const loc=card.querySelector(".gate-auditorium-location");',
+    ' const identity=card.querySelector(".gate-processing-card__identity");',
+    ' const name=card.querySelector(".gate-processing-card__name");',
+    ' const load=card.querySelector(".gate-processing-card__load");',
     ' return {card:rect(card),pad:css.paddingLeft,border:css.borderLeftColor,borderWidth:css.borderLeftWidth,shadow:css.boxShadow,',
     '   pseudoContent:pseudo.content,pseudoInset:pseudo.top,pseudoPointer:pseudo.pointerEvents,',
     '   pseudoBg:pseudo.backgroundImage,pseudoMask:pseudo.maskImage||pseudo.webkitMaskImage,',
     '   pseudoAnim:pseudo.animationName,pseudoDuration:pseudo.animationDuration,',
-    '   name:rect(card.querySelector(".gate-processing-card__name")),',
+    '   name:rect(name),nameOverflow:name.scrollWidth-name.clientWidth,',
     '   status:rect(card.querySelector(".gate-processing-card__state")),',
     '   header:rect(card.querySelector(".gate-processing-card__header")),',
     '   center:rect(card.querySelector(".gate-processing-card__center")),',
     '   footer:rect(card.querySelector(".gate-processing-card__footer")),',
-    '   load:rect(card.querySelector(".gate-processing-card__load")),',
+    '   load:rect(load),loadOverflow:load.scrollWidth-load.clientWidth,',
     '   location:loc?rect(loc):null,',
     '   phase:rect(card.querySelector(".gate-processing-card__phase")),',
-    '   timer:rect(timer),timerAnim:getComputedStyle(timer).animationName,',
-    '   identity:rect(card.querySelector(".gate-processing-card__identity")),',
+    '   timer:rect(timer),timerOverflow:timer.scrollWidth-timer.clientWidth,',
+    '   timerFont:getComputedStyle(timer).fontSize,timerAnim:getComputedStyle(timer).animationName,',
+    '   identity:rect(identity),identityOverflow:identity.scrollWidth-identity.clientWidth,',
     '   identityColor:getComputedStyle(card.querySelector(".gate-processing-card__identity")).color };',
     '}',
     'const output={themes:{},closed:null};',
@@ -114,6 +118,7 @@ test('real Chromium validates Processing reference hierarchy, inset band, female
     await writeFile(fixture,html,'utf8');
     for (const [name,width,args] of [
       ['desktop',420,['--window-size=1280,850']],
+      ['six-column-desktop',280,['--window-size=1818,850']],
       ['compact',285,['--window-size=375,800']],
       ['reduced',320,['--window-size=800,850','--force-prefers-reduced-motion']]
     ]) {
@@ -152,10 +157,22 @@ test('real Chromium validates Processing reference hierarchy, inset band, female
           assert.ok(snap.footer.bottom <= snap.card.bottom+1,tag+' footer clips below card');
           assert.ok(snap.timer.x >= snap.card.x,tag+' timer clips horizontally');
           assert.ok(snap.identity.right <= snap.card.right,tag+' identity clips horizontally');
+          assert.ok(snap.timer.right + 6 <= snap.identity.x,tag+' timer box overlaps BAND/SPACE region');
+          assert.ok(snap.timerOverflow <= 1,tag+' timer glyphs overrun their grid column');
+          assert.ok(snap.identityOverflow <= 1,tag+' BAND/SPACE glyphs overrun their column');
+          assert.ok(snap.nameOverflow <= 1,tag+' dorm name overflows');
+          assert.ok(snap.loadOverflow <= 1,tag+' central load overflows');
           assert.equal(snap.pseudoAnim,name==='reduced'?'none':'gate-board-alert-orbit',tag+' animation mismatch');
           if (name!=='reduced')assert.equal(snap.pseudoDuration,'4.5s',tag+' wrong orbit duration');
           if(level==='overtime')assert.equal(snap.timerAnim,name==='reduced'?'none':'mg-crit-pulse',tag+' timer pulse mismatch');
           else assert.equal(snap.timerAnim,'none',tag+' timer must remain steady below 60');
+        }
+        for(const sample of [states.space,states.closed]){
+          assert.ok(sample.timer.right + 6 <= sample.identity.x,name+'/'+theme+' timer intersects service indicator');
+          assert.ok(sample.timerOverflow <= 1,name+'/'+theme+' timer glyphs overflow at actual card width');
+          assert.ok(sample.identityOverflow <= 1,name+'/'+theme+' service label glyphs overflow at actual card width');
+          assert.ok(sample.nameOverflow <= 1,name+'/'+theme+' dorm header name overflow');
+          assert.ok(sample.loadOverflow <= 1,name+'/'+theme+' current/max load overflow');
         }
         assert.equal(states.closed.pseudoContent,'none',name+'/'+theme+' closed dorm animated');
         assert.ok(states.space.identityColor && states.space.identityColor!=='rgba(0, 0, 0, 0)',name+'/'+theme+' SPACE identity color missing');

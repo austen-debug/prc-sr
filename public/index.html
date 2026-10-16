@@ -396,6 +396,7 @@ body > * {
       <span class="gate-processing-command__label">SAVE</span>
     </button>
   </div>
+  <div id="modal-assignment-feedback" class="gate-processing-command-feedback" role="status" aria-live="polite" aria-atomic="true" hidden></div>
 </div>
 
 <!-- Phase Selection -->
@@ -416,8 +417,10 @@ body > * {
      </div>
      <div class="flex gap-2 justify-center"><button type="button" onclick="setLoadFull()" class="gate-processing-command gate-processing-command--shortcut"><span class="gate-processing-command__label">FULL</span></button> <button type="button" onclick="saveLoad()" class="gate-processing-command gate-processing-command--commit"><span class="gate-processing-command__label">SAVE LOAD</span></button>
      </div>
+     <div id="modal-load-feedback" class="gate-processing-command-feedback" role="status" aria-live="polite" aria-atomic="true" hidden></div>
     </div><!-- Open/Close -->
     <div id="modal-action-section" class="flex gap-3 justify-center"></div>
+    <div id="modal-action-feedback" class="gate-processing-command-feedback gate-processing-command-feedback--footer" role="status" aria-live="polite" aria-atomic="true" hidden></div>
       </div>
   </div><!-- End Dorm Processing Modal -->
 

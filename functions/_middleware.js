@@ -19,7 +19,7 @@ const ROLE_HOME = Object.freeze({
 });
 
 const UI_STYLESHEETS = [
-  '<link rel="stylesheet" href="/css/military-glass-terminal.css?v=military-glass-terminal-20260929-tablet-menu">'
+  '<link rel="stylesheet" href="/css/military-glass-terminal.css?v=processing-commands-20261016-v2">'
 ];
 
 const UI_INLINE_ASSETS = [];
@@ -35,9 +35,9 @@ const UI_HEAD_SCRIPTS = [
   '<script src="/js/prc-dash-dorm-reopen.js?v=popup-plop-sounds-20260928" defer></script>',
   '<script src="/js/prc-dash-final-audit.js?v=squadron-popup-sounds-20260928" defer></script>',
   '<script src="/js/gate-status-board-controller.js?v=dorm-timer-record-lifecycle-20260722" defer></script>',
-  '<script src="/js/gate-processing-controller.js?v=record-display-integrity-20260714" defer></script>',
+  '<script src="/js/gate-processing-controller.js?v=processing-commands-20261016-v2" defer></script>',
   '<script src="/js/prc-dash-dorm-flag-validation.js?v=processing-band-designator-20260915" defer></script>',
-  '<script src="/js/prc-dash-auditorium-location.js?v=processing-modal-record-binding-20260721" defer></script>',
+  '<script src="/js/prc-dash-auditorium-location.js?v=processing-commands-20261016-v2" defer></script>',
   '<script src="/js/gate-bus-workflow-controller.js?v=phase-3-bus-workflow-20260709" defer></script>',
   '<script src="/js/gate-airport-bus-delete-controller.js?v=airport-bus-delete-20260714" defer></script>',
   '<script src="/js/gate-input-page-controller.js?v=record-display-integrity-20260714" defer></script>',

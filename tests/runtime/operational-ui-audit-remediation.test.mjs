@@ -414,14 +414,14 @@ test('Processing BAND designator uses rounded-rectangle geometry', async () => {
 test('middleware delivers one canonical stylesheet and no retired CSS assets', async () => {
   const middleware = await source('functions/_middleware.js');
 
-  assert.match(middleware, /military-glass-terminal\.css\?v=military-glass-terminal-20260929-tablet-menu/);
+  assert.match(middleware, /military-glass-terminal\.css\?v=processing-commands-20261016-v2/);
   assert.equal((middleware.match(/<link rel="stylesheet"/g) || []).length, 1);
   assert.doesNotMatch(middleware, /gate-ui-ownership-correction\.css|gate-fullscreen-board-contract\.css|gate-tablet-shell\.css|gate-mobile-corrective\.css/);
 });
 
 
 test('Squadron SITREP ships current canonical assets and preserves lightweight communication UI', async () => {
-  const version = 'military-glass-terminal-20260929-tablet-menu';
+  const version = 'processing-commands-20261016-v2';
   const url = `/css/military-glass-terminal.css?v=${version}`;
   const scriptUrl = '/js/prc-dash-final-audit.js?v=squadron-popup-sounds-20260928';
   const [middleware, standalone, budgetText, stack, css, controller, index] = await Promise.all([

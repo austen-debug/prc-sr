@@ -92,8 +92,10 @@
     const saveButton = flex.querySelector('button[onclick="saveAssignedAirman()"]');
     if (saveButton) {
       const label = saveButton.querySelector('.gate-processing-command__label');
-      if (label) label.textContent = 'SAVE';
-      else saveButton.textContent = 'SAVE';
+      if (!saveInFlight) {
+        if (label) label.textContent = 'SAVE';
+        else saveButton.textContent = 'SAVE';
+      }
       saveButton.dataset.processingAssignmentSave = 'true';
       // Presentation only: keep both SAVE and the existing SAVING... state inside
       // the canonical 78px assignment-grid button track, including on tablets.
@@ -176,16 +178,27 @@
     else button.textContent = text;
   }
 
+  function setAssignmentFeedback(message) {
+    const feedback = document.getElementById('modal-assignment-feedback');
+    if (!feedback) return;
+    feedback.textContent = message || '';
+    feedback.hidden = !message;
+    if (message) feedback.dataset.state = 'error';
+    else delete feedback.dataset.state;
+  }
+
   async function saveProcessingAssignmentAndLocation() {
     if (saveInFlight) return;
 
     ensureAuditoriumInput();
+    setAssignmentFeedback('');
     const activeId = getModalDormIdSafe();
     const boundId = activeBoundDormId();
 
     if (!activeId || !boundId) {
       hydrateProcessingModal(activeId);
       console.warn('GATE Processing save blocked because the modal was not hydrated for the active dorm.', { activeId, boundId });
+      setAssignmentFeedback('The selected dorm is not ready. Close and reopen its Processing controls.');
       return;
     }
 
@@ -193,6 +206,7 @@
     const controller = window.GateProcessingController;
     if (!dorm || typeof controller?.updateDorm !== 'function') {
       console.warn('GATE Processing save blocked because the canonical dorm mutation owner is unavailable.');
+      setAssignmentFeedback('Unable to access the dorm record. Try again.');
       return;
     }
 
@@ -220,10 +234,14 @@
       const result = await controller.updateDorm(payload, { source: 'processing-assignment-location-update' });
       if (!result?.isOk) {
         console.warn('GATE Processing assignment/location save failed.', result?.error || result);
+        if (getModalDormIdSafe() === boundId) setAssignmentFeedback('Unable to save the Airman and auditorium location. Try again.');
         return;
       }
 
       if (getModalDormIdSafe() === boundId) controller.closeDormModal?.();
+    } catch (error) {
+      console.warn('GATE Processing assignment/location save failed:', error);
+      if (getModalDormIdSafe() === boundId) setAssignmentFeedback('Unable to save the Airman and auditorium location. Try again.');
     } finally {
       saveInFlight = false;
       if (button) {

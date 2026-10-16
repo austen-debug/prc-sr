@@ -9,6 +9,8 @@
   let renderQueued = false;
   let contextMenu = null;
   let editSubmitBound = false;
+  let loadSaveInFlight = false;
+  let reopenInFlight = false;
 
   function n(value) {
     const parsed = Number(value || 0);
@@ -225,6 +227,35 @@
     try { modalDormId = id || null; } catch (_) {}
   }
 
+  function setModalFeedback(fieldId, message, state = 'error') {
+    const field = document.getElementById(fieldId);
+    if (!field) return;
+    field.textContent = message || '';
+    field.hidden = !message;
+    if (message) field.dataset.state = state;
+    else delete field.dataset.state;
+  }
+
+  function setModalCommandBusy(button, busy, pendingLabel) {
+    if (!button) return;
+    const label = button.querySelector('.gate-processing-command__label');
+    if (busy) {
+      if (label) {
+        button.dataset.processingOriginalLabel = label.textContent || '';
+        label.textContent = pendingLabel;
+      }
+      button.disabled = true;
+      button.setAttribute('aria-busy', 'true');
+    } else {
+      if (label && button.dataset.processingOriginalLabel) {
+        label.textContent = button.dataset.processingOriginalLabel;
+      }
+      delete button.dataset.processingOriginalLabel;
+      button.disabled = false;
+      button.removeAttribute('aria-busy');
+    }
+  }
+
   function instructorModalActions(id, state) {
     const editButton = `<button type="button" data-processing-action="edit-record" data-dorm-id="${esc(id)}" class="gate-processing-command gate-processing-command--secondary"><span class="gate-processing-command__label">EDIT RECORD</span></button>`;
     if (state === 'empty') {
@@ -240,6 +271,9 @@
     const dorm = dormById(id);
     if (!dorm) return;
     setActiveModalDorm(id);
+    setModalFeedback('modal-assignment-feedback', '');
+    setModalFeedback('modal-load-feedback', '');
+    setModalFeedback('modal-action-feedback', '');
 
     const name = document.getElementById('modal-dorm-name');
     const info = document.getElementById('modal-dorm-info');
@@ -323,6 +357,7 @@
     const input = document.getElementById('modal-load-input');
     if (!input) return;
     input.setCustomValidity('');
+    setModalFeedback('modal-load-feedback', '');
     input.value = String(Math.max(0, n(input.value) + Number(delta || 0)));
   }
 
@@ -331,16 +366,20 @@
     const input = document.getElementById('modal-load-input');
     if (dorm && input) {
       input.setCustomValidity('');
+      setModalFeedback('modal-load-feedback', '');
       input.value = String(n(dorm.max_load));
     }
   }
 
   async function saveLoadCanonical() {
-    const dorm = dormById(activeModalDormId());
+    if (loadSaveInFlight) return;
+    const dormId = activeModalDormId();
+    const dorm = dormById(dormId);
     const input = document.getElementById('modal-load-input');
     if (!dorm || !input) return;
-
+    setModalFeedback('modal-load-feedback', '');
     input.setCustomValidity('');
+
     const requested = Math.max(0, Math.trunc(n(input.value)));
     const capacity = Math.max(0, Math.trunc(n(dorm.max_load)));
     if (requested > capacity) {
@@ -362,7 +401,23 @@
     }
 
     input.value = String(requested);
-    await updateDorm({ ...dorm, current_load: requested, updated_at: new Date().toISOString() }, { source: 'processing-load-update' });
+    const button = document.querySelector('#dorm-modal button[onclick="saveLoad()"]');
+    loadSaveInFlight = true;
+    setModalCommandBusy(button, true, 'SAVING...');
+    try {
+      const result = await updateDorm({ ...dorm, current_load: requested, updated_at: new Date().toISOString() }, { source: 'processing-load-update' });
+      if (!result?.isOk && activeModalDormId() === dormId) {
+        setModalFeedback('modal-load-feedback', 'Unable to save the dorm load. Check the record and try again.');
+      }
+      return result;
+    } catch (error) {
+      console.warn('GATE Processing load save failed:', error);
+      if (activeModalDormId() === dormId) setModalFeedback('modal-load-feedback', 'Unable to save the dorm load. Try again.');
+      return { isOk: false, error: 'Dorm load save failed.' };
+    } finally {
+      setModalCommandBusy(button, false);
+      loadSaveInFlight = false;
+    }
   }
 
   async function saveAssignedAirmanCanonical() {
@@ -418,36 +473,58 @@
   }
 
   async function reopenDormCanonical(id, options = {}) {
-    if (!isInstructor()) return;
+    if (!isInstructor() || reopenInFlight) return;
     const dorm = dormById(id || activeEditDormId() || activeModalDormId());
     if (!dorm) return;
     if (String(dorm.state || '').toLowerCase() !== 'closed') {
       setEditMessage('Only closed dorms can be reopened.', true);
+      setModalFeedback('modal-action-feedback', 'Only closed dorms can be reopened.');
       return;
     }
 
-    const finalTimeSource = options.finalTime || document.getElementById('edit-closed-timer')?.value || dorm.closed_timer || '00:00';
+    // The Processing popup must use the selected dorm's persisted final time.
+    // Edit-form values are permitted only through an explicit edit-modal option.
+    const finalTimeSource = options.finalTime || dorm.closed_timer || '00:00';
     const elapsedSeconds = parseTimerToSeconds(finalTimeSource);
     const reopenedOpenedAt = new Date(Date.now() - (elapsedSeconds * 1000)).toISOString();
     const now = new Date().toISOString();
+    const button = document.querySelector('#dorm-modal [data-processing-action="reopen-dorm"]');
+    setModalFeedback('modal-action-feedback', '');
+    reopenInFlight = true;
+    setModalCommandBusy(button, true, 'REOPENING...');
+    try {
+      const result = await updateDorm({
+        ...dorm,
+        state: 'open',
+        phase: 'OPEN',
+        opened_at: reopenedOpenedAt,
+        closed_at: '',
+        closed_timer: '',
+        manual_reopen_override: 'true',
+        updated_at: now
+      }, {
+        source: 'processing-reopen-dorm',
+        soundType: 'dorm_open',
+        soundPayload: { dorm_id: dorm.__backendId, dorm_name: dorm.dorm_name || '', action: 'reopen_dorm' }
+      });
 
-    await updateDorm({
-      ...dorm,
-      state: 'open',
-      phase: 'OPEN',
-      opened_at: reopenedOpenedAt,
-      closed_at: '',
-      closed_timer: '',
-      manual_reopen_override: 'true',
-      updated_at: now
-    }, {
-      source: 'processing-reopen-dorm',
-      soundType: 'dorm_open',
-      soundPayload: { dorm_id: dorm.__backendId, dorm_name: dorm.dorm_name || '', action: 'reopen_dorm' }
-    });
-
-    closeDormModalCanonical();
-    closeDormEditModalCanonical();
+      if (result?.isOk) {
+        closeDormModalCanonical();
+        closeDormEditModalCanonical();
+      } else {
+        setEditMessage('Failed to reopen dorm. Try again.', true);
+        if (activeModalDormId() === dorm.__backendId) setModalFeedback('modal-action-feedback', 'Failed to reopen dorm. Try again.');
+      }
+      return result;
+    } catch (error) {
+      console.warn('GATE Processing dorm reopen failed:', error);
+      setEditMessage('Failed to reopen dorm. Try again.', true);
+      if (activeModalDormId() === dorm.__backendId) setModalFeedback('modal-action-feedback', 'Failed to reopen dorm. Try again.');
+      return { isOk: false, error: 'Dorm reopen failed.' };
+    } finally {
+      setModalCommandBusy(button, false);
+      reopenInFlight = false;
+    }
   }
 
   function reopenDormFromEditModalCanonical(event) {

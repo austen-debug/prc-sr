@@ -268,11 +268,11 @@ test('authoritative records refresh contract remains live and mutation-confirmed
   assert.match(html, /await refresh\(true\);[\s\S]*setInterval\(\(\) => \{[\s\S]*refresh\(\)/);
   assert.match(html, /\}, 3000\);/);
   // Create/delete still request a synchronous authoritative refresh.
-  assert.ok((html.match(/if \\(result\\.isOk\\) \\{\\s*await refresh\\(true\\);\\s*\\}/g) || []).length >= 2);
+  assert.ok((html.match(/if \(result\.isOk\) \{\s*await refresh\(true\);\s*\}/g) || []).length >= 2);
   // A committed PUT must not become an apparent failure if its subsequent GET
   // is temporarily unavailable. The existing polling loop will retry reads.
   const update = html.slice(html.indexOf('async update(record) {'), html.indexOf('async delete(record) {'));
-  assert.match(update, /if \\(result\\.isOk\\) \\{[\\s\\S]*?try \\{\\s*await refresh\\(true\\);[\\s\\S]*?catch \\(error\\)/);
+  assert.match(update, /if \(result\.isOk\) \{[\s\S]*?try \{\s*await refresh\(true\);[\s\S]*?catch \(error\)/);
   assert.match(update, /return result;/);
 });
 

@@ -782,7 +782,14 @@ async function refresh(force = false) {
         const result = await response.json();
 
         if (result.isOk) {
-          await refresh(true);
+          // A successful PUT has already committed in D1. A later GET failure
+          // must not turn that authoritative success into a false UI failure.
+          // The existing refresh timer will retry if this read is unavailable.
+          try {
+            await refresh(true);
+          } catch (error) {
+            console.warn('GATE record update committed; refresh will retry:', error);
+          }
         }
 
         return result;

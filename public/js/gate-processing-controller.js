@@ -519,6 +519,55 @@
     closeDormModalCanonical();
   }
 
+  // The API and middleware return structured reasons for refused writes. Never
+  // replace an actionable authorization/lifecycle rejection with a generic retry.
+  // All displayed messages are fixed text; raw SQL/exception content is excluded.
+  function dormReopenFailureMessage(result) {
+    const code = String(result?.code || '').trim();
+    const detail = String(result?.error || '');
+    if (code === 'admin_writes_disabled') {
+      return 'Admin operational changes are currently disabled pending the separate provenance migration. Sign in as Instructor to reopen this dorm; do not change D1 settings.';
+    }
+    if (code === 'admin_schema_required') {
+      return 'Admin operational changes are blocked because the verified Admin provenance schema is not installed. Sign in as Instructor or contact the system administrator.';
+    }
+    if (code === 'lifecycle_required') {
+      if (detail === 'Only records in the active Week Group can be modified.') {
+        return 'This dorm does not belong to the active Week Group. Select the correct operational group before reopening it.';
+      }
+      return 'Reopen blocked: an active Week Group and matching configuration are required. Check the current Week Group in Input.';
+    }
+    if (code === 'integrity_error') {
+      return 'Reopen blocked: Week Group configuration and lifecycle records do not agree. Contact the GATE administrator; do not edit the database manually.';
+    }
+    if (code === 'unauthorized') return 'Your login session has expired. Sign in again before reopening this dorm.';
+    if (code === 'forbidden') return 'Your account does not have permission to reopen dorms. Sign in with an authorized Instructor account.';
+    if (code === 'not_found') return 'This dorm is no longer available. Refresh Processing before attempting another change.';
+    if (['version_conflict', 'record_version_conflict', 'conflict'].includes(code)) {
+      return 'The dorm changed after you opened it. Refresh Processing to review its latest state before retrying.';
+    }
+    return 'Dorm reopen was not confirmed. Check its current state before retrying. If it remains closed, contact the GATE administrator.';
+  }
+
+  function showDormReopenFailure(message, dormId) {
+    setEditMessage(message, true);
+    if (activeModalDormId() === dormId) setModalFeedback('modal-action-feedback', message);
+    // Context-menu and other nonmodal actions must not hide the rejection inside
+    // a closed modal. Keep an accessible message on the Processing page.
+    const page = document.getElementById('page-processing');
+    if (!page) return;
+    let status = document.getElementById('gate-processing-reopen-feedback');
+    if (!status) {
+      status = document.createElement('p');
+      status.id = 'gate-processing-reopen-feedback';
+      status.setAttribute('role', 'alert');
+      status.className = 'text-red-500';
+      page.prepend(status);
+    }
+    status.textContent = message;
+    status.classList.remove('hidden');
+  }
+
   async function reopenDormCanonical(id, options = {}) {
     if (!isInstructor() || reopenInFlight) return;
     const dorm = dormById(id || activeEditDormId() || activeModalDormId());
@@ -537,6 +586,8 @@
     const now = new Date().toISOString();
     const button = document.querySelector('#dorm-modal [data-processing-action="reopen-dorm"]');
     setModalFeedback('modal-action-feedback', '');
+    const previousFailure = document.getElementById('gate-processing-reopen-feedback');
+    if (previousFailure) { previousFailure.textContent = ''; previousFailure.classList.add('hidden'); }
     reopenInFlight = true;
     setModalCommandBusy(button, true, 'REOPENING...');
     try {
@@ -559,15 +610,15 @@
         closeDormModalCanonical();
         closeDormEditModalCanonical();
       } else {
-        setEditMessage('Failed to reopen dorm. Try again.', true);
-        if (activeModalDormId() === dorm.__backendId) setModalFeedback('modal-action-feedback', 'Failed to reopen dorm. Try again.');
+        const message = dormReopenFailureMessage(result);
+        showDormReopenFailure(message, dorm.__backendId);
       }
       return result;
     } catch (error) {
-      console.warn('GATE Processing dorm reopen failed:', error);
-      setEditMessage('Failed to reopen dorm. Try again.', true);
-      if (activeModalDormId() === dorm.__backendId) setModalFeedback('modal-action-feedback', 'Failed to reopen dorm. Try again.');
-      return { isOk: false, error: 'Dorm reopen failed.' };
+      console.warn('GATE Processing dorm reopen request or refresh failed:', error);
+      const message = 'Dorm reopen status could not be confirmed. Refresh Processing and check the dorm state before retrying.';
+      showDormReopenFailure(message, dorm.__backendId);
+      return { isOk: false, code: 'result_unconfirmed', error: message };
     } finally {
       setModalCommandBusy(button, false);
       reopenInFlight = false;

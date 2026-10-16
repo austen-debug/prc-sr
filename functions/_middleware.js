@@ -19,7 +19,7 @@ const ROLE_HOME = Object.freeze({
 });
 
 const UI_STYLESHEETS = [
-  '<link rel="stylesheet" href="/css/military-glass-terminal.css?v=squadron-help-centered-20261016-v2">'
+  '<link rel="stylesheet" href="/css/military-glass-terminal.css?v=processing-bus-command-sweep-20261016-v1">'
 ];
 
 const UI_INLINE_ASSETS = [];

@@ -91,7 +91,9 @@
 
     const saveButton = flex.querySelector('button[onclick="saveAssignedAirman()"]');
     if (saveButton) {
-      saveButton.textContent = 'SAVE';
+      const label = saveButton.querySelector('.gate-processing-command__label');
+      if (label) label.textContent = 'SAVE';
+      else saveButton.textContent = 'SAVE';
       saveButton.dataset.processingAssignmentSave = 'true';
       // Presentation only: keep both SAVE and the existing SAVING... state inside
       // the canonical 78px assignment-grid button track, including on tablets.
@@ -167,6 +169,13 @@
       document.querySelector('#dorm-modal button[onclick="saveAssignedAirman()"]');
   }
 
+  function setAssignmentSaveLabel(button, text) {
+    if (!button) return;
+    const label = button.querySelector('.gate-processing-command__label');
+    if (label) label.textContent = text;
+    else button.textContent = text;
+  }
+
   async function saveProcessingAssignmentAndLocation() {
     if (saveInFlight) return;
 
@@ -203,7 +212,8 @@
     saveInFlight = true;
     if (button) {
       button.disabled = true;
-      button.textContent = 'SAVING...';
+      button.setAttribute('aria-busy', 'true');
+      setAssignmentSaveLabel(button, 'SAVING...');
     }
 
     try {
@@ -218,7 +228,8 @@
       saveInFlight = false;
       if (button) {
         button.disabled = false;
-        button.textContent = originalText;
+        button.removeAttribute('aria-busy');
+        setAssignmentSaveLabel(button, originalText);
       }
     }
   }

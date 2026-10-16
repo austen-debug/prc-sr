@@ -11,7 +11,7 @@ function jsonResponse(data, status = 200) {
 }
 
 function instructorOnly(data) {
-  return String(data?.session?.role || '').trim().toLowerCase() === 'instructor';
+  return ['instructor','admin'].includes(String(data?.session?.role || '').trim().toLowerCase());
 }
 
 function safeFilenamePart(value) {

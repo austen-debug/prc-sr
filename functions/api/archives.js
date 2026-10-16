@@ -193,7 +193,7 @@ function archiveDetail(row, amendments, lifecycle) {
 }
 
 export async function onRequestGet({ request, env, data }) {
-  if (roleOf(data) !== 'instructor') return forbidden();
+  if (!['instructor','admin'].includes(roleOf(data))) return forbidden();
 
   try {
     const url = new URL(request.url);

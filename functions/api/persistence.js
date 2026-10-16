@@ -89,7 +89,7 @@ async function saveDraft(env, payload) {
   if (Number(updated?.meta?.changes)!==1) return conflict('Concurrent draft edit detected. Reload before saving.');
   return reply({isOk:true,draft:publicDraft(await draftRow(env,id))});
 }
-async function adopt(env) {
+async function adopt(env,actor) {
   if (!(await mirrorStatus(env)).ready) return unavailable('Migration parity or required triggers are not verified.');
   const group = configValue(await configRecord(env));
   if (!group) return conflict('There is no active legacy Week Group to register.');
@@ -108,22 +108,22 @@ async function adopt(env) {
       failUnless(env,"(SELECT COUNT(*) FROM records WHERE type='config' AND json_extract(data,'$.key')='week_group' AND json_extract(data,'$.value')=?)=1",group),
       env.DB.prepare("INSERT INTO gate_week_groups(cycle_id,week_group,state,receiving_windows_json,created_at,updated_at,activated_at) VALUES(?,?,'active',?,?,?,?)")
         .bind(id,group,JSON.stringify(windows),now,now,now),
-      env.DB.prepare("INSERT INTO gate_audit_events(event_id,cycle_id,entity_type,entity_id,event_type,actor_role,metadata_json,occurred_at) VALUES(?,?,'week_group',?,'legacy_cycle_adopted','instructor',?,?)")
-        .bind(event,id,id,JSON.stringify({week_group:group,source:'legacy_config'}),now)
+      env.DB.prepare("INSERT INTO gate_audit_events(event_id,cycle_id,entity_type,entity_id,event_type,actor_role,metadata_json,occurred_at) VALUES(?,?,'week_group',?,'legacy_cycle_adopted',?,?,?)")
+        .bind(event,id,id,actor,JSON.stringify({week_group:group,source:'legacy_config'}),now)
     ]);
     return reply({isOk:true,adopted:true,cycle_id:id,week_group:group});
   } catch { return conflict('Active-cycle registration changed concurrently. Refresh state.'); }
 }
-function configStatements(env,row,key,value,now) {
+function configStatements(env,row,key,value,now,actor) {
   const original = row?JSON.parse(row.data):{}, id=row?.id||uuid();
   const data=JSON.stringify({...original,type:'config',key,value,__backendId:id,
     record_version:Math.max(0,Number(original.record_version)||0)+1,
-    created_by_role:original.created_by_role||'instructor',updated_by_role:'instructor',
+    created_by_role:row?(original.created_by_role||'unknown'):actor,updated_by_role:actor,
     created_at:row?.created_at||now,updated_at:now});
   if (!row) return [env.DB.prepare("INSERT INTO records(id,type,week_group,data,created_at,updated_at) VALUES(?,'config','',?,?,?)").bind(id,data,now,now)];
   return [env.DB.prepare('UPDATE records SET data=?,updated_at=? WHERE id=? AND data=?').bind(data,now,row.id,row.data),assertOne(env)];
 }
-async function initialize(env,payload) {
+async function initialize(env,payload,actor) {
   const id=String(payload.draft_id||''), revision=Number(payload.revision);
   if (!/^[A-Za-z0-9_-]{1,100}$/.test(id)||!Number.isSafeInteger(revision)||revision<1) return error('validation','Saved draft ID and revision are required.',400);
   const key=`initialize:${id}:${revision}`;
@@ -140,28 +140,28 @@ async function initialize(env,payload) {
   const draft=normalizeDraft({proposed_week_group:saved.proposed_week_group,rows:JSON.parse(saved.rows_json),receiving_windows:JSON.parse(saved.receiving_windows_json),import_review:JSON.parse(saved.import_review_json)});
   validateInitialization(draft);
   const now=nowIso(), cycleId=uuid(), operation=uuid(), audit=uuid();
-  const dormRows=buildDormRows(draft,cycleId,now,uuid);
+  const dormRows=buildDormRows(draft,cycleId,now,uuid,actor);
   const statements=[
     failUnless(env,"NOT EXISTS(SELECT 1 FROM records WHERE type IN ('bus','dorm')) AND NOT EXISTS(SELECT 1 FROM records WHERE type='config' AND json_extract(data,'$.key')='week_group' AND COALESCE(json_extract(data,'$.value'),'')<>'') AND NOT EXISTS(SELECT 1 FROM gate_week_groups WHERE state<>'closed')"),
     env.DB.prepare("INSERT INTO gate_week_groups(cycle_id,week_group,state,source_draft_id,receiving_windows_json,revision,created_at,updated_at,activated_at) VALUES(?,?,'active',?,?,1,?,?,?)")
       .bind(cycleId,draft.proposed_week_group,id,JSON.stringify(draft.receiving_windows),now,now,now),
     env.DB.prepare("UPDATE gate_input_drafts SET status='consumed',consumed_at=?,revision=revision+1,updated_at=? WHERE draft_id=? AND revision=? AND status='draft'").bind(now,now,id,revision),
     assertOne(env),
-    ...configStatements(env,config,'week_group',draft.proposed_week_group,now),
+    ...configStatements(env,config,'week_group',draft.proposed_week_group,now,actor),
     env.DB.prepare(`INSERT INTO records(id,type,week_group,data,created_at,updated_at)
       SELECT json_extract(value,'$.id'),json_extract(value,'$.type'),json_extract(value,'$.week_group'),json_extract(value,'$.data'),json_extract(value,'$.created_at'),json_extract(value,'$.updated_at') FROM json_each(?)`)
       .bind(JSON.stringify(dormRows)),
     env.DB.prepare("INSERT INTO gate_workflow_operations(operation_id,idempotency_key,action,status,cycle_id,draft_id,request_fingerprint,phase,created_at,updated_at,completed_at) VALUES(?,?,'initialize','completed',?,?,?,'committed',?,?,?)")
       .bind(operation,key,cycleId,id,`${id}:${revision}:${draft.proposed_week_group}`,now,now,now),
-    env.DB.prepare("INSERT INTO gate_audit_events(event_id,cycle_id,operation_id,entity_type,entity_id,event_type,actor_role,prior_version,resulting_version,metadata_json,occurred_at) VALUES(?,?,?,'week_group',?,'week_group_initialized','instructor',0,1,?,?)")
-      .bind(audit,cycleId,operation,cycleId,JSON.stringify({week_group:draft.proposed_week_group,dorm_count:dormRows.length}),now)
+    env.DB.prepare("INSERT INTO gate_audit_events(event_id,cycle_id,operation_id,entity_type,entity_id,event_type,actor_role,prior_version,resulting_version,metadata_json,occurred_at) VALUES(?,?,?,'week_group',?,'week_group_initialized',?,0,1,?,?)")
+      .bind(audit,cycleId,operation,cycleId,actor,JSON.stringify({week_group:draft.proposed_week_group,dorm_count:dormRows.length}),now)
   ];
   try {
     await env.DB.batch(statements);
     return reply({isOk:true,cycle_id:cycleId,week_group:draft.proposed_week_group,dorm_count:dormRows.length});
   } catch (e) { console.error('Atomic initialization rejected:',e); return conflict('Initialization was not confirmed. Refresh authoritative state before retrying.'); }
 }
-async function closeout(env,payload) {
+async function closeout(env,payload,actor) {
   const requested=String(payload.cycle_id||'');
   if (!/^[A-Za-z0-9_-]{1,100}$/.test(requested)) return error('validation','A valid active cycle ID is required.',400);
   const key=`closeout:${requested}`;
@@ -189,7 +189,7 @@ async function closeout(env,payload) {
   if (!windows||typeof windows!=='object'||Array.isArray(windows)) return conflict('Invalid receiving-window state.');
   for (const field of WINDOWS) windows[field]=windows[field]||dorms.find(row=>row[field])?.[field]||'';
   const now=nowIso(), archiveId=uuid(), operation=uuid(), audit=uuid();
-  const payloadArchive=buildArchivePayload({cycleId:current.cycle_id,weekGroup:current.week_group,dorms,buses,sourceRecords:snapshot,windows,now});
+  const payloadArchive=buildArchivePayload({cycleId:current.cycle_id,weekGroup:current.week_group,dorms,buses,sourceRecords:snapshot,windows,now,actorRole:actor});
   payloadArchive.__backendId=archiveId;
   const archiveJson=JSON.stringify(payloadArchive);
   if (new TextEncoder().encode(archiveJson).length>1800000) return conflict('The complete archive exceeds the safe row limit. No data was cleared. A lossless storage plan is required.');
@@ -203,22 +203,22 @@ async function closeout(env,payload) {
       archiveId,archiveJson,archiveId,payloadArchive.source_records_json,archiveId,snapshot.length),
     env.DB.prepare("DELETE FROM records WHERE week_group=? AND type IN ('dorm','bus','sound_event')").bind(current.week_group),
     failUnless(env,"NOT EXISTS(SELECT 1 FROM records WHERE week_group=? AND type IN ('dorm','bus','sound_event'))",current.week_group),
-    ...configStatements(env,config,'week_group','',now),
-    ...(lastAirport?configStatements(env,lastAirport,'last_airport','',now):[]),
+    ...configStatements(env,config,'week_group','',now,actor),
+    ...(lastAirport?configStatements(env,lastAirport,'last_airport','',now,actor):[]),
     env.DB.prepare("UPDATE gate_week_groups SET state='closed',archive_id=?,closed_at=?,revision=revision+1,updated_at=? WHERE cycle_id=? AND state='active' AND revision=?")
       .bind(archiveId,now,now,current.cycle_id,current.revision),
     assertOne(env),
     env.DB.prepare("INSERT INTO gate_workflow_operations(operation_id,idempotency_key,action,status,cycle_id,request_fingerprint,archive_id,phase,created_at,updated_at,completed_at) VALUES(?,?,'closeout','completed',?,?,?,'archive_and_clear_committed',?,?,?)")
       .bind(operation,key,current.cycle_id,`${current.cycle_id}:${current.revision}`,archiveId,now,now,now),
-    env.DB.prepare("INSERT INTO gate_audit_events(event_id,cycle_id,operation_id,entity_type,entity_id,event_type,actor_role,prior_version,resulting_version,metadata_json,occurred_at) VALUES(?,?,?,'week_group',?,'week_group_closed','instructor',?,?,?,?)")
-      .bind(audit,current.cycle_id,operation,current.cycle_id,current.revision,current.revision+1,JSON.stringify({week_group:current.week_group,archive_id:archiveId,dorm_count:dorms.length,bus_count:buses.length,source_record_count:snapshot.length}),now)
+    env.DB.prepare("INSERT INTO gate_audit_events(event_id,cycle_id,operation_id,entity_type,entity_id,event_type,actor_role,prior_version,resulting_version,metadata_json,occurred_at) VALUES(?,?,?,'week_group',?,'week_group_closed',?,?,?,?,?)")
+      .bind(audit,current.cycle_id,operation,current.cycle_id,actor,current.revision,current.revision+1,JSON.stringify({week_group:current.week_group,archive_id:archiveId,dorm_count:dorms.length,bus_count:buses.length,source_record_count:snapshot.length}),now)
   ];
   try {
     await env.DB.batch(statements);
     return reply({isOk:true,cycle_id:current.cycle_id,archive_id:archiveId,week_group:current.week_group,dorm_count:dorms.length,bus_count:buses.length,source_record_count:snapshot.length});
   } catch (e) { console.error('Atomic closeout rejected:',e); return conflict('Closeout was not confirmed. Inspect operation and archive before retrying.'); }
 }
-async function amendArchive(env,payload) {
+async function amendArchive(env,payload,actor) {
   const id=String(payload.archive_id||''),reason=String(payload.reason||'').trim(),changes=payload.changes;
   const allowed=new Set(['week_group','archived_at','total_arrived','total_expected','total_loaded','female_total','nat_total','space_force_total','arrived_space_force_total',...WINDOWS]);
   if (!id||reason.length<5||reason.length>2000||!changes||typeof changes!=='object'||Array.isArray(changes)||!Object.keys(changes).length||Object.keys(changes).some(key=>!allowed.has(key))) return error('validation','Archive ID, documented reason and supported correction fields are required.',400);
@@ -229,16 +229,16 @@ async function amendArchive(env,payload) {
   const cycle=await env.DB.prepare('SELECT cycle_id FROM gate_week_groups WHERE archive_id=? LIMIT 1').bind(id).first();
   try {
     await env.DB.batch([
-      env.DB.prepare("INSERT INTO gate_archive_amendments(amendment_id,archive_id,cycle_id,amendment_number,amendment_type,reason,changes_json,actor_role,created_at) VALUES(?,?,?,?,'correction',?,?,'instructor',?)")
-        .bind(amendment,id,cycle?.cycle_id||null,sequence,reason,JSON.stringify(changes),now),
-      env.DB.prepare("INSERT INTO gate_audit_events(event_id,cycle_id,entity_type,entity_id,event_type,actor_role,metadata_json,occurred_at) VALUES(?,?,'archive',?,'archive_amended','instructor',?,?)")
-        .bind(audit,cycle?.cycle_id||null,id,JSON.stringify({amendment_id:amendment,amendment_number:sequence,fields:Object.keys(changes)}),now)
+      env.DB.prepare("INSERT INTO gate_archive_amendments(amendment_id,archive_id,cycle_id,amendment_number,amendment_type,reason,changes_json,actor_role,created_at) VALUES(?,?,?,?,'correction',?,?,?,?)")
+        .bind(amendment,id,cycle?.cycle_id||null,sequence,reason,JSON.stringify(changes),actor,now),
+      env.DB.prepare("INSERT INTO gate_audit_events(event_id,cycle_id,entity_type,entity_id,event_type,actor_role,metadata_json,occurred_at) VALUES(?,?,'archive',?,'archive_amended',?,?,?)")
+        .bind(audit,cycle?.cycle_id||null,id,actor,JSON.stringify({amendment_id:amendment,amendment_number:sequence,fields:Object.keys(changes)}),now)
     ]);
     return reply({isOk:true,amendment_id:amendment,amendment_number:sequence},201);
   } catch { return conflict('Archive amendment changed concurrently. Reload and retry.'); }
 }
 export async function onRequestGet({request,env,data}) {
-  if (role(data)!=='instructor') return deny();
+  if (!['admin','instructor'].includes(role(data))) return deny();
   const mode=new URL(request.url).searchParams.get('mode')||'health';
   try {
     if (mode==='health') return reply(await health(env));
@@ -254,7 +254,7 @@ export async function onRequestGet({request,env,data}) {
   } catch (e) { console.error('Persistence read failed:',e); return unavailable('Persistence schema or state verification failed.'); }
 }
 export async function onRequestPost({request,env,data}) {
-  if (role(data)!=='instructor') return deny();
+  if (!['admin','instructor'].includes(role(data))) return deny();
   if (!enabled(env)) return unavailable('Persistence is disabled.');
   try {
     sameOrigin(request);
@@ -264,10 +264,10 @@ export async function onRequestPost({request,env,data}) {
     if (!payload||typeof payload!=='object'||Array.isArray(payload)) return error('validation','Invalid request body.',400);
     // Await dispatch inside the catch boundary: asynchronous validation failures must return 400, not an uncaught 500.
     if (payload.action==='save_draft') return await saveDraft(env,payload);
-    if (payload.action==='adopt') return await adopt(env);
-    if (payload.action==='initialize') return await initialize(env,payload);
-    if (payload.action==='closeout') return await closeout(env,payload);
-    if (payload.action==='amend_archive') return await amendArchive(env,payload);
+    if (payload.action==='adopt') return await adopt(env,role(data));
+    if (payload.action==='initialize') return await initialize(env,payload,role(data));
+    if (payload.action==='closeout') return await closeout(env,payload,role(data));
+    if (payload.action==='amend_archive') return await amendArchive(env,payload,role(data));
     return error('validation','Unsupported persistence action.',400);
   } catch(e) {
     if (e instanceof PersistenceValidationError || e instanceof SyntaxError) return error('validation',e.message,400);

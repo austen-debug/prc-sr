@@ -19,8 +19,8 @@ export async function recordDiagnostic(env,input){
   // error types. Never persist arbitrary exception message/stack content.
   const detail=String(input.detail||'No additional safe diagnostic data').slice(0,200);
   await env.DB.prepare('INSERT INTO gate_diagnostic_events(event_id,source,category,severity,code,route,detail,http_status,occurred_at) VALUES(?,?,?,?,?,?,?,?,?)')
-   .bind(crypto.randomUUID(),source,category,/^[A-Z0-9_]{2,48}$/.test(code)?code:'UNKNOWN',
+   .bind(crypto.randomUUID(),source,category,severity,/^[A-Z0-9_]{2,48}$/.test(code)?code:'UNKNOWN',
     safeRoute(input.route),detail,Number.isSafeInteger(input.status)?input.status:0,Date.now()).run();
   return true;
- }catch(error){if(env?.GATE_TEST_DEBUG==='true')console.warn('DIAGNOSTIC_SQL_TEST_ERROR:',error?.message);return false;}
+ }catch{return false;}
 }

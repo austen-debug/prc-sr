@@ -226,14 +226,14 @@
   }
 
   function instructorModalActions(id, state) {
-    const editButton = `<button type="button" data-processing-action="edit-record" data-dorm-id="${esc(id)}" class="px-6 py-3 rounded-lg font-bold text-white text-lg" style="background:var(--surface-alt);border:1px solid var(--border);color:var(--text);">EDIT RECORD</button>`;
+    const editButton = `<button type="button" data-processing-action="edit-record" data-dorm-id="${esc(id)}" class="gate-processing-command gate-processing-command--secondary"><span class="gate-processing-command__label">EDIT RECORD</span></button>`;
     if (state === 'empty') {
       return `<button type="button" data-processing-action="open-dorm" data-dorm-id="${esc(id)}" class="px-8 py-3 rounded-lg font-bold text-white text-lg" style="background:var(--blue);">OPEN DORM</button>${editButton}`;
     }
     if (state === 'open') {
       return `<button type="button" data-processing-action="close-dorm" data-dorm-id="${esc(id)}" class="px-8 py-3 rounded-lg font-bold text-white text-lg" style="background:var(--red);">CLOSE DORM</button>${editButton}`;
     }
-    return `<button type="button" data-processing-action="reopen-dorm" data-dorm-id="${esc(id)}" class="px-8 py-3 rounded-lg font-bold text-white text-lg" style="background:linear-gradient(135deg,#2563eb,#38bdf8);">REOPEN DORM</button>${editButton}`;
+    return `<button type="button" data-processing-action="reopen-dorm" data-dorm-id="${esc(id)}" class="gate-processing-command gate-processing-command--reopen"><span class="gate-processing-command__label">REOPEN DORM</span></button>${editButton}`;
   }
 
   function openDormModalCanonical(id) {

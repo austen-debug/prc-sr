@@ -22,7 +22,7 @@ function chromium() {
   return null;
 }
 
-const template = section(js,'  // Compact, decorative icon;', '  function ensureDocumentIdentity()');
+const template = section(js, "  // Optical-center, high-contrast plain 'i';", '  function ensureDocumentIdentity()');
 const binder = section(js,'  // One floating tooltip keeps long descriptions', '  function bindSquadronControls(page)');
 const escaped = text => String(text).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;');
 const tooltipFactory = new Function('esc', template + '\nreturn tooltip;')(escaped);
@@ -36,7 +36,7 @@ const help = [
   ['Closed','These dorms have completed PRC processing.']
 ];
 
-test('all seven existing Squadron contextual explanations are preserved with compact accessible SVG buttons', () => {
+test('all seven Squadron explanations retain accessible, high-contrast plain info glyphs', () => {
   assert.equal(help.length, 7);
   assert.equal((js.match(/tooltip\(/g) || []).length, 5, 'One helper and three dynamic dorm labels plus four static metric usages');
   for (const [name, description] of help) {
@@ -45,6 +45,10 @@ test('all seven existing Squadron contextual explanations are preserved with com
     assert.match(button, /class="gate-info"/);
     assert.match(button, new RegExp('aria-label="About ' + name + '"','i'));
     assert.match(button, /gate-info__icon/);
+    assert.match(button, /viewBox="0 0 16 16"/);
+    assert.match(button, /<circle cx="8" cy="3.4" r="1.35"/);
+    assert.match(button, /<path d="M8 6.8v6.4"/);
+    assert.doesNotMatch(button, /r="9"|viewBox="0 0 24 24"/, 'Icon must not contain its former circled-i outline');
     assert.match(button, /aria-hidden="true"/);
   }
   assert.match(js, /<div id="squadron-tooltip" class="gate-squadron-tooltip" role="tooltip" hidden>/);
@@ -54,6 +58,9 @@ test('all seven existing Squadron contextual explanations are preserved with com
   assert.match(js, /button\.addEventListener\('click', \(\) => showTip\(button\)\)/);
   assert.match(js, /tip\.dataset\.open = 'true'/);
   assert.match(css, /@keyframes gate-squadron-info-jello/);
+  assert.match(css, /inset:-13px;/);
+  assert.match(css, /color:#fff;/);
+  assert.doesNotMatch(css, /data-gate-shell-posture\^="tablet"\] #page-squadron \.gate-info/);
   assert.doesNotMatch(template, /squadron-information/);
   assert.match(css, /@media \(prefers-reduced-motion:reduce\)/);
 });
@@ -63,8 +70,8 @@ test('the standalone Squadron page and app shell use the same fresh tooltip CSS/
   const standalone = await source('public/squadron/index.html');
   const budget = JSON.parse(await source('docs/build-2/ACTIVE_RUNTIME_BUDGET.json'));
   for (const uri of [
-    '/css/military-glass-terminal.css?v=squadron-help-blue-20261016-v1',
-    '/js/prc-dash-final-audit.js?v=squadron-help-blue-20261016-v1'
+    '/css/military-glass-terminal.css?v=squadron-help-centered-20261016-v2',
+    '/js/prc-dash-final-audit.js?v=squadron-help-centered-20261016-v2'
   ]) {
     assert.ok(mw.includes(uri), 'Middleware lacks latest Squadron UI asset ' + uri);
     assert.ok(standalone.includes(uri), 'Standalone Squadron route lacks latest UI asset ' + uri);
@@ -89,6 +96,8 @@ test('real Chromium renders compact blue info icon with animated tooltip above/b
     ' const icon=b.querySelector(".gate-info__icon");',
     ' const tip=byId("squadron-tooltip");',
     ' const row=b.closest(".gate-squadron-metric-head");',
+    ' document.body.classList.add("gate-app-shell-ready");',
+    ' document.body.dataset.gateShellPosture="tablet-portrait";',
 
     ' const dims=e=>{const r=e.getBoundingClientRect();return{x:r.x,y:r.y,width:r.width,height:r.height,right:r.right,bottom:r.bottom}};',
     ' const result={count:page.querySelectorAll(".gate-info").length,themes:{}};',
@@ -96,7 +105,13 @@ test('real Chromium renders compact blue info icon with animated tooltip above/b
     '  document.body.classList.toggle("theme-light",theme==="day");',
     '  b.blur();',
     '  tip.hidden=true;tip.dataset.open="false";',
-    '  const initial={button:dims(b),row:dims(row),gradient:getComputedStyle(b).backgroundImage,iconColor:getComputedStyle(icon).color,hidden:tip.hidden};',
+    '  const glyph=icon.getBBox();',
+    '  const visualCenterX=(glyph.x+glyph.width/2-8)*12/16;',
+    '  const visualCenterY=(glyph.y+glyph.height/2-8)*12/16;',
+    '  const br=b.getBoundingClientRect(),ir=icon.getBoundingClientRect();',
+    '  const offsetX=ir.x+ir.width/2-br.x-br.width/2;',
+    '  const offsetY=ir.y+ir.height/2-br.y-br.height/2;',
+    '  const initial={button:dims(b),row:dims(row),gradient:getComputedStyle(b).backgroundImage,iconColor:getComputedStyle(icon).color,hidden:tip.hidden,glyphCenterX:offsetX+visualCenterX,glyphCenterY:offsetY+visualCenterY,glyphSize:dims(icon),buttonHitInset:getComputedStyle(b,"::after").top};',
     '  b.dispatchEvent(new Event("mouseenter"));',
     '  const style=getComputedStyle(tip);',
     '  const open={button:dims(b),row:dims(row),tip:dims(tip),text:tip.textContent,open:tip.dataset.open,',
@@ -112,7 +127,7 @@ test('real Chromium renders compact blue info icon with animated tooltip above/b
     '  result.themes[theme]={initial,open,focused,escaped,tapped};',
     '  b.dispatchEvent(new Event("mouseleave"));',
     ' }',
-    ' result.allButtons=[...page.querySelectorAll(".gate-info")].every(x=>getComputedStyle(x).width==="22px");',
+    ' result.allButtons=[...page.querySelectorAll(".gate-info")].every(x=>getComputedStyle(x).width==="18px");',
     ' document.getElementById("results").textContent=JSON.stringify(result);',
     '})();'
   ].join('\n');
@@ -143,9 +158,14 @@ test('real Chromium renders compact blue info icon with animated tooltip above/b
       for(const [theme,s] of Object.entries(data.themes)){
         const label=mode+'/'+theme;
         assert.equal(s.initial.hidden,true,label+' tooltip visible at rest');
-        assert.equal(s.initial.button.width,22,label+' icon width changed');
-        assert.equal(s.initial.button.height,22,label+' icon height changed');
+        assert.equal(s.initial.button.width,18,label+' icon width changed');
+        assert.equal(s.initial.button.height,18,label+' icon height changed');
         assert.match(s.initial.gradient,/linear-gradient/i,label+' blue gradient button missing');
+        assert.equal(s.initial.iconColor,'rgb(255, 255, 255)',label+' icon is not high-contrast white');
+        assert.ok(Math.abs(s.initial.glyphCenterX)<=1,label+' plain i is not horizontally centered');
+        assert.ok(Math.abs(s.initial.glyphCenterY)<=1,label+' plain i is not optically centered');
+        assert.equal(s.initial.glyphSize.width,12,label+' glyph should be 12px');
+        assert.equal(s.initial.buttonHitInset,'-13px',label+' compact icon lost enlarged transparent touch target');
         assert.equal(s.open.open,'true',label+' hover did not open tooltip');
         assert.equal(s.open.aria,'squadron-tooltip',label+' aria-describedby missing');
         assert.equal(s.open.events,'none',label+' tooltip could intercept clicks');

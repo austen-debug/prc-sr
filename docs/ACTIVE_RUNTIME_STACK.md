@@ -23,7 +23,7 @@ The machine-readable inventory and ceilings are governed by `docs/build-2/ACTIVE
 
 Middleware now injects one stylesheet and no stylesheet imports:
 
-1. `/css/military-glass-terminal.css?v=squadron-help-blue-20261016-v1`
+1. `/css/military-glass-terminal.css?v=squadron-help-centered-20261016-v2`
 
 `public/css/military-glass-terminal.css` is the production visual source of truth for tokens, light/dark themes, shell geometry, page spacing, Status/Squadron boards, Processing, Airport, Input, Archives, login, modal geometry, responsive behavior, fullscreen behavior, skeleton geometry, z-index bands, and interaction motion.
 
@@ -41,7 +41,7 @@ Injected by middleware in current order on the Flight Alert feature branch:
 6. `/js/prc-dash-sat-arrivals.js`
 7. `/js/prc-dash-space-force.js`
 8. `/js/prc-dash-dorm-reopen.js?v=popup-plop-sounds-20260928`
-9. `/js/prc-dash-final-audit.js?v=squadron-help-blue-20261016-v1`
+9. `/js/prc-dash-final-audit.js?v=squadron-help-centered-20261016-v2`
 10. `/js/gate-status-board-controller.js?v=status-board-alert-banding-20261016-v1`
 11. `/js/gate-processing-controller.js?v=processing-dorm-cards-20261016-v2`
 12. `/js/prc-dash-dorm-flag-validation.js?v=processing-band-designator-20260915`

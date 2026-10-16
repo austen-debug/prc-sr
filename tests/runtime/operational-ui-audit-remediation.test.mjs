@@ -415,16 +415,16 @@ test('Processing BAND uses its existing green token in the lower-right card foot
 test('middleware delivers one canonical stylesheet and no retired CSS assets', async () => {
   const middleware = await source('functions/_middleware.js');
 
-  assert.match(middleware, /military-glass-terminal\.css\?v=squadron-help-blue-20261016-v1/);
+  assert.match(middleware, /military-glass-terminal\.css\?v=squadron-help-centered-20261016-v2/);
   assert.equal((middleware.match(/<link rel="stylesheet"/g) || []).length, 1);
   assert.doesNotMatch(middleware, /gate-ui-ownership-correction\.css|gate-fullscreen-board-contract\.css|gate-tablet-shell\.css|gate-mobile-corrective\.css/);
 });
 
 
 test('Squadron SITREP ships current canonical assets and preserves lightweight communication UI', async () => {
-  const version = 'squadron-help-blue-20261016-v1';
+  const version = 'squadron-help-centered-20261016-v2';
   const url = `/css/military-glass-terminal.css?v=${version}`;
-  const scriptUrl = '/js/prc-dash-final-audit.js?v=squadron-help-blue-20261016-v1';
+  const scriptUrl = '/js/prc-dash-final-audit.js?v=squadron-help-centered-20261016-v2';
   const [middleware, standalone, budgetText, stack, css, controller, index] = await Promise.all([
     source('functions/_middleware.js'), source('public/squadron/index.html'),
     source('docs/build-2/ACTIVE_RUNTIME_BUDGET.json'), source('docs/ACTIVE_RUNTIME_STACK.md'),
@@ -449,7 +449,7 @@ test('Squadron SITREP ships current canonical assets and preserves lightweight c
   assert.match(squadronCss, /#page-squadron \.gate-squadron-tempo-options\s*\{[^}]*grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
   assert.match(squadronCss, /#page-squadron \.gate-squadron-columns\s*\{[^}]*grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
   assert.match(squadronCss, /#page-squadron \.gate-squadron-dorm\s*\{[^}]*background:var\(--mg-surface-strong\)/);
-  assert.match(squadronCss, /#page-squadron \.gate-info\s*\{[^}]*width:22px;[^}]*height:22px;[^}]*border:1px solid var\(--mg-accent-deep\)/);
+  assert.match(squadronCss, /#page-squadron \.gate-info\s*\{[^}]*width:18px;[^}]*height:18px;[^}]*border:1px solid var\(--mg-accent-deep\)/);
   assert.match(squadronCss, /@keyframes gate-squadron-info-jello/);
   assert.match(squadronCss, /#page-squadron \.gate-squadron-tooltip\[data-open="true"\]/);
 

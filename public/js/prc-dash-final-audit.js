@@ -30,8 +30,8 @@
   const standalone = () => document.body.classList.contains('gate-squadron-standalone');
   const esc = value => String(value ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#039;');
   function setText(element, value) { if (element && element.textContent !== String(value)) element.textContent = String(value); }
-  // Compact, decorative icon; the button's accessible name remains contextual.
-  const tooltip = (label, description) => `<button type="button" class="gate-info" data-squadron-tip="${esc(description)}" aria-label="About ${esc(label)}"><svg class="gate-info__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 7.5h.01"/></svg></button>`;
+  // Optical-center, high-contrast plain 'i'; no duplicate circle around it. Contextual accessible name remains unchanged.
+  const tooltip = (label, description) => `<button type="button" class="gate-info" data-squadron-tip="${esc(description)}" aria-label="About ${esc(label)}"><svg class="gate-info__icon" viewBox="0 0 16 16" fill="none" aria-hidden="true" focusable="false"><circle cx="8" cy="3.4" r="1.35" fill="currentColor"/><path d="M8 6.8v6.4" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg></button>`;
 
   function ensureDocumentIdentity() {
     document.title = standalone() ? 'Squadron Board · GATE' : 'GATE — Gateway Arrival Tracking Environment | Pfingston Reception Center';

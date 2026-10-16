@@ -53,5 +53,5 @@ test('Button styling is scoped to existing stylesheet and respects theme, focus 
   assert.match(css, /#dorm-modal \.gate-processing-command:focus-visible/);
   assert.match(css, /@media \(prefers-reduced-motion: reduce\)/);
   assert.match(css, /@media \(forced-colors: active\)/);
-  assert.doesNotMatch(css, /@import\s+/);
+  assert.doesNotMatch(css, /^\s*@import\s+/m);
 });

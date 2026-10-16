@@ -98,6 +98,16 @@
     const existingFlags = card.querySelector('.gate-dorm-flags');
     const existingBanner = card.querySelector('.gate-dorm-top-banner');
 
+    // The Status Board reference card renders BAND/SPACE FORCE within its
+    // three-column header. Never insert the legacy full-width banner over it.
+    // Keep the same female/BAND/Space Force classes and dataset validation.
+    if (card.closest('#page-board') && card.dataset.gateBoardLayout === 'reference-v2') {
+      card.dataset.dormFlagSig = signature;
+      existingFlags?.remove();
+      existingBanner?.remove();
+      return;
+    }
+
     if (card.dataset.dormFlagSig === signature) {
       if (isBoardCard && (existingBanner || !shouldShowIndicator)) return;
       if (isProcessingCard && !existingFlags && !existingBanner) return;

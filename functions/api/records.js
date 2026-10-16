@@ -495,33 +495,24 @@ export async function onRequestDelete({ request, env, data }) {
       ).bind(id, currentVersion)
       : env.DB.prepare('DELETE FROM records WHERE id = ?').bind(id);
 
-    // The legacy database trigger remains an unverified SYSTEM observation.
-    // For Admin, commit the physical delete and its verified actor event together.
-    // Instructor/Airman delete statements are deliberately unchanged.
+    // The existing delete trigger records a SYSTEM observation without authenticated attribution.
+    // For Admin, the verified actor audit must be in the same transaction as the delete.
     let result;
     if (role === 'admin') {
       const eventId = crypto.randomUUID();
       const operationId = crypto.randomUUID();
       const now = new Date().toISOString();
       const metadata = JSON.stringify({ operation_id: operationId, authenticated_actor: true });
-      const batch = await env.DB.batch([
+      const statements = [
         statement,
-        env.DB.prepare("SELECT CASE WHEN changes()=1 THEN 1 ELSE json_extract('invalid-json','
-  } catch (error) {
-    return jsonResponse({
-      isOk: false,
-      code: error?.code || 'delete_failed',
-      error: error.message || 'Failed to delete record.'
-    }, Number(error?.status) || 500);
-  }
-}
-) END"),
+        env.DB.prepare("SELECT CASE WHEN changes()=1 THEN 1 ELSE json_extract('invalid-json','$') END"),
         env.DB.prepare(`INSERT INTO gate_audit_events
           (event_id,cycle_id,entity_type,entity_id,event_type,actor_role,prior_version,resulting_version,metadata_json,occurred_at)
           VALUES (?,(SELECT cycle_id FROM gate_week_groups WHERE week_group=? ORDER BY created_at DESC LIMIT 1),?,?,'record_delete_authorized','admin',?,?,?,?)`)
           .bind(eventId, String(existingRow.week_group || ''), String(existingRecord.type || ''), id,
             currentVersion, currentVersion, metadata, now)
-      ]);
+      ];
+      const batch = await env.DB.batch(statements);
       result = batch?.[0];
     } else {
       result = await statement.run();

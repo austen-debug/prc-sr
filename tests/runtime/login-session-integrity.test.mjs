@@ -86,7 +86,7 @@ test('login client validates deep-link destinations by authenticated role', asyn
   assert.match(loginHtml, /await request\('\/api\/login'/);
   assert.match(loginHtml, /await request\('\/api\/session'/);
   assert.match(loginHtml, /const RETURN_ROUTES = Object\.freeze/);
-  assert.match(loginHtml, /'\/processing\/': Object\.freeze\(\['instructor', 'airman'\]\)/);
+  assert.match(loginHtml, /'\/processing\/': Object\.freeze\(\['admin', 'instructor', 'airman'\]\)/);
   assert.match(loginHtml, /'\/squadron\/': Object\.freeze\(\['squadron'\]\)/);
   assert.match(loginHtml, /const requested = new URLSearchParams\(window\.location\.search\)\.get\('returnTo'\)/);
   assert.match(loginHtml, /RETURN_ROUTES\[requested\]\?\.includes\(role\) \? requested : fallback/);

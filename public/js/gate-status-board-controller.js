@@ -327,15 +327,22 @@
     renderStats.busWrites += 1;
   }
 
-  function applyTimerVisualState(timer, minutes) {
+  // Visual-only Status Board escalation. The dorm record and its identity
+  // ring/glow are never altered; the inset perimeter is owned by board CSS.
+  function applyTimerVisualState(timer, card, elapsed) {
+    const minutes = elapsed.valid ? elapsed.minutes : -1;
     const warning = minutes >= 40 && minutes < 50;
-    const critical = minutes >= 50;
-    const visualState = critical ? 'critical' : (warning ? 'warning' : 'normal');
+    const critical = minutes >= 50 && minutes < 60;
+    const overtime = minutes >= 60;
+    const visualState = overtime ? 'overtime' : (critical ? 'critical' : (warning ? 'warning' : 'normal'));
 
     timer.classList.toggle('timer-yellow', warning);
-    timer.classList.toggle('timer-red', critical);
-    if (timer.classList.contains('timer-flash')) timer.classList.remove('timer-flash');
+    timer.classList.toggle('timer-red', critical || overtime);
+    timer.classList.toggle('timer-flash', overtime);
     if (timer.dataset.timerVisualState !== visualState) timer.dataset.timerVisualState = visualState;
+    // Assign only when the threshold changes: CSS animation must not restart
+    // on every second tick and card layout must not be re-rendered.
+    if (card.dataset.gateTimeAlert !== visualState) card.dataset.gateTimeAlert = visualState;
   }
 
   function ensureTimerElement(card) {
@@ -380,7 +387,7 @@
       timer.dataset.timerRecordState = elapsed.valid ? 'valid' : 'invalid-opened-at';
       if (!elapsed.valid) renderStats.invalidOpenTimestamps += 1;
       if (timer.textContent !== elapsed.text) timer.textContent = elapsed.text;
-      applyTimerVisualState(timer, elapsed.minutes);
+      applyTimerVisualState(timer, card, elapsed);
 
       if (elapsed.valid && elapsed.minutes >= 60 && id && typeof triggerOvertimeSoundIfNeeded === 'function') {
         triggerOvertimeSoundIfNeeded(id);

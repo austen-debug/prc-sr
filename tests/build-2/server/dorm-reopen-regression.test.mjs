@@ -124,7 +124,7 @@ test('Admin writes remain fail-closed pending verified migration; Instructor req
   request:new Request('https://gate.example/api/records',{method:'PUT',headers:{'Content-Type':'application/json'},body}),
   next:async()=>new Response('bypassed security',{status:209})});
  const admin=await make('admin');
- assert.equal(admin.status,503);assert.equal((await admin.json()).code,'admin_writes_disabled');
+ assert.equal(admin.status,503);assert.equal((await admin.json()).code,'admin_schema_required');
  const instructor=await make('instructor');
  assert.equal(instructor.status,409);assert.equal((await instructor.json()).code,'lifecycle_required');
 });

@@ -324,9 +324,10 @@
       tip.style.setProperty('--gate-squadron-tooltip-arrow-x', `${arrow}px`);
       tip.dataset.placement = above ? 'above' : 'below';
       button.setAttribute('aria-describedby', 'squadron-tooltip');
-      window.requestAnimationFrame(() => {
-        if (activeButton === button) tip.dataset.open = 'true';
-      });
+      // Width was already measured while hidden/closed; the browser can
+      // transition from that layout state without waiting for a frame that
+      // may be throttled in background tabs.
+      tip.dataset.open = 'true';
     };
     page.querySelectorAll('[data-squadron-tip]').forEach(button => {
       button.addEventListener('mouseenter', () => showTip(button));

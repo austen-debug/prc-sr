@@ -58,7 +58,7 @@ test('real Chromium validates Processing reference hierarchy, inset band, female
   const script = [
     '(function(){',
     'const normalizeLocation = value => String(value || "").toUpperCase();',
-    'const esc = value => String(value).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll("\"","&quot;");',
+    'const esc = value => String(value).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(String.fromCharCode(34),"&quot;");',
     adapterCode,
     'document.getElementById("proc-dorm-grid").innerHTML = '+JSON.stringify(markup)+';',
     'const dorms = '+JSON.stringify(dorms)+';',

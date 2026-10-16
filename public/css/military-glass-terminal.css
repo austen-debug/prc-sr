@@ -1497,121 +1497,12 @@ tbody tr:hover {
 /* --------------------------------------------------------------------------
    7. PROCESSING PAGE
    -------------------------------------------------------------------------- */
-/*
- * Add Local Bus: one evergreen Processing action, same moving conic light
- * as the dorm-card perimeter. The animation is masked to the button's
- * 2px inner edge; neither the label nor the click target is animated.
- * Keep the modal and local-bus persistence exclusively in their owners.
- */
+/* Add Local Bus shares the Processing popup's blue REOPEN command surface
+   and its hover/focus-only gradient sweep. Toolbar dimensions stay intact. */
 #page-processing #processing-add-local-bus {
-  position: relative;
-  isolation: isolate;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  box-sizing: border-box;
   min-height: 48px;
-  min-width: 0;
   padding: .65rem 1.2rem;
-  overflow: hidden;
-  border: 1px solid var(--mg-accent);
-  border-radius: var(--mg-radius-sm);
-  background: var(--mg-accent-deep);
-  color: #fff;
-  font-family: var(--mg-font-sans);
   font-size: .92rem;
-  font-weight: 800;
-  line-height: 1.2;
-  letter-spacing: .025em;
-  text-align: center;
-  cursor: pointer;
-  touch-action: manipulation;
-  transition: border-color 180ms ease, box-shadow 180ms ease, transform 120ms ease;
-}
-
-#page-processing #processing-add-local-bus .gate-processing-local-bus-action__label {
-  position: relative;
-  z-index: 1;
-  pointer-events: none;
-}
-
-#page-processing #processing-add-local-bus::before {
-  content: "";
-  position: absolute;
-  inset: 3px;
-  z-index: 0;
-  box-sizing: border-box;
-  border: 2px solid var(--mg-accent);
-  border-radius: calc(var(--mg-radius-sm) - 3px);
-  pointer-events: none;
-}
-
-@supports ((-webkit-mask-composite: xor) or (mask-composite: exclude)) {
-  #page-processing #processing-add-local-bus::before {
-    border: 0;
-    padding: 2px;
-    background: conic-gradient(
-      from var(--gate-board-alert-angle),
-      color-mix(in srgb, var(--mg-accent) 25%, transparent) 0deg,
-      color-mix(in srgb, var(--mg-accent) 35%, transparent) 210deg,
-      var(--mg-accent) 270deg,
-      color-mix(in srgb, white 45%, var(--mg-accent)) 294deg,
-      var(--mg-accent) 314deg,
-      color-mix(in srgb, var(--mg-accent) 25%, transparent) 360deg
-    );
-    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    -webkit-mask-composite: xor;
-    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    mask-composite: exclude;
-    animation: gate-board-alert-orbit 4.5s linear infinite;
-  }
-}
-
-@media (hover: hover) {
-  #page-processing #processing-add-local-bus:not(:disabled):hover {
-    border-color: var(--mg-text);
-    box-shadow: 0 0 0 2px var(--mg-focus);
-  }
-}
-
-#page-processing #processing-add-local-bus:focus-visible {
-  outline: 2px solid var(--mg-accent);
-  outline-offset: 3px;
-}
-
-#page-processing #processing-add-local-bus:not(:disabled):active {
-  transform: scale(.99);
-}
-
-#page-processing #processing-add-local-bus:disabled {
-  opacity: .65;
-  cursor: wait;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  #page-processing #processing-add-local-bus,
-  #page-processing #processing-add-local-bus::before {
-    animation: none;
-    transition: none;
-  }
-}
-
-@media (forced-colors: active) {
-  #page-processing #processing-add-local-bus {
-    background: ButtonFace;
-    color: ButtonText;
-    border-color: ButtonText;
-  }
-  #page-processing #processing-add-local-bus::before {
-    border: 2px solid ButtonText;
-    background: none;
-    mask: none;
-    -webkit-mask: none;
-    animation: none;
-  }
-  #page-processing #processing-add-local-bus:focus-visible {
-    outline-color: Highlight;
-  }
 }
 
 #page-processing #proc-dorm-grid {
@@ -3084,7 +2975,8 @@ body.gate-modal-open {
  * Scope deliberately excludes phase selectors, load steppers and other dialogs.
  * Button semantics and persistence remain with existing Processing owners.
  */
-#dorm-modal .gate-processing-command {
+#dorm-modal .gate-processing-command,
+#page-processing #processing-add-local-bus {
   --gate-command-bg: var(--mg-surface-soft);
   --gate-command-edge: var(--mg-border-strong);
   --gate-command-ink: var(--mg-text);
@@ -3119,7 +3011,8 @@ body.gate-modal-open {
   transition: border-color 180ms ease, box-shadow 180ms ease, transform 120ms ease;
 }
 
-#dorm-modal .gate-processing-command::before {
+#dorm-modal .gate-processing-command::before,
+#page-processing #processing-add-local-bus::before {
   content: "";
   position: absolute;
   inset: 0;
@@ -3132,7 +3025,8 @@ body.gate-modal-open {
   pointer-events: none;
 }
 
-#dorm-modal .gate-processing-command__label {
+#dorm-modal .gate-processing-command__label,
+#page-processing #processing-add-local-bus .gate-processing-local-bus-action__label {
   position: relative;
   z-index: 1;
   pointer-events: none;
@@ -3162,7 +3056,8 @@ body.theme-light #dorm-modal .gate-processing-command--commit {
   --gate-command-ink: var(--mg-text);
 }
 
-#dorm-modal .gate-processing-command--reopen {
+#dorm-modal .gate-processing-command--reopen,
+#page-processing #processing-add-local-bus {
   --gate-command-bg: var(--mg-accent-deep);
   --gate-command-edge: var(--mg-accent);
   --gate-command-ink: #fff;
@@ -3183,30 +3078,36 @@ body.theme-light #dorm-modal .gate-processing-command--commit {
 }
 
 @media (hover: hover) {
-  #dorm-modal .gate-processing-command:not(:disabled):hover::before {
+  #dorm-modal .gate-processing-command:not(:disabled):hover::before,
+  #page-processing #processing-add-local-bus:not(:disabled):hover::before {
     transform: scaleX(1);
   }
 
-  #dorm-modal .gate-processing-command:not(:disabled):hover {
+  #dorm-modal .gate-processing-command:not(:disabled):hover,
+  #page-processing #processing-add-local-bus:not(:disabled):hover {
     border-color: var(--mg-accent);
   }
 }
 
-#dorm-modal .gate-processing-command:focus-visible {
+#dorm-modal .gate-processing-command:focus-visible,
+#page-processing #processing-add-local-bus:focus-visible {
   outline: 2px solid var(--mg-accent);
   outline-offset: 3px;
   box-shadow: 0 0 0 2px var(--mg-surface-strong);
 }
 
-#dorm-modal .gate-processing-command:focus-visible::before {
+#dorm-modal .gate-processing-command:focus-visible::before,
+#page-processing #processing-add-local-bus:focus-visible::before {
   transform: scaleX(1);
 }
 
-#dorm-modal .gate-processing-command:not(:disabled):active {
+#dorm-modal .gate-processing-command:not(:disabled):active,
+#page-processing #processing-add-local-bus:not(:disabled):active {
   transform: scale(.99);
 }
 
 #dorm-modal .gate-processing-command:disabled,
+#page-processing #processing-add-local-bus:disabled,
 #dorm-modal .gate-processing-command[aria-busy="true"] {
   cursor: wait;
   opacity: .74;
@@ -3215,6 +3116,7 @@ body.theme-light #dorm-modal .gate-processing-command--commit {
 }
 
 #dorm-modal .gate-processing-command:disabled::before,
+#page-processing #processing-add-local-bus:disabled::before,
 #dorm-modal .gate-processing-command[aria-busy="true"]::before {
   transform: scaleX(0);
 }
@@ -3251,27 +3153,33 @@ body.theme-light #dorm-modal .gate-processing-command--commit {
 
 @media (prefers-reduced-motion: reduce) {
   #dorm-modal .gate-processing-command,
-  #dorm-modal .gate-processing-command::before {
+  #dorm-modal .gate-processing-command::before,
+  #page-processing #processing-add-local-bus,
+  #page-processing #processing-add-local-bus::before {
     transition: none;
   }
 
-  #dorm-modal .gate-processing-command:not(:disabled):active {
+  #dorm-modal .gate-processing-command:not(:disabled):active,
+  #page-processing #processing-add-local-bus:not(:disabled):active {
     transform: none;
   }
 }
 
 @media (forced-colors: active) {
-  #dorm-modal .gate-processing-command {
+  #dorm-modal .gate-processing-command,
+  #page-processing #processing-add-local-bus {
     background: ButtonFace;
     color: ButtonText;
     border-color: ButtonText;
   }
 
-  #dorm-modal .gate-processing-command::before {
+  #dorm-modal .gate-processing-command::before,
+  #page-processing #processing-add-local-bus::before {
     display: none;
   }
 
-  #dorm-modal .gate-processing-command:focus-visible {
+  #dorm-modal .gate-processing-command:focus-visible,
+  #page-processing #processing-add-local-bus:focus-visible {
     outline-color: Highlight;
   }
 }

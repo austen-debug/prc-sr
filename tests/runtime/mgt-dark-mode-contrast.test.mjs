@@ -62,6 +62,6 @@ test('female, Space Force, and Band identity color contracts remain present', ()
   assert.match(css, /--gate-flag-female-red:\s*#ff4d47\s*;/i);
   assert.match(css, /--gate-flag-band-green:\s*#59c877\s*;/i);
   assert.match(css, /--gate-flag-space-force-bluebird:\s*#5bc9f0\s*;/i);
-  assert.match(css, /\.proc-card\.border-space-force[\s\S]*content:\s*"SPACE FORCE"/);
-  assert.match(css, /\.proc-card\.border-band[\s\S]*content:\s*"BAND"/);
+  assert.match(css, /\.gate-processing-card__identity--space \{\s*color:\s*var\(--gate-flag-space-force-bluebird\)/);
+  assert.match(css, /\.gate-processing-card__identity--band \{\s*color:\s*var\(--gate-flag-band-green\)/);
 });

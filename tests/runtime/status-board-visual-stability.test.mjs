@@ -53,7 +53,7 @@ test('Status Board renders dorm states incrementally and exposes diagnostics', a
   assert.match(controller, /repairStatusBoardSurfaces/);
 });
 
-test('Status Board timer geometry is fixed-width and non-animated', async () => {
+test('Status Board timer geometry stays fixed-width with overtime-only pulse', async () => {
   const css = await source('public/css/military-glass-terminal.css');
   const controller = await source('public/js/gate-status-board-controller.js');
 
@@ -62,7 +62,8 @@ test('Status Board timer geometry is fixed-width and non-animated', async () => 
   assert.match(css, /--mg-font-mono:\s*"IBM Plex Mono",\s*"JetBrains Mono",\s*"SFMono-Regular",\s*Consolas/);
   assert.match(css, /\.font-tabular,[\s\S]*font-feature-settings:\s*"tnum" 1/);
   assert.match(css, /\.timer-display,[\s\S]*animation:\s*none/);
-  assert.match(controller, /timer\.classList\.remove\('timer-flash'\)/);
+  assert.match(controller, /const overtime = minutes >= 60/);
+  assert.match(controller, /timer\.classList\.toggle\('timer-flash', overtime\)/);
 });
 
 test('Status Board metrics use fluid bounded typography inside the canonical grid', async () => {
@@ -126,7 +127,7 @@ test('Active timer ownership disables the legacy flashing interval', async () =>
   assert.match(controller, /window\.updateTimers = canonicalTimerTick/);
   assert.match(controller, /window\.clearInterval\(legacyInterval\)/);
   assert.match(controller, /timer\.classList\.remove\('timer-flash'\)/);
-  assert.match(controller, /timer\.classList\.toggle\('timer-red', critical\)/);
+  assert.match(controller, /timer\.classList\.toggle\('timer-red', critical \|\| overtime\)/);
   assert.doesNotMatch(middleware, /gate-status-board-timer-visual-stability\.js/);
 });
 

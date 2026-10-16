@@ -1,4 +1,5 @@
 import { verifyRequestSession } from './session-contract.mjs';
+import { recordDiagnostic, safeRoute } from './diagnostic-store.mjs';
 
 const restricted = (message, code = 'lifecycle_required', status = 409) => new Response(JSON.stringify({
   isOk: false, code, error: message
@@ -118,5 +119,22 @@ export async function onRequest(context) {
 
   const blocked = await guardPersistence(context);
   if (blocked) return blocked;
-  return context.next();
+  // Record only response classification and route; never a payload, token,
+  // query string or raw exception. The reporter is best-effort.
+  try {
+    const response=await context.next();
+    if(url.pathname!=='/api/client-diagnostics' && response.status>=500) {
+      await recordDiagnostic(context.env,{source:'server',category:'api',severity:'error',
+        code:'API_HTTP_'+response.status,route:safeRoute(url.pathname),
+        detail:'API returned a server error status.',status:response.status});
+    }
+    return response;
+  } catch(error) {
+    if(url.pathname!=='/api/client-diagnostics') {
+      await recordDiagnostic(context.env,{source:'server',category:'api',severity:'error',
+        code:'API_UNHANDLED_EXCEPTION',route:safeRoute(url.pathname),
+        detail:'An unexpected API exception occurred.',status:500});
+    }
+    throw error;
+  }
 }

@@ -86,6 +86,9 @@ jobs:
       - name: Status Board alert band computed styles in Chromium
         run: node --test tests/runtime/status-board-alert-browser.test.mjs
 
+      - name: Status Board PDF reference layout, Chromium geometry and API ownership
+        run: node --test tests/runtime/status-board-reference-layout.test.mjs
+
       - name: Processing modal record persistence
         run: node --test tests/runtime/processing-modal-record-persistence.test.mjs
 

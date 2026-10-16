@@ -334,6 +334,7 @@ body > * {
    </div>
    <div class="flex-shrink-0 border-t px-4 py-3 flex gap-3 justify-between items-center" style="border-color:var(--border);">
     <div id="init-status-msg" class="text-sm hidden"></div><button id="init-wg-btn" onclick="initializeWeekGroup()" class="px-6 py-3 rounded-lg font-bold text-white text-base" style="background:#16a34a;">INITIALIZE WEEK GROUP</button>
+    <button id="closeout-btn" type="button" onclick="initiateCloseout()" class="px-6 py-3 rounded-lg font-bold text-white text-lg" style="background:#dc2626;">CLOSE OUT WEEK GROUP</button>
    </div>
    <div id="init-success-overlay" class="confirm-overlay hidden">
     <div class="surface border rounded-lg p-8 text-center max-w-sm" style="border-color:var(--border);">
@@ -346,9 +347,7 @@ body > * {
   </div><!-- PAGE: PROCESSING -->
   <div id="page-processing" class="page flex-col w-full overflow-y-auto">
   <div class="px-4 py-3 flex-shrink-0 flex items-center gap-4 flex-wrap">
-  <button onclick="openLocalBusModal()" class="px-6 py-3 rounded-lg font-bold text-white text-lg" style="background:#2563eb;">+ ADD LOCAL BUS</button>
-
-  <button id="closeout-btn" onclick="initiateCloseout()" class="px-6 py-3 rounded-lg font-bold text-white text-lg" style="background:#dc2626;">CLOSE OUT WEEK GROUP</button>
+  <button id="processing-add-local-bus" type="button" onclick="openLocalBusModal()" class="gate-processing-local-bus-action"><span class="gate-processing-local-bus-action__label">+ ADD LOCAL BUS</span></button>
 
   <div id="processing-edit-hint" class="text-xs text-muted font-bold hidden">Instructor access: right-click any dorm to edit its record.</div>
 </div>

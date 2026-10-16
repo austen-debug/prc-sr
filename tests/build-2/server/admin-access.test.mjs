@@ -200,3 +200,27 @@ test('Direct API cannot forge administrative audit events or overwrite snapshots
   assert.equal(change.status,405);
   assert.equal(JSON.parse(db.prepare('SELECT data FROM records WHERE id=?').get(id).data).total_arrived,undefined);
 });
+
+test('Admin interface route protects direct physical index document and all non-admin roles',async()=>{
+  const {onRequest:root}=await import('../../../functions/_middleware.js');
+  const env={AUTH_SECRET:'route-flag-secret',ADMIN_USERNAME:'administrator',ADMIN_PASSWORD:'admin-pass',
+    MTI_USERNAME:'instructor',MTI_PASSWORD:'instructor-pass',AIRMAN_USERNAME:'airman',AIRMAN_PASSWORD:'airman-pass',
+    SQUADRON_USERNAME:'squadron',SQUADRON_PASSWORD:'squadron-pass'};
+  const sign=async(username,password)=>{
+    const result=await login({env,request:new Request('https://gate.example/api/login',{method:'POST',
+      headers:{'Content-Type':'application/json'},body:JSON.stringify({username,password})})});
+    assert.equal(result.status,200);
+    return result.headers.get('set-cookie').split(';')[0];
+  };
+  const cookies={admin:await sign('administrator','admin-pass'),instructor:await sign('instructor','instructor-pass'),
+    airman:await sign('airman','airman-pass'),squadron:await sign('squadron','squadron-pass')};
+  const request=(path,cookie)=>root({request:new Request('https://gate.example'+path,
+    {headers:cookie?{Cookie:cookie}:{}}),env,next:async()=>new Response('<html>ADMIN</html>',{status:200,headers:{'Content-Type':'text/html'}})});
+  for(const path of ['/administration/','/administration/index.html']){
+    assert.equal((await request(path,cookies.admin)).status,200);
+    for(const role of ['instructor','airman','squadron'])
+      assert.notEqual((await request(path,cookies[role])).status,200,role+': '+path);
+    assert.equal((await request(path)).status,302);
+  }
+  assert.equal((await request('/administration/internal.html',cookies.admin)).status,404);
+});

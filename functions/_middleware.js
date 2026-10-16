@@ -378,7 +378,9 @@ export async function onRequest(context) {
   const session = await verifyRequestSession(context.request, context.env);
   if (!session) {
     if (pathname.startsWith('/api/')) return jsonResponse({ isOk: false, code: 'unauthorized', error: 'Unauthorized.' }, 401);
-    if (APP_ROUTES[pathname] || pathname === '/squadron/') return redirectToLogin(url, pathname);
+    if (APP_ROUTES[pathname] || pathname === '/squadron/' ||
+        pathname === '/administration' || pathname.startsWith('/administration/'))
+      return redirectToLogin(url, pathname);
     return redirectToLogin(url);
   }
 
@@ -392,9 +394,13 @@ export async function onRequest(context) {
   }
 
   if (pathname.startsWith('/api/')) return context.next();
-  if (pathname === '/administration/' || pathname === '/administration') {
+  // Protect every route spelling of the static Administration document, including
+  // direct /index.html access and unrecognized assets beneath the admin prefix.
+  if (pathname === '/administration' || pathname.startsWith('/administration/')) {
     if (session.role !== 'admin') return redirectTo(url, homeForRole(session.role));
     if (pathname === '/administration') return redirectTo(url, '/administration/');
+    if (pathname !== '/administration/' && pathname !== '/administration/index.html')
+      return jsonResponse({isOk:false,code:'not_found',error:'Not found.'},404);
     return context.next();
   }
   if (pathname === '/') return redirectTo(url, homeForRole(session.role));

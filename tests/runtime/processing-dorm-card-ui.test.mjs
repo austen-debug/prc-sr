@@ -99,9 +99,9 @@ test('all three revised asset references remain coordinated across middleware, b
   const squadron = await source('public/squadron/index.html');
   const budget = JSON.parse(await source('docs/build-2/ACTIVE_RUNTIME_BUDGET.json'));
   const assets = [
-    '/css/military-glass-terminal.css?v=processing-dorm-cards-20261016-v1',
-    '/js/gate-processing-controller.js?v=processing-dorm-cards-20261016-v1',
-    '/js/prc-dash-auditorium-location.js?v=processing-dorm-cards-20261016-v1'
+    '/css/military-glass-terminal.css?v=processing-dorm-cards-20261016-v2',
+    '/js/gate-processing-controller.js?v=processing-dorm-cards-20261016-v2',
+    '/js/prc-dash-auditorium-location.js?v=processing-dorm-cards-20261016-v2'
   ];
   for (const asset of assets) {
     assert.ok(mw.includes(asset), 'Middleware missing ' + asset);

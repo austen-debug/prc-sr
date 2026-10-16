@@ -32,7 +32,7 @@ test('real Chromium proves inset orbit, female outline invariance, layout stabil
     '  document.getElementById("col-open").innerHTML = window.GateComponents.dormCard(dorm("FEMALE", "female"));',
     '  document.getElementById("squadron-test").innerHTML = window.GateComponents.dormCard(dorm("SQUADRON", "female"));',
     '  document.getElementById("proc-dorm-grid").innerHTML =',
-    '    "<div class=\"proc-card border-female\" data-gate-time-alert=\"warning\"><div class=\"font-black\">PROCESSING</div></div>";',
+    '    `<div class="proc-card border-female" data-gate-time-alert="warning"><div class="font-black">PROCESSING</div></div>`;',
     '  const board = document.querySelector("#page-board #col-open .gate-dorm-card");',
     '  const timer = board.querySelector(".gate-dorm-timer");',
     '  const squadron = document.querySelector("#page-squadron .gate-dorm-card");',

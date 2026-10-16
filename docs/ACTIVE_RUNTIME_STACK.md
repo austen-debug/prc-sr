@@ -23,7 +23,7 @@ The machine-readable inventory and ceilings are governed by `docs/build-2/ACTIVE
 
 Middleware now injects one stylesheet and no stylesheet imports:
 
-1. `/css/military-glass-terminal.css?v=military-glass-terminal-20260929-tablet-menu`
+1. `/css/military-glass-terminal.css?v=processing-commands-20261016-v2`
 
 `public/css/military-glass-terminal.css` is the production visual source of truth for tokens, light/dark themes, shell geometry, page spacing, Status/Squadron boards, Processing, Airport, Input, Archives, login, modal geometry, responsive behavior, fullscreen behavior, skeleton geometry, z-index bands, and interaction motion.
 
@@ -43,9 +43,9 @@ Injected by middleware in current order on the Flight Alert feature branch:
 8. `/js/prc-dash-dorm-reopen.js?v=popup-plop-sounds-20260928`
 9. `/js/prc-dash-final-audit.js?v=record-display-integrity-20260714`
 10. `/js/gate-status-board-controller.js?v=dorm-timer-record-lifecycle-20260722`
-11. `/js/gate-processing-controller.js?v=record-display-integrity-20260714`
+11. `/js/gate-processing-controller.js?v=processing-commands-20261016-v2`
 12. `/js/prc-dash-dorm-flag-validation.js?v=processing-band-designator-20260915`
-13. `/js/prc-dash-auditorium-location.js?v=processing-modal-record-binding-20260721`
+13. `/js/prc-dash-auditorium-location.js?v=processing-commands-20261016-v2`
 14. `/js/gate-bus-workflow-controller.js?v=phase-3-bus-workflow-20260709`
 15. `/js/gate-airport-bus-delete-controller.js?v=airport-bus-delete-20260714`
 16. `/js/gate-input-page-controller.js?v=record-display-integrity-20260714`

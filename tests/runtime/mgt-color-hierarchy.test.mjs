@@ -76,7 +76,8 @@ test('Processing save commitments use amber while routine open and nominal statu
   assert.match(processing, /data-processing-action="open-dorm"[\s\S]*?style="background:var\(--blue\);">OPEN DORM/);
 
   assert.match(processing, />OPEN<\/span>/);
-  assert.match(processing, /style="background:var\(--green\);">OPEN<\/span>/);
+  assert.match(processing, /gate-processing-card__state--/);
+  assert.match(css, /#page-processing \.gate-processing-card__state--open \{[\s\S]*?background:\s*var\(--mg-ok\)/);
 });
 
 test('dorm progress uses nominal green, while female and service identity contracts remain intact', () => {
@@ -87,8 +88,10 @@ test('dorm progress uses nominal green, while female and service identity contra
   assert.match(full, /background:\s*linear-gradient\(90deg,\s*var\(--mg-ok-deep\),\s*var\(--mg-ok\)\)/);
 
   assert.match(css, /#page-processing #proc-dorm-grid \.proc-card\.border-female[\s\S]*border-color:\s*var\(--gate-flag-female-red\)/);
-  assert.match(css, /\.proc-card\.border-space-force[\s\S]*content:\s*"SPACE FORCE"/);
-  assert.match(css, /\.proc-card\.border-band[\s\S]*content:\s*"BAND"/);
+  assert.match(processing, /gate-processing-card__identity--space/);
+  assert.match(processing, /gate-processing-card__identity--band/);
+  assert.match(css, /\.gate-processing-card__identity--space \{\s*color:\s*var\(--gate-flag-space-force-bluebird\)/);
+  assert.match(css, /\.gate-processing-card__identity--band \{\s*color:\s*var\(--gate-flag-band-green\)/);
   assert.match(css, /\.gate-dorm-flag-chip\.flag-band\s*\{\s*color:\s*var\(--gate-flag-band-green\)/);
   assert.match(css, /\.gate-dorm-flag-chip\.flag-space-force\s*\{\s*color:\s*var\(--gate-flag-space-force-bluebird\)/);
 });

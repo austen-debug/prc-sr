@@ -23,7 +23,7 @@ The machine-readable inventory and ceilings are governed by `docs/build-2/ACTIVE
 
 Middleware now injects one stylesheet and no stylesheet imports:
 
-1. `/css/military-glass-terminal.css?v=processing-bus-command-sweep-20261016-v1`
+1. `/css/military-glass-terminal.css?v=status-board-reference-20261016-v1`
 
 `public/css/military-glass-terminal.css` is the production visual source of truth for tokens, light/dark themes, shell geometry, page spacing, Status/Squadron boards, Processing, Airport, Input, Archives, login, modal geometry, responsive behavior, fullscreen behavior, skeleton geometry, z-index bands, and interaction motion.
 
@@ -34,7 +34,7 @@ The former multi-file CSS stack and its corrective/import cascade are retired fr
 Injected by middleware in current order on the Flight Alert feature branch:
 
 1. `/js/gate-record-display-contract.js?v=record-display-integrity-20260714b`
-2. `/js/gate-component-contracts.js`
+2. `/js/gate-component-contracts.js?v=status-board-reference-20261016-v1`
 3. `/js/gate-ui-hooks.js?v=port-clear-banner-20260928`
 4. `/js/gate-branding-controller.js`
 5. `/js/prc-dash-runtime-fixes.js?v=sound-toggle-assets-20260928`
@@ -42,10 +42,10 @@ Injected by middleware in current order on the Flight Alert feature branch:
 7. `/js/prc-dash-space-force.js`
 8. `/js/prc-dash-dorm-reopen.js?v=popup-plop-sounds-20260928`
 9. `/js/prc-dash-final-audit.js?v=squadron-help-centered-20261016-v2`
-10. `/js/gate-status-board-controller.js?v=status-board-alert-banding-20261016-v1`
+10. `/js/gate-status-board-controller.js?v=status-board-reference-20261016-v1`
 11. `/js/gate-processing-controller.js?v=processing-dorm-cards-20261016-v2`
-12. `/js/prc-dash-dorm-flag-validation.js?v=processing-band-designator-20260915`
-13. `/js/prc-dash-auditorium-location.js?v=processing-dorm-cards-20261016-v2`
+12. `/js/prc-dash-dorm-flag-validation.js?v=status-board-reference-20261016-v1`
+13. `/js/prc-dash-auditorium-location.js?v=status-board-reference-20261016-v1`
 14. `/js/gate-bus-workflow-controller.js?v=phase-3-bus-workflow-20260709`
 15. `/js/gate-airport-bus-delete-controller.js?v=airport-bus-delete-20260714`
 16. `/js/gate-input-page-controller.js?v=record-display-integrity-20260714`
@@ -153,3 +153,7 @@ NOT AUTHORIZED — Build 1 Status Board retirement
 ## Historical continuity
 
 Earlier ownership consolidation, removed patch files, and page-specific migrations remain documented in the phase reports under `docs/`. Git history retains the prior expanded CSS stack. This document governs the current served runtime when those earlier reports conflict with present middleware.
+
+### Status Board reference layout and API ownership (October 2026)
+
+Status Board dorm cards now opt in to the reference layout through `GateComponents.dormCard(dorm, {showAuditorium:true,statusBoardLayout:true})`; Squadron retains the shared legacy card structure. The canonical Status Board controller still reads `allData` by active Week Group and sorts through `GateRecordDisplay`; it never requests or writes data. Live records come from the existing `GET /api/records?scope=live` three-second polling loop through `dataSdk`, with refresh notifications driving `afterRenderAll` and `afterDataChanged` hooks. No new endpoints, record fields, network requests, or writes are introduced. Flag and auditorium adapters only validate classes or populate the dedicated footer location slot. Canonical timers remain DOM-only on one-second aligned ticks; overtime audio and the read-only Phase 3A shadow continue unchanged. The new grid is isolated to `#page-board .gate-board-card--reference` and maintains the female exterior border, timer inset alert ring, and progress bar.

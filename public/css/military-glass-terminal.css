@@ -1499,12 +1499,6 @@ tbody tr:hover {
    -------------------------------------------------------------------------- */
 /* Add Local Bus shares the Processing popup's blue REOPEN command surface
    and its hover/focus-only gradient sweep. Toolbar dimensions stay intact. */
-#page-processing #processing-add-local-bus {
-  min-height: 48px;
-  padding: .65rem 1.2rem;
-  font-size: .92rem;
-}
-
 #page-processing #proc-dorm-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -3182,6 +3176,13 @@ body.theme-light #dorm-modal .gate-processing-command--commit {
   #page-processing #processing-add-local-bus:focus-visible {
     outline-color: Highlight;
   }
+}
+
+/* Keep existing toolbar button proportions after the shared popup rules. */
+#page-processing #processing-add-local-bus {
+  min-height: 48px;
+  padding: .65rem 1.2rem;
+  font-size: .92rem;
 }
 
 #dorm-edit-modal .gate-processing-edit-workspace,

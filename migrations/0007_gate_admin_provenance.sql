@@ -4,6 +4,16 @@
 -- No existing operational records, archives, actor values or timestamps are updated.
 -- Do not apply to live D1 merely by merging the PR.
 
+-- Retain AUTOINCREMENT high-water marks, even if an earlier manual
+-- maintenance action caused max(id) to be lower than sqlite_sequence.seq.
+CREATE TABLE gate_admin_sequence_preservation (
+  name TEXT PRIMARY KEY,
+  previous_seq INTEGER NOT NULL
+);
+INSERT INTO gate_admin_sequence_preservation(name,previous_seq)
+SELECT name,seq FROM sqlite_sequence
+WHERE name IN ('gate_squadron_notices','gate_squadron_information_revisions');
+
 DROP TRIGGER IF EXISTS gate_record_audit_insert;
 DROP TRIGGER IF EXISTS gate_record_audit_update;
 DROP TRIGGER IF EXISTS gate_record_audit_delete;
@@ -75,6 +85,14 @@ DROP TABLE gate_squadron_information_revisions;
 ALTER TABLE gate_squadron_information_revisions_admin_v1 RENAME TO gate_squadron_information_revisions;
 CREATE TRIGGER trg_gate_squadron_information_no_update BEFORE UPDATE ON gate_squadron_information_revisions BEGIN SELECT RAISE(ABORT,'Squadron information is append-only'); END;
 CREATE TRIGGER trg_gate_squadron_information_no_delete BEFORE DELETE ON gate_squadron_information_revisions BEGIN SELECT RAISE(ABORT,'Squadron information is append-only'); END;
+
+UPDATE sqlite_sequence SET seq=MAX(seq,COALESCE(
+  (SELECT previous_seq FROM gate_admin_sequence_preservation WHERE name='gate_squadron_notices'),0))
+WHERE name='gate_squadron_notices';
+UPDATE sqlite_sequence SET seq=MAX(seq,COALESCE(
+  (SELECT previous_seq FROM gate_admin_sequence_preservation WHERE name='gate_squadron_information_revisions'),0))
+WHERE name='gate_squadron_information_revisions';
+DROP TABLE gate_admin_sequence_preservation;
 
 -- Additive journal: withdraw/restore does not mutate the historical archive row.
 CREATE TABLE IF NOT EXISTS gate_admin_archive_dispositions (

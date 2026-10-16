@@ -28,3 +28,9 @@ If Admin mutations fail, disable GATE_ADMIN_WRITES_ENABLED first and return to t
 
 ## Deletion provenance
 The original record deletion trigger remains an unverified `system` observation. Admin-initiated operational record deletes additionally commit a verified `record_delete_authorized` audit event with role `admin` in the same D1 batch. This does not modify the existing Instructor/Airman delete command or mislabel a database trigger as the authenticated actor.
+
+## Final Admin read boundary and diagnostics
+- A withdrawn archive is filtered from Instructor views in both `/api/archives` and legacy `/api/records` all-records listings. Existing `scope=live` receives no archive-disposition filtering. Instructor access to details and amendments of withdrawn archives is denied; Admin may inspect for recovery.
+- Admin-only `/api/admin?mode=integrity` checks source/mirror parity and the six expected mirror/audit triggers without applying repairs.
+- Admin-only `/api/admin?mode=security` reports role-binding presence and control flags but never transmits secret values.
+- The schema migration retains the AUTOINCREMENT `sqlite_sequence` high-water marks for both Squadron revision/notice tables.

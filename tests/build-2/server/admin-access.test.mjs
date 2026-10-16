@@ -6,7 +6,10 @@ import { onRequestPost as login } from '../../../functions/api/login.js';
 import { verifyRequestSession } from '../../../functions/api/session-contract.mjs';
 import { onRequestPost as dispose, onRequestGet as dispositionHistory } from '../../../functions/api/admin-archives.js';
 import { onRequestPost as retiredArchiveDelete } from '../../../functions/api/archive-delete.js';
-import { onRequestDelete as deleteRecord } from '../../../functions/api/records.js';
+import { onRequestDelete as deleteRecord, onRequestGet as listRecords } from '../../../functions/api/records.js';
+import { onRequestGet as listArchives } from '../../../functions/api/archives.js';
+import { onRequestGet as adminInfo } from '../../../functions/api/admin.js';
+import { onRequest as apiMiddleware } from '../../../functions/api/_middleware.js';
 import { normalizeActorRole } from '../../../public/app/data/canonical-entity.mjs';
 import { stampUpdatedRecord } from '../../../functions/api/records-contract.mjs';
 
@@ -72,7 +75,11 @@ test('D1 Admin migration preserves historical rows, expands valid actor constrai
   db.prepare("INSERT INTO gate_squadron_information_revisions(instructions_json,published_at,published_by_role) VALUES('[]','2026-10-15T00:00:00Z','instructor')").run();
   const auditBefore=db.prepare("SELECT * FROM gate_audit_events WHERE event_id='original-audit'").get();
   const amendBefore=db.prepare("SELECT * FROM gate_archive_amendments WHERE amendment_id='amend1'").get();
+  db.prepare("UPDATE sqlite_sequence SET seq=900 WHERE name='gate_squadron_notices'").run();
+  db.prepare("UPDATE sqlite_sequence SET seq=500 WHERE name='gate_squadron_information_revisions'").run();
   db.exec(sql('0007_gate_admin_provenance.sql'));
+  assert.ok(db.prepare("SELECT seq FROM sqlite_sequence WHERE name='gate_squadron_notices'").get().seq>=900);
+  assert.ok(db.prepare("SELECT seq FROM sqlite_sequence WHERE name='gate_squadron_information_revisions'").get().seq>=500);
   assert.deepEqual(db.prepare("SELECT * FROM gate_audit_events WHERE event_id='original-audit'").get(),auditBefore);
   assert.deepEqual(db.prepare("SELECT * FROM gate_archive_amendments WHERE amendment_id='amend1'").get(),amendBefore);
   assert.equal(db.prepare("SELECT COUNT(*) AS n FROM gate_squadron_notices").get().n,1);
@@ -120,4 +127,57 @@ test('Admin operational deletions retain database SYSTEM observation plus verifi
   const events=db.prepare("SELECT event_type,actor_role FROM gate_audit_events WHERE entity_id='config-delete-1' ORDER BY rowid").all();
   assert.equal(events.filter(row=>row.event_type==='record_deleted'&&row.actor_role==='system').length,1);
   assert.equal(events.filter(row=>row.event_type==='record_delete_authorized'&&row.actor_role==='admin').length,1);
+});
+
+test('Archive withdrawal is enforced consistently for Instructor legacy reads, canonical reads, and amendments',async()=>{
+  const db=fixture(),id=seedArchive(db);db.exec(sql('0007_gate_admin_provenance.sql'));
+  const env={DB:cloudflare(db),GATE_ADMIN_WRITES_ENABLED:'true'};
+  const mutation=await dispose({env,data:{session:{role:'admin',iat:Date.now()}},
+    request:new Request('https://gate.example/api/admin-archives',{method:'POST',
+      headers:{Origin:'https://gate.example','Content-Type':'application/json'},
+      body:JSON.stringify({archiveId:id,confirmArchiveId:id,action:'withdraw',expectedRevision:0,
+        operationId:'admin_hide_archive_001',reason:'Duplicate historical archive requires withdrawal'})})});
+  assert.equal(mutation.status,200);
+  const instructor={session:{role:'instructor'}},admin={session:{role:'admin'}};
+  const list=(role)=>listRecords({env,data:role,request:new Request('https://gate.example/api/records')});
+  const [instructorRecords,adminRecords]=await Promise.all([list(instructor),list(admin)]);
+  assert.equal((await instructorRecords.json()).records.some(record=>record.__backendId===id),false);
+  assert.equal((await adminRecords.json()).records.some(record=>record.__backendId===id),true);
+  const visible=await listRecords({env,data:instructor,request:new Request('https://gate.example/api/records?scope=live')});
+  assert.equal(visible.status,200);
+  const summary=await listArchives({env,data:instructor,request:new Request('https://gate.example/api/archives')});
+  assert.equal((await summary.json()).archives.some(record=>record.id===id),false);
+  const detail=await listArchives({env,data:instructor,request:new Request('https://gate.example/api/archives?id='+id)});
+  assert.equal(detail.status,404);
+  const adminDetail=await listArchives({env,data:admin,request:new Request('https://gate.example/api/archives?id='+id)});
+  assert.equal(adminDetail.status,200);
+});
+test('Admin integrity and access configuration are read-only and disclose no secret values',async()=>{
+  const db=fixture();db.exec(sql('0007_gate_admin_provenance.sql'));
+  const env={DB:cloudflare(db),ADMIN_USERNAME:'admin-name',ADMIN_PASSWORD:'TOP_SECRET_FIXTURE',
+    MTI_USERNAME:'mti-name',MTI_PASSWORD:'mti-test-pass',GATE_ADMIN_WRITES_ENABLED:'false'};
+  const data={session:{role:'admin',exp:Date.now()+120000}};
+  const security=await adminInfo({env,data,request:new Request('https://gate.example/api/admin?mode=security')});
+  assert.equal(security.status,200);
+  const serialized=await security.text();
+  assert.equal(serialized.includes('TOP_SECRET_FIXTURE'),false);
+  const parsed=JSON.parse(serialized);
+  assert.equal(parsed.roles.find(item=>item.role==='admin').configured,true);
+  assert.equal(parsed.adminWritesEnabled,false);
+  const integrity=await adminInfo({env,data,request:new Request('https://gate.example/api/admin?mode=integrity')});
+  const result=await integrity.json();
+  assert.equal(result.isOk,true);
+  assert.equal(result.integrityReady,true);
+  assert.equal(result.requiredTriggerCount,6);
+  const denied=await adminInfo({env,data:{session:{role:'instructor'}},request:new Request('https://gate.example/api/admin?mode=security')});
+  assert.equal(denied.status,403);
+});
+test('Admin mutations fail closed while existing Instructor writes retain middleware pass-through',async()=>{
+  const db=fixture(),env={DB:cloudflare(db),AUTH_SECRET:'fixture-only'};
+  async function guarded(role){
+    return apiMiddleware({request:new Request('https://gate.example/api/records',{method:'POST',headers:{'Content-Type':'application/json'},body:'{"type":"bus"}'}),
+      env,data:{session:{role}},next:()=>new Response('downstream route', {status:209})});
+  }
+  assert.equal((await guarded('admin')).status,503);
+  assert.equal((await guarded('instructor')).status,209);
 });

@@ -1,6 +1,6 @@
 export const SHELL_CONTRACT_VERSION = '2C.1.0';
 
-export const SHELL_ROLES = Object.freeze(['instructor', 'airman', 'squadron']);
+export const SHELL_ROLES = Object.freeze(['admin', 'instructor', 'airman', 'squadron']);
 
 const routes = [
   {
@@ -10,8 +10,8 @@ const routes = [
     pageId: 'page-board',
     group: 'operations',
     order: 10,
-    allowedRoles: ['instructor', 'airman'],
-    defaultForRoles: ['instructor', 'airman'],
+    allowedRoles: ['admin', 'instructor', 'airman'],
+    defaultForRoles: ['admin', 'instructor', 'airman'],
     description: 'Live arrivals, active buses, dorm status, and processing progress.'
   },
   {
@@ -21,7 +21,7 @@ const routes = [
     pageId: 'page-airport',
     group: 'operations',
     order: 20,
-    allowedRoles: ['instructor'],
+    allowedRoles: ['admin', 'instructor'],
     defaultForRoles: [],
     description: 'Airport dispatch, arrival confirmation, and bus history.'
   },
@@ -32,7 +32,7 @@ const routes = [
     pageId: 'page-input',
     group: 'configuration',
     order: 30,
-    allowedRoles: ['instructor'],
+    allowedRoles: ['admin', 'instructor'],
     defaultForRoles: [],
     description: 'Week Group initialization, dorm configuration, and receiving windows.'
   },
@@ -43,7 +43,7 @@ const routes = [
     pageId: 'page-processing',
     group: 'operations',
     order: 40,
-    allowedRoles: ['instructor', 'airman'],
+    allowedRoles: ['admin', 'instructor', 'airman'],
     defaultForRoles: [],
     description: 'Dorm assignment and processing workflow.'
   },
@@ -54,7 +54,7 @@ const routes = [
     pageId: 'page-archives',
     group: 'records',
     order: 50,
-    allowedRoles: ['instructor'],
+    allowedRoles: ['admin', 'instructor'],
     defaultForRoles: [],
     description: 'Historical receiving snapshots, reports, and closeout records.'
   },
@@ -65,7 +65,7 @@ const routes = [
     pageId: 'page-squadron',
     group: 'leadership',
     order: 60,
-    allowedRoles: ['instructor', 'squadron'],
+    allowedRoles: ['admin', 'instructor', 'squadron'],
     defaultForRoles: ['squadron'],
     description: 'Read-only squadron and leadership operational summary.'
   }

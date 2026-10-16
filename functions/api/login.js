@@ -2,6 +2,7 @@ import { roleSigningSecret } from './session-contract.mjs';
 
 const COOKIE_NAME = 'prc_sr_session';
 const SESSION_MAX_AGE_SECONDS = 12 * 60 * 60;
+const ADMIN_MAX_AGE_SECONDS = 30 * 60;
 
 function jsonResponse(data, status = 200, extraHeaders = {}) {
   return new Response(JSON.stringify(data), {
@@ -57,6 +58,7 @@ function configuredCredentialMatch(username, password, configuredUsername, confi
 
 function matchingRoles(username, password, env) {
   return [
+    ['admin', env.ADMIN_USERNAME, env.ADMIN_PASSWORD],
     ['instructor', env.MTI_USERNAME, env.MTI_PASSWORD],
     ['airman', env.AIRMAN_USERNAME, env.AIRMAN_PASSWORD],
     ['squadron', env.SQUADRON_USERNAME, env.SQUADRON_PASSWORD]
@@ -96,15 +98,16 @@ export async function onRequestPost({ request, env }) {
     const signingSecret = roleSigningSecret(role, env);
     if (!signingSecret) return jsonResponse({ isOk: false, code: 'configuration_required', error: 'Authentication is not configured.' }, 503);
     const now = Date.now();
+    const maxAge = role === 'admin' ? ADMIN_MAX_AGE_SECONDS : SESSION_MAX_AGE_SECONDS;
     const token = await createSession({
       username,
       role,
       iat: now,
-      exp: now + (SESSION_MAX_AGE_SECONDS * 1000)
+      exp: now + (maxAge * 1000)
     }, signingSecret);
 
     return jsonResponse({ isOk: true, role }, 200, {
-      'Set-Cookie': `${COOKIE_NAME}=${token}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=${SESSION_MAX_AGE_SECONDS}`
+      'Set-Cookie': `${COOKIE_NAME}=${token}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=${maxAge}`
     });
   } catch {
     return jsonResponse({ isOk: false, code: 'login_failed', error: 'Login failed.' }, 500);

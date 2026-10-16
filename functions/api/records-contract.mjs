@@ -1,6 +1,6 @@
-const ROLE_SET = new Set(['instructor', 'airman', 'squadron', 'system']);
-const RECORD_READ_ROLE_SET = new Set(['instructor', 'airman', 'system']);
-const WRITE_ROLE_SET = new Set(['instructor', 'airman', 'system']);
+const ROLE_SET = new Set(['admin', 'instructor', 'airman', 'squadron', 'system']);
+const RECORD_READ_ROLE_SET = new Set(['admin', 'instructor', 'airman', 'system']);
+const WRITE_ROLE_SET = new Set(['admin', 'instructor', 'airman', 'system']);
 const PROHIBITED_METADATA_KEY = /^(?:trainee_name|first_name|last_name|ssn|social_security|dod_id|edipi|orders?)$/i;
 
 export const RECORDS_API_CAPABILITIES = Object.freeze({
@@ -60,7 +60,7 @@ export function stampUpdatedRecord(existing = {}, incoming = {}, { role, now } =
     record_version: recordVersionOf(existing) + 1,
     created_at: existing.created_at || incoming.created_at || now,
     updated_at: now,
-    created_by_role: existing.created_by_role || actorRole,
+    created_by_role: existing.created_by_role || 'unknown',
     updated_by_role: actorRole
   };
 }

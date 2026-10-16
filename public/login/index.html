@@ -63,12 +63,13 @@
       const msg = document.getElementById('login-message');
       const idleLabel = submit.textContent.trim();
       const RETURN_ROUTES = Object.freeze({
-        '/board/': Object.freeze(['instructor', 'airman']),
-        '/airport/': Object.freeze(['instructor']),
-        '/input/': Object.freeze(['instructor']),
-        '/processing/': Object.freeze(['instructor', 'airman']),
-        '/archives/': Object.freeze(['instructor']),
-        '/squadron-board/': Object.freeze(['instructor']),
+        '/board/': Object.freeze(['admin', 'instructor', 'airman']),
+        '/airport/': Object.freeze(['admin', 'instructor']),
+        '/input/': Object.freeze(['admin', 'instructor']),
+        '/processing/': Object.freeze(['admin', 'instructor', 'airman']),
+        '/archives/': Object.freeze(['admin', 'instructor']),
+        '/squadron-board/': Object.freeze(['admin', 'instructor']),
+        '/administration/': Object.freeze(['admin']),
         '/squadron/': Object.freeze(['squadron'])
       });
 

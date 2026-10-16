@@ -126,7 +126,7 @@ test('Active timer ownership disables the legacy flashing interval', async () =>
 
   assert.match(controller, /window\.updateTimers = canonicalTimerTick/);
   assert.match(controller, /window\.clearInterval\(legacyInterval\)/);
-  assert.match(controller, /timer\.classList\.remove\('timer-flash'\)/);
+  assert.match(controller, /timer\.classList\.toggle\('timer-flash', overtime\)/);
   assert.match(controller, /timer\.classList\.toggle\('timer-red', critical \|\| overtime\)/);
   assert.doesNotMatch(middleware, /gate-status-board-timer-visual-stability\.js/);
 });

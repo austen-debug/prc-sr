@@ -25,7 +25,7 @@ function pageMarkup(id, next) {
   return html.slice(from, to);
 }
 
-test('raw served HTML never contains Week Group closeout inside Processing even before any scripts', () => {
+test('raw served HTML never contains Week Group closeout inside Processing even before any scripts', async () => {
   const input = pageMarkup('input', '<!-- PAGE: PROCESSING -->');
   const processing = pageMarkup('processing', '<!-- PAGE: ARCHIVES -->');
   assert.match(input, /id="closeout-btn"[^>]*onclick="initiateCloseout\(\)"/);

@@ -66,6 +66,17 @@ function harness(record, accounting, write, role = 'instructor') {
     closeDormEditModalCanonical: () => { closed++; },
     console: { warn() {} }
   };
+  // Load the actual canonical error-classification and visible-feedback helpers
+  // into the isolated command harness; failures must remain visible to users.
+  mock.dormReopenFailureMessage = new Function(
+    part(controller, '  function dormReopenFailureMessage(', '  function showDormReopenFailure(')
+    + '\nreturn dormReopenFailureMessage;'
+  )();
+  mock.showDormReopenFailure = new Function(
+    'setEditMessage', 'activeModalDormId', 'setModalFeedback', 'document',
+    part(controller, '  function showDormReopenFailure(', '  async function reopenDormCanonical(')
+    + '\nreturn showDormReopenFailure;'
+  )(mock.setEditMessage, mock.activeModalDormId, mock.setModalFeedback, document);
   function compile(first, last, names, fn) {
     return new Function(...names, 'let loadSaveInFlight = false; let reopenInFlight = false;\n' +
       part(controller, first, last) + '\nreturn ' + fn + ';')(...names.map(n => mock[n]));
@@ -74,7 +85,7 @@ function harness(record, accounting, write, role = 'instructor') {
     document, load, save, reopen, get closed() { return closed; },
     full: compile('  function setLoadFullCanonical(', '  async function saveLoadCanonical(', ['dormById', 'activeModalDormId', 'document', 'n', 'setModalFeedback'], 'setLoadFullCanonical'),
     persistLoad: compile('  async function saveLoadCanonical(', '  async function saveAssignedAirmanCanonical(', ['activeModalDormId', 'dormById', 'document', 'n', 'assignmentSummary', 'updateDorm', 'setModalFeedback', 'setModalCommandBusy', 'console'], 'saveLoadCanonical'),
-    reopenDorm: compile('  async function reopenDormCanonical(', '  function reopenDormFromEditModalCanonical(', ['isInstructor', 'dormById', 'activeEditDormId', 'activeModalDormId', 'setEditMessage', 'setModalFeedback', 'parseTimerToSeconds', 'document', 'updateDorm', 'setModalCommandBusy', 'closeDormModalCanonical', 'closeDormEditModalCanonical', 'console'], 'reopenDormCanonical')
+    reopenDorm: compile('  async function reopenDormCanonical(', '  function reopenDormFromEditModalCanonical(', ['isInstructor', 'dormById', 'activeEditDormId', 'activeModalDormId', 'setEditMessage', 'setModalFeedback', 'parseTimerToSeconds', 'document', 'updateDorm', 'setModalCommandBusy', 'closeDormModalCanonical', 'closeDormEditModalCanonical', 'console', 'dormReopenFailureMessage', 'showDormReopenFailure'], 'reopenDormCanonical')
   };
 }
 

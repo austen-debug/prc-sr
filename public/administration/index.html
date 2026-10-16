@@ -174,7 +174,7 @@ async function loadSecurity(){
   const table=byId('security-roles');try{
     const data=await api('/api/admin?mode=security');table.replaceChildren();
     for(const role of data.roles)row(table,[role.role,role.permissions,role.configured?'Configured':'Not configured']);
-    byId('security-status').textContent='Administrative write switch: '+(data.adminWritesEnabled?'Enabled':'Disabled')+'. Persistence flag: '+(data.persistenceEnabled?'Enabled':'Disabled')+'. Session expiration: '+(data.sessionExpiresAt?asDate(data.sessionExpiresAt):'Unavailable')+'.';
+    byId('security-status').textContent='Privileged archive-administration switch: '+(data.adminWritesEnabled?'Enabled':'Disabled')+'. Persistence flag: '+(data.persistenceEnabled?'Enabled':'Disabled')+'. Session expiration: '+(data.sessionExpiresAt?asDate(data.sessionExpiresAt):'Unavailable')+'.';
   }catch(error){empty(table,3,'Security configuration unavailable: '+error.message);}
 }
 async function loadAudit(){const t=byId('audit-list');try{const x=await api('/api/admin?mode=audit');t.replaceChildren();if(!x.events?.length)empty(t,5,'No audit events.');for(const e of x.events||[])row(t,[asDate(e.occurred_at),e.actor_role,e.event_type,e.entity_type+': '+e.entity_id,e.prior_version+' → '+e.resulting_version]);}catch(e){empty(t,5,e.message);}}

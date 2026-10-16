@@ -21,7 +21,8 @@ export async function onRequestGet({env,data,request}){
         {role:'airman',permissions:'Existing authorized board and processing',configured:configured('AIRMAN_USERNAME')&&configured('AIRMAN_PASSWORD')},
         {role:'squadron',permissions:'Existing restricted Squadron Board',configured:configured('SQUADRON_USERNAME')&&configured('SQUADRON_PASSWORD')}
       ],adminWritesEnabled:env.GATE_ADMIN_WRITES_ENABLED==='true',persistenceEnabled:env.GATE_PERSISTENCE_ENABLED==='true',
-      sessionExpiresAt:Number(data?.session?.exp||0)});
+      sessionExpiresAt:Number(data?.session?.exp||0),
+      operationalRule:'Admin inherits Instructor operations after authenticated actor audit provenance is installed; privileged archive actions additionally require the Admin write switch.'});
     }
     if(mode==='integrity'){
       const counts=await env.DB.prepare(`WITH mirrored AS (

@@ -449,9 +449,12 @@ test('Squadron SITREP ships current canonical assets and preserves lightweight c
   assert.match(squadronCss, /#page-squadron \.gate-squadron-tempo-options\s*\{[^}]*grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
   assert.match(squadronCss, /#page-squadron \.gate-squadron-columns\s*\{[^}]*grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/);
   assert.match(squadronCss, /#page-squadron \.gate-squadron-dorm\s*\{[^}]*background:var\(--mg-surface-strong\)/);
-  assert.match(squadronCss, /#page-squadron \.gate-info\s*\{[^}]*border:0;[^}]*font-size:17px/);
+  assert.match(squadronCss, /#page-squadron \.gate-info\s*\{[^}]*width:22px;[^}]*height:22px;[^}]*border:1px solid var\(--mg-accent-deep\)/);
+  assert.match(squadronCss, /@keyframes gate-squadron-info-jello/);
+  assert.match(squadronCss, /#page-squadron \.gate-squadron-tooltip\[data-open="true"\]/);
 
-  assert.ok(controller.includes('>ⓘ</button>'), 'tooltips use the requested information glyph');
+  assert.ok(controller.includes('class="gate-info__icon"'), 'tooltip buttons use an accessible compact SVG glyph');
+  assert.ok(controller.includes('aria-label="About ${esc(label)}"'), 'tooltip buttons retain contextual accessible names');
   assert.ok(controller.includes('id="squadron-metric-local" class="gate-squadron-value">--:--:--</div>'));
   assert.ok(!controller.includes('id="squadron-metric-local" class="gate-squadron-value is-time"'));
   assert.ok(squadronCss.includes('display:flex; flex-direction:column; align-items:center;'), 'metric cards share one vertical layout');

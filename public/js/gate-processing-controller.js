@@ -157,10 +157,10 @@
         alert === 'critical' || alert === 'overtime' ? 'timer-red' : '',
         alert === 'overtime' ? 'timer-flash' : ''
       ].filter(Boolean).join(' ');
-      return \`<div class="\${classes}" data-opened="\${esc(dorm.opened_at)}" data-dorm-id="\${esc(dorm.__backendId)}" aria-live="off">\${esc(timer?.text || '00:00')}</div>\`;
+      return `<div class="${classes}" data-opened="${esc(dorm.opened_at)}" data-dorm-id="${esc(dorm.__backendId)}" aria-live="off">${esc(timer?.text || '00:00')}</div>`;
     }
     if (state === 'closed' && dorm.closed_timer) {
-      return \`<div class="gate-processing-card__timer gate-processing-card__timer--final text-2xl font-mono font-black font-tabular text-muted">\${esc(dorm.closed_timer)}</div>\`;
+      return `<div class="gate-processing-card__timer gate-processing-card__timer--final text-2xl font-mono font-black font-tabular text-muted">${esc(dorm.closed_timer)}</div>`;
     }
     return '<div class="gate-processing-card__timer gate-processing-card__timer--empty" aria-hidden="true"></div>';
   }
@@ -184,11 +184,11 @@
     const closedClass = state === 'closed' ? 'dorm-closed' : '';
     const assignment = String(dorm.assigned_airman || '').trim();
     const assignedAirmanHtml = assignment
-      ? \`<div class="gate-processing-card__airman" title="\${esc(assignment)}">\${esc(assignment)}</div>\`
+      ? `<div class="gate-processing-card__airman" title="${esc(assignment)}">${esc(assignment)}</div>`
       : '';
     const phase = String(dorm.phase || (state === 'closed' ? 'CLOSED' : '')).trim();
     const phaseHtml = phase
-      ? \`<div class="gate-processing-card__phase" title="Processing phase: \${esc(phase)}">PHASE · \${esc(phase)}</div>\`
+      ? `<div class="gate-processing-card__phase" title="Processing phase: ${esc(phase)}">PHASE · ${esc(phase)}</div>`
       : '';
     const identityHtml = spaceForce
       ? '<span class="gate-processing-card__identity gate-processing-card__identity--space" aria-label="Space Force dorm">SPACE</span>'
@@ -196,27 +196,27 @@
         ? '<span class="gate-processing-card__identity gate-processing-card__identity--band" aria-label="Band dorm">BAND</span>'
         : '');
     const info = [esc(dorm.sdq), esc(dorm.section), esc(dorm.inter_sec)].filter(Boolean).join(' · ');
-    return \`<div class="proc-card gate-processing-card \${borderClasses} \${closedClass}" data-component="processing-dorm-card" data-owner="gate-processing-controller" data-dorm-id="\${esc(dorm.__backendId)}" data-state="\${esc(state)}" data-gate-time-alert="\${alertState}" tabindex="0" role="button" aria-label="Open Processing controls for \${esc(dorm.dorm_name || 'dorm')}">
+    return `<div class="proc-card gate-processing-card ${borderClasses} ${closedClass}" data-component="processing-dorm-card" data-owner="gate-processing-controller" data-dorm-id="${esc(dorm.__backendId)}" data-state="${esc(state)}" data-gate-time-alert="${alertState}" tabindex="0" role="button" aria-label="Open Processing controls for ${esc(dorm.dorm_name || 'dorm')}">
       <div class="gate-processing-card__header">
         <div class="gate-processing-card__identification">
-          <div class="gate-processing-card__name">\${esc(dorm.dorm_name || '')}</div>
-          <div class="gate-processing-card__meta">\${info}</div>
+          <div class="gate-processing-card__name">${esc(dorm.dorm_name || '')}</div>
+          <div class="gate-processing-card__meta">${info}</div>
         </div>
         <div class="gate-processing-card__status-group">
-          \${stateLabelHtml(dorm)}
-          \${assignedAirmanHtml}
+          ${stateLabelHtml(dorm)}
+          ${assignedAirmanHtml}
         </div>
       </div>
       <div class="gate-processing-card__center">
-        <div class="gate-processing-card__load text-xl font-black font-tabular">\${n(dorm.current_load)} / \${n(dorm.max_load)}</div>
+        <div class="gate-processing-card__load text-xl font-black font-tabular">${n(dorm.current_load)} / ${n(dorm.max_load)}</div>
         <div class="gate-processing-card__location-slot" data-processing-location-slot></div>
-        \${phaseHtml}
+        ${phaseHtml}
       </div>
       <div class="gate-processing-card__footer">
-        \${timerHtml(dorm)}
-        \${identityHtml}
+        ${timerHtml(dorm)}
+        ${identityHtml}
       </div>
-    </div>\`;
+    </div>`;
   }
 
   function renderProcessingPageCanonical(dorms) {

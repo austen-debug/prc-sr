@@ -73,6 +73,32 @@ async function guardPersistence(context) {
   return null;
 }
 
+
+// Admin mutations are intentionally dormant until the operator has verified the
+// versioned D1 provenance migration. Existing three-role writes are unaffected.
+async function requireAdminWriteCompatibility(context,session) {
+  if(session?.role!=='admin'||!['POST','PUT','PATCH','DELETE'].includes(context.request.method))return null;
+  const path=new URL(context.request.url).pathname;
+  if(path==='/api/logout')return null;
+  if(context.env?.GATE_ADMIN_WRITES_ENABLED!=='true')
+    return restricted('Admin writes have not been enabled after D1 migration validation.','admin_writes_disabled',503);
+  if(!context.env?.DB)return restricted('Admin database is unavailable.','admin_schema_required',503);
+  try {
+    const schema=await context.env.DB.prepare(
+      "SELECT name,sql FROM sqlite_master WHERE (type='table' AND name IN ('gate_audit_events','gate_archive_amendments','gate_squadron_notices','gate_squadron_information_revisions','gate_admin_archive_dispositions')) OR (type='trigger' AND name IN ('gate_record_audit_insert','gate_record_audit_update','trg_gate_admin_dispositions_no_delete','trg_gate_admin_dispositions_no_update'))"
+    ).all();
+    const found=new Map((schema.results||[]).map(row=>[row.name,String(row.sql||'')]));
+    const roleTables=['gate_audit_events','gate_archive_amendments','gate_squadron_notices','gate_squadron_information_revisions'];
+    const auditTriggers=['gate_record_audit_insert','gate_record_audit_update'];
+    const dispositions=['gate_admin_archive_dispositions','trg_gate_admin_dispositions_no_delete','trg_gate_admin_dispositions_no_update'];
+    if(!roleTables.every(name=>found.get(name)?.includes("'admin'"))||
+       !auditTriggers.every(name=>found.get(name)?.includes("'admin'"))||
+       !dispositions.every(name=>found.has(name)))
+      return restricted('Admin provenance schema is not ready.','admin_schema_required',503);
+  }catch{return restricted('Admin provenance verification failed.','admin_schema_required',503);}
+  return null;
+}
+
 export async function onRequest(context) {
   // `context.data.session` may be populated by a verified upstream middleware.
   // It is server-owned request context, not client input. Re-verify only when absent.
@@ -83,6 +109,9 @@ export async function onRequest(context) {
   if (session?.role === 'squadron' && !squadronApiAllowed(url.pathname, context.request.method)) {
     return restricted('Squadron access is limited to the read-only Squadron Board endpoint.', 'forbidden', 403);
   }
+
+  const adminBlocked = await requireAdminWriteCompatibility(context,session);
+  if(adminBlocked) return adminBlocked;
 
   const blocked = await guardPersistence(context);
   if (blocked) return blocked;

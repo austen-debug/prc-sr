@@ -153,7 +153,7 @@ test('real Chromium verifies motionless idle, shared popup sweep, focus state, u
         assert.match(idle.gradient,/linear-gradient/,tag+' popup sweep is missing');
         assert.equal(idle.animation,'none',tag+' button must not animate continuously');
         assert.equal(idle.transform,'matrix(0, 0, 0, 1, 0, 0)',tag+' sweep must be collapsed at rest');
-        assert.equal(idle.transition,'transform',tag+' popup sweep transition missing');
+        assert.equal(idle.transition,name==='reduced'?'none':'transform',tag+' popup sweep motion preference mismatch');
         assert.equal(idle.duration,name==='reduced'?'0s':'0.18s',tag+' transition duration mismatch');
         assert.equal(focused.focusVisible,true,tag+' keyboard focus must be visible');
         assert.equal(again.animation,'none',tag+' button should not orbit after focus');

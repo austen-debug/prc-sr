@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>GATE | Administration</title>
+<meta name="robots" content="noindex,nofollow">
+<style>
+:root{color-scheme:dark;font-family:system-ui,-apple-system,Segoe UI,sans-serif;--background:#111924;--panel:#202d3e;--border:#43536a;--text:#eef3fa;--muted:#b5c5d5;--accent:#81b3df;--danger:#f2aaa2}
+*{box-sizing:border-box}body{background:var(--background);color:var(--text);margin:0}header{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:1rem 1.5rem;border-bottom:1px solid var(--border);background:#192637}header a{color:var(--text);text-decoration:none;border:1px solid var(--border);padding:.55rem .8rem;border-radius:.5rem}main{max-width:1300px;margin:auto;padding:1.5rem}h1{font-size:1.6rem;margin:0 0 .25rem}h2{font-size:1.18rem;margin:0 0 .8rem}h3{font-size:1rem;margin:.2rem 0 .7rem}p{color:var(--muted);margin:.25rem 0 .8rem}button,select,input,textarea{font:inherit}button{cursor:pointer;background:#355777;color:#fff;border:1px solid #6987a0;padding:.52rem .8rem;border-radius:.4rem}button:disabled{opacity:.45;cursor:not-allowed}button.danger{border-color:#a45b5b;background:#733f40}a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:3px solid var(--accent);outline-offset:3px}.tabs{display:flex;gap:.45rem;flex-wrap:wrap;margin:1rem 0}.tabs button[aria-selected=true]{background:#577c9b}.panel{border:1px solid var(--border);background:var(--panel);border-radius:.7rem;padding:1rem;margin-bottom:1rem}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:.8rem}.data{font-size:1.4rem;font-variant-numeric:tabular-nums;color:white}.muted{color:var(--muted)}.small{font-size:.85rem}.status{min-height:1.4rem;margin:.5rem 0}.table-scroll{overflow-x:auto}table{border-collapse:collapse;width:100%;text-align:left}th,td{padding:.55rem .6rem;border-bottom:1px solid var(--border);font-size:.87rem;vertical-align:top}th{color:var(--muted)}.hidden{display:none!important}.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:.75rem}label{display:flex;flex-direction:column;gap:.3rem;font-size:.9rem}input,select,textarea{background:#101b28;color:var(--text);padding:.55rem;border:1px solid #63748a;border-radius:.35rem;width:100%}textarea{min-height:5rem;resize:vertical}.notice{border-left:3px solid var(--accent);padding:.8rem;background:#1b3449;margin:.7rem 0}.warning{border-left-color:var(--danger)}.pill{display:inline-block;padding:.18rem .4rem;border-radius:.3rem;background:#30485c;font-size:.72rem}.empty{padding:1rem;color:var(--muted)}footer{padding:1rem 1.5rem;color:var(--muted);font-size:.8rem}#command-status[data-error=true]{color:var(--danger)}
+</style>
+</head>
+<body>
+<header><div><strong>GATE</strong> <span class="muted">/ Administration</span></div><a href="/board/">Return to Operations</a></header>
+<main>
+<h1>System Administration</h1>
+<p>System-level inspection and controlled historical record management. Receiving workflows remain on their existing pages.</p>
+<div class="notice" role="status" id="readiness">Checking authoritative system status…</div>
+<nav class="tabs" aria-label="Administration sections">
+<button data-tab="overview" aria-selected="true">Overview</button>
+<button data-tab="archives" aria-selected="false">Archive Administration</button>
+<button data-tab="lifecycle" aria-selected="false">Lifecycle</button>
+<button data-tab="audit" aria-selected="false">Audit History</button>
+<button data-tab="future" aria-selected="false">Configuration &amp; Security</button>
+</nav>
+<section id="panel-overview" class="panel">
+<h2>Operational integrity</h2>
+<div class="grid" id="health-grid"><p>Loading authoritative health…</p></div>
+<div class="notice"><strong>Authority boundary</strong><p>All existing Instructor, Airman, and Squadron workflows remain in their original operational interfaces. This workspace never writes to live bus or dorm records.</p></div>
+<button id="refresh-health">Refresh status</button>
+</section>
+<section id="panel-archives" class="panel hidden">
+<h2>Archive Administration</h2>
+<p>Withdraw a historical archive from routine listings, or restore a withdrawn archive. The source snapshot, lifecycle, and amendment history are preserved.</p>
+<h3>Available historical archives</h3>
+<div class="table-scroll"><table><thead><tr><th>Week Group</th><th>Archive ID</th><th>Archived</th><th>Action</th></tr></thead><tbody id="archive-list"><tr><td colspan="4">Loading…</td></tr></tbody></table></div>
+<h3>Disposition history and restoration</h3>
+<div class="table-scroll"><table><thead><tr><th>Time</th><th>Archive ID</th><th>Action</th><th>Reason</th><th>Restore</th></tr></thead><tbody id="dispositions"><tr><td colspan="5">Loading…</td></tr></tbody></table></div>
+<form id="archive-action-form" class="panel" style="margin-top:1rem" autocomplete="off">
+<h3>Controlled administrative action</h3>
+<div class="form-grid">
+<label>Archive ID <input name="archiveId" required maxlength="100" pattern="[a-zA-Z0-9_-]{8,100}"></label>
+<label>Action <select name="action"><option value="withdraw">Withdraw archive</option><option value="restore">Restore archive</option></select></label>
+<label>Current disposition revision <input name="expectedRevision" required type="number" min="0" step="1" value="0"></label>
+<label>Re-enter archive ID to confirm <input name="confirmArchiveId" required></label>
+</div>
+<label style="margin-top:.75rem">Administrative reason (10–1000 characters)<textarea name="reason" minlength="10" maxlength="1000" required placeholder="Document the operational reason; do not include trainee personal information."></textarea></label>
+<p class="small">An Admin session less than five minutes old is required. Reauthenticate to authorize a destructive historical-record action.</p>
+<button class="danger" id="submit-action" type="submit" disabled>Submit audited action</button>
+<div id="command-status" class="status" role="status" aria-live="polite"></div>
+</form>
+</section>
+<section id="panel-lifecycle" class="panel hidden">
+<h2>Lifecycle &amp; Recovery Inspection</h2>
+<p>Read-only view of authoritative Week Group lifecycle state. Abnormal recovery is held for a separately verified administrative command package.</p>
+<div class="table-scroll"><table><thead><tr><th>Week Group</th><th>State</th><th>Revision</th><th>Archive</th><th>Created</th></tr></thead><tbody id="cycle-list"><tr><td colspan="5">Loading…</td></tr></tbody></table></div>
+</section>
+<section id="panel-audit" class="panel hidden">
+<h2>Audit History</h2>
+<p>Recent append-only operational and administrative audit events. Actor values represent verified role provenance where recorded.</p>
+<div class="table-scroll"><table><thead><tr><th>When</th><th>Actor</th><th>Event</th><th>Entity</th><th>Version</th></tr></thead><tbody id="audit-list"><tr><td colspan="5">Loading…</td></tr></tbody></table></div>
+</section>
+<section id="panel-future" class="panel hidden">
+<h2>Configuration, Security &amp; Exceptional Recovery</h2>
+<div class="notice">Advanced configuration, account administration, and exceptional lifecycle recovery are not active. They require individual authoritative data contracts, isolated validation, and operational acceptance before activation.</div>
+<p>Credentials remain in Cloudflare environment bindings. This interface does not expose secret values or unrestricted database operations.</p>
+</section>
+</main>
+<footer>GATE Admin access is server-authorized. This interface does not provide general database edit or SQL capabilities.</footer>
+<script>
+'use strict';
+const byId=id=>document.getElementById(id);
+const node=(tag,text)=>{const el=document.createElement(tag);el.textContent=String(text??'—');return el;};
+const asDate=s=>{const d=new Date(s);return Number.isNaN(d.getTime())?'—':d.toLocaleString();};
+const escapeCell=s=>String(s??'—');
+let health=null, archiveRevisions=new Map();
+async function api(path,opts={}){const response=await fetch(path,{credentials:'same-origin',cache:'no-store',...opts});const body=await response.json().catch(()=>({isOk:false,code:'invalid_response'}));if(!response.ok||!body.isOk)throw new Error(body.error||body.code||'Request failed');return body;}
+function row(tbody,values,action){const tr=document.createElement('tr');values.forEach(value=>{const td=node('td',value);tr.append(td)});if(action){const td=document.createElement('td');td.append(action);tr.append(td)}tbody.append(tr);}
+function empty(tbody,count,text){tbody.replaceChildren();const tr=document.createElement('tr'),td=node('td',text);td.colSpan=count;tr.append(td);tbody.append(tr);}
+function section(name){document.querySelectorAll('[data-tab]').forEach(btn=>btn.setAttribute('aria-selected',String(btn.dataset.tab===name)));document.querySelectorAll('main > section[id^="panel-"]').forEach(el=>el.classList.toggle('hidden',el.id!=='panel-'+name));if(name==='archives')loadArchives();if(name==='lifecycle')loadCycles();if(name==='audit')loadAudit();}
+document.querySelectorAll('[data-tab]').forEach(btn=>btn.addEventListener('click',()=>section(btn.dataset.tab)));
+function fillForm(archiveId,action,revision){const form=byId('archive-action-form');form.elements.archiveId.value=archiveId;form.elements.action.value=action;form.elements.expectedRevision.value=revision;form.elements.confirmArchiveId.value='';form.elements.reason.value='';form.elements.confirmArchiveId.focus();}
+async function loadHealth(){try{health=await api('/api/admin');const readiness=byId('readiness');readiness.textContent=health.adminSchemaReady?'Admin schema verified. '+(health.writesEnabled?'Controlled archive actions enabled.':'Administrative writes are disabled pending controlled activation.'):'Admin data schema is not installed; historical write controls are unavailable.';readiness.classList.toggle('warning',!health.writesEnabled);byId('submit-action').disabled=!health.writesEnabled;const grid=byId('health-grid');grid.replaceChildren();for(const [label,value] of [['Active Week Group',health.activeCycle?.week_group||'None'],['Lifecycle State',health.activeCycle?.state||'No active cycle'],['Historical Archives',health.archiveCount],['Open Recovery Conditions',health.unresolvedOperations],['Audit Events',health.auditEventCount],['Admin Data Schema',health.adminSchemaReady?'Verified':'Unavailable']]){const box=node('div','');box.className='panel';const caption=node('p',label),stat=node('div',value);stat.className='data';box.append(caption,stat);grid.append(box);}}catch(e){byId('readiness').textContent=e.message;byId('readiness').classList.add('warning');byId('submit-action').disabled=true;}}
+async function loadArchives(){const list=byId('archive-list'),history=byId('dispositions');try{const [archives,disps]=await Promise.all([api('/api/archives'),api('/api/admin-archives')]);archiveRevisions=new Map();const first=new Set();for(const disp of disps.dispositions||[]){if(!first.has(disp.archive_id)){first.add(disp.archive_id);archiveRevisions.set(disp.archive_id,disp.revision);}}
+list.replaceChildren();if(!archives.archives?.length)empty(list,4,'No current archives.');for(const a of archives.archives||[]){const tr=document.createElement('tr');[a.week_group,a.id,asDate(a.archived_at)].forEach(value=>tr.append(node('td',value)));const td=document.createElement('td'),button=node('button','Withdraw');button.type='button';button.addEventListener('click',()=>fillForm(a.id,'withdraw',archiveRevisions.get(a.id)||0));td.append(button);tr.append(td);list.append(tr);}
+history.replaceChildren();if(!disps.dispositions?.length)empty(history,5,'No administrative dispositions recorded.');for(const d of disps.dispositions||[]){const button=node('button','Restore');button.type='button';button.disabled=d.action!=='withdraw'||d.revision!==archiveRevisions.get(d.archive_id);button.addEventListener('click',()=>fillForm(d.archive_id,'restore',d.revision));row(history,[asDate(d.occurred_at),d.archive_id,d.action,d.reason],button);}
+}catch(e){empty(list,4,e.message);empty(history,5,'Administrative journal unavailable.');}}
+async function loadCycles(){const t=byId('cycle-list');try{const x=await api('/api/admin?mode=cycles');t.replaceChildren();if(!x.cycles?.length)empty(t,5,'No registered cycles.');for(const c of x.cycles||[])row(t,[c.week_group,c.state,c.revision,c.archive_id||'—',asDate(c.created_at)]);}catch(e){empty(t,5,e.message);}}
+async function loadAudit(){const t=byId('audit-list');try{const x=await api('/api/admin?mode=audit');t.replaceChildren();if(!x.events?.length)empty(t,5,'No audit events.');for(const e of x.events||[])row(t,[asDate(e.occurred_at),e.actor_role,e.event_type,e.entity_type+': '+e.entity_id,e.prior_version+' → '+e.resulting_version]);}catch(e){empty(t,5,e.message);}}
+byId('refresh-health').addEventListener('click',loadHealth);
+byId('archive-action-form').addEventListener('submit',async(event)=>{event.preventDefault();const f=event.currentTarget,el=f.elements,status=byId('command-status');status.textContent='Submitting authenticated operation…';status.dataset.error='false';const payload={archiveId:el.archiveId.value.trim(),action:el.action.value,reason:el.reason.value.trim(),expectedRevision:Number(el.expectedRevision.value),confirmArchiveId:el.confirmArchiveId.value.trim(),operationId:crypto.randomUUID()};const button=byId('submit-action');button.disabled=true;try{const r=await api('/api/admin-archives',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});status.textContent='Verified '+r.action+' (revision '+r.revision+').';await loadArchives();}catch(e){status.textContent=e.message;status.dataset.error='true';}finally{button.disabled=!health?.writesEnabled;}});
+loadHealth();
+</script>
+</body></html>

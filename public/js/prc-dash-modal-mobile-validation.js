@@ -18,7 +18,7 @@
   }
 
   function isInstructor() {
-    return currentRoleSafe() === 'instructor';
+    return ['instructor','admin'].includes(currentRoleSafe());
   }
 
   function isTouchDevice() {

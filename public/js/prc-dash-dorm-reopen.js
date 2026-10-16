@@ -7,7 +7,7 @@
   let hooksRegistered = false;
 
   function isInstructor() {
-    try { return typeof currentRole === 'undefined' || currentRole === 'instructor'; } catch (_) { return false; }
+    try { return typeof currentRole === 'undefined' || ['instructor','admin'].includes(currentRole); } catch (_) { return false; }
   }
 
   function parseTimerToSeconds(value) {

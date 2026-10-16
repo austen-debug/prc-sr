@@ -45,7 +45,7 @@ test('Input placement module and stylesheet references have fresh independent re
   const standalone = await source('public/squadron/index.html');
   const budget = JSON.parse(await source('docs/build-2/ACTIVE_RUNTIME_BUDGET.json'));
   const flight = await source('public/app/features/input/flight-alert-import.mjs');
-  const cssUrl = '/css/military-glass-terminal.css?v=processing-bus-command-sweep-20261016-v1';
+  const cssUrl = '/css/military-glass-terminal.css?v=status-board-reference-20261016-v1';
   const importUrl = '/app/features/input/flight-alert-import.mjs?v=flight-alert-import-20261016-input-closeout-v1';
   assert.ok(middleware.includes(cssUrl));
   assert.ok(standalone.includes(cssUrl));

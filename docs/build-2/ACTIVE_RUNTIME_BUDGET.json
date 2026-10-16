@@ -16,12 +16,12 @@
     "middlewareStatusBoardSourceRewriteRemoved": true
   },
   "currentDirectStyles": [
-    "/css/military-glass-terminal.css?v=processing-bus-command-sweep-20261016-v1"
+    "/css/military-glass-terminal.css?v=status-board-reference-20261016-v1"
   ],
   "currentImportedStyles": [],
   "currentDirectScripts": [
     "/js/gate-record-display-contract.js?v=record-display-integrity-20260714b",
-    "/js/gate-component-contracts.js",
+    "/js/gate-component-contracts.js?v=status-board-reference-20261016-v1",
     "/js/gate-ui-hooks.js?v=port-clear-banner-20260928",
     "/js/gate-branding-controller.js",
     "/js/prc-dash-runtime-fixes.js?v=sound-toggle-assets-20260928",
@@ -29,10 +29,10 @@
     "/js/prc-dash-space-force.js",
     "/js/prc-dash-dorm-reopen.js?v=popup-plop-sounds-20260928",
     "/js/prc-dash-final-audit.js?v=squadron-help-centered-20261016-v2",
-    "/js/gate-status-board-controller.js?v=status-board-alert-banding-20261016-v1",
+    "/js/gate-status-board-controller.js?v=status-board-reference-20261016-v1",
     "/js/gate-processing-controller.js?v=processing-dorm-cards-20261016-v2",
-    "/js/prc-dash-dorm-flag-validation.js?v=processing-band-designator-20260915",
-    "/js/prc-dash-auditorium-location.js?v=processing-dorm-cards-20261016-v2",
+    "/js/prc-dash-dorm-flag-validation.js?v=status-board-reference-20261016-v1",
+    "/js/prc-dash-auditorium-location.js?v=status-board-reference-20261016-v1",
     "/js/gate-bus-workflow-controller.js?v=phase-3-bus-workflow-20260709",
     "/js/gate-airport-bus-delete-controller.js?v=airport-bus-delete-20260714",
     "/js/gate-input-page-controller.js?v=record-display-integrity-20260714",

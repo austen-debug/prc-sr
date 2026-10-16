@@ -19,14 +19,14 @@ const ROLE_HOME = Object.freeze({
 });
 
 const UI_STYLESHEETS = [
-  '<link rel="stylesheet" href="/css/military-glass-terminal.css?v=processing-bus-command-sweep-20261016-v1">'
+  '<link rel="stylesheet" href="/css/military-glass-terminal.css?v=status-board-reference-20261016-v1">'
 ];
 
 const UI_INLINE_ASSETS = [];
 
 const UI_HEAD_SCRIPTS = [
   '<script src="/js/gate-record-display-contract.js?v=record-display-integrity-20260714b" defer></script>',
-  '<script src="/js/gate-component-contracts.js" defer></script>',
+  '<script src="/js/gate-component-contracts.js?v=status-board-reference-20261016-v1" defer></script>',
   '<script src="/js/gate-ui-hooks.js?v=port-clear-banner-20260928" defer></script>',
   '<script src="/js/gate-branding-controller.js" defer></script>',
   '<script src="/js/prc-dash-runtime-fixes.js?v=sound-toggle-assets-20260928" defer></script>',
@@ -34,10 +34,10 @@ const UI_HEAD_SCRIPTS = [
   '<script src="/js/prc-dash-space-force.js" defer></script>',
   '<script src="/js/prc-dash-dorm-reopen.js?v=popup-plop-sounds-20260928" defer></script>',
   '<script src="/js/prc-dash-final-audit.js?v=squadron-help-centered-20261016-v2" defer></script>',
-  '<script src="/js/gate-status-board-controller.js?v=status-board-alert-banding-20261016-v1" defer></script>',
+  '<script src="/js/gate-status-board-controller.js?v=status-board-reference-20261016-v1" defer></script>',
   '<script src="/js/gate-processing-controller.js?v=processing-dorm-cards-20261016-v2" defer></script>',
-  '<script src="/js/prc-dash-dorm-flag-validation.js?v=processing-band-designator-20260915" defer></script>',
-  '<script src="/js/prc-dash-auditorium-location.js?v=processing-dorm-cards-20261016-v2" defer></script>',
+  '<script src="/js/prc-dash-dorm-flag-validation.js?v=status-board-reference-20261016-v1" defer></script>',
+  '<script src="/js/prc-dash-auditorium-location.js?v=status-board-reference-20261016-v1" defer></script>',
   '<script src="/js/gate-bus-workflow-controller.js?v=phase-3-bus-workflow-20260709" defer></script>',
   '<script src="/js/gate-airport-bus-delete-controller.js?v=airport-bus-delete-20260714" defer></script>',
   '<script src="/js/gate-input-page-controller.js?v=record-display-integrity-20260714" defer></script>',

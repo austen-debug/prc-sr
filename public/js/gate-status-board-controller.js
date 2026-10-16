@@ -163,7 +163,7 @@
 
   function renderDormCard(dorm) {
     const html = components()?.dormCard
-      ? components().dormCard(dorm, { showAuditorium: true })
+      ? components().dormCard(dorm, { showAuditorium: true, statusBoardLayout: true })
       : fallbackDormCard(dorm);
     return html
       .replace('data-component="dorm-card"', 'data-component="dorm-card" data-owner="gate-status-board-controller"')

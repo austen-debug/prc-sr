@@ -156,7 +156,7 @@ test('middleware loads the record display contract before all dorm consumers', a
   assert.ok(recordContract < processing);
   assert.ok(recordContract < input);
   assert.match(middleware, /gate-record-display-contract\.js\?v=record-display-integrity-20260714b/);
-  assert.match(middleware, /prc-dash-dorm-flag-validation\.js\?v=processing-band-designator-20260915/);
+  assert.match(middleware, /prc-dash-dorm-flag-validation\.js\?v=status-board-reference-20261016-v1/);
 });
 
 test('Status Board uses one canonical timer and direct-surface integrity owner', async () => {
@@ -174,7 +174,7 @@ test('Status Board uses one canonical timer and direct-surface integrity owner',
   assert.match(status, /renderStatusBoard\(\{ force: true \}\)/);
   assert.doesNotMatch(status, /activeBusObserver|bodyObserver|boardObserver/);
   assert.doesNotMatch(middleware, /gate-status-board-timer-visual-stability\.js/);
-  assert.match(middleware, /gate-status-board-controller\.js\?v=status-board-alert-banding-20261016-v1/);
+  assert.match(middleware, /gate-status-board-controller\.js\?v=status-board-reference-20261016-v1/);
 });
 
 test('shared overtime controller only paints Squadron timers and delegates styling to canonical CSS', async () => {

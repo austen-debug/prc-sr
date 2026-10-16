@@ -49,5 +49,5 @@ test('Processing open, close, and reopen remain timestamp-bound to the canonical
 
 test('Middleware versions the timer lifecycle owner', async () => {
   const middleware = await source('functions/_middleware.js');
-  assert.match(middleware, /gate-status-board-controller\.js\?v=status-board-alert-banding-20261016-v1/);
+  assert.match(middleware, /gate-status-board-controller\.js\?v=status-board-reference-20261016-v1/);
 });

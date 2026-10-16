@@ -99,14 +99,14 @@ test('all three revised asset references remain coordinated across middleware, b
   const squadron = await source('public/squadron/index.html');
   const budget = JSON.parse(await source('docs/build-2/ACTIVE_RUNTIME_BUDGET.json'));
   const assets = [
-    '/css/military-glass-terminal.css?v=processing-bus-command-sweep-20261016-v1',
+    '/css/military-glass-terminal.css?v=status-board-reference-20261016-v1',
     '/js/gate-processing-controller.js?v=processing-dorm-cards-20261016-v2',
-    '/js/prc-dash-auditorium-location.js?v=processing-dorm-cards-20261016-v2'
+    '/js/prc-dash-auditorium-location.js?v=status-board-reference-20261016-v1'
   ];
   for (const asset of assets) {
     assert.ok(mw.includes(asset), 'Middleware missing ' + asset);
     assert.ok([...budget.currentDirectStyles, ...budget.currentDirectScripts].includes(asset), 'Inventory missing ' + asset);
   }
   assert.ok(squadron.includes(assets[0]));
-  assert.ok(mw.includes('/js/gate-status-board-controller.js?v=status-board-alert-banding-20261016-v1'));
+  assert.ok(mw.includes('/js/gate-status-board-controller.js?v=status-board-reference-20261016-v1'));
 });

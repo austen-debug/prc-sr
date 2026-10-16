@@ -89,6 +89,9 @@ jobs:
       - name: Processing command button styling
         run: node --test tests/runtime/processing-command-button-style.test.mjs
 
+      - name: Processing button release and functional writes
+        run: node --test tests/runtime/processing-command-release-integrity.test.mjs
+
       - name: Fullscreen command-board readability
         run: node --test tests/runtime/fullscreen-command-board-readability.test.mjs
 

@@ -357,14 +357,14 @@ function actionFixture() {
  const footer = new ElementStub('div'); footer.className = 'flex-shrink-0 border-t';
  const initStatus = new ElementStub('div', 'init-status-msg');
  const initialize = new ElementStub('button', 'init-wg-btn'); initialize.onclick = () => 'canonical initialize';
- footer.append(initStatus, initialize);
+ const closeout = new ElementStub('button', 'closeout-btn'); closeout.onclick = () => 'canonical archive';
+ const archiveStatus = new ElementStub('div', 'closeout-safety-msg');
+ footer.append(initStatus, initialize, closeout, archiveStatus);
  page.append(header, grid, footer);
  const processingHeader = new ElementStub('div');
  const localBus = new ElementStub('button', 'local-bus-action');
- const closeout = new ElementStub('button', 'closeout-btn'); closeout.onclick = () => 'canonical archive';
- const archiveStatus = new ElementStub('div', 'closeout-safety-msg');
  const hint = new ElementStub('div', 'processing-edit-hint');
- processingHeader.append(localBus, closeout, archiveStatus, hint);
+ processingHeader.append(localBus, hint);
  processing.append(processingHeader);
  body.append(page, processing);
  const doc = { getElementById(id) { const visit = node => node.id === id ? node : node.nodes.map(visit).find(Boolean); return visit(body); }, createElement(tag) { return new ElementStub(tag); } };
@@ -373,6 +373,8 @@ function actionFixture() {
 test('Week Group action cards keep identical structures, aligned buttons and reserved status areas while preserving their handlers', () => {
  const {doc,page,processingHeader,footer,initialize,closeout,localBus,initStatus,archiveStatus}=actionFixture();
  const initializeHandler=initialize.onclick, closeoutHandler=closeout.onclick;
+ assert.equal(page.contains(closeout),true,'closeout is in Input markup before JS executes');
+ assert.equal(processingHeader.contains(closeout),false,'Processing never owns closeout');
  assert.equal(relocateWeekGroupActions(doc),true);
  const startPanel=doc.getElementById('gate-week-group-initialize-panel');
  const finishPanel=doc.getElementById('gate-week-group-closeout-panel');

@@ -107,6 +107,9 @@ jobs:
       - name: Processing computed button styles in Chrome
         run: node --test tests/runtime/processing-command-browser-style.test.mjs
 
+      - name: Processing Add Local Bus orbit and Input-only Close Week Group
+        run: node --test tests/runtime/processing-local-bus-action-ui.test.mjs
+
       - name: Fullscreen command-board readability
         run: node --test tests/runtime/fullscreen-command-board-readability.test.mjs
 

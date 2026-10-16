@@ -1,5 +1,5 @@
 /** GATE Input enhancement: Flight Alert import changes draft rows only, never operational records. */
-import './week-group-action-placement.mjs';
+import './week-group-action-placement.mjs?v=input-closeout-native-20261016-v1';
 import { parseFlightAlertText, validateFlightAlertRows, normalizeSquadron, orderFlightAlertRows, prepareFlightAlertReviewRows } from './flight-alert-parser.mjs?v=flight-alert-parser-20261013-pdfjs';
 import { extractFlightAlertPdf } from './flight-alert-pdf.mjs?v=flight-alert-pdf-20261013-pdfjs';
 

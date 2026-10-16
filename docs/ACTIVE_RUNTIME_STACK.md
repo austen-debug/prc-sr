@@ -23,7 +23,7 @@ The machine-readable inventory and ceilings are governed by `docs/build-2/ACTIVE
 
 Middleware now injects one stylesheet and no stylesheet imports:
 
-1. `/css/military-glass-terminal.css?v=processing-commands-20261016-v2`
+1. `/css/military-glass-terminal.css?v=status-board-alert-banding-20261016-v1`
 
 `public/css/military-glass-terminal.css` is the production visual source of truth for tokens, light/dark themes, shell geometry, page spacing, Status/Squadron boards, Processing, Airport, Input, Archives, login, modal geometry, responsive behavior, fullscreen behavior, skeleton geometry, z-index bands, and interaction motion.
 
@@ -42,7 +42,7 @@ Injected by middleware in current order on the Flight Alert feature branch:
 7. `/js/prc-dash-space-force.js`
 8. `/js/prc-dash-dorm-reopen.js?v=popup-plop-sounds-20260928`
 9. `/js/prc-dash-final-audit.js?v=record-display-integrity-20260714`
-10. `/js/gate-status-board-controller.js?v=dorm-timer-record-lifecycle-20260722`
+10. `/js/gate-status-board-controller.js?v=status-board-alert-banding-20261016-v1`
 11. `/js/gate-processing-controller.js?v=processing-commands-20261016-v2`
 12. `/js/prc-dash-dorm-flag-validation.js?v=processing-band-designator-20260915`
 13. `/js/prc-dash-auditorium-location.js?v=processing-commands-20261016-v2`
@@ -66,7 +66,7 @@ Injected by middleware in current order on the Flight Alert feature branch:
 - `GateHooks` owns lifecycle hook registration and the `renderAll()` / `showPage()` wrappers.
 - `GateAppShell` owns visible route state, role-aware navigation, desktop/tablet/phone posture classification, drawer/sheet behavior, system-control placement, and Week Group shell context. It also owns the canonical `/board/`, `/airport/`, `/input/`, `/processing/`, `/archives/`, and instructor `/squadron-board/` browser routes, including History API Back/Forward behavior; standalone Squadron Access remains `/squadron/`.
 - `GatePermissionGuard` owns client-side action protection; server authorization remains authoritative.
-- `GateStatusBoardController` owns the visible Status Board dorm columns, dorm cards, active-bus panel, elapsed-time calculation, record-bound timer text, warning/critical timer state, direct-surface integrity repair, and per-column incremental rendering. It rebinds every open timer to the current dorm record before each second-aligned tick and publishes the same elapsed-time function to the Processing open/close workflow.
+- `GateStatusBoardController` owns the visible Status Board dorm columns, dorm cards, active-bus panel, elapsed-time calculation, record-bound timer text, 40/50/60-minute warning/critical/overtime visual states, inset alert-band attributes, direct-surface integrity repair, and per-column incremental rendering. The alert band is CSS-only, inside the existing card outline, and never overrides Female/Band/Space Force identity styling, padding, records, or sound-event persistence. It rebinds every open timer to the current dorm record before each second-aligned tick and publishes the same elapsed-time function to the Processing open/close workflow.
 - `GatePremiumMetricsController` owns change-only synchronization of Arrived, Expected, Last, and Local values. The Local clock is second-aligned, displays `HH:MM:SS`, resumes immediately after visibility/focus/fullscreen transitions, and updates only the `#stat-local` text node.
 - `GateProcessingController` owns Processing page rendering, dorm-modal lifecycle, and all dorm-record mutations. Open writes `opened_at`; Close derives `closed_timer` from that timestamp through the canonical elapsed-time function; Reopen reconstructs `opened_at` from the retained final time.
 - `GateAuditoriumLocationController` owns field hydration and card augmentation for Auditorium Location. It binds the modal field to the active dorm ID and delegates persistence through `GateProcessingController.updateDorm`; it does not call the Data SDK directly.

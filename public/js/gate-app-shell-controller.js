@@ -430,7 +430,7 @@
     const sheet = ensureMobileSheet();
     const routeList = sheet.querySelector('#gate-mobile-sheet-routes');
     if (!routeList) return;
-    routeList.innerHTML = pages.map(page => navButton(page, true)).join('') + (role() === 'admin' ? '<a class="nav-btn nav-link-item gate-component-nav-button" href="/administration/">Administration</a>' : '');
+    routeList.innerHTML = pages.map(page => navButton(page, true)).join('') + (role() === 'admin' ? '<a data-gate-admin-nav="true" class="nav-btn nav-link-item gate-component-nav-button" href="/administration/">Administration</a>' : '');
     sheet.dataset.role = role();
   }
 
@@ -442,9 +442,9 @@
     if (allowedPages().includes('squadron')) ensureSquadronPage();
 
     const pages = allowedPages();
-    menu.querySelectorAll('[data-gate-nav-button="true"]').forEach(button => button.remove());
+    menu.querySelectorAll('[data-gate-nav-button="true"], [data-gate-admin-nav="true"]').forEach(button => button.remove());
     const panel = document.getElementById('gate-shell-system-panel');
-    const html = pages.map(page => navButton(page)).join('') + (role() === 'admin' ? '<a class="nav-btn nav-link-item gate-component-nav-button" href="/administration/">Administration</a>' : '');
+    const html = pages.map(page => navButton(page)).join('') + (role() === 'admin' ? '<a data-gate-admin-nav="true" class="nav-btn nav-link-item gate-component-nav-button" href="/administration/">Administration</a>' : '');
     if (panel && panel.parentNode === menu) panel.insertAdjacentHTML('beforebegin', html);
     else menu.innerHTML = html;
 

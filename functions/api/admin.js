@@ -15,14 +15,14 @@ export async function onRequestGet({env,data,request}){
     }
     if(mode!=='health')return response({isOk:false,code:'unsupported_mode'},400);
     const [tables,cycle,operations,archives,audit] = await Promise.all([
-      env.DB.prepare("SELECT name FROM sqlite_master WHERE type IN ('table','trigger') AND name IN ('gate_admin_archive_dispositions','trg_gate_admin_dispositions_no_update','trg_gate_admin_dispositions_no_delete')").all(),
+      env.DB.prepare("SELECT name,sql FROM sqlite_master WHERE (type='table' AND name IN ('gate_audit_events','gate_archive_amendments','gate_squadron_notices','gate_squadron_information_revisions','gate_admin_archive_dispositions')) OR (type='trigger' AND name IN ('gate_record_audit_insert','gate_record_audit_update','trg_gate_admin_dispositions_no_delete','trg_gate_admin_dispositions_no_update'))").all(),
       env.DB.prepare("SELECT cycle_id,week_group,state,revision,archive_id,updated_at FROM gate_week_groups WHERE state<>'closed' ORDER BY created_at DESC LIMIT 1").first(),
       env.DB.prepare("SELECT COUNT(*) AS n FROM gate_workflow_operations WHERE status IN ('failed','needs_recovery','running','archive_verified')").first(),
       env.DB.prepare("SELECT COUNT(*) AS n FROM records WHERE type='archive'").first(),
       env.DB.prepare("SELECT COUNT(*) AS n FROM gate_audit_events").first()
     ]);
-    const names=new Set((tables.results||[]).map(row=>row.name));
-    const schemaReady=['gate_admin_archive_dispositions','trg_gate_admin_dispositions_no_update','trg_gate_admin_dispositions_no_delete'].every(name=>names.has(name));
+    const definitions=new Map((tables.results||[]).map(row=>[row.name,String(row.sql||'')]));
+    const schemaReady=['gate_audit_events','gate_archive_amendments','gate_squadron_notices','gate_squadron_information_revisions','gate_record_audit_insert','gate_record_audit_update'].every(name=>definitions.get(name)?.includes("'admin'")) && ['gate_admin_archive_dispositions','trg_gate_admin_dispositions_no_update','trg_gate_admin_dispositions_no_delete'].every(name=>definitions.has(name));
     return response({isOk:true,adminSchemaReady:schemaReady,writesEnabled:schemaReady&&env.GATE_ADMIN_WRITES_ENABLED==='true',
       activeCycle:cycle||null,unresolvedOperations:Number(operations?.n||0),archiveCount:Number(archives?.n||0),auditEventCount:Number(audit?.n||0)});
   }catch{ return response({isOk:false,code:'admin_health_unavailable',error:'Authoritative diagnostics unavailable.'},503);}

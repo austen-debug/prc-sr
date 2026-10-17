@@ -3799,7 +3799,8 @@ body.login-page {
   color: var(--mg-text);
 }
 
-/* Ambient grid is paint-only; it cannot intercept or shift the login controls. */
+/* A single large decorative emblem behind the glass, never inside the login card.
+   Using the existing white asset avoids a second image or a new visual layer. */
 body.login-page::before {
   content: "";
   position: fixed;
@@ -3807,11 +3808,8 @@ body.login-page::before {
   inset: 0;
   z-index: var(--mg-z-base);
   pointer-events: none;
-  background-image:
-    linear-gradient(rgba(var(--mg-accent-rgb), .038) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(var(--mg-accent-rgb), .038) 1px, transparent 1px);
-  background-size: 36px 36px;
-  mask-image: radial-gradient(ellipse at 50% 44%, #000 8%, transparent 77%);
+  background: url('/assets/gate_emblem_white.png') center 52% / max(100%, 720px) auto no-repeat;
+  opacity: .065;
 }
 
 .login-shell {
@@ -3853,29 +3851,8 @@ body.login-page .login-card {
 
 body.login-page .login-brand-stack {
   display: grid;
-  gap: 1.05rem;
-  padding-bottom: 1.3rem;
+  padding-bottom: 1.35rem;
   border-bottom: 1px solid var(--mg-border-soft);
-}
-
-.login-brand-topline {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: .6rem .95rem;
-  min-width: 0;
-}
-
-body.login-page .login-brand-mark {
-  flex: 0 0 auto;
-  width: 132px;
-  height: 35px;
-  background: url('/assets/gate_emblem_white.png') left center / contain no-repeat;
-}
-
-body.theme-light.login-page .login-brand-mark {
-  background-image: url('/assets/gate_emblem_blue.png');
 }
 
 body.login-page .login-command-kicker,
@@ -3892,25 +3869,34 @@ body.login-page .login-footer-note {
 
 .login-brand-copy {
   display: grid;
-  gap: .3rem;
+  justify-items: center;
+  gap: .45rem;
+  min-width: 0;
+  text-align: center;
+}
+
+.login-brand-copy .login-command-kicker {
+  margin-top: .2rem;
 }
 
 .login-wordmark {
   margin: 0;
   color: var(--mg-text);
-  font-size: clamp(2.6rem, 7vw, 3.35rem);
+  font-size: clamp(3.2rem, 9vw, 4.3rem);
   font-weight: 900;
-  line-height: .96;
-  letter-spacing: -.066em;
+  line-height: 1;
+  letter-spacing: -.065em;
+  text-shadow: 0 0 26px rgba(var(--mg-accent-rgb), .1);
 }
 
 body.login-page .login-system-name {
   margin: 0;
   color: var(--mg-text-soft);
-  font-size: clamp(.8rem, 2vw, .94rem);
-  font-weight: 600;
+  font-size: clamp(.8rem, 2vw, .92rem);
+  font-weight: 750;
   line-height: 1.45;
-  letter-spacing: .025em;
+  letter-spacing: .065em;
+  text-transform: uppercase;
 }
 
 .login-introduction {
@@ -3987,8 +3973,14 @@ body.login-page .login-form input:focus {
   padding: 2px;
   overflow: hidden;
   border-radius: calc(var(--mg-radius-md) + 2px);
-  background: rgba(var(--mg-accent-rgb), .28);
-  box-shadow: 0 0 20px rgba(var(--mg-accent-rgb), .11);
+  background: rgba(var(--mg-accent-rgb), .3);
+  box-shadow: 0 0 20px rgba(var(--mg-accent-rgb), .12);
+  transition: box-shadow 180ms ease;
+}
+
+.login-submit-frame:hover,
+.login-submit-frame:focus-within {
+  box-shadow: 0 0 24px rgba(var(--mg-accent-rgb), .22);
 }
 
 .login-submit-frame::before {
@@ -4001,14 +3993,14 @@ body.login-page .login-form input:focus {
   pointer-events: none;
   background: conic-gradient(
     from 0deg,
-    transparent 0deg 224deg,
-    rgba(var(--mg-accent-rgb), .08) 258deg,
-    rgba(172, 228, 255, .9) 304deg,
-    rgba(var(--mg-accent-rgb), .12) 339deg,
-    transparent 360deg
+    transparent 0deg 235deg,
+    rgba(var(--mg-accent-rgb), .14) 260deg,
+    rgba(178, 231, 255, .94) 302deg,
+    rgba(var(--mg-accent-rgb), .28) 330deg,
+    transparent 355deg
   );
   transform: translate(-50%, -50%) rotate(0deg);
-  animation: gate-login-button-orbit 9s linear infinite;
+  animation: gate-login-button-orbit 7.5s linear infinite;
 }
 
 @keyframes gate-login-button-orbit {
@@ -4033,7 +4025,7 @@ body.login-page .login-button {
   font-weight: 800;
   line-height: 1.3;
   letter-spacing: .04em;
-  text-transform: none;
+  text-transform: uppercase;
   cursor: pointer;
   transition: background-color 150ms ease, box-shadow 150ms ease;
 }
@@ -4086,11 +4078,8 @@ body.login-page .login-button[aria-busy="true"]::after {
   display: grid;
   gap: .45rem;
   min-width: 0;
-  padding: .95rem 1rem;
-  border: 1px solid var(--mg-border-soft);
-  border-left: 2px solid color-mix(in srgb, var(--mg-accent) 60%, var(--mg-border-soft));
-  border-radius: var(--mg-radius-sm);
-  background: color-mix(in srgb, var(--mg-surface-muted) 52%, transparent);
+  padding: 1.05rem 0 0;
+  border-top: 1px solid var(--mg-border-soft);
 }
 
 .login-use-notice h2 {
@@ -4144,18 +4133,11 @@ body.login-page .login-footer-note {
     padding-bottom: 1rem;
   }
 
-  body.login-page .login-brand-mark {
-    width: 115px;
-    height: 32px;
-  }
-
-  .login-wordmark { font-size: clamp(2.55rem, 12vw, 3.1rem); }
+  .login-wordmark { font-size: clamp(2.85rem, 13vw, 3.6rem); }
 }
 
 @media (max-width: 360px) {
   body.login-page .login-command-kicker { font-size: .6875rem; }
-  .login-brand-topline { align-items: flex-start; }
-  .login-use-notice { padding: .8rem .85rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -4163,6 +4145,7 @@ body.login-page .login-footer-note {
   body.login-page .login-button[aria-busy="true"]::after { animation: none; background: transparent; }
   body.login-page .login-form input,
   body.login-page .login-button { transition: none; }
+  .login-submit-frame { transition: none; }
 }
 
 /* --------------------------------------------------------------------------

@@ -165,7 +165,7 @@
 
     window.GateHooks.installActiveBusController = function gateHooksActiveBusHandoff() {
       if (window.GateStatusBoardController?.scheduleRender) {
-        window.GateStatusBoardController.scheduleRender({ force: true });
+        window.GateStatusBoardController.scheduleRender();
         return true;
       }
       return false;

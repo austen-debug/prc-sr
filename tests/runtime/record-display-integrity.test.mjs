@@ -171,10 +171,13 @@ test('Status Board uses one canonical timer and direct-surface integrity owner',
   assert.match(status, /SURFACE_IDS\s*=\s*Object\.freeze\(\['col-empty', 'col-open', 'col-closed', 'active-buses'\]\)/);
   assert.match(status, /surfaceObserver\.observe\(surface, \{ childList: true \}\)/);
   assert.doesNotMatch(status, /observe\(board, \{ childList: true, subtree: true \}\)/);
-  assert.match(status, /renderStatusBoard\(\{ force: true \}\)/);
+  assert.match(status, /renderStatusBoard\(\)/);
+  assert.match(status, /if \(signature === lastDormSignatures\.get\(state\) && complete\) return/);
+  assert.match(status, /if \(signature === lastBusSignature && complete\) return/);
+  assert.doesNotMatch(status, /pendingForceRender/);
   assert.doesNotMatch(status, /activeBusObserver|bodyObserver|boardObserver/);
   assert.doesNotMatch(middleware, /gate-status-board-timer-visual-stability\.js/);
-  assert.match(middleware, /gate-status-board-controller\.js\?v=status-board-reference-20261016-v1/);
+  assert.match(middleware, /gate-status-board-controller\.js\?v=status-board-spacing-20261017-v1/);
 });
 
 test('shared overtime controller only paints Squadron timers and delegates styling to canonical CSS', async () => {
@@ -221,6 +224,7 @@ test('airport bus persistence refreshes Status Board before auxiliary sound pers
   assert.ok(refreshIndex > cacheIndex, 'Status Board refresh must follow the persisted bus cache update');
   assert.ok(soundIndex > refreshIndex, 'auxiliary sound persistence must not gate Status Board rendering');
   assert.doesNotMatch(createAirport, /await\s+createSoundEvent/);
-  assert.match(workflow, /GateActiveBusController\?\.render\?\.\(\{ force: true \}\)/);
+  assert.match(workflow, /GateStatusBoardController\?\.scheduleRender\?\.\(\)/);
+  assert.doesNotMatch(workflow, /GateActiveBusController\?\.render\?\.\(\{ force: true \}\)/);
   assert.match(recordsApi, /await env\.DB\.prepare\([\s\S]*INSERT INTO records[\s\S]*\.run\(\);[\s\S]*return jsonResponse\(\{ isOk: true, data: storedRecord \}, 201/);
 });

@@ -48,6 +48,9 @@ test('Status Board renders dorm states incrementally and exposes diagnostics', a
 
   assert.match(controller, /lastDormSignatures\s*=\s*new Map/);
   assert.match(controller, /signature === lastDormSignatures\.get\(state\) && complete/);
+  assert.match(controller, /signature === lastBusSignature && complete/);
+  assert.doesNotMatch(controller, /pendingForceRender/);
+  assert.match(controller, /if \(dormRepairNeeded\) renderColumns\(dorms\)/);
   assert.match(controller, /renderStats\.columnWrites/);
   assert.match(controller, /diagnostics/);
   assert.match(controller, /repairStatusBoardSurfaces/);
@@ -100,7 +103,7 @@ test('Served source contains canonical Status Board rewrite contracts', async ()
   assert.match(middleware, /lastEl\.textContent !== String\(lastAirport\)/);
   assert.doesNotMatch(middleware, /const localEl = document\.getElementById\('stat-local'\)/);
   assert.match(middleware, /el\.classList\.remove\('timer-flash'\)/);
-  assert.match(middleware, /status-board-reference-20261016-v1/);
+  assert.match(middleware, /gate-status-board-controller\.js\?v=status-board-spacing-20261017-v1/);
   assert.match(middleware, /metric-live-clock-20260722/);
 });
 
@@ -120,14 +123,20 @@ test('Served HTML retires the legacy Local clock interval', async () => {
   assert.doesNotMatch(transformed, /const localEl = document\.getElementById\('stat-local'\)/);
 });
 
-test('Active timer ownership disables the legacy flashing interval', async () => {
+test('Shared sound tick is private and cannot be cleared by legacy Status Board cleanup', async () => {
   const controller = await source('public/js/gate-status-board-controller.js');
+  const sound = await source('public/js/prc-dash-overtime-audit.js');
   const middleware = await source('functions/_middleware.js');
 
   assert.match(controller, /window\.updateTimers = canonicalTimerTick/);
   assert.match(controller, /window\.clearInterval\(legacyInterval\)/);
   assert.match(controller, /timer\.classList\.toggle\('timer-flash', overtime\)/);
   assert.match(controller, /timer\.classList\.toggle\('timer-red', critical \|\| overtime\)/);
+  assert.match(sound, /controllerInterval = setInterval\(tick, TIMER_TICK_MS\)/);
+  assert.match(sound, /if \(typeof timerInterval !== 'undefined' && timerInterval\)/);
+  assert.match(sound, /timerInterval = null/);
+  assert.doesNotMatch(sound, /timerInterval = controllerInterval/);
+  assert.match(sound, /if \(!window\.GateStatusBoardController\?\.isCanonicalElapsedTimerOwner\)/);
   assert.doesNotMatch(middleware, /gate-status-board-timer-visual-stability\.js/);
 });
 

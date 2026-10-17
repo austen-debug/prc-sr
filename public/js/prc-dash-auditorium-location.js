@@ -345,6 +345,9 @@
       if (!column) return;
       const dorms = boardDormsForColumn(columnId);
       column.querySelectorAll('.dorm-card, .gate-dorm-card').forEach((card, index) => {
+        // Reference cards already receive this field from GateComponents.
+        // Avoid a second writer changing their layout after the canonical render.
+        if (card.dataset.gateBoardLayout === 'reference-v2') return;
         setLocation(card, dormForCard(card, dorms[index], dorms));
       });
     });

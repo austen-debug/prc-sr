@@ -221,6 +221,7 @@ test('airport bus persistence refreshes Status Board before auxiliary sound pers
   assert.ok(refreshIndex > cacheIndex, 'Status Board refresh must follow the persisted bus cache update');
   assert.ok(soundIndex > refreshIndex, 'auxiliary sound persistence must not gate Status Board rendering');
   assert.doesNotMatch(createAirport, /await\s+createSoundEvent/);
-  assert.match(workflow, /GateActiveBusController\?\.render\?\.\(\{ force: true \}\)/);
+  assert.match(workflow, /GateStatusBoardController\?\.scheduleRender\?\.\(\)/);
+  assert.doesNotMatch(workflow, /GateActiveBusController\?\.render\?\.\(\{ force: true \}\)/);
   assert.match(recordsApi, /await env\.DB\.prepare\([\s\S]*INSERT INTO records[\s\S]*\.run\(\);[\s\S]*return jsonResponse\(\{ isOk: true, data: storedRecord \}, 201/);
 });

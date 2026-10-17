@@ -1,8 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { readFile, writeFile, mkdtemp, rm } from 'node:fs/promises';
+import { spawnSync } from 'node:child_process';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { dirname, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import { onRequestPost as login } from '../../functions/api/login.js';
 import { verifyRequestSession } from '../../functions/api/session-contract.mjs';
@@ -226,4 +229,99 @@ test('changing Squadron credentials revokes only Squadron sessions and never exp
   assert.ok(!encoded.includes('squadron-new') && !encoded.includes('rotation-secret'));
   assert.equal(await verifyRequestSession(newSquadron,{...rotated,SQUADRON_USERNAME:''}),null);
   assert.equal(await verifyRequestSession(newSquadron,{...rotated,AUTH_SECRET:''}),null);
+});
+
+
+test('modern glass login keeps the exact authentication form, monitored-use notice, and single CSS owner', async () => {
+  const html = await source('public/login/index.html');
+  const css = await source('public/css/military-glass-terminal.css');
+  const middleware = await source('functions/_middleware.js');
+  for (const id of ['login-form','username','password','login-submit','login-message','login-title']) {
+    assert.equal(html.split('id="' + id + '"').length - 1, 1, 'Missing or duplicated login contract: ' + id);
+  }
+  assert.match(html, /type="text" autocomplete="username"/);
+  assert.match(html, /type="password" autocomplete="current-password"/);
+  assert.match(html, /id="login-message" role="alert" aria-live="polite"/);
+  assert.match(html, /login-submit-frame/);
+  assert.match(html, /Authorized use notice/);
+  assert.match(html, /may be monitored, recorded, and audited/);
+  assert.match(html, /Do not enter CUI or PII/);
+  assert.doesNotMatch(html, /Command Access|login-identity-strip|Beta Test v3/);
+  assert.match(html, /\/css\/military-glass-terminal\.css\?v=login-glass-20261017-v1/);
+  assert.match(css, /\.login-submit-frame::before\s*\{[^}]*animation:\s*gate-login-button-orbit 9s linear infinite/);
+  assert.match(css, /@media \(prefers-reduced-motion:\s*reduce\)\s*\{[\s\S]*?\.login-submit-frame::before\s*\{\s*animation:\s*none/);
+  assert.doesNotMatch(css, /login-identity-strip|login-card-surface/);
+  assert.doesNotMatch(html, /<script\s+src=/);
+  assert.match(middleware, /pathname === '\/login\/'/);
+  assert.match(html, /if \(event\.persisted\) setBusy\(false\)/);
+  assert.match(html, /if \(submit\.disabled\) return/);
+});
+
+test('Chromium validates responsive glass login geometry, visual focus, and orbit under Night/Day', async () => {
+  const chrome = [process.env.CHROME_BIN, 'google-chrome', 'chromium', 'chromium-browser']
+    .filter(Boolean).find(exe => spawnSync(exe, ['--version'], {encoding:'utf8', timeout:3000}).status === 0);
+  assert.ok(chrome, 'Chromium is required to verify actual responsive login geometry');
+  const styleUrl = pathToFileURL(resolve(root, 'public/css/military-glass-terminal.css')).href;
+  const html = (await source('public/login/index.html'))
+    .replace(/<link rel="preconnect"[^>]*>\n/g, '')
+    .replace(/<link rel="stylesheet" href="https:\/\/fonts\.googleapis\.com[^"]*">/, '')
+    .replace('/css/military-glass-terminal.css?v=login-glass-20261017-v1', styleUrl);
+  const measure = [
+    '(function(){',
+    'const $=s=>document.querySelector(s);',
+    'const rect=e=>{const r=e.getBoundingClientRect();return{x:r.left,y:r.top,right:r.right,bottom:r.bottom,width:r.width,height:r.height}};',
+    'const input=$("#username"),pass=$("#password"),button=$("#login-submit");',
+    'const card=$(".login-card"),brand=$(".login-brand-stack"),intro=$(".login-introduction"),form=$("#login-form"),notice=$(".login-use-notice"),frame=$(".login-submit-frame");',
+    'input.focus();',
+    'const focus=getComputedStyle(input);',
+    'const out={viewport:innerWidth,docWidth:document.documentElement.scrollWidth,card:rect(card),',
+    ' brand:rect(brand),intro:rect(intro),form:rect(form),notice:rect(notice),',
+    ' input:rect(input),password:rect(pass),button:rect(button),frame:rect(frame),',
+    ' buttonText:button.textContent.trim(),buttonAnimation:getComputedStyle(frame,"::before").animationName,',
+    ' buttonDisabled:button.disabled,inputType:input.type,passwordType:pass.type,',
+    ' glass:getComputedStyle(card).backdropFilter,cardBg:getComputedStyle(card).backgroundColor,',
+    ' border:getComputedStyle(card).borderTopWidth,focusOutline:focus.outlineStyle};',
+    'document.getElementById("gate-measurements").textContent=JSON.stringify(out);',
+    '})();'
+  ].join('\n');
+  const dir = await mkdtemp(join(tmpdir(),'gate-login-glass-'));
+  try {
+    const fixture = join(dir, 'login.html');
+    for (const [width,height] of [[360,740],[390,844],[768,1024],[1440,900],[1024,600]]) {
+      for (const theme of ['night','day']) {
+        const page=html.replace('<body class="login-page">', '<body class="login-page'+
+          (theme === 'day' ? ' theme-light' : '')+'">')
+          .replace('</body>','<pre id="gate-measurements"></pre><script>'+measure+'</script></body>');
+        await writeFile(fixture,page,'utf8');
+        const run=spawnSync(chrome,['--headless=new','--no-sandbox','--disable-gpu','--disable-dev-shm-usage',
+          '--disable-background-networking','--no-first-run','--user-data-dir='+join(dir,'chrome-'+width+'-'+theme),
+          '--window-size='+width+','+height,'--dump-dom',pathToFileURL(fixture).href],
+          {encoding:'utf8',timeout:30000,maxBuffer:4*1024*1024});
+        assert.equal(run.status,0,width+'/'+theme+' Chromium failed: '+String(run.stderr||'').slice(-300));
+        const match=run.stdout.match(/<pre id="gate-measurements">([^<]+)<\/pre>/);
+        assert.ok(match,width+'/'+theme+' missing computed UI geometry');
+        const a=JSON.parse(match[1].replaceAll('&quot;','"').replaceAll('&amp;','&'));
+        const where=width+'/'+theme;
+        assert.ok(a.docWidth<=a.viewport+1,where+' viewport overflows horizontally');
+        assert.ok(a.card.x>=-1 && a.card.right<=a.viewport+1,where+' card outside viewport');
+        assert.ok(a.card.width<=501,where+' login card is too wide');
+        assert.ok(a.brand.bottom<=a.intro.y+1 && a.intro.bottom<=a.form.y+1,where+' heading and form overlap');
+        assert.ok(a.form.bottom<=a.notice.y+1,where+' form overlaps authorized-use notice');
+        assert.ok(a.input.height>=44 && a.password.height>=44 && a.button.height>=44,
+          where+' inputs or button below accessible touch dimensions');
+        assert.ok(a.input.x>=a.card.x && a.password.right<=a.card.right+1,where+' inputs overflow card');
+        assert.ok(a.frame.y<=a.button.y+2 && a.button.bottom<=a.frame.bottom+1,where+' button ring misplaced');
+        assert.equal(a.buttonText,'Sign In');
+        assert.equal(a.buttonDisabled,false);
+        assert.equal(a.buttonAnimation,'gate-login-button-orbit',where+' halo not animated');
+        assert.equal(a.inputType,'text');
+        assert.equal(a.passwordType,'password');
+        assert.ok(a.glass!=='none',where+' glass surface absent');
+        assert.ok(a.border!=='0px',where+' card boundary missing');
+        assert.equal(a.focusOutline,'solid',where+' keyboard focus styling absent');
+      }
+    }
+  } finally {
+    await rm(dir, {recursive:true, force:true});
+  }
 });

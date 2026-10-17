@@ -20,6 +20,8 @@ test('every authenticated GATE document has exactly one organizational footer; l
     assert.match(html, /737 TRG <span aria-hidden="true">\|<\/span> BMT ENTERPRISE SOLUTION/, path);
     assert.match(html, /\/assets\/battalion_cpc_dark\.png/, path);
     assert.match(html, /\/assets\/battalion_cpc_light\.png/, path);
+    assert.match(html, /class="gate-global-footer__mark gate-global-footer__mark--dark" src="\/assets\/battalion_cpc_light\.png"/, `${path}: dark theme uses the light logo`);
+    assert.match(html, /class="gate-global-footer__mark gate-global-footer__mark--light" src="\/assets\/battalion_cpc_dark\.png"/, `${path}: light theme uses the dark logo`);
   }
   assert.doesNotMatch(await source('public/login/index.html'), /gate-global-footer/);
 });

@@ -19,7 +19,7 @@ const ROLE_HOME = Object.freeze({
 });
 
 const UI_STYLESHEETS = [
-  '<link rel="stylesheet" href="/css/military-glass-terminal.css?v=status-board-spacing-20261017-v1">'
+  '<link rel="stylesheet" href="/css/military-glass-terminal.css?v=global-footer-20261017-v1">'
 ];
 
 const UI_INLINE_ASSETS = [];

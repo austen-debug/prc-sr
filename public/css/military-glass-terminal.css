@@ -6411,3 +6411,88 @@ body.theme-light :is(input, textarea):focus-visible {
     animation: none;
   }
 }
+
+/* --------------------------------------------------------------------------
+   AUTHENTICATED GLOBAL FOOTER — shared Build 1 page chrome
+   The static templates own the markup. No additional script or stylesheet.
+   -------------------------------------------------------------------------- */
+:root { --gate-global-footer-height: 28px; }
+
+.gate-global-footer {
+  position: fixed;
+  inset: auto 0 0;
+  z-index: var(--mg-z-shell);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  min-height: var(--gate-global-footer-height);
+  padding: 4px 16px calc(4px + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--mg-border-soft);
+  background: rgba(15, 22, 31, .86);
+  -webkit-backdrop-filter: blur(14px) saturate(125%);
+  backdrop-filter: blur(14px) saturate(125%);
+  box-shadow: 0 -4px 18px rgba(0, 0, 0, .12);
+  color: var(--mg-text-soft);
+  font-family: var(--mg-font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: .065em;
+  pointer-events: none;
+}
+
+.gate-global-footer__classification { min-width: 0; white-space: nowrap; }
+.gate-global-footer__organization { text-align: center; white-space: nowrap; }
+.gate-global-footer__organization > span { padding-inline: 4px; opacity: .5; }
+.gate-global-footer__brand { display: flex; align-items: center; justify-self: end; height: 17px; }
+.gate-global-footer__mark { display: block; width: auto; max-width: 92px; height: 17px; object-fit: contain; }
+.gate-global-footer__mark--light { display: none; }
+
+body.theme-light .gate-global-footer {
+  background: rgba(249, 251, 254, .90);
+  color: var(--mg-text-soft);
+  border-top-color: var(--mg-border-glass);
+}
+
+body.theme-light .gate-global-footer__mark--dark { display: none; }
+body.theme-light .gate-global-footer__mark--light { display: block; }
+
+/* Reserve space for bottom actions, including the fullscreen command board. */
+body .page.active,
+body.gate-app-shell-ready .page.active {
+  padding-bottom: calc(var(--mg-page-gap) + var(--gate-global-footer-height) + env(safe-area-inset-bottom, 0px));
+}
+
+body.fullscreen-board #page-board,
+body.gate-fullscreen-board-active #page-board {
+  padding-bottom: calc(.65rem + var(--gate-global-footer-height) + env(safe-area-inset-bottom, 0px));
+}
+
+.gate-squadron-standalone #page-squadron {
+  padding-bottom: calc(var(--gate-global-footer-height) + 1rem + env(safe-area-inset-bottom, 0px));
+}
+
+@media (max-width: 760px) {
+  :root { --gate-global-footer-height: 40px; }
+  .gate-global-footer {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto auto;
+    column-gap: 8px;
+    row-gap: 1px;
+    padding: 4px 10px calc(4px + env(safe-area-inset-bottom, 0px));
+    font-size: 8px;
+    letter-spacing: .02em;
+  }
+  .gate-global-footer__classification,
+  .gate-global-footer__organization { grid-column: 1; text-align: left; }
+  .gate-global-footer__brand { grid-column: 2; grid-row: 1 / 3; }
+  .gate-global-footer__mark { max-width: 72px; height: 20px; }
+}
+
+@media print {
+  .gate-global-footer { display: none; }
+  body .page.active,
+  body.gate-app-shell-ready .page.active,
+  .gate-squadron-standalone #page-squadron { padding-bottom: 0; }
+}

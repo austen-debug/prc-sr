@@ -46,7 +46,7 @@ Injected by middleware in current order on the Flight Alert feature branch:
 11. `/js/gate-processing-controller.js?v=processing-dorm-cards-20261016-v2`
 12. `/js/prc-dash-dorm-flag-validation.js?v=status-board-reference-20261016-v1`
 13. `/js/prc-dash-auditorium-location.js?v=status-board-spacing-20261017-v1`
-14. `/js/gate-bus-workflow-controller.js?v=phase-3-bus-workflow-board-stability-20261017-v1`
+14. `/js/gate-bus-workflow-controller.js?v=airport-pax-limit-60-20261017-v1`
 15. `/js/gate-airport-bus-delete-controller.js?v=airport-bus-delete-20260714`
 16. `/js/gate-input-page-controller.js?v=record-display-integrity-20260714`
 17. `/js/gate-archive-controller.js?v=receiving-day-truth-20260928`

@@ -6,6 +6,7 @@
   let installed = false;
   let hooksRegistered = false;
   let refreshQueued = false;
+  const MAX_BUS_PAX = 60;
 
   function n(value) {
     const parsed = Number(value || 0);
@@ -105,10 +106,10 @@
 
   function validateCounts(prefix, total, females, naturals, spaceForce) {
     const totalError = prefix === 'local' ? 'local-total-error' : `${prefix}-otw-error`;
-    const totalLabel = prefix === 'local' ? 'Total arrived' : 'OTW';
+    const totalLabel = prefix === 'local' ? 'Total arrived' : 'Total Pax';
 
-    if (!Number.isFinite(total) || total <= 0 || total > 44) {
-      showError(totalError, `${totalLabel} must be between 1 and 44.`);
+    if (!Number.isFinite(total) || total <= 0 || total > MAX_BUS_PAX) {
+      showError(totalError, `${totalLabel} must be between 1 and ${MAX_BUS_PAX}.`);
       return false;
     }
     if (!Number.isFinite(females) || females < 0 || females > total) {

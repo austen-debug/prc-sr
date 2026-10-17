@@ -3971,7 +3971,7 @@ body.login-page .login-form input {
   transition: border-color 160ms ease, background-color 160ms ease, box-shadow 160ms ease;
 }
 
-body.login-page .login-form input:focus-visible {
+body.login-page .login-form input:focus {
   border-color: var(--mg-accent);
   outline: 2px solid var(--mg-accent);
   outline-offset: 2px;

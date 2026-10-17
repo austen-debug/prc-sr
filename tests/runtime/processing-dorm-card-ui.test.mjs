@@ -9,7 +9,7 @@ const source = name => readFile(resolve(root, name), 'utf8');
 const processing = await source('public/js/gate-processing-controller.js');
 const css = await source('public/css/military-glass-terminal.css');
 const adapter = await source('public/js/prc-dash-auditorium-location.js');
-const audio = await source('public/js/prc-dash-overtime-audit.js?v=status-board-timer-owner-20261017-v1');
+const audio = await source('public/js/prc-dash-overtime-audit.js');
 
 function section(content, a, b) {
   const from = content.indexOf(a), to = content.indexOf(b, from);

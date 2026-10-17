@@ -16,7 +16,7 @@ function countSet(command = {}) {
 }
 
 function validateCounts(counts) {
-  if (counts.total < 1 || counts.total > 44) return 'Bus total must be between 1 and 44.';
+  if (counts.total < 1 || counts.total > 60) return 'Bus total must be between 1 and 60.';
   if (counts.female > counts.total) return 'Female count cannot exceed the bus total.';
   if (counts.naturalization > counts.total) return 'Naturalization count cannot exceed the bus total.';
   if (counts.spaceForce > counts.total) return 'Space Force count cannot exceed the bus total.';

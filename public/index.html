@@ -237,8 +237,9 @@ body > * {
     </div>
     <form id="airport-form" class="surface border rounded-lg p-4 space-y-3">
  <h3 class="font-black text-lg uppercase tracking-wider">Generate Airport Bus</h3>
+     <p class="text-xs text-muted">ADD AIRPORT BUSES ONLY</p>
      <div>
-      <label class="block text-sm font-medium mb-1" for="bus-otw">Total On The Way (Max 44)</label><input id="bus-otw" type="number" inputmode="numeric" min="0" max="44" class="w-full border rounded px-3 py-2 bg-transparent" style="border-color:var(--border);color:var(--text);" required>
+      <label class="block text-sm font-medium mb-1" for="bus-otw">Total Pax</label><input id="bus-otw" type="number" inputmode="numeric" min="0" max="60" class="w-full border rounded px-3 py-2 bg-transparent" style="border-color:var(--border);color:var(--text);" required>
       <div id="bus-otw-error" class="text-red-500 text-xs mt-1 hidden"></div>
      </div>
      <div>
@@ -545,7 +546,7 @@ body > * {
       <label class="block text-sm font-medium mb-1" for="local-dest">Originating Destination</label><input id="local-dest" type="text" placeholder="ORIGINATING DESTINATION" class="w-full border rounded px-3 py-2 bg-transparent" style="border-color:var(--border);color:var(--text);" required>
      </div>
      <div>
-      <label class="block text-sm font-medium mb-1" for="local-total">Total Arrived</label><input id="local-total" type="number" inputmode="numeric" min="1" class="w-full border rounded px-3 py-2 bg-transparent" style="border-color:var(--border);color:var(--text);" required>
+      <label class="block text-sm font-medium mb-1" for="local-total">Total Arrived</label><input id="local-total" type="number" inputmode="numeric" min="1" max="60" class="w-full border rounded px-3 py-2 bg-transparent" style="border-color:var(--border);color:var(--text);" required>
      </div>
      <div>
       <label class="block text-sm font-medium mb-1" for="local-female">Females</label><input id="local-female" type="number" inputmode="numeric" min="0" value="0" class="w-full border rounded px-3 py-2 bg-transparent" style="border-color:var(--border);color:var(--text);">
@@ -568,8 +569,8 @@ body > * {
 
     <form id="airport-bus-edit-form" class="space-y-4">
       <div>
-        <label class="block text-sm font-medium mb-1" for="edit-bus-otw">Total On The Way</label>
-        <input id="edit-bus-otw" type="number" inputmode="numeric" min="0" max="44" class="w-full border rounded px-3 py-2 bg-transparent" style="border-color:var(--border);color:var(--text);" required>
+        <label class="block text-sm font-medium mb-1" for="edit-bus-otw">Total Pax</label>
+        <input id="edit-bus-otw" type="number" inputmode="numeric" min="0" max="60" class="w-full border rounded px-3 py-2 bg-transparent" style="border-color:var(--border);color:var(--text);" required>
         <div id="edit-bus-otw-error" class="text-red-500 text-xs mt-1 hidden"></div>
       </div>
 
@@ -1651,6 +1652,11 @@ closed_timer: d.state === 'closed'
         return;
       }
 
+      if (!Number.isFinite(total) || total < 1 || total > 60) {
+        showMsg('local-bus-msg', 'Total arrived must be between 1 and 60.', true);
+        return;
+      }
+
       if (!wg) {
         showMsg('local-bus-msg', 'Initialize a Week Group before adding a local arrival.', true);
         return;
@@ -1761,7 +1767,7 @@ closed_timer: d.state === 'closed'
       const females = Number(document.getElementById('bus-female').value || 0);
       const nats = Number(document.getElementById('bus-nat').value || 0);
       document.querySelectorAll('#airport-form .text-red-500').forEach(el => el.classList.add('hidden'));
-      if (otw > 44) { document.getElementById('bus-otw-error').textContent = 'Max 44'; document.getElementById('bus-otw-error').classList.remove('hidden'); return; }
+      if (otw > 60) { document.getElementById('bus-otw-error').textContent = 'Total Pax must be between 1 and 60.'; document.getElementById('bus-otw-error').classList.remove('hidden'); return; }
       if (females > otw) { document.getElementById('bus-female-error').textContent = 'Females cannot exceed OTW'; document.getElementById('bus-female-error').classList.remove('hidden'); return; }
       if (nats > otw) { document.getElementById('bus-nat-error').textContent = 'Naturalizations cannot exceed OTW'; document.getElementById('bus-nat-error').classList.remove('hidden'); return; }
       if (allData.length >= 999) { showMsg('airport-msg', 'Record limit reached!', true); return; }
@@ -2045,9 +2051,9 @@ document.getElementById('airport-bus-edit-form').addEventListener('submit', asyn
     el.classList.add('hidden');
   });
 
-  if (!Number.isFinite(otw) || otw < 0 || otw > 44) {
+  if (!Number.isFinite(otw) || otw < 0 || otw > 60) {
     const el = document.getElementById('edit-bus-otw-error');
-    el.textContent = 'OTW must be between 0 and 44.';
+    el.textContent = 'Total Pax must be between 0 and 60.';
     el.classList.remove('hidden');
     return;
   }

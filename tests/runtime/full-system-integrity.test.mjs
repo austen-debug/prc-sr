@@ -65,6 +65,9 @@ test('all six operational routes and their critical DOM surfaces remain present'
     'archive-history', 'local-bus-modal', 'airport-bus-edit-modal', 'confirm-dialog'
   ]) assert.match(html, new RegExp(`id=["']${id}["']`), `${id} missing from base DOM`);
 
+  assert.match(html, /<form id="airport-form"[\s\S]*?<h3[^>]*>Generate Airport Bus<\/h3>\s*<p class="text-xs text-muted">ADD AIRPORT BUSES ONLY<\/p>/,
+    'Airport-only guidance must appear directly beneath the bus generation heading');
+
   const squadron = await source('public/js/prc-dash-final-audit.js');
   assert.match(squadron, /page-squadron/);
   assert.match(squadron, /gate-squadron-page/);

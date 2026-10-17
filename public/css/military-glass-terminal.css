@@ -1009,14 +1009,22 @@ tbody tr:hover {
   grid-area: active;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
-  align-items: start;
+  align-items: center;
   gap: .85rem;
   min-width: 0;
+  min-height: 54px;
   padding: .8rem .9rem;
 }
 
 #page-board .gate-active-buses-label {
-  padding-top: .55rem;
+  padding: 0;
+  color: var(--mg-text-soft);
+  font-family: var(--mg-font-mono);
+  font-size: clamp(.75rem, .75vw, .875rem);
+  font-weight: 700;
+  letter-spacing: .06em;
+  line-height: 1.25;
+  text-transform: uppercase;
   white-space: nowrap;
 }
 
@@ -1026,6 +1034,15 @@ tbody tr:hover {
   align-items: stretch;
   gap: .55rem;
   min-width: 0;
+}
+
+#page-board #active-buses [data-empty-state="true"] {
+  align-self: center;
+  color: var(--mg-text-muted);
+  font-family: var(--mg-font-sans);
+  font-size: .875rem;
+  font-weight: 500;
+  line-height: 1.25;
 }
 
 #page-board #active-buses .bus-badge,
@@ -1111,6 +1128,17 @@ tbody tr:hover {
 #page-board [data-dorm-column],
 #page-squadron [data-dorm-column] {
   min-width: 0;
+}
+
+#page-board .dorm-col-header {
+  margin: 0 0 8px;
+  color: var(--mg-text-soft);
+  font-family: var(--mg-font-mono);
+  font-size: clamp(.75rem, .85vw, .875rem);
+  font-weight: 700;
+  letter-spacing: .06em;
+  line-height: 1.25;
+  text-transform: uppercase;
 }
 
 #page-board #col-empty,
@@ -1389,7 +1417,8 @@ tbody tr:hover {
   row-gap: 8px;
   column-gap: 0;
   min-height: clamp(194px,15vw,244px);
-  padding: 12px;
+  /* The alert occupies inset 6–8px: a 14px content inset leaves 6px clearance. */
+  padding: 14px;
   overflow: hidden;
   border-radius: var(--mg-radius-lg);
   /* Board tiles are read-only; avoid an old-theme background during a theme switch.
@@ -1657,7 +1686,7 @@ body.theme-light #page-board .gate-board-card--reference .gate-dorm-status[data-
 @media (max-width: 767px) {
   #page-board .gate-dorm-card.gate-board-card--reference {
     min-height: 194px;
-    padding: 12px;
+    padding: 14px;
     row-gap: 8px;
     border-radius: var(--mg-radius-md);
   }
@@ -1668,8 +1697,7 @@ body.theme-light #page-board .gate-board-card--reference .gate-dorm-status[data-
 
 /* Audit-aligned board telemetry: never fall below the 12px support-text baseline.
    Squadron, Processing and the shared component defaults remain unchanged. */
-#page-board .metric-label,
-#page-board .gate-active-buses-label {
+#page-board .metric-label {
   font-size: clamp(.75rem, .75vw, .875rem);
   line-height: 1.25;
 }

@@ -143,8 +143,8 @@
   function refreshAllSurfaces(source = 'gate-bus-workflow-controller') {
     try { if (typeof renderAll === 'function') renderAll(); } catch (error) { console.warn('GATE bus renderAll refresh failed:', error); }
     runPass();
-    try { window.GateStatusBoardController?.scheduleRender?.({ force: true }); } catch (_) {}
-    try { window.GateActiveBusController?.render?.({ force: true }); } catch (_) {}
+    // Reconcile only changed board surfaces; do not force-replace dorm cards or buses.
+    try { window.GateStatusBoardController?.scheduleRender?.(); } catch (_) {}
     try { window.GatePremiumMetricsController?.refresh?.(); } catch (_) {}
     try { window.runGateHooks?.('afterDataChanged', { source }); } catch (_) {}
   }

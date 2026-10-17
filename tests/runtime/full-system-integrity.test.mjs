@@ -68,6 +68,19 @@ test('all six operational routes and their critical DOM surfaces remain present'
   assert.match(html, /<form id="airport-form"[\s\S]*?<h3[^>]*>Generate Airport Bus<\/h3>\s*<p class="text-xs text-muted">ADD AIRPORT BUSES ONLY<\/p>/,
     'Airport-only guidance must appear directly beneath the bus generation heading');
 
+  assert.match(html, /for="bus-otw">Total Pax<\/label><input id="bus-otw"[^>]*max="60"/);
+  assert.match(html, /for="local-total">Total Arrived<\/label><input id="local-total"[^>]*max="60"/);
+  assert.match(html, /for="edit-bus-otw">Total Pax<\/label>\s*<input id="edit-bus-otw"[^>]*max="60"/);
+  assert.doesNotMatch(html, /Max 44|Total On The Way|total > 44|otw > 44/);
+  assert.match(html, /total < 1 \|\| total > 60/);
+  assert.match(html, /otw > 60/);
+  const busController = await source('public/js/gate-bus-workflow-controller.js');
+  const busRepository = await source('public/app/data/repositories/bus-repository.mjs');
+  assert.match(busController, /const MAX_BUS_PAX = 60/);
+  assert.match(busController, /total > MAX_BUS_PAX/);
+  assert.match(busRepository, /counts\.total > 60/);
+  assert.doesNotMatch(busRepository, /counts\.total > 44/);
+
   const squadron = await source('public/js/prc-dash-final-audit.js');
   assert.match(squadron, /page-squadron/);
   assert.match(squadron, /gate-squadron-page/);

@@ -243,12 +243,23 @@ test('modern glass login keeps the exact authentication form, monitored-use noti
   assert.match(html, /type="password" autocomplete="current-password"/);
   assert.match(html, /id="login-message" role="alert" aria-live="polite"/);
   assert.match(html, /login-submit-frame/);
-  assert.match(html, /Authorized use notice/);
+  assert.match(html, /GOVERNMENT NOTICE/);
+  assert.match(html, /AUTHORIZED USE ONLY/);
+  assert.doesNotMatch(html, /Authorized Reception Center personnel only/);
+  assert.doesNotMatch(html, /login-brand-mark|login-brand-topline/);
+  assert.ok(html.indexOf('>GATE</p>') < html.indexOf('>GATEWAY ARRIVAL TRACKING ENVIRONMENT</p>'));
+  assert.ok(html.indexOf('>GATEWAY ARRIVAL TRACKING ENVIRONMENT</p>') < html.indexOf('>PFINGSTON RECEPTION CENTER</p>'));
+  assert.ok(html.indexOf('>PFINGSTON RECEPTION CENTER</p>') < html.indexOf('>Sign In</h1>'));
+  assert.match(html, /Enter your credentials to enter/);
+  assert.ok(html.indexOf('id="login-submit"') < html.indexOf('GOVERNMENT NOTICE'));
   assert.match(html, /may be monitored, recorded, and audited/);
   assert.match(html, /Do not enter CUI or PII/);
   assert.doesNotMatch(html, /Command Access|login-identity-strip|Beta Test v3/);
-  assert.match(html, /\/css\/military-glass-terminal\.css\?v=login-glass-20261017-v1/);
-  assert.match(css, /\.login-submit-frame::before\s*\{[^}]*animation:\s*gate-login-button-orbit 9s linear infinite/);
+  assert.match(html, /\/css\/military-glass-terminal\.css\?v=login-watermark-20261017-v2/);
+  assert.match(css, /\.login-submit-frame::before\s*\{[^}]*animation:\s*gate-login-button-orbit 7\.5s linear infinite/);
+  assert.match(css, /body\.login-page::before\s*\{[^}]*background:\s*url\('\/assets\/gate_emblem_white\.png'\)/);
+  assert.match(css, /body\.login-page::before\s*\{[^}]*opacity:\s*\.065/);
+  assert.doesNotMatch(css, /\.login-brand-mark|\.login-brand-topline/);
   assert.match(css, /@media \(prefers-reduced-motion:\s*reduce\)\s*\{[\s\S]*?\.login-submit-frame::before\s*\{\s*animation:\s*none/);
   assert.doesNotMatch(css, /login-identity-strip|login-card-surface/);
   assert.doesNotMatch(html, /<script\s+src=/);
@@ -265,7 +276,7 @@ test('Chromium validates responsive glass login geometry, visual focus, and orbi
   const html = (await source('public/login/index.html'))
     .replace(/<link rel="preconnect"[^>]*>\n/g, '')
     .replace(/<link rel="stylesheet" href="https:\/\/fonts\.googleapis\.com[^"]*">/, '')
-    .replace('/css/military-glass-terminal.css?v=login-glass-20261017-v1', styleUrl);
+    .replace('/css/military-glass-terminal.css?v=login-watermark-20261017-v2', styleUrl);
   const measure = [
     '(function(){',
     'const $=s=>document.querySelector(s);',
@@ -279,6 +290,9 @@ test('Chromium validates responsive glass login geometry, visual focus, and orbi
     ' input:rect(input),password:rect(pass),button:rect(button),frame:rect(frame),',
     ' buttonText:button.textContent.trim(),buttonAnimation:getComputedStyle(frame,"::before").animationName,',
     ' buttonDisabled:button.disabled,inputType:input.type,passwordType:pass.type,',
+    ' watermark:getComputedStyle(document.body,"::before").backgroundImage,',
+    ' watermarkOpacity:parseFloat(getComputedStyle(document.body,"::before").opacity),',
+    ' logoCount:document.querySelectorAll(".login-brand-mark").length,',
     ' glass:getComputedStyle(card).backdropFilter,cardBg:getComputedStyle(card).backgroundColor,',
     ' border:getComputedStyle(card).borderTopWidth,focusOutline:focus.outlineStyle};',
     'document.getElementById("gate-measurements").textContent=JSON.stringify(out);',
@@ -314,6 +328,9 @@ test('Chromium validates responsive glass login geometry, visual focus, and orbi
         assert.equal(a.buttonText,'Sign In');
         assert.equal(a.buttonDisabled,false);
         assert.equal(a.buttonAnimation,'gate-login-button-orbit',where+' halo not animated');
+        assert.ok(a.watermark.includes('gate_emblem_white.png'),where+' full GATE watermark is missing');
+        assert.ok(a.watermarkOpacity>0 && a.watermarkOpacity<=0.09,where+' watermark too prominent or invisible');
+        assert.equal(a.logoCount,0,where+' obsolete card emblem is still present');
         assert.equal(a.inputType,'text');
         assert.equal(a.passwordType,'password');
         assert.ok(a.glass!=='none',where+' glass surface absent');

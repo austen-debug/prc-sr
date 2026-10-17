@@ -98,7 +98,7 @@
   function forceRecordRefresh() {
     try { if (typeof renderAll === 'function') renderAll(); } catch (error) { console.warn('GATE Processing render refresh failed:', error); }
     try { window.GateDormBoardController?.refresh?.(); } catch (_) {}
-    try { window.GateActiveBusController?.render?.({ force: true }); } catch (_) {}
+    try { window.GateActiveBusController?.render?.(); } catch (_) {}
     try { window.runGateHooks?.('afterDataChanged', { source: 'processing-record-update' }); } catch (_) {}
     schedulePass();
   }

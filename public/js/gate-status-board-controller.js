@@ -8,7 +8,6 @@
 
   let installed = false;
   let renderQueued = false;
-  let pendingForceRender = false;
   let lastBusSignature = '';
   let surfaceObserver = null;
   let observerConnected = false;
@@ -210,9 +209,8 @@
     board.dataset.owner = 'gate-status-board-controller';
   }
 
-  function renderColumns(dorms, options = {}) {
+  function renderColumns(dorms) {
     const source = Array.isArray(dorms) ? dorms : getDorms();
-    const force = Boolean(options.force);
     setBoardOwnership();
 
     DORM_STATES.forEach(state => {
@@ -222,7 +220,7 @@
       const filtered = expectedDorms(source, state);
       const signature = dormSignature(filtered);
       const complete = hasCompleteDormColumnMarkup(column, filtered, state);
-      if (!force && signature === lastDormSignatures.get(state) && complete) return;
+      if (signature === lastDormSignatures.get(state) && complete) return;
 
       lastDormSignatures.set(state, signature);
       column.dataset.component = 'status-board-dorm-column';
@@ -297,15 +295,14 @@
     });
   }
 
-  function renderActiveBuses(options = {}) {
+  function renderActiveBuses() {
     const container = document.getElementById('active-buses');
     if (!container) return;
 
     const buses = getActiveBuses();
     const signature = busSignature(buses);
-    const force = Boolean(options.force);
     const complete = hasCompleteActiveBusMarkup(container, buses);
-    if (!force && signature === lastBusSignature && complete) return;
+    if (signature === lastBusSignature && complete) return;
     lastBusSignature = signature;
 
     container.dataset.component = 'active-bus-panel';
@@ -467,17 +464,15 @@
     }
   }
 
-  function renderStatusBoard(options = {}) {
+  function renderStatusBoard() {
     renderQueued = false;
-    const force = Boolean(options.force || pendingForceRender);
-    pendingForceRender = false;
     const dorms = getDorms();
 
     statusBoardRenderInProgress = true;
     try {
       withSurfaceObserverPaused(() => {
-        renderColumns(dorms, { force });
-        renderActiveBuses({ force });
+        renderColumns(dorms);
+        renderActiveBuses();
       });
       updateBoardTimers();
       renderStats.renderPasses += 1;
@@ -486,11 +481,10 @@
     }
   }
 
-  function scheduleRender(options = {}) {
-    if (options.force) pendingForceRender = true;
+  function scheduleRender() {
     if (renderQueued) return;
     renderQueued = true;
-    requestAnimationFrame(() => renderStatusBoard({ force: pendingForceRender }));
+    requestAnimationFrame(renderStatusBoard);
   }
 
   function repairStatusBoardSurfaces() {
@@ -505,8 +499,9 @@
     statusBoardRenderInProgress = true;
     try {
       withSurfaceObserverPaused(() => {
-        if (dormRepairNeeded) renderColumns(dorms, { force: true });
-        if (busRepairNeeded) renderActiveBuses({ force: true });
+        // Only the damaged column or panel is replaced; healthy cards retain their DOM.
+        if (dormRepairNeeded) renderColumns(dorms);
+        if (busRepairNeeded) renderActiveBuses();
       });
       updateBoardTimers();
       renderStats.surfaceRepairs += 1;
@@ -551,7 +546,7 @@
       observedSurfaceCount: SURFACE_IDS.filter(id => document.getElementById(id)).length,
       timerOwnerActive: Boolean(canonicalTimerTimeout),
       timerSchedule: 'second-aligned-timeout',
-      pendingRender: renderQueued || pendingForceRender
+      pendingRender: renderQueued
     });
   }
 
@@ -599,7 +594,7 @@
     patchLegacyBoardGlobals();
     exposeControllers();
     ensureTimerOwner();
-    renderStatusBoard({ force: true });
+    renderStatusBoard();
     observeStatusBoardSurfaces();
     window.registerGateHook?.('afterRenderAll', handleRenderLifecycle);
     window.registerGateHook?.('afterDataChanged', handleDataLifecycle);

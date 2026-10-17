@@ -58,7 +58,7 @@ test('reference markup follows both PDF examples without affecting Squadron rend
 
 test('render paths, API read and write ownership, auditoriums and flags stay separate',async()=>{
   assert.match(status,/components\(\)\.dormCard\(dorm, \{ showAuditorium: true, statusBoardLayout: true \}\)/);
-  assert.match(status,/if \(!force && signature === lastDormSignatures\.get\(state\) && complete\) return/);
+  assert.match(status,/if \(signature === lastDormSignatures\.get\(state\) && complete\) return/);
   assert.match(status,/timer\.textContent !== elapsed\.text/);
   assert.match(status,/if \(card\.dataset\.gateTimeAlert !== visualState\)/);
   assert.match(status,/window\.setTimeout\(\(\) => \{/);

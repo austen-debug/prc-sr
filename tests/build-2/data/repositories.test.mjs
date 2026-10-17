@@ -84,6 +84,37 @@ test('new writes require actor role and persist creator/updater provenance', asy
   assert.equal(transport.records[1].updated_by_role, 'airman');
 });
 
+test('Airport and Local Bus counts accept 60 Pax but reject 61 on creation and edit', async () => {
+  const { repositories, transport } = setup();
+  const airportCommand = { actorRole: ACTOR, weekGroup: 'WG', busId: '60', female: 22, naturalization: 4, spaceForce: 8, departedAt: '2026-07-07T18:00:00Z' };
+  const localCommand = { actorRole: ACTOR, weekGroup: 'WG', destination: 'MEPS', female: 20, naturalization: 3, spaceForce: 6, arrivedAt: '2026-07-07T18:05:00Z' };
+
+  const airport = await repositories.buses.createAirportBus({ ...airportCommand, total: 60 });
+  const local = await repositories.buses.createLocalArrival({ ...localCommand, total: 60 });
+  assert.equal(airport.ok, true);
+  assert.equal(local.ok, true);
+  assert.deepEqual(transport.records.map(row => row.otw_count), [60, 60]);
+
+  const tooManyAirport = await repositories.buses.createAirportBus({ ...airportCommand, busId: '61', total: 61 });
+  const tooManyLocal = await repositories.buses.createLocalArrival({ ...localCommand, destination: 'OTHER', total: 61 });
+  assert.equal(tooManyAirport.error.code, RepositoryErrorCode.VALIDATION);
+  assert.equal(tooManyLocal.error.code, RepositoryErrorCode.VALIDATION);
+  assert.equal(transport.records.length, 2, 'Invalid counts must not create records');
+
+  const id = airport.data.id;
+  const editedToLimit = await repositories.buses.updateCounts(id, {
+    actorRole: ACTOR, total: 60, female: 25, naturalization: 5, spaceForce: 9,
+    updatedAt: '2026-07-07T18:10:00Z'
+  });
+  assert.equal(editedToLimit.ok, true);
+  const invalidEdit = await repositories.buses.updateCounts(id, {
+    actorRole: ACTOR, total: 61, female: 25, naturalization: 5, spaceForce: 9,
+    updatedAt: '2026-07-07T18:11:00Z'
+  });
+  assert.equal(invalidEdit.error.code, RepositoryErrorCode.VALIDATION);
+  assert.equal(transport.records.find(row => row.__backendId === id).otw_count, 60);
+});
+
 test('repository updates use record versions by default', async () => {
   const { repositories, transport } = setup([{ __backendId: 'bus-1', type: 'bus', week_group: 'WG', bus_id: '1', status: 'active', otw_count: 40, record_version: 2, departed_at: '2026-07-07T18:00:00Z' }]);
   const confirmed = await repositories.buses.confirmArrival('bus-1', { actorRole: ACTOR, arrivedAt: '2026-07-07T18:30:00Z' });

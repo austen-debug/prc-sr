@@ -232,8 +232,12 @@
   function patchGlobalFunctions() {
     ensureTimerStyles();
 
-    window.updateTimers = updateTimerDisplays;
-    try { updateTimers = updateTimerDisplays; } catch (_) {}
+    // The Status Board owns the shared elapsed-time entrypoint; this controller
+    // updates Squadron timers through its own tick without replacing that owner.
+    if (!window.GateStatusBoardController?.isCanonicalElapsedTimerOwner) {
+      window.updateTimers = updateTimerDisplays;
+      try { updateTimers = updateTimerDisplays; } catch (_) {}
+    }
 
     window.triggerOvertimeSoundIfNeeded = triggerOvertimeSoundOnce;
     try { triggerOvertimeSoundIfNeeded = triggerOvertimeSoundOnce; } catch (_) {}
@@ -244,9 +248,9 @@
 
   function stopLegacyTimerInterval() {
     try {
-      if (typeof timerInterval !== 'undefined' && timerInterval && timerInterval !== controllerInterval) {
+      if (typeof timerInterval !== 'undefined' && timerInterval) {
         clearInterval(timerInterval);
-        timerInterval = controllerInterval;
+        timerInterval = null;
       }
     } catch (_) {}
   }
@@ -259,8 +263,9 @@
 
   function startControllerInterval() {
     if (controllerInterval) return;
+    // Keep this sound/Squadron interval private: the Status Board separately
+    // retires any late-starting legacy timerInterval on its lifecycle hooks.
     controllerInterval = setInterval(tick, TIMER_TICK_MS);
-    try { timerInterval = controllerInterval; } catch (_) {}
   }
 
   function exposeController() {

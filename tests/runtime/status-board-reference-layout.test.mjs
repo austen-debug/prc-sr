@@ -122,6 +122,10 @@ test('Chromium card geometry avoids overlap and clipping at 260–420px, themes 
     ' return {id:e.dataset.dormId,card:rect(e),header:rect(h),left:rect(left),ident:rect(ident),right:rect(right),',
     ' center:rect(center),footer:rect(footer),timer:rect(timer),load:rect(load),aud:aud?rect(aud):null,',
     ' track:rect(track),name:rect(name),status:rect(state),scroll:overflow(e),nameOver:overflow(name),',
+    ' align:{nameLeft:rect(name).x,squadronLeft:rect(q(".gate-board-card__squadron")).x,',
+    ' sectionLeft:rect(q(".gate-board-card__section")).x,audLeft:aud?rect(aud).x:null,',
+    ' progressLeft:rect(track).x,statusRight:rect(state).right,',
+    ' airmanRight:rect(q(".gate-dorm-airman")).right,loadRight:rect(load).right,progressRight:rect(track).right},',
     ' text:{name:parseFloat(cs(name).fontSize),squadron:parseFloat(cs(q(".gate-board-card__squadron")).fontSize),',
     ' section:parseFloat(cs(q(".gate-board-card__section")).fontSize),identity:parseFloat(cs(ident).fontSize),',
     ' status:parseFloat(cs(state).fontSize),airman:parseFloat(cs(q(".gate-dorm-airman")).fontSize),',
@@ -194,7 +198,14 @@ test('Chromium card geometry avoids overlap and clipping at 260–420px, themes 
           if(typeof px==='number'&&px!==null&&label!=='paddingLeft'&&label!=='paddingRight')
             assert.ok(px>=12,context+' '+label+' font below 12px: '+px);
         }
-        assert.ok(c.text.paddingLeft>=12&&c.text.paddingRight>=12,context+' card padding below 12px');
+        assert.ok(c.text.paddingLeft>=14&&c.text.paddingRight>=14,context+' alert ring has insufficient content clearance');
+        const a=c.align,near=(x,y)=>Math.abs(x-y)<=1;
+        assert.ok(near(a.nameLeft,a.squadronLeft)&&near(a.nameLeft,a.sectionLeft),context+' header fields do not share the left inset');
+        assert.ok(near(a.nameLeft,a.progressLeft),context+' progress is not aligned to the header inset');
+        if(a.audLeft!==null)assert.ok(near(a.nameLeft,a.audLeft),context+' auditorium location has a different inset');
+        assert.ok(near(a.statusRight,a.airmanRight)&&near(a.statusRight,a.loadRight),context+' right-side information edges disagree');
+        assert.ok(near(a.statusRight,a.progressRight),context+' progress differs from right-side card inset');
+        assert.ok(a.nameLeft-c.card.x>=14&&c.card.right-a.loadRight>=14,context+' content too close to inset alert ring');
         assert.match(c.text.loadFamily,/Mono|mono/i,context+' load counts not in mono/tabular type');
         assert.equal(c.text.loadWeight,'700',context+' load weight should be bold');
         assert.equal(c.text.statusWeight,'700',context+' state label should be bold');
@@ -209,6 +220,60 @@ test('Chromium card geometry avoids overlap and clipping at 260–420px, themes 
       const female=results.night.find(x=>x.id==='2D1'),space=results.night.find(x=>x.id==='2D2');
       assert.notEqual(female.outerBorder,space.outerBorder,'Female outer red identity border lost');
       assert.equal(female.alertContent,'none','Closed female card should have no animated band');
+    }
+  }finally{await rm(dir,{recursive:true,force:true});}
+});
+
+
+test('Chromium aligns the Active Buses empty state and restores consistent column headings',async()=>{
+  const chrome=chromeBinary();
+  assert.ok(chrome,'Chromium required for board text alignment verification');
+  const href=pathToFileURL(resolve(root,'public/css/military-glass-terminal.css')).href;
+  const script=[
+    '(function(){',
+    'const block=document.querySelector(".gate-active-buses-block"),label=block.querySelector(".gate-active-buses-label"),none=document.querySelector("#active-buses [data-empty-state]");',
+    'const heads=[...document.querySelectorAll(".dorm-col-header")];',
+    'const rect=e=>{const r=e.getBoundingClientRect();return{x:r.x,y:r.y,right:r.right,bottom:r.bottom,midY:r.y+r.height/2}};',
+    'const css=e=>{const s=getComputedStyle(e);return{family:s.fontFamily,size:parseFloat(s.fontSize),weight:s.fontWeight,transform:s.textTransform,paddingTop:parseFloat(s.paddingTop)}};',
+    'document.getElementById("results").textContent=JSON.stringify({viewport:innerWidth,block:rect(block),label:rect(label),none:rect(none),',
+    'labelStyle:css(label),noneStyle:css(none),gridColumns:getComputedStyle(block).gridTemplateColumns,',
+    'headings:heads.map(e=>({rect:rect(e),style:css(e)}))});',
+    '})();'
+  ].join('\n');
+  const dir=await mkdtemp(join(tmpdir(),'gate-board-header-align-'));
+  try{
+    const file=join(dir,'fixture.html');
+    for(const width of [390,1280]){
+      const html='<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1">'+
+        '<link rel="stylesheet" href="'+href+'"></head><body><main id="page-board">'+
+        '<div class="board-header"><section class="gate-active-buses-block">'+
+        '<div class="gate-active-buses-label">ACTIVE BUSES</div>'+
+        '<div id="active-buses"><span data-empty-state="true">None</span></div></section></div>'+
+        '<div class="dorm-dashboard">'+['Empty','Open','Closed'].map(state=>
+          '<div class="dorm-column"><div class="dorm-col-header">'+state+'</div>'+
+          '<div class="dorm-col-content" id="col-'+state.toLowerCase()+'"><div>None</div></div></div>'
+        ).join('')+'</div></main><pre id="results"></pre><script>'+script+'</script></body></html>';
+      await writeFile(file,html,'utf8');
+      const run=spawnSync(chrome,['--headless=new','--no-sandbox','--disable-gpu','--disable-dev-shm-usage',
+        '--no-first-run','--disable-background-networking','--user-data-dir='+join(dir,'chrome-'+width),
+        '--window-size='+width+',900','--dump-dom',pathToFileURL(file).href],
+      {encoding:'utf8',timeout:30000,maxBuffer:4*1024*1024});
+      assert.equal(run.status,0,width+'px board fixture failed: '+String(run.stderr||'').slice(-400));
+      const match=run.stdout.match(/<pre id="results">([^<]+)<\/pre>/);
+      assert.ok(match,width+'px missing board text measurements');
+      const data=JSON.parse(match[1].replaceAll('&quot;','"').replaceAll('&amp;','&'));
+      assert.ok(data.labelStyle.size>=12&&data.noneStyle.size>=12,'Bus label or empty state is too small');
+      assert.equal(data.labelStyle.paddingTop,0,'Active Buses label still relies on a top offset');
+      assert.ok(data.headings.every(h=>h.style.size>=12&&h.style.weight==='700'&&h.style.transform==='uppercase'),
+        'Dorm column headings lack consistent canonical typography');
+      assert.ok(data.headings.every(h=>h.style.family===data.headings[0].style.family&&h.style.size===data.headings[0].style.size),
+        'Dorm headings do not share a single type contract');
+      if(data.viewport>767){
+        assert.ok(Math.abs(data.label.midY-data.none.midY)<=1,'Active Buses and None are not vertically centered');
+      }else{
+        assert.ok(data.none.y>=data.label.bottom-1,'Phone Active Buses empty state overlaps label');
+      }
+      assert.ok(data.none.right<=data.block.right+1,'Active bus empty state overflows the panel');
     }
   }finally{await rm(dir,{recursive:true,force:true});}
 });

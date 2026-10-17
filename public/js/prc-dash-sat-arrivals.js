@@ -381,7 +381,7 @@
 
     syncHeaderValues();
     if (typeof window.GateActiveBusController?.render === 'function') {
-      window.GateActiveBusController.render({ force: true });
+      window.GateActiveBusController.render();
     }
   }
 

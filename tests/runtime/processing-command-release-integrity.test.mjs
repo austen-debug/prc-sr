@@ -93,12 +93,12 @@ test('Processing controllers retain their coordinated release and the shared CSS
   const middleware = await source('functions/_middleware.js');
   assert.ok(middleware.includes('/js/gate-processing-controller.js?v=processing-dorm-cards-20261016-v2'),
     'Processing mutation owner should remain unchanged');
-  assert.ok(middleware.includes('/js/prc-dash-auditorium-location.js?v=status-board-reference-20261016-v1'),
+  assert.ok(middleware.includes('/js/prc-dash-auditorium-location.js?v=status-board-spacing-20261017-v1'),
     'Shared display adapter must load at the revised Status Board version');
   const inventory = JSON.parse(await source('docs/build-2/ACTIVE_RUNTIME_BUDGET.json'));
   const cssUrl = inventory.currentDirectStyles.find(url => url.startsWith('/css/military-glass-terminal.css?v='));
   assert.ok(cssUrl && middleware.includes(cssUrl), 'Canonical stylesheet URL must match active runtime manifest');
-  assert.ok(middleware.includes('/js/gate-status-board-controller.js?v=status-board-reference-20261016-v1'));
+  assert.ok(middleware.includes('/js/gate-status-board-controller.js?v=status-board-spacing-20261017-v1'));
   assert.doesNotMatch(middleware, /military-glass-terminal-20260929-tablet-menu/);
 });
 

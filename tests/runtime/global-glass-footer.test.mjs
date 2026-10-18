@@ -56,7 +56,7 @@ test('standalone Administration footer retains fixed dimensions while enlarging 
 test('footer uses existing stylesheet and does not expand the active asset budget', async () => {
   const middleware = await source('functions/_middleware.js');
   const budget = JSON.parse(await source('docs/build-2/ACTIVE_RUNTIME_BUDGET.json'));
-  const expected = '/css/military-glass-terminal.css?v=global-footer-20261017-v2';
+  const expected = '/css/military-glass-terminal.css?v=week-group-progress-20261018-v1';
   assert.ok(budget.currentDirectStyles.includes(expected));
   assert.ok(middleware.includes(expected));
   assert.equal(budget.currentDirectStyles.length, 1);

@@ -19,7 +19,7 @@ const ROLE_HOME = Object.freeze({
 });
 
 const UI_STYLESHEETS = [
-  '<link rel="stylesheet" href="/css/military-glass-terminal.css?v=global-footer-20261017-v2">'
+  '<link rel="stylesheet" href="/css/military-glass-terminal.css?v=week-group-progress-20261018-v1">'
 ];
 
 const UI_INLINE_ASSETS = [];
@@ -40,8 +40,8 @@ const UI_HEAD_SCRIPTS = [
   '<script src="/js/prc-dash-auditorium-location.js?v=status-board-spacing-20261017-v1" defer></script>',
   '<script src="/js/gate-bus-workflow-controller.js?v=airport-pax-limit-60-20261017-v1" defer></script>',
   '<script src="/js/gate-airport-bus-delete-controller.js?v=airport-bus-delete-20260714" defer></script>',
-  '<script src="/js/gate-input-page-controller.js?v=record-display-integrity-20260714" defer></script>',
-  '<script src="/js/gate-archive-controller.js?v=receiving-day-truth-20260928" defer></script>',
+  '<script src="/js/gate-input-page-controller.js?v=week-group-progress-20261018-v1" defer></script>',
+  '<script src="/js/gate-archive-controller.js?v=week-group-progress-20261018-v1" defer></script>',
   '<script src="/js/gate-permission-guard.js?v=permission-server-role-20260922" defer></script>',
   '<script type="module" src="/app/features/input/flight-alert-import.mjs?v=flight-alert-import-20261016-input-closeout-v1"></script>',
   '<script src="/js/gate-app-shell-controller.js?v=tablet-menu-20260929" defer></script>',

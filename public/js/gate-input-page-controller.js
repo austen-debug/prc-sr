@@ -18,6 +18,7 @@
   let passQueued = false;
   let dataSdkPatched = false;
   let archiveOpenPatched = false;
+  let initializationInProgress = false;
 
   function n(value) {
     const parsed = Number(value || 0);
@@ -504,6 +505,7 @@
     event?.preventDefault?.();
     event?.stopPropagation?.();
     event?.stopImmediatePropagation?.();
+    if (initializationInProgress) return;
 
     ensureInputPageShell();
     syncAllBatchRowsFromDom();
@@ -520,6 +522,8 @@
     const windows = readWindowInputs(weekGroup);
     const btn = document.getElementById('init-wg-btn');
     const originalText = btn?.textContent || 'INITIALIZE WEEK GROUP';
+    const progress = window.GateWeekGroupProgress;
+    initializationInProgress = true;
 
     if (btn) {
       btn.disabled = true;
@@ -528,6 +532,7 @@
 
     let ok = 0;
     try {
+      progress?.show?.(weekGroup, 'initialize');
       const existingConfig = allDataSafe().find(record => record.type === 'config' && record.key === 'week_group');
       const configPayload = existingConfig
         ? { ...existingConfig, value: weekGroup, updated_at: new Date().toISOString() }
@@ -536,7 +541,8 @@
       if (configResult?.isOk) syncLocalRecord(configResult.data || configPayload);
       else throw new Error(configResult?.error || 'Failed to set active Week Group.');
 
-      for (const row of rows) {
+      for (const [index, row] of rows.entries()) {
+        progress?.update?.(`Creating dorm ${index + 1} of ${rows.length}…`);
         const payload = buildDormPayload(row, weekGroup, windows);
         const result = await window.dataSdk.create(payload);
         if (result?.isOk) {
@@ -545,6 +551,7 @@
         }
       }
 
+      progress?.update?.('Finalizing Week Group…');
       if (ok === rows.length) {
         document.getElementById('init-success-overlay')?.classList.remove('hidden');
         showInputMessage(`${weekGroup} initialized with ${ok} dorms.`, false);
@@ -558,6 +565,8 @@
     } catch (error) {
       showInputMessage(error?.message || 'Failed to initialize Week Group.', true);
     } finally {
+      progress?.hide?.();
+      initializationInProgress = false;
       if (btn) {
         btn.disabled = false;
         btn.textContent = originalText;

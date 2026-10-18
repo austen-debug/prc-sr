@@ -31,6 +31,7 @@
   let closeoutPatchAttempts = 0;
   let closeoutPatchTimer = null;
   let closeoutInProgress = false;
+  let weekGroupProgressPhraseIndex = 0;
 
   function n(value) {
     const parsed = Number(value || 0);
@@ -214,14 +215,24 @@
 
   // Native modal stays above every page re-render while the canonical closeout runs.
   // It owns no operational records, timers, or persistence; confirmation remains separate.
-  function showCloseoutProgress(weekGroup) {
+  function showCloseoutProgress(weekGroup, action = 'closeout') {
+    const phrases = [
+      '60 SECONDS… HYDRATE',
+      'I PROMISE IT’S DOING SOMETHING…',
+      'DO TEN PUSH-UPS WHILE YOU WAIT',
+      'DFAC ASSISTANTS GO!',
+      'SHORT CHOPPY STEPPING OUR WAY THROUGH PROCESSING…',
+      'HYDRATE OR DIE',
+      'I… AM AN AMERICAN AIRMAN…',
+      'GUIDON IS CURRENTLY ENTERING THE STAIRWELL…'
+    ];
     let dialog = document.getElementById('gate-closeout-progress');
     if (!dialog) {
       dialog = document.createElement('dialog');
       dialog.id = 'gate-closeout-progress';
       dialog.className = 'gate-closeout-progress';
       dialog.setAttribute('aria-labelledby', 'gate-closeout-progress-title');
-      dialog.setAttribute('aria-describedby', 'gate-closeout-progress-stage');
+      dialog.setAttribute('aria-describedby', 'gate-closeout-progress-stage gate-closeout-progress-phrase');
       dialog.setAttribute('aria-modal', 'true');
       dialog.innerHTML = [
         '<div class="gate-closeout-progress-panel">',
@@ -229,14 +240,18 @@
         '<h2 id="gate-closeout-progress-title">ARCHIVING WEEK GROUP</h2>',
         '<p id="gate-closeout-progress-week"></p>',
         '<p id="gate-closeout-progress-stage" role="status" aria-live="polite" aria-atomic="true"></p>',
+        '<p id="gate-closeout-progress-phrase"></p>',
         '</div>'
       ].join('');
       // Escape must not cancel the server-side closeout after it has begun.
       dialog.addEventListener('cancel', event => event.preventDefault());
       document.body.appendChild(dialog);
     }
+    dialog.querySelector('#gate-closeout-progress-title').textContent = action === 'initialize' ? 'INITIALIZING WEEK GROUP' : 'ARCHIVING WEEK GROUP';
     dialog.querySelector('#gate-closeout-progress-week').textContent = 'Week Group: ' + weekGroup;
-    updateCloseoutProgress('Creating archive record…');
+    dialog.querySelector('#gate-closeout-progress-phrase').textContent = phrases[weekGroupProgressPhraseIndex];
+    weekGroupProgressPhraseIndex = (weekGroupProgressPhraseIndex + 1) % phrases.length;
+    updateCloseoutProgress(action === 'initialize' ? 'Registering Week Group…' : 'Creating archive record…');
     if (!dialog.open) dialog.showModal();
   }
 
@@ -251,6 +266,13 @@
     if (dialog.open) dialog.close();
     dialog.remove();
   }
+
+  // Shared Input-page progress presentation; controllers retain ownership of their writes.
+  window.GateWeekGroupProgress = Object.freeze({
+    show: showCloseoutProgress,
+    update: updateCloseoutProgress,
+    hide: hideCloseoutProgress
+  });
 
   function showArchiveMessage(message, isError = true) {
     const msg = document.getElementById('archive-edit-msg');
@@ -446,9 +468,8 @@
       try { window.runGateHooks?.('afterCloseout', { weekGroup, archiveId: result.data.__backendId, source: 'gate-archive-controller' }); } catch (_) {}
       try { window.runGateHooks?.('afterDataChanged', { weekGroup, archiveId: result.data.__backendId, source: 'gate-archive-controller' }); } catch (_) {}
       renderArchiveManagementView();
-      // The closeout hook refreshes the archive list asynchronously. Keep the
-      // overlay in place through that final refresh rather than exposing a flash.
-      if (archiveIndexPromise) await archiveIndexPromise;
+      // Archive-list refresh is presentation only. Do not hold the transaction
+      // modal open on a pending or stalled GET after archive verification and clearance.
       showCloseoutMessage(`Week group ${weekGroup} archived and cleared.`);
       window.setTimeout(() => showCloseoutMessage(''), 6000);
     } catch (error) {

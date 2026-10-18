@@ -16,7 +16,7 @@
     "middlewareStatusBoardSourceRewriteRemoved": true
   },
   "currentDirectStyles": [
-    "/css/military-glass-terminal.css?v=global-footer-20261017-v2"
+    "/css/military-glass-terminal.css?v=week-group-progress-20261018-v1"
   ],
   "currentImportedStyles": [],
   "currentDirectScripts": [
@@ -35,8 +35,8 @@
     "/js/prc-dash-auditorium-location.js?v=status-board-spacing-20261017-v1",
     "/js/gate-bus-workflow-controller.js?v=airport-pax-limit-60-20261017-v1",
     "/js/gate-airport-bus-delete-controller.js?v=airport-bus-delete-20260714",
-    "/js/gate-input-page-controller.js?v=record-display-integrity-20260714",
-    "/js/gate-archive-controller.js?v=receiving-day-truth-20260928",
+    "/js/gate-input-page-controller.js?v=week-group-progress-20261018-v1",
+    "/js/gate-archive-controller.js?v=week-group-progress-20261018-v1",
     "/js/gate-permission-guard.js?v=permission-server-role-20260922",
     "/app/features/input/flight-alert-import.mjs?v=flight-alert-import-20261016-input-closeout-v1",
     "/js/gate-app-shell-controller.js?v=tablet-menu-20260929",

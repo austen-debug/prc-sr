@@ -61,7 +61,7 @@
     const wg = activeWeekGroup();
     const dorms = records()
       .filter(record => record?.type === 'dorm')
-      .filter(record => !wg || record.week_group === wg);
+      .filter(record => wg && record.week_group === wg);
     return recordDisplay()?.sortDorms ? recordDisplay().sortDorms(dorms) : dorms;
   }
 
@@ -69,7 +69,7 @@
     const wg = activeWeekGroup();
     return records()
       .filter(record => record?.type === 'bus')
-      .filter(record => !wg || record.week_group === wg)
+      .filter(record => wg && record.week_group === wg)
       .filter(record => record.status === 'active' || record.status === 'otw')
       .sort((a, b) => String(a.created_at || '').localeCompare(String(b.created_at || '')));
   }

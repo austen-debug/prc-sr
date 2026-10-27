@@ -10,8 +10,10 @@ const refuse = (code,error,status=409) => send({isOk:false,code,error},status);
 const allowed = data => data?.session?.role === 'instructor';
 const keyOk = value => typeof value==='string' && /^[a-f\d-]{36}$/i.test(value);
 const nowIso = () => new Date().toISOString();
-const assertion = (env,condition,...args) =>
-  env.DB.prepare(`SELECT CASE WHEN ${condition} THEN 1 ELSE json_extract('invalid-json','$') END`).bind(...args);
+const assertion = (env,condition,...args) => {
+  const stmt=env.DB.prepare(`SELECT CASE WHEN ${condition} THEN 1 ELSE json_extract('invalid-json','$') END`);
+  return args.length ? stmt.bind(...args) : stmt;
+};
 
 async function committedArchive(env,requestId) {
   const rows=await env.DB.prepare("SELECT id,week_group FROM records WHERE type='archive' AND json_extract(data,'$.legacy_closeout_request_id')=? LIMIT 2").bind(requestId).all();
@@ -77,7 +79,10 @@ export async function onRequestPost({request,env,data}){
     // some records. Never create a second archive over that partial state.
     const oldest=rows.map(row=>row.created_at).sort()[0]||nowIso();
     const existing=await env.DB.prepare("SELECT id FROM records WHERE type='archive' AND week_group=? AND (julianday(json_extract(data,'$.archived_at'))>=julianday(?) OR julianday(json_extract(data,'$.archived_at'))>=julianday('now','-1 day')) LIMIT 1").bind(weekGroup,oldest).first();
-    if(existing)return refuse('existing_archive','An archive already exists for this Week Group. Reconcile remaining records; do not archive twice.');
+    if(existing){
+      const sounds=rows.filter(row=>row.type==='sound_event').length;
+      return refuse('existing_archive',`An archive already exists. ${dorms.length} dorm, ${buses.length} bus, and ${sounds} sound-event records remain. No additional archive or deletion was attempted. Reconcile the previous closeout first.`);
+    }
 
     const fields=['receiving_day_one_start','receiving_day_one_end','receiving_day_two_start','receiving_day_two_end'];
     const windows={};

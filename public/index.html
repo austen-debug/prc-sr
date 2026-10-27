@@ -764,7 +764,11 @@ async function refresh(force = false) {
         const result = await response.json();
 
         if (result.isOk) {
-          await refresh(true);
+          // The D1 mutation already committed. Rendering is a separate read,
+          // never a condition for acknowledging a successful write.
+          void refresh(true).catch(error => {
+            console.warn('GATE record committed; background refresh will retry:', error);
+          });
         }
 
         return result;
@@ -809,7 +813,11 @@ async function refresh(force = false) {
         const result = await response.json();
 
         if (result.isOk) {
-          await refresh(true);
+          // The D1 mutation already committed. Rendering is a separate read,
+          // never a condition for acknowledging a successful write.
+          void refresh(true).catch(error => {
+            console.warn('GATE record committed; background refresh will retry:', error);
+          });
         }
 
         return result;

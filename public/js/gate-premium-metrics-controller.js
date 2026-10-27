@@ -40,11 +40,11 @@
     const buses = records.filter(record => record?.type === 'bus' && record.week_group === wg);
     const arrivedBuses = buses.filter(bus => String(bus.status || '').trim().toLowerCase() === 'arrived');
     const totalExpected = dorms.reduce((sum, dorm) => sum + (Number(dorm.max_load) || 0), 0);
-    const accounting = window.GateOperationalCounts?.calculateAssignmentSummary?.(records, wg);
+    const accounting = wg ? window.GateOperationalCounts?.calculateAssignmentSummary?.(records, wg) : null;
     const totalArrived = accounting
       ? accounting.arrived
       : arrivedBuses.reduce((sum, bus) => sum + (Number(bus.otw_count) || 0), 0);
-    const lastAirport = records.find(record => record?.type === 'config' && record.key === 'last_airport')?.value || '—';
+    const lastAirport = wg ? (records.find(record => record?.type === 'config' && record.key === 'last_airport')?.value || '—') : '—';
 
     return {
       arrived: totalArrived,

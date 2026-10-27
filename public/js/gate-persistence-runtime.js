@@ -66,7 +66,10 @@
     const selectors='#wg-batch-input, #batch-rows-container input, #batch-rows-container select, #batch-rows-container [data-gate-input-clear-row], #receiving-windows-panel input, #gate-import-open, #gate-import-inter';
     document.querySelectorAll(selectors).forEach(element=>{element.disabled=locked;});
     if(byId('init-wg-btn'))byId('init-wg-btn').disabled=locked||conflict;
-    if(byId('closeout-btn'))byId('closeout-btn').disabled=mode!=='ready'||!health?.cycle||health.cycle.state!=='active'||actionInFlight;
+    // A cached failed health read must not permanently strand closeout.
+    // Allow re-verification only; the transaction still requires server readiness.
+    const retryable = mode==='blocked' && (!health || health.cycle?.state==='active');
+    if(byId('closeout-btn'))byId('closeout-btn').disabled=!(mode==='ready' && health?.cycle?.state==='active'||retryable)||actionInFlight;
   }
   function scheduleSave(delay=850){
     if(mode==='checking'){dirtyDuringBoot=true;return;}
@@ -103,6 +106,15 @@
       }else status(`Input was NOT saved: ${failure.message}`,true);
       lockInput();throw failure;
     }finally{if(inFlight===task)inFlight=null;}
+  }
+  function verificationFailure(){
+    if(!health)return 'Server readiness could not be verified.';
+    if(mode==='legacy')return 'Transactional persistence is disabled; reload to use the authorized legacy workflow.';
+    const keys=['original','mirrored','differences','extras','unmapped','required_triggers'];
+    if(keys.every(key=>Number.isFinite(Number(health[key])) && health[key]!==undefined && health[key]!==null)){
+      return `Source ${health.original}; mirrors ${health.mirrored}; mismatches ${health.differences}; extras ${health.extras}; unmapped ${health.unmapped}; triggers ${health.required_triggers}/6.`;
+    }
+    return health.message || 'Authoritative persistence checks did not pass.';
   }
   async function refreshHealth(){
     health=await api('health');
@@ -175,7 +187,8 @@
     if(actionInFlight)return;actionInFlight=true;lockInput();
     try{
       await refreshHealth();
-      if(mode!=='ready'||health.adoption_required||health.cycle?.state!=='active'){
+      if(mode!=='ready')throw new Error(`Persistence verification failed: ${verificationFailure()} No lifecycle change was made.`);
+      if(health.adoption_required||health.cycle?.state!=='active'){
         throw new Error('Register the current active Week Group before closeout.');
       }
       const cycleId=health.cycle.cycle_id,weekGroup=health.cycle.week_group;
@@ -208,7 +221,9 @@
     // Intercept legacy handlers even before health/authentication is established.
     event.preventDefault();event.stopPropagation();event.stopImmediatePropagation?.();
     if(!instructor())return status('Instructor authorization is required.',true);
-    if(mode!=='ready')return status('Persistence verification is incomplete. No lifecycle change was made.',true);
+    if(mode!=='ready' && (target.id==='init-wg-btn'||mode!=='blocked'))
+      return status('Persistence verification is incomplete. No lifecycle change was made.',true);
+    // Closeout performs its own fresh server health check before confirmation.
     if(target.id==='init-wg-btn')void initialize();else void closeout();
   }
   function inputChanged(event){
@@ -225,7 +240,7 @@
     try{
       await refreshHealth();
       if(mode==='legacy')return;
-      if(mode==='blocked')return status('Persistence parity, triggers, or lifecycle state failed verification. Operations are blocked.',true);
+      if(mode==='blocked')return status(`Persistence verification requires attention: ${verificationFailure()} Closeout can retry verification; no records have been modified.`,true);
       if(active()){
         status(health.adoption_required?`Register the existing active ${health.legacy_week_group} before closeout.`:`${health.cycle.week_group} is active. Input will unlock after closeout.`);
         adoptionButton();lockInput();return;

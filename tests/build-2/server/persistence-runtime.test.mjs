@@ -6,10 +6,10 @@ import {runInNewContext} from 'node:vm';
 const source=readFileSync(new URL('../../../public/js/gate-persistence-runtime.js',import.meta.url),'utf8');
 const settle=async()=>{for(let i=0;i<8;i++)await new Promise(resolve=>setImmediate(resolve));};
 
-function fixture({legacy='',cycle=null,draft=null,loseCloseoutResponse=false}={}){
+function fixture({legacy='',cycle=null,draft=null,loseCloseoutResponse=false,healthReadyAfter=1}={}){
   const elements=new Map(), listeners=new Map(), hooks=new Map(), calls=[];
   const rows=[{rowIndex:0,sdq:'321 TRS',sec:'01',inter_sec:'02',dorm_name:'3A1',sex:'male',band:false,space_force:false,load:54}];
-  const state={legacy,cycle,draft,archives:0,closeouts:0,adoptions:0,initializations:0,reviewSaves:[]};
+  const state={legacy,cycle,draft,archives:0,closeouts:0,adoptions:0,initializations:0,reviewSaves:[],healthReads:0};
   const header={appendChild(node){elements.set(node.id,node);}};
   function element(id){
     const events=new Map();
@@ -38,7 +38,13 @@ function fixture({legacy='',cycle=null,draft=null,loseCloseoutResponse=false}={}
   let responseLost=loseCloseoutResponse;
   const response=(body,status=200)=>({ok:status<400,status,async json(){return body;}});
   async function fetch(url,init={}){
-    if(url.includes('mode=health'))return response({isOk:true,enabled:true,ready:true,legacy_week_group:state.legacy,cycle:state.cycle,adoption_required:!!state.legacy&&!state.cycle});
+    if(url.includes('mode=health')){
+      state.healthReads++;
+      const ready=state.healthReads>=healthReadyAfter;
+      return response({isOk:true,enabled:true,ready,legacy_week_group:state.legacy,cycle:state.cycle,
+        adoption_required:!!state.legacy&&!state.cycle,
+        original:12,mirrored:ready?12:11,differences:ready?0:1,extras:0,unmapped:0,required_triggers:6});
+    }
     if(url.includes('mode=draft'))return response({isOk:true,draft:state.draft});
     const body=JSON.parse(init.body);calls.push(body);
     if(body.action==='save_draft'){
@@ -133,4 +139,30 @@ test('unrelated draft edit preserves Flight Alert review previously recovered fr
   assert.equal(f.state.reviewSaves[0].published_total,54);
   assert.equal(f.state.reviewSaves[0].band_decision,'none');
   assert.equal(f.state.draft.rows[0].load,53);
+});
+
+test('A stale failed startup health check recovers on closeout and commits once',async()=>{
+  const f=fixture({legacy:'WG26050',cycle:{cycle_id:'cycle-existing',week_group:'WG26050',state:'active'},healthReadyAfter:2});
+  await f.settle();
+  assert.equal(f.elements.get('closeout-btn').disabled,false);
+  assert.equal(await f.event('closeout-btn'),true);
+  assert.equal(f.state.healthReads,3);
+  assert.equal(f.state.closeouts,1);
+  assert.equal(f.state.archives,1);
+});
+test('A real parity failure retains the active records and refuses closeout',async()=>{
+  const f=fixture({legacy:'WG26050',cycle:{cycle_id:'cycle-existing',week_group:'WG26050',state:'active'},healthReadyAfter:999});
+  await f.settle();
+  assert.equal(f.elements.get('closeout-btn').disabled,false);
+  assert.equal(await f.event('closeout-btn'),true);
+  assert.equal(f.state.healthReads,3);
+  assert.equal(f.state.closeouts,0);
+  assert.equal(f.state.archives,0);
+  assert.match(f.elements.get('gate-draft-persistence-status').textContent,/mismatches 1/);
+});
+test('Persistence SQL uses direct mirror comparisons, avoiding D1 UNION limits',()=>{
+  const server=readFileSync(new URL('../../../functions/api/persistence.js',import.meta.url),'utf8');
+  const part=server.slice(server.indexOf('async function mirrorStatus('),server.indexOf('async function configRecord('));
+  assert.doesNotMatch(part,/UNION ALL/);
+  assert.match(part,/required_triggers:installed/);
 });

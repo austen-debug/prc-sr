@@ -93,6 +93,7 @@ async function harness(options = {}) {
     getRecordsOfType: type => type === 'dorm' ? dorms : [],
     showCloseoutMessage: message => calls.push('message:' + message),
     buildArchivePayload: () => ({ week_group: weekGroup }),
+    collectWindows: () => ({}),
     syncLocalRecord: () => calls.push('sync'),
     verifyArchiveCreated: async () => options.verified !== false,
     deleteRecordsSafely: async () => { calls.push('deleteLiveRecords'); },

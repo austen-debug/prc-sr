@@ -14,23 +14,32 @@ const deny = () => error('forbidden','Instructor authorization is required.',403
 const assertOne = env => env.DB.prepare("SELECT CASE WHEN changes()=1 THEN 1 ELSE json_extract('invalid-json','$') END");
 const failUnless = (env, sql, ...values) => env.DB.prepare(`SELECT CASE WHEN ${sql} THEN 1 ELSE json_extract('invalid-json','$') END`).bind(...values);
 
+// D1 can limit compound SELECT terms; check each mirror with correlated reads.
 async function mirrorStatus(env) {
   const triggers = await env.DB.prepare("SELECT COUNT(*) AS n FROM sqlite_master WHERE type='trigger' AND name IN ('gate_mirror_records_insert','gate_mirror_records_update','gate_mirror_records_delete','gate_record_audit_insert','gate_record_audit_update','gate_record_audit_delete')").first();
-  const counts = await env.DB.prepare(`WITH mirrored AS (
-    SELECT id,'bus' AS type,week_group,data,created_at,updated_at FROM gate_v2_buses
-    UNION ALL SELECT id,type,week_group,data,created_at,updated_at FROM gate_v2_dorms
-    UNION ALL SELECT id,type,week_group,data,created_at,updated_at FROM gate_v2_archives
-    UNION ALL SELECT id,type,week_group,data,created_at,updated_at FROM gate_v2_config
-    UNION ALL SELECT id,type,week_group,data,created_at,updated_at FROM gate_v2_sound_events
-  ) SELECT
-  (SELECT COUNT(*) FROM records WHERE type IN ('bus','dorm','archive','config','sound_event')) AS original,
-  (SELECT COUNT(*) FROM mirrored) AS mirrored,
-  (SELECT COUNT(*) FROM records r LEFT JOIN mirrored m ON r.id=m.id AND r.type=m.type
-    WHERE r.type IN ('bus','dorm','archive','config','sound_event') AND (m.id IS NULL
-      OR r.week_group IS NOT m.week_group OR r.data IS NOT m.data
-      OR r.created_at IS NOT m.created_at OR r.updated_at IS NOT m.updated_at)) AS differences,
-  (SELECT COUNT(*) FROM mirrored m LEFT JOIN records r ON r.id=m.id AND r.type=m.type WHERE r.id IS NULL) AS extras,
-  (SELECT COUNT(*) FROM records WHERE type NOT IN ('bus','dorm','archive','config','sound_event','audit_event')) AS unmapped`).first();
+  const mirrors = [
+    ['bus', 'gate_v2_buses'], ['dorm', 'gate_v2_dorms'],
+    ['archive', 'gate_v2_archives'], ['config', 'gate_v2_config'],
+    ['sound_event', 'gate_v2_sound_events']
+  ];
+  const mirrorCount = mirrors.map(([, table]) => `(SELECT COUNT(*) FROM ${table})`).join(' + ');
+  const completeMatch = mirrors.map(([type, table]) =>
+    `(r.type='${type}' AND EXISTS(SELECT 1 FROM ${table} m
+      WHERE m.id=r.id AND m.week_group IS r.week_group
+        AND m.data IS r.data AND m.created_at IS r.created_at
+        AND m.updated_at IS r.updated_at${type === 'bus' ? '' : ` AND m.type='${type}'`}))`
+  ).join(' OR ');
+  const extraCount = mirrors.map(([type, table]) =>
+    `(SELECT COUNT(*) FROM ${table} m
+      WHERE NOT EXISTS(SELECT 1 FROM records r WHERE r.id=m.id AND r.type='${type}'))`
+  ).join(' + ');
+  const counts = await env.DB.prepare(`SELECT
+    (SELECT COUNT(*) FROM records WHERE type IN ('bus','dorm','archive','config','sound_event')) AS original,
+    (${mirrorCount}) AS mirrored,
+    (SELECT COUNT(*) FROM records r WHERE r.type IN ('bus','dorm','archive','config','sound_event')
+      AND NOT (${completeMatch})) AS differences,
+    (${extraCount}) AS extras,
+    (SELECT COUNT(*) FROM records WHERE type NOT IN ('bus','dorm','archive','config','sound_event','audit_event')) AS unmapped`).first();
   const original = Number(counts.original), mirrored = Number(counts.mirrored), differences = Number(counts.differences);
   const extras = Number(counts.extras), unmapped = Number(counts.unmapped), installed = Number(triggers?.n || 0);
   return { ready:installed===6 && original===mirrored && differences===0 && extras===0 && unmapped===0,

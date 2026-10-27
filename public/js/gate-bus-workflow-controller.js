@@ -49,7 +49,7 @@
 
     return list
       .filter(isBusRecord)
-      .filter(bus => !activeWg || bus.week_group === activeWg)
+      .filter(bus => activeWg && bus.week_group === activeWg)
       .sort((a, b) => {
         const statusA = isActiveBus(a) ? 0 : 1;
         const statusB = isActiveBus(b) ? 0 : 1;

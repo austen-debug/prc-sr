@@ -418,69 +418,79 @@
     try { if (typeof updateTotalLoadCalc === 'function') updateTotalLoadCalc(); } catch (_) {}
   }
 
+  // Legacy closeout is a single authenticated D1 batch, never a sequence of
+  // browser-directed record deletions. Server generates and verifies the
+  // lossless archive, clears the active records and config atomically.
   async function runSafeCloseout() {
     if (closeoutInProgress) return;
-    if (!isInstructor()) {
-      showCloseoutMessage('Instructor access required to close out week group.', true);
-      return;
-    }
+    if (!isInstructor()) return showCloseoutMessage('Instructor access required to close out Week Group.', true);
     const weekGroup = activeWeekGroup();
-    if (!weekGroup) {
-      showCloseoutMessage('No active week group to close out.', true);
-      return;
-    }
-    const dorms = getRecordsOfType('dorm').filter(dorm => dorm.week_group === weekGroup);
-    const buses = getRecordsOfType('bus').filter(bus => bus.week_group === weekGroup);
-    const soundEvents = getRecordsOfType('sound_event').filter(event => event.week_group === weekGroup);
-    if (!dorms.length && !buses.length) {
-      showCloseoutMessage('No dorm or bus records found for the active week group.', true);
-      return;
-    }
+    if (!weekGroup) return showCloseoutMessage('No active Week Group to close out.', true);
 
-    const btn = document.getElementById('closeout-btn');
+    const button = document.getElementById('closeout-btn');
     closeoutInProgress = true;
+    let committed = false;
+    let timeout = null;
     try {
-      if (btn) btn.disabled = true;
+      if (button) button.disabled = true;
       showCloseoutProgress(weekGroup);
-      showCloseoutMessage('Creating archive record...');
-      // Yield one task so the overlay can paint; unlike requestAnimationFrame,
-      // the closeout is not suspended indefinitely if this tab is backgrounded.
-      await new Promise(resolve => window.setTimeout(resolve, 0));
-      const payload = buildArchivePayload(weekGroup, dorms, buses);
-      const result = await window.dataSdk.create(payload);
-      if (!result?.isOk || !result.data?.__backendId) throw new Error(result?.error || 'Archive creation failed. Live records were not cleared.');
-      syncLocalRecord(result.data || payload);
-
-      showCloseoutMessage('Verifying archive record...');
-      updateCloseoutProgress('Verifying archive record…');
-      const verified = await verifyArchiveCreated(result.data.__backendId, weekGroup);
-      if (!verified) throw new Error('Archive verification failed. Live records were not cleared.');
-
-      showCloseoutMessage('Archive verified. Clearing live records...');
-      updateCloseoutProgress('Archive verified. Clearing live records…');
-      await deleteRecordsSafely([...dorms, ...buses, ...soundEvents]);
-      await clearConfig('last_airport', 'last airport arrival');
-      await clearConfig('week_group', 'active week group');
-      resetInputAfterCloseout();
-      updateCloseoutProgress('Finalizing Week Group…');
-
-      try { if (typeof renderAll === 'function') renderAll(); } catch (_) {}
-      try { window.runGateHooks?.('afterCloseout', { weekGroup, archiveId: result.data.__backendId, source: 'gate-archive-controller' }); } catch (_) {}
-      try { window.runGateHooks?.('afterDataChanged', { weekGroup, archiveId: result.data.__backendId, source: 'gate-archive-controller' }); } catch (_) {}
-      renderArchiveManagementView();
-      // Archive-list refresh is presentation only. Do not hold the transaction
-      // modal open on a pending or stalled GET after archive verification and clearance.
-      showCloseoutMessage(`Week group ${weekGroup} archived and cleared.`);
-      window.setTimeout(() => showCloseoutMessage(''), 6000);
+      updateCloseoutProgress('Verifying operational records and preparing lossless archive…');
+      const requestId = window.crypto?.randomUUID?.();
+      if (!requestId) throw new Error('Secure operation identity is unavailable; closeout was not attempted.');
+      const windows = collectWindows({ weekGroup,
+        dorms: getRecordsOfType('dorm').filter(dorm => dorm.week_group === weekGroup) });
+      const controller = new AbortController();
+      timeout = window.setTimeout(() => controller.abort(), 30000);
+      let response;
+      try {
+        response = await fetch('/api/legacy-closeout', {
+          method:'POST', credentials:'same-origin', cache:'no-store', signal:controller.signal,
+          headers:{'Content-Type':'application/json','Accept':'application/json'},
+          body:JSON.stringify({week_group:weekGroup,request_id:requestId,receiving_windows:windows})
+        });
+      } catch (error) {
+        // A dropped/aborted response does not prove the transaction rolled back.
+        // Reconcile by the same request ID; never issue a second closeout write.
+        if (timeout !== null) window.clearTimeout(timeout);
+        timeout = null;
+        updateCloseoutProgress('Connection interrupted. Checking whether archive committed…');
+        let recovered;
+        try {
+          const status = await fetch('/api/legacy-closeout?request_id=' + encodeURIComponent(requestId), {
+            credentials:'same-origin',cache:'no-store',headers:{Accept:'application/json'},
+            signal:AbortSignal.timeout(10000)
+          });
+          recovered = await status.json();
+          if (!status.ok || !recovered.isOk) recovered = null;
+        } catch (_) {}
+        if (!recovered?.closed)
+          throw new Error('Closeout outcome is not confirmed. Do not retry or initialize another Week Group until records and archive are reconciled.');
+        response = {ok:true,json:async()=>recovered};
+      } finally {
+        if (timeout !== null) window.clearTimeout(timeout);
+        timeout = null;
+      }
+      const result = await response.json();
+      if (!response.ok || !result?.isOk || !result.closed)
+        throw new Error(result?.error || 'Archive and clearance were not confirmed. No second closeout was attempted.');
+      committed = true;
+      updateCloseoutProgress('Archive committed; active records cleared atomically.');
+      showCloseoutMessage(`Week Group ${weekGroup} archived as ${result.archive_id}; live records cleared.`);
     } catch (error) {
-      console.error('GATE closeout failed:', error);
-      showCloseoutMessage(error?.message || 'Closeout failed. Live records were not cleared.', true);
-      hideCloseoutProgress();
-      window.alert(error?.message || 'Closeout failed. Live records were not cleared.');
+      console.error('GATE atomic closeout not confirmed:', error);
+      showCloseoutMessage(error?.message || 'Closeout could not be verified.', true);
+      window.alert(error?.message || 'Closeout could not be verified. Do not retry.');
     } finally {
+      if (timeout !== null) window.clearTimeout(timeout);
       hideCloseoutProgress();
       closeoutInProgress = false;
-      if (btn) btn.disabled = false;
+      if (button) button.disabled = false;
+    }
+    if (committed) {
+      // A fresh page load is the authoritative UI reconciliation. It removes
+      // stale boards and Input controls without waiting on a possibly stalled
+      // secondary records GET while the blocking progress modal is open.
+      window.location.reload();
     }
   }
 

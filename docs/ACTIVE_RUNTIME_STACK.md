@@ -49,7 +49,7 @@ Injected by middleware in current order on the Flight Alert feature branch:
 14. `/js/gate-bus-workflow-controller.js?v=airport-pax-limit-60-20261017-v1`
 15. `/js/gate-airport-bus-delete-controller.js?v=airport-bus-delete-20260714`
 16. `/js/gate-input-page-controller.js?v=week-group-progress-20261018-v1`
-17. `/js/gate-archive-controller.js?v=week-group-progress-20261018-v1`
+17. `/js/gate-archive-controller.js?v=atomic-legacy-closeout-20261027-v1`
 18. `/js/gate-permission-guard.js?v=permission-server-role-20260922`
 19. `/app/features/input/flight-alert-import.mjs?v=flight-alert-import-20260929-tablet-dialog` (new draft-only Input enhancement)
 20. `/js/gate-app-shell-controller.js?v=tablet-menu-20260929`

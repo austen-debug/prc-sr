@@ -41,7 +41,7 @@ const UI_HEAD_SCRIPTS = [
   '<script src="/js/gate-bus-workflow-controller.js?v=airport-pax-limit-60-20261017-v1" defer></script>',
   '<script src="/js/gate-airport-bus-delete-controller.js?v=airport-bus-delete-20260714" defer></script>',
   '<script src="/js/gate-input-page-controller.js?v=week-group-progress-20261018-v1" defer></script>',
-  '<script src="/js/gate-archive-controller.js?v=week-group-progress-20261018-v1" defer></script>',
+  '<script src="/js/gate-archive-controller.js?v=atomic-legacy-closeout-20261027-v1" defer></script>',
   '<script src="/js/gate-permission-guard.js?v=permission-server-role-20260922" defer></script>',
   '<script type="module" src="/app/features/input/flight-alert-import.mjs?v=live-closeout-reverify-20261027-v1"></script>',
   '<script src="/js/gate-app-shell-controller.js?v=tablet-menu-20260929" defer></script>',

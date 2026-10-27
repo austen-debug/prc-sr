@@ -626,7 +626,7 @@ test('Archives use a compact read-only historical library and exact Letter lands
   assert.match(controller, /gate-archive-detail-section/);
   assert.match(css, /#page-archives \.gate-archive-toolbar-simple\s*\{/);
   assert.match(css, /#page-archives \.gate-archive-detail-section\s*\{/);
-  const archiveScript = '/js/gate-archive-controller.js?v=week-group-progress-20261018-v1';
+  const archiveScript = '/js/gate-archive-controller.js?v=atomic-legacy-closeout-20261027-v1';
   assert.ok(middleware.includes(archiveScript));
   assert.ok(budget.currentDirectScripts.includes(archiveScript));
 });

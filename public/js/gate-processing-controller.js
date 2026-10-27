@@ -53,16 +53,17 @@
     const wg = activeWeekGroup();
     const dorms = records()
       .filter(record => record?.type === 'dorm')
-      .filter(record => !wg || record.week_group === wg);
+      .filter(record => wg && record.week_group === wg);
     return recordDisplay()?.sortDorms ? recordDisplay().sortDorms(dorms) : dorms;
   }
 
   function assignmentSummary() {
     const wg = activeWeekGroup();
+    if (!wg) return { arrived: 0, loaded: 0, awaitingAssignment: 0, overAssigned: 0 };
     const accounting = window.GateOperationalCounts?.calculateAssignmentSummary?.(records(), wg);
     if (accounting) return accounting;
 
-    const weekRecords = records().filter(record => !wg || String(record?.week_group || '') === wg);
+    const weekRecords = records().filter(record => String(record?.week_group || '') === wg);
     const arrived = weekRecords
       .filter(record => record?.type === 'bus' && String(record.status || '').trim().toLowerCase() === 'arrived')
       .reduce((sum, bus) => sum + Math.max(0, Math.trunc(n(bus.otw_count))), 0);
@@ -222,7 +223,8 @@
   function renderProcessingPageCanonical(dorms) {
     const grid = document.getElementById('proc-dorm-grid');
     if (!grid) return;
-    const source = Array.isArray(dorms) ? dorms : processingDorms();
+    const active = activeWeekGroup();
+    const source = !active ? [] : (Array.isArray(dorms) ? dorms.filter(dorm => dorm.week_group === active) : processingDorms());
     const list = recordDisplay()?.sortDorms ? recordDisplay().sortDorms(source) : source;
     grid.dataset.component = 'processing-dorm-grid';
     grid.dataset.owner = 'gate-processing-controller';

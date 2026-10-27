@@ -23,7 +23,13 @@ async function harness(options = {}) {
   const button = { disabled: false, textContent: 'CLOSE OUT WEEK GROUP' };
   let dialog = null;
   let resolveCreate;
-  const pendingCreate = new Promise(resolve => { resolveCreate = resolve; });
+  const pendingCreate = new Promise(resolve => {
+    resolveCreate = result => resolve({ok:Boolean(result?.isOk),async json(){
+      return result?.isOk
+        ? {isOk:true,closed:true,archive_id:result?.data?.__backendId||'arch-123',week_group:'WG26053'}
+        : {isOk:false,error:result?.error||'Archive verification failed.'};
+    }});
+  });
   let finishIndex;
   const archiveRefresh = new Promise(resolve => { finishIndex = resolve; });
 
@@ -68,6 +74,8 @@ async function harness(options = {}) {
   const dorms = [{ type: 'dorm', week_group: weekGroup }];
   const context = {
     document, console: { error(...args) { calls.push('error'); } },
+    AbortController:class {constructor(){this.signal={};}abort(){}},
+    fetch:(_url,options) => { calls.push('atomicCloseout'); assert.match(options.body,/"WG26053"/);return pendingCreate; },
     requestAnimationFrame(callback) { callback(); },
     window: {
       alert(message) { alerts.push(message); },
@@ -75,9 +83,9 @@ async function harness(options = {}) {
         if (delay === 0) Promise.resolve().then(callback);
         else calls.push('scheduleMessageClear');
       },
-      dataSdk: {
-        create() { calls.push('createArchive'); return pendingCreate; }
-      },
+      crypto:{randomUUID:()=> '01234567-89ab-4cde-8fab-0123456789ab'},
+      clearTimeout(){},
+      location:{reload(){calls.push('reload');}},
       runGateHooks(event) { calls.push('hook:' + event); }
     },
     isInstructor: () => true,
@@ -128,7 +136,7 @@ test('Closeout displays a blocking modal with an accessible spinner through arch
 
   // A second invocation while the first transaction is in flight must not issue another write.
   await h.subject.runSafeCloseout();
-  assert.equal(h.calls.filter(item => item === 'createArchive').length, 1);
+  assert.equal(h.calls.filter(item => item === 'atomicCloseout').length, 1);
 
   h.setPendingRefresh();
   h.resolveCreate({ isOk: true, data: { __backendId: 'arch-123' } });
@@ -137,28 +145,26 @@ test('Closeout displays a blocking modal with an accessible spinner through arch
   assert.equal(dialog.open, false, 'presentation refresh must not keep the spinner open after closeout');
   assert.equal(dialog.removed, true);
   assert.equal(h.currentDialog, null);
-  assert.ok(h.stages.includes('Verifying archive record…'));
-  assert.ok(h.stages.includes('Archive verified. Clearing live records…'));
-  assert.ok(h.stages.includes('Finalizing Week Group…'));
-  assert.equal(h.calls.includes('deleteLiveRecords'), true);
-  assert.ok(h.calls.indexOf('sync') < h.calls.indexOf('deleteLiveRecords'));
+  assert.ok(h.stages.includes('Verifying operational records and preparing lossless archive…'));
+  assert.ok(h.stages.includes('Archive committed; active records cleared atomically.'));
+  assert.equal(h.calls.includes('deleteLiveRecords'), false, 'no browser-directed partial deletions');
 
   h.finishIndex();
   assert.equal(h.button.disabled, false);
   assert.deepEqual(h.alerts, []);
-  assert.ok(h.calls.includes('hook:afterCloseout'));
-  assert.ok(h.calls.includes('hook:afterDataChanged'));
+  assert.ok(h.calls.includes('reload'), 'authoritative reload replaces stale rendered records');
 });
 
 test('Failure removes progress overlay and retains archive-before-clear safety', async () => {
-  const h = await harness({ verified: false });
+  const h = await harness();
   const running = h.subject.runSafeCloseout();
-  h.resolveCreate({ isOk: true, data: { __backendId: 'arch-123' } });
+  h.resolveCreate({ isOk: false, error: 'Archive verification failed.' });
   await running;
   assert.equal(h.dialogs.length, 1);
   assert.equal(h.dialogs[0].removed, true);
   assert.equal(h.button.disabled, false);
-  assert.equal(h.calls.includes('deleteLiveRecords'), false, 'failed verification must not clear operational records');
+  assert.equal(h.calls.includes('atomicCloseout'), true);
+  assert.equal(h.calls.includes('reload'), false, 'unconfirmed closeout may not be presented as complete');
   assert.equal(h.alerts.length, 1);
   assert.match(h.alerts[0], /Archive verification failed/);
   assert.ok(h.calls.indexOf('close') < h.calls.indexOf('error') + 5 || h.dialogs[0].removed);

@@ -23,7 +23,7 @@
   }
 
   function recordsByType(type, weekGroup) {
-    return records().filter(record => record && record.type === type && (!weekGroup || record.week_group === weekGroup));
+    return weekGroup ? records().filter(record => record && record.type === type && record.week_group === weekGroup) : [];
   }
 
   function getDorms(providedDorms) {
@@ -36,6 +36,7 @@
   }
 
   function calculateCounts(providedDorms) {
+    if (!activeWg()) return { arrived:0, loaded:0, remaining:0, overAssigned:0 };
     const accounting = window.GateOperationalCounts?.calculateAssignmentSummary?.(records(), activeWg());
     if (accounting) {
       return {
@@ -141,6 +142,7 @@
     window.registerGateHook('afterDataChanged', () => renderSummary());
     window.registerGateHook('afterPageChange', () => renderSummary());
     window.registerGateHook('afterModalOpen', () => renderSummary());
+    window.registerGateHook('afterCloseout', () => renderSummary());
     hooksRegistered = true;
   }
 

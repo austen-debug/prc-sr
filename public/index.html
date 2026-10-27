@@ -986,7 +986,7 @@ function updateAirportMetric() {
     return;
   }
 
-  const lastAirport = getConfig('last_airport') || '—';
+  const lastAirport = getActiveWG() ? (getConfig('last_airport') || '—') : '—';
   el.textContent = `LAST: ${lastAirport} | LOCAL: ${getLocalTime24()}`;
 }
 

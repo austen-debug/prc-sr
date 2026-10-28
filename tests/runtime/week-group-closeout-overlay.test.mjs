@@ -212,82 +212,107 @@ test('Both Week Group actions show exactly one rotating MTI phrase per operation
   }
 });
 
-async function inputHarness() {
-  const input = await source('public/js/gate-input-page-controller.js');
-  const initializeFunction = portion(input, '  async function initializeWeekGroupCanonical(', '  function returnToBoardCanonical(');
-  const calls = [];
-  const button = { disabled: false, textContent: 'INITIALIZE WEEK GROUP' };
-  const overlay = { classList: { remove(name) { calls.push('success:' + name); } } };
-  let resolveConfig;
-  const configWrite = new Promise(resolve => { resolveConfig = resolve; });
-  const context = {
-    document: {
-      getElementById(id) {
-        return id === 'init-wg-btn' ? button : id === 'init-success-overlay' ? overlay : null;
+async function inputHarness({recover=false,unconfirmed=false}={}) {
+  const input=await source('public/js/gate-input-page-controller.js');
+  const initializeFunction=portion(input,'  async function initializeWeekGroupCanonical(','  function returnToBoardCanonical(');
+  const calls=[];
+  const button={disabled:false,textContent:'INITIALIZE WEEK GROUP'};
+  const overlay={classList:{remove(name){calls.push('success:'+name);}}};
+  let resolveCommit;
+  const pendingCommit=new Promise(resolve=>{resolveCommit=resolve;});
+  const context={
+    document:{getElementById(id){return id==='init-wg-btn'?button:id==='init-success-overlay'?overlay:null;}},
+    AbortController:class {constructor(){this.signal={};}abort(){}},
+    AbortSignal:{timeout:()=>({})},
+    fetch(url,options){
+      calls.push('fetch:'+String(url).split('?')[0]+':'+(options?.method||'GET'));
+      if(String(url).includes('mode=legacy_initialization')){
+        return Promise.resolve({ok:true,json:async()=>({isOk:true,initialized:!unconfirmed,dorm_count:1})});
       }
+      return pendingCommit;
     },
-    window: {
-      GateWeekGroupProgress: {
-        show(weekGroup, action) { calls.push('show:' + action + ':' + weekGroup); },
-        update(stage) { calls.push('stage:' + stage); },
-        hide() { calls.push('hide'); }
+    window:{
+      crypto:{randomUUID:()=> '28ec3c1f-9c5a-4acd-9e39-b136f3d36d7f'},
+      setTimeout(){return 1;},clearTimeout(){},
+      GateWeekGroupProgress:{
+        show(weekGroup,action){calls.push('show:'+action+':'+weekGroup);},
+        update(stage){calls.push('stage:'+stage);},
+        hide(){calls.push('hide');}
       },
-      dataSdk: {
-        create(payload) {
-          calls.push('create:' + payload.type);
-          if (payload.type === 'config') return configWrite;
-          return Promise.resolve({ isOk: true, data: { __backendId: 'dorm-123' } });
-        }
-      },
-      GateStatusBoardController: { scheduleRender() { calls.push('renderStatus'); } },
-      GateProcessingController: { scheduleRender() { calls.push('renderProcessing'); } },
-      runGateHooks(name) { calls.push('hook:' + name); }
+      dataSdk:{async refresh(){calls.push('refresh');}}
     },
-    ensureInputPageShell() {},
-    syncAllBatchRowsFromDom() {},
-    saveWindowInputs() {},
-    preflightInitialization: () => ({ ok: true }),
-    getWeekGroupInputValue: () => 'WG26053',
-    filledRows: () => [{ dorm_name: '331' }],
-    readWindowInputs: () => ({}),
-    allDataSafe: () => [],
-    buildDormPayload: () => ({ type: 'dorm', week_group: 'WG26053' }),
-    syncLocalRecord: () => calls.push('sync'),
-    showInputMessage: message => calls.push('message:' + message)
+    ensureInputPageShell(){},
+    syncAllBatchRowsFromDom(){},
+    saveWindowInputs(){},
+    preflightInitialization:()=>({ok:true}),
+    getWeekGroupInputValue:()=> 'WG26053',
+    filledRows:()=> [{sdq:'321 TRS',dorm_name:'A01',sex:'male',load:35}],
+    readWindowInputs:()=>({}),
+    showInputMessage:message=>calls.push('message:'+message)
   };
-  const subject = new Script(
-    '(function () { let initializationInProgress = false;\n' + initializeFunction +
-    '\nreturn { initializeWeekGroupCanonical }; })()'
+  const subject=new Script(
+    '(function(){let initializationInProgress=false;let initializationOutcomeUnknown=false;\n'+
+    initializeFunction+'\nreturn {initializeWeekGroupCanonical};})()'
   ).runInNewContext(context);
-  return { subject, calls, button, resolveConfig };
+  return {
+    subject,calls,button,
+    resolveCommit(payload){resolveCommit({
+      ok:payload.ok,status:payload.status||200,
+      async json(){return payload.body;}
+    });},
+    rejectCommit(){resolveCommit(Promise.reject(new TypeError('Connection interrupted')));}
+  };
 }
 
-test('Initialize uses shared spinner, blocks duplicate submits, and dismisses on success', async () => {
-  const h = await inputHarness();
-  const running = h.subject.initializeWeekGroupCanonical();
-  assert.equal(h.button.disabled, true);
-  assert.equal(h.calls[0], 'show:initialize:WG26053');
+test('Initialize uses one atomic POST, blocks duplicate submits and dismisses progress after confirmed save',async()=>{
+  const h=await inputHarness();
+  const pending=h.subject.initializeWeekGroupCanonical();
+  assert.equal(h.button.disabled,true);
+  assert.equal(h.calls[0],'show:initialize:WG26053');
   await h.subject.initializeWeekGroupCanonical();
-  assert.deepEqual(h.calls.filter(call => call === 'create:config'), ['create:config']);
-
-  h.resolveConfig({ isOk: true, data: { __backendId: 'config-123' } });
-  await running;
-  assert.ok(h.calls.includes('stage:Creating dorm 1 of 1…'));
+  assert.deepEqual(h.calls.filter(x=>x==='fetch:/api/persistence:POST'),['fetch:/api/persistence:POST']);
+  h.resolveCommit({ok:true,body:{isOk:true,initialized:true,week_group:'WG26053',dorm_count:1}});
+  await pending;
+  assert.ok(h.calls.some(x=>x.startsWith('stage:Atomically committing')));
+  assert.ok(h.calls.includes('refresh'));
   assert.ok(h.calls.includes('success:hidden'));
   assert.ok(h.calls.includes('hide'));
-  assert.ok(h.calls.indexOf('hide') > h.calls.indexOf('create:dorm'));
-  assert.equal(h.button.disabled, false);
-  assert.equal(h.button.textContent, 'INITIALIZE WEEK GROUP');
+  assert.ok(h.calls.indexOf('hide')>h.calls.indexOf('refresh'));
+  assert.equal(h.button.disabled,false);
+  assert.equal(h.button.textContent,'INITIALIZE WEEK GROUP');
 });
 
-test('Initialize dismisses spinner and reports a failed server write', async () => {
-  const h = await inputHarness();
-  const running = h.subject.initializeWeekGroupCanonical();
-  h.resolveConfig({ isOk: false, error: 'Server validation rejected Week Group.' });
-  await running;
+test('Initialize dismisses progress and surfaces an authoritative server rejection without refreshing',async()=>{
+  const h=await inputHarness();
+  const pending=h.subject.initializeWeekGroupCanonical();
+  h.resolveCommit({ok:false,status:409,body:{isOk:false,error:'Server validation rejected Week Group.'}});
+  await pending;
   assert.ok(h.calls.includes('hide'));
   assert.ok(h.calls.includes('message:Server validation rejected Week Group.'));
-  assert.equal(h.calls.includes('create:dorm'), false);
-  assert.equal(h.calls.includes('success:hidden'), false);
-  assert.equal(h.button.disabled, false);
+  assert.equal(h.calls.includes('refresh'),false);
+  assert.equal(h.calls.includes('success:hidden'),false);
+  assert.equal(h.button.disabled,false);
+});
+
+test('Interrupted initialization verifies the same request ID rather than posting a second time',async()=>{
+  const h=await inputHarness({recover:true});
+  const pending=h.subject.initializeWeekGroupCanonical();
+  h.rejectCommit();
+  await pending;
+  assert.equal(h.calls.filter(x=>x==='fetch:/api/persistence:POST').length,1);
+  assert.equal(h.calls.filter(x=>x==='fetch:/api/persistence:GET').length,1);
+  assert.ok(h.calls.includes('refresh'));
+  assert.ok(h.calls.includes('success:hidden'));
+});
+
+test('An unresolved initialization outcome disables a new submission until reconciliation',async()=>{
+  const h=await inputHarness({unconfirmed:true});
+  const pending=h.subject.initializeWeekGroupCanonical();
+  h.rejectCommit();
+  await pending;
+  assert.equal(h.button.disabled,true);
+  assert.equal(h.calls.filter(x=>x==='fetch:/api/persistence:POST').length,1);
+  await h.subject.initializeWeekGroupCanonical();
+  assert.equal(h.calls.filter(x=>x==='fetch:/api/persistence:POST').length,1);
+  assert.ok(h.calls.some(x=>x.includes('outcome is unknown')));
 });

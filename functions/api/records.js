@@ -342,6 +342,8 @@ export async function onRequestPost({ request, env, data }) {
     const record = await request.json();
     const type = String(record.type || '').trim().toLowerCase();
     if (!type) return jsonResponse({ isOk: false, code: 'validation', error: 'Record type is required.' }, 400);
+    if (type === 'archive' || type === 'archive_amendment')
+      return jsonResponse({isOk:false,code:'immutable_archive',error:'Archives are created only by verified closeout; corrections use append-only amendments.'},405);
 
     if (type === 'audit_event') {
       // Administrative event names are reserved to server-owned D1 transactions.
@@ -403,12 +405,9 @@ export async function onRequestPut({ request, env, data }) {
     if (!existingRow) return jsonResponse({ isOk: false, code: 'not_found', error: 'Record not found.' }, 404);
 
     const existingRecord = parseStoredRecord(existingRow);
-    if (existingRecord?.type === 'archive' && role === 'admin')
-      return jsonResponse({isOk:false,code:'immutable_archive',error:'Archive snapshots require an append-only amendment, not a direct update.'},405);
-    if (existingRecord?.type === 'archive' && role === 'instructor' &&
-        (await withdrawnArchiveIds(env)).has(String(id))) {
-      return jsonResponse({ isOk: false, code: 'archive_withdrawn', error: 'This archive is no longer in the operational archive library.' }, 403);
-    }
+    // Enforce on the stored row, never on a client-supplied type or feature flag.
+    if (existingRow.type === 'archive' || existingRow.type === 'archive_amendment')
+      return jsonResponse({isOk:false,code:'immutable_archive',error:'Historical snapshots cannot be overwritten. Use Create Amendment.'},405);
     if (isAuditEvent(existingRecord)) {
       return jsonResponse({ isOk: false, code: 'append_only', error: 'Audit events are append-only.' }, 405);
     }
@@ -491,7 +490,7 @@ export async function onRequestDelete({ request, env, data }) {
     const existingRow = await getRecordRow(env, id);
     if (!existingRow) return jsonResponse({ isOk: false, code: 'not_found', error: 'Record not found.' }, 404);
     const existingRecord = parseStoredRecord(existingRow);
-    if (existingRecord?.type === 'archive') return jsonResponse({isOk:false,code:'archive_admin_required',error:'Historical archives cannot be physically deleted.'},403);
+    if (existingRow.type === 'archive' || existingRow.type === 'archive_amendment') return jsonResponse({isOk:false,code:'immutable_archive',error:'Historical archives and amendments cannot be physically deleted.'},403);
     if (isAuditEvent(existingRecord)) {
       return jsonResponse({ isOk: false, code: 'append_only', error: 'Audit events are append-only.' }, 405);
     }

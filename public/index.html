@@ -605,7 +605,7 @@ body > * {
 <div id="archive-edit-modal" class="confirm-overlay hidden">
   <div class="modal-content" style="max-width: 900px;">
     <div class="flex justify-between items-center mb-4">
-      <h2 class="text-xl font-black">Edit Archived Week Group</h2>
+      <h2 class="text-xl font-black">Create Archive Amendment</h2>
       <button onclick="closeArchiveEditModal()" class="text-3xl leading-none text-muted hover:text-white">×</button>
     </div>
 
@@ -613,24 +613,24 @@ body > * {
       <div class="grid grid-cols-2 gap-3">
         <div>
           <label class="block text-sm font-medium mb-1" for="archive-edit-wg">Week Group</label>
-          <input id="archive-edit-wg" type="text" class="w-full border rounded px-3 py-2 bg-transparent" style="border-color:var(--border);color:var(--text);">
+          <input id="archive-edit-wg" type="text" class="w-full border rounded px-3 py-2 bg-transparent" style="border-color:var(--border);color:var(--text);" readonly aria-readonly="true">
         </div>
 
         <div>
           <label class="block text-sm font-medium mb-1" for="archive-edit-archived-at">Archived At</label>
-          <input id="archive-edit-archived-at" type="text" class="w-full border rounded px-3 py-2 bg-transparent font-tabular" style="border-color:var(--border);color:var(--text);">
+          <input id="archive-edit-archived-at" type="text" class="w-full border rounded px-3 py-2 bg-transparent font-tabular" style="border-color:var(--border);color:var(--text);" readonly aria-readonly="true">
         </div>
       </div>
 
       <div class="grid grid-cols-4 gap-3">
         <div>
           <label class="block text-sm font-medium mb-1" for="archive-edit-dorm-count">Dorms</label>
-          <input id="archive-edit-dorm-count" type="number" min="0" class="w-full border rounded px-3 py-2 bg-transparent font-tabular" style="border-color:var(--border);color:var(--text);">
+          <input id="archive-edit-dorm-count" type="number" min="0" class="w-full border rounded px-3 py-2 bg-transparent font-tabular" style="border-color:var(--border);color:var(--text);" readonly aria-readonly="true">
         </div>
 
         <div>
           <label class="block text-sm font-medium mb-1" for="archive-edit-bus-count">Buses</label>
-          <input id="archive-edit-bus-count" type="number" min="0" class="w-full border rounded px-3 py-2 bg-transparent font-tabular" style="border-color:var(--border);color:var(--text);">
+          <input id="archive-edit-bus-count" type="number" min="0" class="w-full border rounded px-3 py-2 bg-transparent font-tabular" style="border-color:var(--border);color:var(--text);" readonly aria-readonly="true">
         </div>
 
         <div>
@@ -651,30 +651,22 @@ body > * {
         </div>
 
         <div>
-          <label class="block text-sm font-medium mb-1">Actions</label>
-          <div class="flex gap-2">
-            <button type="button" onclick="printArchiveSpreadsheet()" class="flex-1 py-2 rounded font-bold text-white" style="background:var(--blue);">PRINT</button>
-            <button type="button" onclick="deleteArchiveWithOverride()" class="flex-1 py-2 rounded font-bold text-white" style="background:var(--red);">DELETE</button>
-          </div>
+          <label class="block text-sm font-medium mb-1" for="archive-edit-total-expected">Total Expected</label>
+          <input id="archive-edit-total-expected" type="number" min="0" class="w-full border rounded px-3 py-2 bg-transparent font-tabular" style="border-color:var(--border);color:var(--text);">
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1" for="archive-edit-total-loaded">Total Loaded</label>
+          <input id="archive-edit-total-loaded" type="number" min="0" class="w-full border rounded px-3 py-2 bg-transparent font-tabular" style="border-color:var(--border);color:var(--text);">
         </div>
       </div>
-
       <div>
-        <label class="block text-sm font-medium mb-1" for="archive-edit-dorm-data">Dorm Data JSON</label>
-        <textarea id="archive-edit-dorm-data" rows="8" class="w-full border rounded px-3 py-2 bg-transparent font-mono text-xs" style="border-color:var(--border);color:var(--text);"></textarea>
-      </div>
-
-      <div>
-        <label class="block text-sm font-medium mb-1" for="archive-edit-bus-data">Bus Data JSON</label>
-        <textarea id="archive-edit-bus-data" rows="8" class="w-full border rounded px-3 py-2 bg-transparent font-mono text-xs" style="border-color:var(--border);color:var(--text);"></textarea>
-      </div>
-
-      <div class="text-xs text-muted">
-        Dorm and bus data are stored as JSON so the full archived week group can be corrected without changing the live board.
+        <label class="block text-sm font-medium mb-1" for="archive-edit-reason">Amendment reason (required)</label>
+        <textarea id="archive-edit-reason" required minlength="5" maxlength="2000" rows="3" class="w-full border rounded px-3 py-2 bg-transparent" style="border-color:var(--border);color:var(--text);" placeholder="Explain the specific correction and supporting evidence."></textarea>
+        <p class="text-xs text-muted">The original archived snapshot is immutable. This creates a numbered correction with an audit record.</p>
       </div>
 
       <div class="flex gap-3 pt-2">
-        <button type="submit" class="flex-1 py-3 rounded-lg font-bold text-white" style="background:var(--green);">SAVE ARCHIVE</button>
+        <button type="submit" class="flex-1 py-3 rounded-lg font-bold text-white" style="background:var(--green);">CREATE AMENDMENT</button>
         <button type="button" onclick="closeArchiveEditModal()" class="flex-1 py-3 rounded-lg font-bold surface border" style="border-color:var(--border);">CANCEL</button>
       </div>
 
@@ -2198,90 +2190,6 @@ function parseJsonField(fieldId, fallback = []) {
 
   return JSON.parse(value);
 }
-
-function openArchiveEditModal(event, id) {
-  event.preventDefault();
-  event.stopPropagation();
-
-  if (!['instructor','admin'].includes(currentRole)) {
-    return;
-  }
-
-  const archive = allData.find(r => r.__backendId === id);
-
-  if (!archive) {
-    return;
-  }
-
-  editArchiveId = id;
-
-  document.getElementById('archive-edit-wg').value = archive.week_group || '';
-  document.getElementById('archive-edit-archived-at').value = archive.archived_at || '';
-  document.getElementById('archive-edit-dorm-count').value = archive.dorm_count || 0;
-  document.getElementById('archive-edit-bus-count').value = archive.bus_count || 0;
-  document.getElementById('archive-edit-total-arrived').value = archive.total_arrived || 0;
-  document.getElementById('archive-edit-female-total').value = archive.female_total || 0;
-  document.getElementById('archive-edit-nat-total').value = archive.nat_total || 0;
-  document.getElementById('archive-edit-dorm-data').value = safeJsonPretty(archive.dorm_data, []);
-  document.getElementById('archive-edit-bus-data').value = safeJsonPretty(archive.bus_data, []);
-
-  const msg = document.getElementById('archive-edit-msg');
-  msg.classList.add('hidden');
-  msg.textContent = '';
-
-  document.getElementById('archive-edit-modal').classList.remove('hidden');
-}
-
-function closeArchiveEditModal() {
-  document.getElementById('archive-edit-modal').classList.add('hidden');
-  editArchiveId = null;
-}
-
-document.getElementById('archive-edit-form').addEventListener('submit', async (e) => {
-  e.preventDefault();
-
-  if (!['instructor','admin'].includes(currentRole) || !editArchiveId) {
-    return;
-  }
-
-  const archive = allData.find(r => r.__backendId === editArchiveId);
-
-  if (!archive) {
-    return;
-  }
-
-  const msg = document.getElementById('archive-edit-msg');
-
-  try {
-    const dormData = parseJsonField('archive-edit-dorm-data', []);
-    const busData = parseJsonField('archive-edit-bus-data', []);
-
-    const updatedArchive = {
-      ...archive,
-      week_group: document.getElementById('archive-edit-wg').value.trim() || archive.week_group,
-      archived_at: document.getElementById('archive-edit-archived-at').value.trim() || archive.archived_at,
-      dorm_count: Number(document.getElementById('archive-edit-dorm-count').value || 0),
-      bus_count: Number(document.getElementById('archive-edit-bus-count').value || 0),
-      total_arrived: Number(document.getElementById('archive-edit-total-arrived').value || 0),
-      female_total: Number(document.getElementById('archive-edit-female-total').value || 0),
-      nat_total: Number(document.getElementById('archive-edit-nat-total').value || 0),
-      dorm_data: JSON.stringify(dormData),
-      bus_data: JSON.stringify(busData)
-    };
-
-    const result = await window.dataSdk.update(updatedArchive);
-
-    if (result.isOk) {
-      closeArchiveEditModal();
-    } else {
-      throw new Error('Failed to save archive.');
-    }
-  } catch (error) {
-    msg.textContent = `Archive save failed: ${error.message}`;
-    msg.style.color = 'var(--red)';
-    msg.classList.remove('hidden');
-  }
-});
 
 function printArchiveSpreadsheet() {
   if (!editArchiveId) {

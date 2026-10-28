@@ -298,26 +298,69 @@ async function closeout(env,payload,actor) {
     return reply({isOk:true,cycle_id:current.cycle_id,archive_id:archiveId,week_group:current.week_group,dorm_count:dorms.length,bus_count:buses.length,source_record_count:snapshot.length});
   } catch (e) { console.error('Atomic closeout rejected:',e); return conflict('Closeout was not confirmed. Inspect operation and archive before retrying.'); }
 }
+// Amendment writes are independent of lifecycle activation, but require the
+// existing D1 append-only table and trigger safeguards. Never rewrite snapshots.
+async function amendmentReady(env) {
+  const schema=await env.DB.prepare("SELECT name FROM sqlite_master WHERE (type='table' AND name IN ('gate_archive_amendments','gate_audit_events')) OR (type='trigger' AND name IN ('trg_gate_amend_no_update','trg_gate_amend_no_delete','trg_gate_audit_no_update','trg_gate_audit_no_delete'))").all();
+  const found=new Set((schema.results||[]).map(row=>row.name));
+  return ['gate_archive_amendments','gate_audit_events','trg_gate_amend_no_update','trg_gate_amend_no_delete','trg_gate_audit_no_update','trg_gate_audit_no_delete'].every(name=>found.has(name));
+}
 async function amendArchive(env,payload,actor) {
-  const id=String(payload.archive_id||''),reason=String(payload.reason||'').trim(),changes=payload.changes;
-  const allowed=new Set(['week_group','archived_at','total_arrived','total_expected','total_loaded','female_total','nat_total','space_force_total','arrived_space_force_total',...WINDOWS]);
-  if (!id||reason.length<5||reason.length>2000||!changes||typeof changes!=='object'||Array.isArray(changes)||!Object.keys(changes).length||Object.keys(changes).some(key=>!allowed.has(key))) return error('validation','Archive ID, documented reason and supported correction fields are required.',400);
-  if (actor === 'instructor' && (await withdrawnArchiveIds(env)).has(id))
-    return error('archive_withdrawn','The historical archive is unavailable for operational amendment.',403);
-  const archive=await env.DB.prepare("SELECT id FROM records WHERE id=? AND type='archive'").bind(id).first();
+  if (!['instructor','admin'].includes(actor)) return deny();
+  if (!(await amendmentReady(env))) return unavailable('Append-only amendment tables and immutability triggers are not verified. The archive remains read-only.');
+  if (actor==='admin') {
+    const schema=await env.DB.prepare("SELECT name,sql FROM sqlite_master WHERE type='table' AND name IN ('gate_archive_amendments','gate_audit_events')").all();
+    if ((schema.results||[]).length!==2 || schema.results.some(row=>!String(row.sql||'').includes("'admin'")))
+      return unavailable('Admin amendment provenance requires the verified 0007 migration.');
+  }
+  const id=String(payload.archive_id||'').trim(),reason=String(payload.reason||'').trim(),changes=payload.changes;
+  const requestId=String(payload.request_id||'').trim(),expected=payload.expected_amendment_count;
+  if (!/^[-a-zA-Z0-9_]{1,100}$/.test(id)||
+      !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(requestId)||
+      reason.length<5||reason.length>2000||
+      !Number.isSafeInteger(expected)||expected<0||
+      !changes||typeof changes!=='object'||Array.isArray(changes)||!Object.keys(changes).length)
+    return error('validation','Archive ID, request ID, expected revision, changes and a documented reason are required.',400);
+  const counts=new Set(['total_arrived','total_expected','total_loaded','female_total','nat_total','space_force_total','arrived_space_force_total']);
+  const allowed=new Set([...counts,...WINDOWS]);
+  if (Object.keys(changes).some(key=>!allowed.has(key))) return error('validation','Unsupported archive correction field.',400);
+  for(const [key,value] of Object.entries(changes)){
+    if(counts.has(key) && (!Number.isSafeInteger(value)||value<0||value>100000))
+      return error('validation',key+' must be a non-negative whole number.',400);
+    if(WINDOWS.includes(key) && (typeof value!=='string'||value.length>40||(value!==''&&!Number.isFinite(Date.parse(value)))))
+      return error('validation',key+' must be a valid date/time or empty.',400);
+  }
+  if ((await withdrawnArchiveIds(env)).has(id))
+    return error('archive_withdrawn','This archive is unavailable for operational amendment.',403);
+  const prior=await env.DB.prepare('SELECT archive_id,reason,changes_json,amendment_number FROM gate_archive_amendments WHERE amendment_id=?').bind(requestId).first();
+  if(prior){
+    if(prior.archive_id===id&&prior.reason===reason&&prior.changes_json===JSON.stringify(changes))
+      return reply({isOk:true,idempotent:true,amendment_id:requestId,amendment_number:prior.amendment_number});
+    return conflict('The amendment request ID was already used with different details.');
+  }
+  const archive=await env.DB.prepare("SELECT id,data FROM records WHERE id=? AND type='archive'").bind(id).first();
   if (!archive) return error('not_found','Archive not found.',404);
-  const last=await env.DB.prepare('SELECT MAX(amendment_number) AS n FROM gate_archive_amendments WHERE archive_id=?').bind(id).first();
-  const sequence=Number(last?.n||0)+1,amendment=uuid(),audit=uuid(),now=nowIso();
-  const cycle=await env.DB.prepare('SELECT cycle_id FROM gate_week_groups WHERE archive_id=? LIMIT 1').bind(id).first();
+  const last=await env.DB.prepare('SELECT COALESCE(MAX(amendment_number),0) AS n FROM gate_archive_amendments WHERE archive_id=?').bind(id).first();
+  if(Number(last?.n)!==expected) return conflict('Archive amendment history changed. Reload the archive before saving.');
+  const sequence=expected+1,audit=uuid(),now=nowIso();
+  const cycleSchema=await env.DB.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='gate_week_groups'").first();
+  const cycle=cycleSchema?await env.DB.prepare('SELECT cycle_id FROM gate_week_groups WHERE archive_id=? LIMIT 1').bind(id).first():null;
   try {
     await env.DB.batch([
+      failUnless(env,"(SELECT data FROM records WHERE id=? AND type='archive')=? AND (SELECT COALESCE(MAX(amendment_number),0) FROM gate_archive_amendments WHERE archive_id=?)=?",
+        id,archive.data,id,expected),
       env.DB.prepare("INSERT INTO gate_archive_amendments(amendment_id,archive_id,cycle_id,amendment_number,amendment_type,reason,changes_json,actor_role,created_at) VALUES(?,?,?,?,'correction',?,?,?,?)")
-        .bind(amendment,id,cycle?.cycle_id||null,sequence,reason,JSON.stringify(changes),actor,now),
-      env.DB.prepare("INSERT INTO gate_audit_events(event_id,cycle_id,entity_type,entity_id,event_type,actor_role,metadata_json,occurred_at) VALUES(?,?,'archive',?,'archive_amended',?,?,?)")
-        .bind(audit,cycle?.cycle_id||null,id,actor,JSON.stringify({amendment_id:amendment,amendment_number:sequence,fields:Object.keys(changes)}),now)
+        .bind(requestId,id,cycle?.cycle_id||null,sequence,reason,JSON.stringify(changes),actor,now),
+      env.DB.prepare("INSERT INTO gate_audit_events(event_id,cycle_id,entity_type,entity_id,event_type,actor_role,prior_version,resulting_version,metadata_json,occurred_at) VALUES(?,?,'archive',?,'archive_amended',?,?,?,?,?)")
+        .bind(audit,cycle?.cycle_id||null,id,actor,expected,sequence,JSON.stringify({amendment_id:requestId,amendment_number:sequence,fields:Object.keys(changes)}),now),
+      failUnless(env,"(SELECT COUNT(*) FROM gate_archive_amendments WHERE amendment_id=? AND archive_id=? AND amendment_number=?)=1 AND (SELECT data FROM records WHERE id=? AND type='archive')=?",
+        requestId,id,sequence,id,archive.data)
     ]);
-    return reply({isOk:true,amendment_id:amendment,amendment_number:sequence},201);
-  } catch { return conflict('Archive amendment changed concurrently. Reload and retry.'); }
+    return reply({isOk:true,amendment_id:requestId,amendment_number:sequence},201);
+  } catch(e) {
+    console.error('Archive amendment transaction was not confirmed:',e);
+    return conflict('Amendment commit was not confirmed; reload archive history and verify the request ID before retrying.');
+  }
 }
 export async function onRequestGet({request,env,data}) {
   if (!['admin','instructor'].includes(role(data))) return deny();
@@ -329,7 +372,9 @@ export async function onRequestGet({request,env,data}) {
       if (enabled(env)) return conflict('Legacy initialization is unavailable after persistence activation.');
       return await legacyInitializationState(env,new URL(request.url).searchParams.get('request_id')||'');
     }
-    if (!enabled(env)) return unavailable('Persistence is disabled.');
+    if (mode==='amendments') {
+      if (!(await amendmentReady(env))) return unavailable('Archive amendment schema is incomplete.');
+    } else if (!enabled(env)) return unavailable('Persistence is disabled.');
     if (mode==='draft') return reply({isOk:true,draft:publicDraft(await draftRow(env,new URL(request.url).searchParams.get('id')||''))});
     if (mode==='amendments') {
       const id=new URL(request.url).searchParams.get('id')||'';
@@ -352,12 +397,12 @@ export async function onRequestPost({request,env,data}) {
     if (!payload||typeof payload!=='object'||Array.isArray(payload)) return error('validation','Invalid request body.',400);
     // Await dispatch inside the catch boundary: asynchronous validation failures must return 400, not an uncaught 500.
     if (payload.action==='initialize_legacy') return await initializeLegacy(env,payload,role(data));
+    if (payload.action==='amend_archive') return await amendArchive(env,payload,role(data));
     if (!enabled(env)) return unavailable('Persistence is disabled.');
     if (payload.action==='save_draft') return await saveDraft(env,payload);
     if (payload.action==='adopt') return await adopt(env,role(data));
     if (payload.action==='initialize') return await initialize(env,payload,role(data));
     if (payload.action==='closeout') return await closeout(env,payload,role(data));
-    if (payload.action==='amend_archive') return await amendArchive(env,payload,role(data));
     return error('validation','Unsupported persistence action.',400);
   } catch(e) {
     if (e instanceof PersistenceValidationError || e instanceof SyntaxError) return error('validation',e.message,400);

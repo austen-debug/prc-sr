@@ -93,8 +93,11 @@ async function amendmentRows(env, archiveId) {
        ORDER BY amendment_number ASC`
     ).bind(archiveId).all();
     return result.results || [];
-  } catch {
-    return [];
+  } catch (error) {
+    // A pre-migration D1 can lack the table; a broken installed table is not empty history.
+    const table=await env.DB.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='gate_archive_amendments'").first();
+    if (!table) return [];
+    throw error;
   }
 }
 
@@ -107,8 +110,11 @@ async function allAmendmentRows(env) {
        ORDER BY archive_id ASC, amendment_number ASC`
     ).all();
     return result.results || [];
-  } catch {
-    return [];
+  } catch (error) {
+    // A pre-migration D1 can lack the table; a broken installed table is not empty history.
+    const table=await env.DB.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='gate_archive_amendments'").first();
+    if (!table) return [];
+    throw error;
   }
 }
 

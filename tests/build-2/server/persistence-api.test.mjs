@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {DatabaseSync} from 'node:sqlite';
 import {onRequestGet,onRequestPost} from '../../../functions/api/persistence.js';
+import {onRequestGet as archiveGet} from '../../../functions/api/archives.js';
 import {normalizeDraft,validateInitialization} from '../../../functions/api/persistence-core.mjs';
 const migration = name => readFileSync(new URL(`../../../migrations/${name}`,import.meta.url),'utf8');
 const stamp='2026-09-21T01:00:00.000Z';
@@ -119,4 +120,89 @@ test('gated transactional persistence cannot be bypassed with the legacy initial
   const denied=await f.post(legacyInput());
   assert.equal(denied.status,409);
   assert.equal(f.native.prepare("SELECT COUNT(*) AS n FROM records").get().n,0);
+});
+
+
+const AMEND_REQUEST='92dbef18-6ccf-4c6b-9aa2-ad86f9b3e653';
+const AMEND_NEXT='9c47c5ea-9d48-4555-a8a6-288a4c9b11e1';
+const correction=(request_id=AMEND_REQUEST,expected_amendment_count=0,changes={total_arrived:39})=>({
+  action:'amend_archive',request_id,archive_id:'historical-archive',
+  expected_amendment_count,reason:'Verified arrival discrepancy against signed movement log.',changes
+});
+function archivedFixture({migrate=true}={}){
+  const f=fixture({migrate});
+  f.env.GATE_PERSISTENCE_ENABLED='false';
+  addRecord(f.native,'historical-archive','archive','WG26040',{
+    archived_at:stamp,total_arrived:41,total_expected:44,total_loaded:40,
+    source_records_json:'[{"id":"immutable-source"}]',source_snapshot_format:'lossless-record-rows-v1'
+  });
+  return f;
+}
+
+test('flag-off archive amendment appends correction and audit without changing a single source archive byte',async()=>{
+  const f=archivedFixture(),original=f.native.prepare("SELECT data FROM records WHERE id='historical-archive'").get().data;
+  const saved=await f.post(correction());
+  assert.equal(saved.status,201,JSON.stringify(saved.body));
+  assert.equal(saved.body.amendment_number,1);
+  assert.equal(f.native.prepare("SELECT data FROM records WHERE id='historical-archive'").get().data,original);
+  const row=f.native.prepare("SELECT * FROM gate_archive_amendments WHERE archive_id='historical-archive'").get();
+  assert.equal(row.amendment_id,AMEND_REQUEST);
+  assert.equal(row.actor_role,'instructor');
+  assert.equal(row.reason,correction().reason);
+  assert.deepEqual(JSON.parse(row.changes_json),{total_arrived:39});
+  const audit=f.native.prepare("SELECT * FROM gate_audit_events WHERE entity_id='historical-archive' AND event_type='archive_amended'").get();
+  assert.equal(audit.prior_version,0);
+  assert.equal(audit.resulting_version,1);
+  const resp=await archiveGet({request:new Request('https://gate.example/api/archives?id=historical-archive'),env:f.env,data:{session:{role:'instructor'}}});
+  const body=await resp.json();
+  assert.equal(body.archive.total_arrived,39);
+  assert.equal(body.amendments[0].amendment_id,AMEND_REQUEST);
+  assert.doesNotMatch(JSON.stringify(body),/immutable-source/);
+  assert.equal(f.native.prepare("SELECT data FROM records WHERE id='historical-archive'").get().data,original);
+});
+
+test('append-only amendment is idempotent, enforces revision CAS and cannot rewrite existing history',async()=>{
+  const f=archivedFixture();
+  const first=await f.post(correction());
+  assert.equal(first.status,201);
+  const replay=await f.post(correction());
+  assert.equal(replay.status,200);
+  assert.equal(replay.body.idempotent,true);
+  assert.equal((await f.post(correction(AMEND_REQUEST,0,{total_arrived:38}))).status,409);
+  assert.equal((await f.post(correction(AMEND_NEXT,0,{total_arrived:38}))).status,409);
+  const next=await f.post(correction(AMEND_NEXT,1,{total_arrived:38}));
+  assert.equal(next.status,201);
+  assert.equal(next.body.amendment_number,2);
+  assert.equal(f.native.prepare('SELECT COUNT(*) AS n FROM gate_archive_amendments').get().n,2);
+  assert.throws(()=>f.native.prepare("UPDATE gate_archive_amendments SET reason='tampered' WHERE amendment_id=?").run(AMEND_REQUEST),/append-only/);
+  assert.throws(()=>f.native.prepare("DELETE FROM gate_archive_amendments WHERE amendment_id=?").run(AMEND_REQUEST),/append-only/);
+});
+
+test('amendment batch failure rolls back correction and its audit while preserving immutable archive',async()=>{
+  const f=archivedFixture(),original=f.native.prepare("SELECT data FROM records WHERE id='historical-archive'").get().data;
+  const priorAudits=f.native.prepare('SELECT COUNT(*) AS n FROM gate_audit_events').get().n;
+  f.failNextWrite();
+  assert.equal((await f.post(correction())).status,409);
+  assert.equal(f.native.prepare('SELECT COUNT(*) AS n FROM gate_archive_amendments').get().n,0);
+  assert.equal(f.native.prepare('SELECT COUNT(*) AS n FROM gate_audit_events').get().n,priorAudits);
+  assert.equal(f.native.prepare("SELECT data FROM records WHERE id='historical-archive'").get().data,original);
+  assert.equal((await f.post(correction())).status,201);
+});
+
+test('amendment fails closed on missing D1 safeguards, disallowed fields, malformed values and non-instructor actor',async()=>{
+  const old=archivedFixture({migrate:false});
+  assert.equal((await old.post(correction())).status,503);
+  assert.equal(old.native.prepare("SELECT COUNT(*) AS n FROM records WHERE type='archive'").get().n,1);
+  const f=archivedFixture();
+  assert.equal((await f.post(correction(AMEND_REQUEST,0,{source_records_json:'tamper'}))).status,400);
+  assert.equal((await f.post(correction(AMEND_REQUEST,0,{total_arrived:-2}))).status,400);
+  assert.equal((await f.post(correction(AMEND_REQUEST,0,{week_group:'FAKE'}))).status,400);
+  assert.equal((await f.post({...correction(),reason:'bad'})).status,400);
+  assert.equal((await f.post({...correction(),expected_amendment_count:null})).status,400);
+  const response=await onRequestPost({
+    request:new Request('https://gate.example/api/persistence',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(correction())}),
+    env:f.env,data:{session:{role:'admin'}}
+  });
+  assert.equal(response.status,503,'Admin amendment requires the 0007 provenance migration.');
+  assert.equal(f.native.prepare('SELECT COUNT(*) AS n FROM gate_archive_amendments').get().n,0);
 });

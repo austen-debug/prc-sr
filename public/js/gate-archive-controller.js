@@ -857,8 +857,9 @@
   function archiveAmendments(amendments) {
     if (!amendments.length) return '<div class="gate-archive-amendment-empty">No corrections or amendments recorded.</div>';
     return `<ol class="gate-archive-amendment-list">${amendments.map(amendment => {
-      const fields = Object.keys(amendment.changes || {});
-      return `<li><div><strong>Amendment #${n(amendment.amendment_number)}</strong><span>${esc(formatDateTime(amendment.created_at))}</span></div><p>${esc(amendment.reason || 'Correction recorded.')}</p><small>${fields.length ? `Fields: ${esc(fields.join(', '))}` : 'No display fields listed.'}</small></li>`;
+      const fields = Object.entries(amendment.changes || {}).map(([field, value]) =>
+        `${field}: ${String(amendment.previous_values?.[field] ?? '—')} → ${String(value ?? '—')}`);
+      return `<li><div><strong>Amendment #${n(amendment.amendment_number)}</strong><span>${esc(formatDateTime(amendment.created_at))} · ${esc(amendment.actor_role || 'unknown role')}</span></div><p>${esc(amendment.reason || 'Correction recorded.')}</p><small>${fields.length ? esc(fields.join(' · ')) : 'No display fields listed.'}</small></li>`;
     }).join('')}</ol>`;
   }
 

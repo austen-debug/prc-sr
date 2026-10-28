@@ -303,6 +303,28 @@ test('canonical Input preflight catches incomplete draft rows that LOAD-only fil
   assert.equal(code.includes('Dorm ${Number(row.rowIndex'),false);
 });
 
+test('Input preflight and populated-row selection retain sparse original slot indices',async()=>{
+  const code=await readFile(new URL('../../public/js/gate-input-page-controller.js',import.meta.url),'utf8');
+  const slots=Array.from({length:8},(_,rowIndex)=>({rowIndex,sdq:'',sec:'',inter_sec:'',dorm_name:'',sex:'male',band:false,space_force:false,load:''}));
+  slots[3]={...slots[3],sdq:'321 TRS',dorm_name:'A01',sex:'female',band:true,load:'42'};
+  slots[7]={...slots[7],sdq:'322 TRS',dorm_name:'B02',space_force:true,load:'48'};
+  const from=code.indexOf('  function filledRows() {'),to=code.indexOf('  function normalizedDormName(',from);
+  assert.ok(from>0&&to>from);
+  const filled=new Script('(function(){'+code.slice(from,to)+'return filledRows;})()').runInNewContext({
+    syncAllBatchRowsFromDom(){},batchRowsSafe:()=>slots,n:value=>Number(value)||0
+  });
+  assert.deepEqual(Array.from(filled(),row=>row.rowIndex),[3,7]);
+  const preflightFrom=code.indexOf('  function preflightInitialization() {');
+  const preflightTo=code.indexOf('  function syncLocalRecord(',preflightFrom);
+  assert.ok(preflightFrom>0&&preflightTo>preflightFrom);
+  const preflight=new Script('(function(){'+code.slice(preflightFrom,preflightTo)+'return preflightInitialization;})()').runInNewContext({
+    getWeekGroupInputValue:()=> 'WG27002',validateReceivingWindows:()=>'',batchRowsSafe:()=>slots,
+    filledRows:filled,n:value=>Number(value)||0,findDuplicateDormIdentity:()=>null,allDataSafe:()=>[]
+  });
+  assert.equal(preflight().ok,true);
+  slots[5].sdq='323 TRS';
+  assert.match(preflight().message,/Input row 6 is incomplete/);
+});
 test('persisted dorm ordering follows normalized source sequence rather than review insertion order',async()=>{
   const code=await readFile(new URL('../../public/js/gate-input-page-controller.js',import.meta.url),'utf8');
   const from=code.indexOf('  function buildDormPayload(');

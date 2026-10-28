@@ -102,7 +102,7 @@ test('generic records write path permits only the registered active Week Group',
   assert.equal((await f.call('POST','/api/records',{type:'unknown',week_group:'WG26050'})).status,400);
   assert.equal((await f.call('POST','/api/records',{type:'dorm',week_group:'WG26050'})).status,409);
   f.native.prepare("UPDATE gate_week_groups SET state='closed',archive_id='archive',closed_at='2026-09-21T02:00:00Z' WHERE cycle_id='active-cycle'").run();
-  assert.equal((await f.call('POST','/api/records',post)).status,503,'a closed lifecycle with active config is inconsistent');
+  assert.equal((await f.call('POST','/api/records',post)).status,409,'a closed lifecycle cannot authorize operational writes');
 });
 
 test('generic config edits cannot spoof the active-group key', async () => {

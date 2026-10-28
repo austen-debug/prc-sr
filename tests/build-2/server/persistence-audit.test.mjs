@@ -60,7 +60,7 @@ function middlewareFixture() {
       async all() { return { results: native.prepare(sql).all(...values) }; }
     };
   }};
-  const env = { DB, GATE_PERSISTENCE_ENABLED:'true', AUTH_SECRET:'fixture-only', MTI_USERNAME:'fixture-instructor', MTI_PASSWORD:'fixture-instructor-password' };
+  const env = { DB, GATE_PERSISTENCE_ENABLED:'true', GATE_PERSISTENCE_CUTOVER_READY:'true', AUTH_SECRET:'fixture-only', MTI_USERNAME:'fixture-instructor', MTI_PASSWORD:'fixture-instructor-password' };
   function signedRequest(method, path, payload) {
     const now = Date.now();
     const body = Buffer.from(JSON.stringify({ username:'fixture-instructor', role:'instructor', iat:now, exp:now+60000 })).toString('base64url');

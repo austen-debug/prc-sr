@@ -5,7 +5,7 @@ import {
   onRequestGet as archiveGet,
   onRequestPost as archivePost
 } from '../../../functions/api/archives.js';
-import { onRequestGet as recordsGet } from '../../../functions/api/records.js';
+import { onRequestGet as recordsGet, onRequestPost as recordsPost, onRequestPut as recordsPut, onRequestDelete as recordsDelete } from '../../../functions/api/records.js';
 
 const stamp = '2026-09-21T22:00:00.000Z';
 
@@ -180,4 +180,31 @@ test('live record polling excludes archive payloads while the default records AP
   const allBody = await all.json();
   assert.equal(allBody.scope,'all');
   assert.deepEqual(allBody.records.map(record => record.type).sort(),['archive','dorm']);
+});
+
+
+test('generic records mutations cannot create, spoof-overwrite or delete archive snapshots for any writer role',async()=>{
+  const f=fixture();
+  const baseline=f.native.prepare("SELECT data FROM records WHERE id='archive-1'").get().data;
+  for(const role of ['instructor','admin','airman']){
+    const data={session:{role}};
+    for(const record of [{type:'archive',week_group:'WG26099'},{type:'archive_amendment',archive_id:'archive-1'}]){
+      const response=await recordsPost({request:new Request('https://gate.example/api/records',{
+        method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(record)
+      }),env:f.env,data});
+      assert.equal(response.status,405,'direct archive creation is reserved to server closeout');
+    }
+    const put=await recordsPut({request:new Request('https://gate.example/api/records',{
+      method:'PUT',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({__backendId:'archive-1',type:'dorm',week_group:'FORGED',total_arrived:999})
+    }),env:f.env,data});
+    assert.equal(put.status,405,'stored archive row wins over spoofed submitted type');
+    const deletion=await recordsDelete({request:new Request('https://gate.example/api/records',{
+      method:'DELETE',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({__backendId:'archive-1',type:'dorm'})
+    }),env:f.env,data});
+    assert.equal(deletion.status,403);
+    assert.equal(f.native.prepare("SELECT data FROM records WHERE id='archive-1'").get().data,baseline);
+  }
+  assert.equal(f.native.prepare("SELECT COUNT(*) AS n FROM records WHERE type='archive'").get().n,1);
 });

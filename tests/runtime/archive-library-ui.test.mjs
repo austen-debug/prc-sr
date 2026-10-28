@@ -81,3 +81,31 @@ test('Archive style is scoped and adapts to small screens without changing heade
   assert.doesNotMatch(addition, /#page-archives \.gate-archive-current-report\s*\{/);
   assert.doesNotMatch(addition, /#gate-matrix-dialog/);
 });
+
+
+test('Visible archive correction uses canonical append-only form and retires competing inline save',async()=>{
+  const js=await load('public/js/gate-archive-controller.js');
+  const html=await load('public/index.html');
+  const handler=js.slice(js.indexOf('  async function saveArchiveEdit('),js.indexOf('  function archiveSpaceForceTotal('));
+  assert.match(js,/data-archive-amend-id/);
+  assert.match(js,/CREATE AMENDMENT/);
+  assert.match(js,/archiveDetailCache\.get\(String\(id \|\| ''\)\)\?\.archive/);
+  assert.match(handler,/action:'amend_archive'/);
+  assert.match(handler,/expected_amendment_count:detail\.amendments\.length/);
+  assert.match(handler,/request_id:requestId/);
+  assert.match(handler,/amendment\.amendment_id|item\.amendment_id===requestId/);
+  assert.doesNotMatch(handler,/dataSdk\.update\(/);
+  assert.match(html,/id="archive-edit-reason" required minlength="5"/);
+  assert.match(html,/CREATE AMENDMENT<\/button>/);
+  assert.doesNotMatch(html,/id="archive-edit-dorm-data"/);
+  assert.doesNotMatch(html,/id="archive-edit-bus-data"/);
+  assert.doesNotMatch(html,/document\.getElementById\('archive-edit-form'\)\.addEventListener\('submit'/);
+  assert.doesNotMatch(html,/SAVE ARCHIVE<\/button>/);
+});
+
+test('Failed archive detail requests remain retryable rather than permanently cached as empty history',async()=>{
+  const js=await load('public/js/gate-archive-controller.js');
+  const loader=js.slice(js.indexOf('  async function loadArchiveDetail('),js.indexOf('  function archiveTotals('));
+  assert.match(loader,/archiveDetailCache\.get\(key\)\?\.isOk!==false/);
+  assert.match(loader,/archiveDetailPromises\.delete\(key\)/);
+});

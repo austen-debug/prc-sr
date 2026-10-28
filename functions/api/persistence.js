@@ -311,7 +311,7 @@ async function amendArchive(env,payload,actor) {
   const id=String(payload.archive_id||'').trim(),reason=String(payload.reason||'').trim(),changes=payload.changes;
   const requestId=String(payload.request_id||'').trim(),expected=payload.expected_amendment_count;
   if (!/^[-a-zA-Z0-9_]{1,100}$/.test(id)||
-      !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(requestId)||
+      !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(requestId)||
       reason.length<5||reason.length>2000||
       !Number.isSafeInteger(expected)||expected<0||
       !changes||typeof changes!=='object'||Array.isArray(changes)||!Object.keys(changes).length)

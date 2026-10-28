@@ -26,7 +26,7 @@ function fixture({migrate=true}={}){
     async run(){if(failWrite){failWrite=false;throw new Error('Injected write failure');}const result=native.prepare(sql).run(...args);return {meta:{changes:Number(result.changes)}};},
     async execute(){return /^\s*(SELECT|WITH|PRAGMA)\b/i.test(sql)?this.all():this.run();}
   };},async batch(statements){native.exec('BEGIN');try{const results=[];for(const item of statements)results.push(await item.execute());native.exec('COMMIT');return results;}catch(e){native.exec('ROLLBACK');throw e;}}};
-  const env={DB,GATE_PERSISTENCE_ENABLED:'true',AUTH_SECRET:'fixture-only'},data={session:{role:'instructor'}};
+  const env={DB,GATE_PERSISTENCE_ENABLED:'true',GATE_PERSISTENCE_CUTOVER_READY:'true',AUTH_SECRET:'fixture-only'},data={session:{role:'instructor'}};
   async function post(body){const request=new Request('https://gate.example/api/persistence',{method:'POST',headers:{'Content-Type':'application/json',Origin:'https://gate.example'},body:JSON.stringify(body)});const response=await onRequestPost({request,env,data});return {status:response.status,body:await response.json()};}
   async function get(mode='health'){const response=await onRequestGet({request:new Request(`https://gate.example/api/persistence?mode=${mode}`),env,data});return {status:response.status,body:await response.json()};}
   return {native,env,post,get,failNextWrite(){failWrite=true;}};

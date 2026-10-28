@@ -73,12 +73,14 @@ export function normalizeDraft(payload = {}) {
 export function validateInitialization(draft) {
   if (!draft.proposed_week_group) throw new PersistenceValidationError('Week Group ID is required.');
   validateReceivingWindows(draft.receiving_windows);
-  const populated = draft.rows.filter(row => row.sdq || row.sec || row.inter_sec || row.dorm_name || row.load !== '');
+  const populated = draft.rows.filter(row => row.sdq || row.sec || row.inter_sec || row.dorm_name || row.load !== '' || row.band || row.space_force);
   if (!populated.length) throw new PersistenceValidationError('At least one dorm must be configured.');
   const seen = new Set();
   for (const row of populated) {
+    if (!row.sdq || !/^(?:[0-9][A-Za-z][0-9]|[A-Za-z][0-9]{2})$/.test(row.dorm_name))
+      throw new PersistenceValidationError(`Input row ${row.rowIndex + 1} requires a Squadron and valid three-character dorm designation.`);
     if (!Number.isInteger(row.load) || row.load < 1 || row.load > 100) throw new PersistenceValidationError('Each configured dorm requires a load from 1 to 100.');
-    const key = `${row.sdq.toUpperCase()}::${(row.dorm_name || `DORM ${row.rowIndex + 1}`).toUpperCase()}`;
+    const key = `${row.sdq.toUpperCase()}::${row.dorm_name.toUpperCase()}`;
     if (seen.has(key)) throw new PersistenceValidationError(`Duplicate Squadron/Dorm: ${key}.`);
     seen.add(key);
   }
@@ -86,7 +88,7 @@ export function validateInitialization(draft) {
 }
 export function buildDormRows(draft, cycleId, now, makeId, actorRole = 'instructor') {
   return validateInitialization(draft).map(row => {
-    const name = row.dorm_name || `Dorm ${row.rowIndex + 1}`;
+    const name = row.dorm_name;
     const order = row.rowIndex + 1;
     const id = makeId();
     const data = {

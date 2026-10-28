@@ -19,6 +19,7 @@
   let dataSdkPatched = false;
   let archiveOpenPatched = false;
   let initializationInProgress = false;
+  let initializationOutcomeUnknown = false;
 
   function n(value) {
     const parsed = Number(value || 0);
@@ -506,69 +507,92 @@
     event?.stopPropagation?.();
     event?.stopImmediatePropagation?.();
     if (initializationInProgress) return;
+    if (initializationOutcomeUnknown) {
+      showInputMessage('Initialization outcome is unresolved. Reload GATE and verify the active Week Group before attempting another write.', true);
+      return;
+    }
 
     ensureInputPageShell();
     syncAllBatchRowsFromDom();
     saveWindowInputs();
-
     const preflight = preflightInitialization();
-    if (!preflight.ok) {
-      showInputMessage(preflight.message, true);
-      return;
-    }
+    if (!preflight.ok) return showInputMessage(preflight.message, true);
 
     const weekGroup = getWeekGroupInputValue();
     const rows = filledRows();
     const windows = readWindowInputs(weekGroup);
+    const requestId = window.crypto?.randomUUID?.();
+    if (!requestId) return showInputMessage('Secure operation identity unavailable. Initialization was not attempted.', true);
+
     const btn = document.getElementById('init-wg-btn');
     const originalText = btn?.textContent || 'INITIALIZE WEEK GROUP';
     const progress = window.GateWeekGroupProgress;
     initializationInProgress = true;
-
     if (btn) {
       btn.disabled = true;
       btn.textContent = 'Initializing...';
     }
 
-    let ok = 0;
+    let committed = false;
     try {
       progress?.show?.(weekGroup, 'initialize');
-      const existingConfig = allDataSafe().find(record => record.type === 'config' && record.key === 'week_group');
-      const configPayload = existingConfig
-        ? { ...existingConfig, value: weekGroup, updated_at: new Date().toISOString() }
-        : { type: 'config', key: 'week_group', value: weekGroup, created_at: new Date().toISOString() };
-      const configResult = existingConfig ? await window.dataSdk.update(configPayload) : await window.dataSdk.create(configPayload);
-      if (configResult?.isOk) syncLocalRecord(configResult.data || configPayload);
-      else throw new Error(configResult?.error || 'Failed to set active Week Group.');
-
-      for (const [index, row] of rows.entries()) {
-        progress?.update?.(`Creating dorm ${index + 1} of ${rows.length}…`);
-        const payload = buildDormPayload(row, weekGroup, windows);
-        const result = await window.dataSdk.create(payload);
-        if (result?.isOk) {
-          ok += 1;
-          syncLocalRecord(result.data || payload);
+      progress?.update?.('Atomically committing ' + rows.length + ' dorms and Week Group configuration…');
+      const controller = new AbortController();
+      const timeout = window.setTimeout(() => controller.abort(), 30000);
+      let result;
+      try {
+        const response = await fetch('/api/persistence', {
+          method: 'POST', credentials: 'same-origin', cache: 'no-store', signal: controller.signal,
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+          body: JSON.stringify({ action: 'initialize_legacy', request_id: requestId,
+            week_group: weekGroup, rows, receiving_windows: windows })
+        });
+        result = await response.json();
+        if (!response.ok || !result?.isOk || !result.initialized) {
+          const rejected = new Error(result?.error || 'The server rejected Week Group initialization.');
+          // Explicit 4xx rejections are authoritative; 5xx/read errors can be ambiguous.
+          rejected.definitive = response.status >= 400 && response.status < 500;
+          throw rejected;
         }
+      } catch (failure) {
+        if (failure.definitive) throw failure;
+        progress?.update?.('Response interrupted; verifying the committed operation…');
+        let verified = null;
+        try {
+          const check = await fetch('/api/persistence?mode=legacy_initialization&request_id=' + encodeURIComponent(requestId), {
+            credentials: 'same-origin', cache: 'no-store', headers: { Accept: 'application/json' },
+            signal: AbortSignal.timeout(10000)
+          });
+          const state = await check.json();
+          if (check.ok && state?.isOk && state.initialized) verified = state;
+        } catch (_) {}
+        if (!verified) {
+          initializationOutcomeUnknown = true;
+          throw new Error('Initialization cannot be confirmed. Reload and inspect the active Week Group before trying again. Do not submit another initialization while the outcome is unknown.');
+        }
+        result = verified;
+      } finally {
+        window.clearTimeout(timeout);
       }
 
-      progress?.update?.('Finalizing Week Group…');
-      if (ok === rows.length) {
+      committed = true;
+      progress?.update?.('D1 transaction committed. Synchronizing the live record snapshot…');
+      try {
+        await window.dataSdk.refresh();
         document.getElementById('init-success-overlay')?.classList.remove('hidden');
-        showInputMessage(`${weekGroup} initialized with ${ok} dorms.`, false);
-      } else {
-        showInputMessage(`${ok}/${rows.length} dorms created. Check records before retrying.`, true);
+        showInputMessage(weekGroup + ' initialized with ' + result.dorm_count + ' dorms.', false);
+      } catch (_) {
+        // A committed D1 transaction cannot become a failed initialization due to GET.
+        initializationOutcomeUnknown = true;
+        showInputMessage(weekGroup + ' was initialized in D1. Live refresh is unavailable; reload GATE to reconcile the display before further actions.', true);
       }
-
-      try { window.GateStatusBoardController?.scheduleRender?.({ force: true }); } catch (_) {}
-      try { window.GateProcessingController?.scheduleRender?.({ force: true }); } catch (_) {}
-      try { window.runGateHooks?.('afterDataChanged', { source: 'gate-input-initialize-week-group' }); } catch (_) {}
     } catch (error) {
-      showInputMessage(error?.message || 'Failed to initialize Week Group.', true);
+      if (!committed) showInputMessage(error?.message || 'Initialization was not completed.', true);
     } finally {
       progress?.hide?.();
       initializationInProgress = false;
       if (btn) {
-        btn.disabled = false;
+        btn.disabled = initializationOutcomeUnknown;
         btn.textContent = originalText;
       }
     }

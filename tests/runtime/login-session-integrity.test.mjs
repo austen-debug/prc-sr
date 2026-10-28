@@ -151,6 +151,24 @@ test('middleware preserves durable app routes across refresh and enforces role b
   assert.match(processingHtml, /data-gate-session-role="instructor"/);
   assert.match(processingHtml, /id="page-processing" class="[^"]*\bactive\b/);
   assert.doesNotMatch(processingHtml, /id="page-board" class="[^"]*\bactive\b/);
+  assert.doesNotMatch(processingHtml, /gate-persistence-runtime\.js/);
+  env.GATE_PERSISTENCE_ENABLED='true';
+  const flagOnly = await request('/input/', instructorCookie);
+  assert.doesNotMatch(await flagOnly.response.text(), /gate-persistence-runtime\.js/,
+    'First flag alone cannot intercept the legacy lifecycle.');
+  env.GATE_PERSISTENCE_CUTOVER_READY='true';
+  const authorized = await request('/input/', instructorCookie);
+  const authorizedHtml = await authorized.response.text();
+  assert.equal((authorizedHtml.match(/gate-persistence-runtime\.js/g) || []).length,1,
+    'Authorized Instructor HTML must load the existing replacement owner exactly once.');
+  assert.ok(authorizedHtml.indexOf('gate-persistence-runtime.js') > authorizedHtml.indexOf('gate-input-page-controller.js'),
+    'Staged controller must load after the legacy Input owner.');
+  const airmanUnderCutover = await request('/processing/', airmanCookie);
+  assert.doesNotMatch(await airmanUnderCutover.response.text(), /gate-persistence-runtime\.js/,
+    'Read-only/operational Airman page does not own Week Group lifecycle.');
+  delete env.GATE_PERSISTENCE_CUTOVER_READY;
+  delete env.GATE_PERSISTENCE_ENABLED;
+
 
   const airmanProcessing = await request('/processing/', airmanCookie);
   assert.equal(airmanProcessing.response.status,200);

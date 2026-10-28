@@ -75,7 +75,7 @@
 
   function canAmendArchive() {
     const role = document.body?.dataset.gateSessionRole || (typeof currentRole === 'undefined' ? '' : currentRole);
-    return role === 'instructor';
+    return role === 'instructor' || role === 'admin';
   }
 
   let amendmentSaveInProgress = false;

@@ -1,5 +1,5 @@
 import { withdrawnArchiveIds } from './archive-dispositions.mjs';
-import { cutoverRequested, PersistenceValidationError, normalizeDraft, validateInitialization, buildDormRows, parseOperationalRow, buildArchivePayload } from './persistence-core.mjs';
+import { cutoverRequested, PersistenceValidationError, normalizeDraft, buildDormRows, parseOperationalRow, buildArchivePayload } from './persistence-core.mjs';
 
 const WINDOWS = ['receiving_day_one_start','receiving_day_one_end','receiving_day_two_start','receiving_day_two_end'];
 const nowIso = () => new Date().toISOString();
@@ -225,9 +225,6 @@ async function initializeLegacy(env,payload,actor) {
     rows:payload.rows,
     receiving_windows:payload.receiving_windows
   });
-  const configured=validateInitialization(draft);
-  if (configured.some(row=>!row.sdq||!/^(?:[0-9][A-Za-z][0-9]|[A-Za-z][0-9]{2})$/.test(row.dorm_name)))
-    return error('validation','Each configured row requires a Squadron and a valid three-character dorm designation.',400);
 
   const now=nowIso();
   const dormRows=buildDormRows(draft,'',now,uuid,actor).map(row=>({
@@ -268,7 +265,6 @@ async function initialize(env,payload,actor) {
   const saved=await draftRow(env,id);
   if (!saved||saved.status!=='draft'||saved.revision!==revision) return conflict('Saved Input draft changed; reload before initializing.');
   const draft=normalizeDraft({proposed_week_group:saved.proposed_week_group,rows:JSON.parse(saved.rows_json),receiving_windows:JSON.parse(saved.receiving_windows_json),import_review:JSON.parse(saved.import_review_json)});
-  validateInitialization(draft);
   const now=nowIso(), cycleId=uuid(), operation=uuid(), audit=uuid();
   const dormRows=buildDormRows(draft,cycleId,now,uuid,actor);
   const statements=[

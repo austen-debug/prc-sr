@@ -138,6 +138,9 @@ test('archive detail is read-only, strips recovery snapshot, parses presentation
   assert.equal(result.body.dorms.length,1);
   assert.equal(result.body.buses.length,2);
   assert.equal(result.body.amendments.length,1);
+  assert.equal(result.body.amendments[0].previous_values.total_arrived,41);
+  assert.equal(result.body.amendments[0].changes.total_arrived,40);
+  assert.equal(result.body.amendments[0].actor_role,'instructor');
   assert.equal(result.body.lifecycle.state,'closed');
   assert.doesNotMatch(JSON.stringify(result.body),/source_records_json/);
   assert.doesNotMatch(JSON.stringify(result.body),/secret-source-row/);
@@ -146,6 +149,28 @@ test('archive detail is read-only, strips recovery snapshot, parses presentation
   assert.equal(JSON.parse(after).total_arrived,41,'baseline archive remains unchanged beneath amendment presentation');
 });
 
+test('archive read model tracks ordered before/after values without changing the original',async()=>{
+  const f=fixture(),before=f.native.prepare("SELECT data FROM records WHERE id='archive-1'").get().data;
+  f.native.prepare("INSERT INTO gate_archive_amendments(amendment_id,archive_id,cycle_id,amendment_number,amendment_type,reason,changes_json,actor_role,created_at) VALUES(?,?,?,?,?,?,?,?,?)")
+    .run('amend-2','archive-1','cycle-1',2,'correction','Final verified reconciliation',JSON.stringify({total_arrived:39,total_loaded:40}),'admin',stamp);
+  const result=await json(await archiveGet({request:new Request('https://gate.example/api/archives?id=archive-1'),env:f.env,data:{session:{role:'admin'}}}));
+  assert.equal(result.status,200);
+  assert.deepEqual(result.body.amendments.map(a=>a.amendment_number),[1,2]);
+  assert.deepEqual(result.body.amendments.map(a=>a.previous_values.total_arrived),[41,40]);
+  assert.equal(result.body.amendments[1].previous_values.total_loaded,41);
+  assert.equal(result.body.archive.total_arrived,39);
+  assert.equal(result.body.archive.total_loaded,40);
+  assert.equal(f.native.prepare("SELECT data FROM records WHERE id='archive-1'").get().data,before);
+});
+test('archive read fails closed rather than silently skipping revision gaps or malformed correction data',async()=>{
+  const f=fixture();
+  f.native.prepare("UPDATE gate_archive_amendments SET amendment_number=3 WHERE amendment_id='amend-1'").run();
+  let result=await json(await archiveGet({request:new Request('https://gate.example/api/archives?id=archive-1'),env:f.env,data:{session:{role:'instructor'}}}));
+  assert.equal(result.status,500);
+  f.native.prepare("UPDATE gate_archive_amendments SET amendment_number=1,changes_json='not-json' WHERE amendment_id='amend-1'").run();
+  result=await json(await archiveGet({request:new Request('https://gate.example/api/archives'),env:f.env,data:{session:{role:'instructor'}}}));
+  assert.equal(result.status,500);
+});
 test('archive presentation endpoint rejects mutations and non-instructor reads', async () => {
   const f = fixture();
   const before = f.native.prepare("SELECT data FROM records WHERE id='archive-1'").get().data;

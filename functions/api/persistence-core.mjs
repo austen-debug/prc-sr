@@ -1,3 +1,5 @@
+export const cutoverRequested = env => env?.GATE_PERSISTENCE_ENABLED === 'true' && env?.GATE_PERSISTENCE_CUTOVER_READY === 'true';
+
 import '../../public/js/gate-receiving-window-engine.js';
 
 // Pure GATE persistence validation and lossless snapshot construction.

@@ -227,7 +227,7 @@ test('Admin interface route protects direct physical index document and all non-
 
 test('Admin operational inheritance is independent from privileged archive flag after 0007',async()=>{
  const native=fixture();
- const env={DB:cloudflare(native),AUTH_SECRET:'test-secret',GATE_PERSISTENCE_ENABLED:'true',GATE_ADMIN_WRITES_ENABLED:'false'};
+ const env={DB:cloudflare(native),AUTH_SECRET:'test-secret',GATE_PERSISTENCE_ENABLED:'true',GATE_PERSISTENCE_CUTOVER_READY:'true',GATE_ADMIN_WRITES_ENABLED:'false'};
  const data={session:{role:'admin'}};
  const run=async(path,method='POST',body={})=>apiMiddleware({
    request:new Request('https://gate.example'+path,{method,headers:{Origin:'https://gate.example','Content-Type':'application/json'},body:JSON.stringify(body)}),
@@ -256,7 +256,7 @@ test('Admin can reopen a closed dorm as ADMIN with a verified audit actor and th
  const add=native.prepare('INSERT INTO records(id,type,week_group,data,created_at,updated_at) VALUES(?,?,?,?,?,?)');
  add.run('weekgroup-config','config',wg,JSON.stringify(config),now,now);
  add.run('admin-dorm-fixture','dorm',wg,JSON.stringify(dorm),now,now);
- const env={DB:cloudflare(native),AUTH_SECRET:'test-secret',GATE_PERSISTENCE_ENABLED:'true',GATE_ADMIN_WRITES_ENABLED:'false'};
+ const env={DB:cloudflare(native),AUTH_SECRET:'test-secret',GATE_PERSISTENCE_ENABLED:'true',GATE_PERSISTENCE_CUTOVER_READY:'true',GATE_ADMIN_WRITES_ENABLED:'false'};
  const request=new Request('https://gate.example/api/records',{method:'PUT',headers:{'Content-Type':'application/json'},
    body:JSON.stringify({__backendId:'admin-dorm-fixture',type:'dorm',week_group:wg,state:'open',phase:'OPEN',
      closed_at:'',closed_timer:'',manual_reopen_override:'true',current_load:15,max_load:42})});

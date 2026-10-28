@@ -17,7 +17,7 @@ async function transformedIndex() {
   const index = await source('public/index.html');
   // vm.Script tests the pure legacy HTML transformer, not the imported Pages session verifier.
   // Strip only the exact ESM import; retain all production transformation logic unchanged.
-  const executable = `${middleware.replace("import { verifyRequestSession } from './api/session-contract.mjs';", '').replace('export async function onRequest', 'async function onRequest')}\nglobalThis.__gateTransform = applyStatusBoardMetricSourceRefactor;`;
+  const executable = `${middleware.replace("import { verifyRequestSession } from './api/session-contract.mjs';", '').replace("import { cutoverRequested } from './api/persistence-core.mjs';", '').replace('export async function onRequest', 'async function onRequest')}\nglobalThis.__gateTransform = applyStatusBoardMetricSourceRefactor;`;
   const sandbox = {
     console,
     TextEncoder,

@@ -58,6 +58,9 @@
     "The production CSS runtime is one canonical direct stylesheet and zero imported stylesheets.",
     "No new asset named as a fix, patch, corrective layer, restore layer, finalizer, cleanup, or stability layer may be activated.",
     "Any active-asset change must update this inventory and the active runtime register in the same pull request.",
-    "The hidden Phase 3A shadow observer remains the only Build 2 runtime asset until a separate authorization decision."
-  ]
+    "The hidden Phase 3A shadow observer remains the only Build 2 runtime asset until a separate authorization decision.",
+    "The existing staged lifecycle runtime may be appended only under the two-step cutover gate; 27 legacy direct scripts plus one staged controller must not exceed the 28-script limit."
+  ],
+  "cutoverRuntimeScript": "/js/gate-persistence-runtime.js?v=cutover-readiness-20261028",
+  "cutoverRuntimeCondition": "GATE_PERSISTENCE_ENABLED=true AND GATE_PERSISTENCE_CUTOVER_READY=true for authenticated Instructor/Admin app routes"
 }

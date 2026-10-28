@@ -1,4 +1,5 @@
 import { verifyRequestSession } from './api/session-contract.mjs';
+import { cutoverRequested } from './api/persistence-core.mjs';
 
 const APP_ROUTES = Object.freeze({
   '/board/': Object.freeze({ page: 'board', roles: Object.freeze(['admin', 'instructor', 'airman']) }),
@@ -23,6 +24,9 @@ const UI_STYLESHEETS = [
 ];
 
 const UI_INLINE_ASSETS = [];
+// The existing staged lifecycle owner loads only after explicit cutover authorization.
+// Do not add another controller or load this asset during the legacy workflow.
+const CUTOVER_RUNTIME_SCRIPT = '<script src="/js/gate-persistence-runtime.js?v=cutover-readiness-20261028" defer></script>';
 
 const UI_HEAD_SCRIPTS = [
   '<script src="/js/gate-record-display-contract.js?v=record-display-integrity-20260714b" defer></script>',
@@ -227,7 +231,7 @@ function prepareAppShellHtml(html) {
   );
 }
 
-function applyUiAssets(html) {
+function applyUiAssets(html, cutoverRuntime = false) {
   const updatedHtml = prepareAppShellHtml(html);
 
   const linksToAdd = UI_STYLESHEETS.filter(link => {
@@ -240,7 +244,8 @@ function applyUiAssets(html) {
     return id ? !updatedHtml.includes(`id="${id}"`) : !updatedHtml.includes(asset);
   });
 
-  const scriptsToAdd = UI_HEAD_SCRIPTS.filter(script => {
+  const activeScripts = cutoverRuntime ? [...UI_HEAD_SCRIPTS, CUTOVER_RUNTIME_SCRIPT] : UI_HEAD_SCRIPTS;
+  const scriptsToAdd = activeScripts.filter(script => {
     const src = extractUrl(script, 'src');
     return src && !updatedHtml.includes(src);
   });
@@ -275,7 +280,7 @@ async function maybeApplyUiAssets(response, routeContext = null) {
   const contentType = response.headers.get('content-type') || '';
   if (!contentType.includes('text/html')) return response;
 
-  let html = applyUiAssets(await response.text());
+  let html = applyUiAssets(await response.text(), routeContext?.cutoverRuntime === true);
   if (routeContext?.page && routeContext?.role) {
     html = applyInitialAppRoute(html, routeContext.page, routeContext.role);
   }
@@ -325,7 +330,7 @@ async function serveMainApp(context, route, session) {
   const response = context.env?.ASSETS?.fetch
     ? await context.env.ASSETS.fetch(rootRequest)
     : await context.next(rootRequest);
-  return maybeApplyUiAssets(response, { page: route.page, role: session.role });
+  return maybeApplyUiAssets(response, { page: route.page, role: session.role, cutoverRuntime:cutoverRequested(context.env) && (session.role === 'instructor' || session.role === 'admin') });
 }
 
 async function bindSquadronAcknowledgmentToSession(response, session) {

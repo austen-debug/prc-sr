@@ -37,6 +37,11 @@ test('active middleware assets match the governed runtime inventory and remain b
   assert.deepEqual(styles, budget.currentDirectStyles);
   assert.deepEqual(scripts, budget.currentDirectScripts);
   assert.deepEqual(imports, budget.currentImportedStyles);
+  const cutoverScript = extractAttributeValues(middleware.match(/const CUTOVER_RUNTIME_SCRIPT = ([^;]+);/)?.[1] || '', 'src');
+  assert.deepEqual(cutoverScript, [budget.cutoverRuntimeScript]);
+  assert.ok(scripts.length + cutoverScript.length <= budget.maximums.directScripts);
+  assert.match(middleware, /cutoverRequested\(context\.env\)/);
+  assert.match(middleware, /cutoverRuntime:cutoverRequested/);
 
   assert.ok(styles.length <= budget.maximums.directStyles);
   assert.ok(scripts.length <= budget.maximums.directScripts);
@@ -89,4 +94,27 @@ test('evidence tooling remains outside active middleware and the Phase 3A shadow
   assert.doesNotMatch(middleware, /review-harness|evidence-retention|evidence-harness/i);
   assert.equal((middleware.match(/gate-status-board-shadow-controller\.js/g) || []).length, 1);
   assert.doesNotMatch(middleware, /navigator\.serviceWorker\.register/);
+});
+
+
+test('authorized cutover injects one existing lifecycle controller; legacy rendering loads none',async()=>{
+  const middleware=await source('functions/_middleware.js');
+  const body=middleware.slice(middleware.indexOf('function applyUiAssets('),middleware.indexOf('function applyInitialAppRoute('));
+  assert.ok(body.startsWith('function applyUiAssets('));
+  const {runInNewContext}=await import('node:vm');
+  const context={
+    UI_STYLESHEETS:[],UI_INLINE_ASSETS:[],
+    UI_HEAD_SCRIPTS:['<script src="/js/gate-input-page-controller.js" defer></script>'],
+    CUTOVER_RUNTIME_SCRIPT:'<script src="/js/gate-persistence-runtime.js?v=cutover-readiness-20261028" defer></script>',
+    prepareAppShellHtml:html=>html,
+    extractUrl:(tag,attribute)=>tag.match(new RegExp(attribute+'="([^"]+)"'))?.[1]||'',
+    extractId:()=>''
+  };
+  const apply=runInNewContext(body+'\napplyUiAssets',context);
+  const legacy=apply('<html><head></head><body></body></html>',false);
+  const enabled=apply('<html><head></head><body></body></html>',true);
+  assert.doesNotMatch(legacy,/gate-persistence-runtime\.js/);
+  assert.equal((enabled.match(/gate-persistence-runtime\.js/g)||[]).length,1);
+  assert.equal((enabled.match(/gate-input-page-controller\.js/g)||[]).length,1);
+  assert.equal((apply(enabled,true).match(/gate-persistence-runtime\.js/g)||[]).length,1);
 });

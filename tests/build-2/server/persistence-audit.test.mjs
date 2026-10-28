@@ -60,7 +60,7 @@ function middlewareFixture() {
       async all() { return { results: native.prepare(sql).all(...values) }; }
     };
   }};
-  const env = { DB, GATE_PERSISTENCE_ENABLED:'true', AUTH_SECRET:'fixture-only', MTI_USERNAME:'fixture-instructor', MTI_PASSWORD:'fixture-instructor-password' };
+  const env = { DB, GATE_PERSISTENCE_ENABLED:'true', GATE_PERSISTENCE_CUTOVER_READY:'true', AUTH_SECRET:'fixture-only', MTI_USERNAME:'fixture-instructor', MTI_PASSWORD:'fixture-instructor-password' };
   function signedRequest(method, path, payload) {
     const now = Date.now();
     const body = Buffer.from(JSON.stringify({ username:'fixture-instructor', role:'instructor', iat:now, exp:now+60000 })).toString('base64url');
@@ -95,12 +95,14 @@ test('generic records write path permits only the registered active Week Group',
   assert.equal((await f.call('POST','/api/records',post)).status,409);
   f.native.prepare("INSERT INTO gate_week_groups(cycle_id,week_group,state) VALUES('active-cycle','WG26050','active')").run();
   f.native.prepare('INSERT INTO records(id,type,week_group,data,created_at,updated_at) VALUES(?,?,?,?,?,?)').run('cfg','config','',JSON.stringify({type:'config',key:'week_group',value:'WG26050'}),'2026-09-21T01:00:00Z','2026-09-21T01:00:00Z');
+  assert.equal((await f.call('POST','/api/records',post)).status,503,'no dorm exists: incomplete lifecycle must remain write-blocked');
+  f.native.prepare('INSERT INTO records(id,type,week_group,data,created_at,updated_at) VALUES(?,?,?,?,?,?)').run('dorm','dorm','WG26050',JSON.stringify({type:'dorm',week_group:'WG26050',dorm_name:'A01'}),'2026-09-21T01:00:00Z','2026-09-21T01:00:00Z');
   assert.equal((await f.call('POST','/api/records',post)).status,200);
   assert.equal((await f.call('POST','/api/records',{...post,week_group:'WG26051'})).status,409);
   assert.equal((await f.call('POST','/api/records',{type:'unknown',week_group:'WG26050'})).status,400);
   assert.equal((await f.call('POST','/api/records',{type:'dorm',week_group:'WG26050'})).status,409);
   f.native.prepare("UPDATE gate_week_groups SET state='closed',archive_id='archive',closed_at='2026-09-21T02:00:00Z' WHERE cycle_id='active-cycle'").run();
-  assert.equal((await f.call('POST','/api/records',post)).status,409);
+  assert.equal((await f.call('POST','/api/records',post)).status,409,'a closed lifecycle cannot authorize operational writes');
 });
 
 test('generic config edits cannot spoof the active-group key', async () => {

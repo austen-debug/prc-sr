@@ -47,7 +47,7 @@ function timestamp(value) {
 
 function archiveSummary(row, amendments = []) {
   const stored = safeObject(row.data);
-  const data = applyAmendments(stored, amendments);
+  const data = projectArchive(stored, amendments).corrected;
   const archivedAt = String(data.archived_at || row.created_at || '');
   return {
     id: String(row.id || ''),
@@ -119,22 +119,35 @@ async function allAmendmentRows(env) {
 }
 
 function presentAmendments(rows) {
-  return rows.map(row => ({
-    amendment_id: String(row.amendment_id || ''),
-    amendment_number: number(row.amendment_number),
-    amendment_type: String(row.amendment_type || 'correction'),
-    reason: String(row.reason || ''),
-    changes: safeObject(row.changes_json),
-    actor_role: String(row.actor_role || ''),
-    created_at: String(row.created_at || '')
-  }));
+  return rows.map(row => {
+    const changes = JSON.parse(String(row.changes_json || ''));
+    if (!changes || typeof changes !== 'object' || Array.isArray(changes) || !Object.keys(changes).length)
+      throw new Error('Archive amendment contains an invalid correction payload.');
+    return {
+      amendment_id: String(row.amendment_id || ''),
+      amendment_number: number(row.amendment_number),
+      amendment_type: String(row.amendment_type || 'correction'),
+      reason: String(row.reason || ''),
+      changes,
+      actor_role: String(row.actor_role || ''),
+      created_at: String(row.created_at || '')
+    };
+  });
 }
 
-function applyAmendments(base, amendments) {
-  return amendments.reduce((record, amendment) => ({
-    ...record,
-    ...amendment.changes
-  }), { ...base });
+// One deterministic projection for archive index, detail, print and amendment history.
+function projectArchive(base, amendments) {
+  let corrected = { ...base };
+  const history = amendments.map((amendment, index) => {
+    if (amendment.amendment_number !== index + 1)
+      throw new Error('Archive amendment revision sequence is incomplete.');
+    const previous_values = Object.fromEntries(Object.keys(amendment.changes).map(key => [
+      key, Object.hasOwn(corrected, key) ? corrected[key] : null
+    ]));
+    corrected = { ...corrected, ...amendment.changes };
+    return { ...amendment, previous_values };
+  });
+  return { corrected, history };
 }
 
 async function lifecycleForArchive(env, archiveId) {
@@ -162,7 +175,7 @@ async function lifecycleForArchive(env, archiveId) {
 
 function archiveDetail(row, amendments, lifecycle) {
   const stored = safeObject(row.data);
-  const corrected = applyAmendments(stored, amendments);
+  const { corrected, history } = projectArchive(stored, amendments);
   const dorms = safeArray(stored.dorm_data);
   const buses = safeArray(stored.bus_data);
 
@@ -196,7 +209,7 @@ function archiveDetail(row, amendments, lifecycle) {
       : (String(stored.archive_schema_version || '').startsWith('gate-archive-schema-v3') ? 'canonical' : 'legacy')
   };
 
-  return { archive, dorms, buses, amendments, lifecycle };
+  return { archive, dorms, buses, amendments: history, lifecycle };
 }
 
 export async function onRequestGet({ request, env, data }) {

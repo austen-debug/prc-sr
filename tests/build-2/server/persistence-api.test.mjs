@@ -199,11 +199,10 @@ test('amendment fails closed on missing D1 safeguards, disallowed fields, malfor
   assert.equal((await f.post(correction(AMEND_REQUEST,0,{week_group:'FAKE'}))).status,400);
   assert.equal((await f.post({...correction(),reason:'bad'})).status,400);
   assert.equal((await f.post({...correction(),expected_amendment_count:null})).status,400);
-  f.data={session:{role:'admin'}};
   const response=await onRequestPost({
     request:new Request('https://gate.example/api/persistence',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(correction())}),
     env:f.env,data:{session:{role:'admin'}}
   });
-  assert.equal(response.status,403);
+  assert.equal(response.status,503,'Admin amendment requires the 0007 provenance migration.');
   assert.equal(f.native.prepare('SELECT COUNT(*) AS n FROM gate_archive_amendments').get().n,0);
 });

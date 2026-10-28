@@ -4,6 +4,7 @@ import {readFileSync} from 'node:fs';
 import {DatabaseSync} from 'node:sqlite';
 import {onRequestGet,onRequestPost} from '../../../functions/api/persistence.js';
 import {onRequestGet as archiveGet} from '../../../functions/api/archives.js';
+import {onRequestPost as legacyCloseoutPost} from '../../../functions/api/legacy-closeout.js';
 import {normalizeDraft,validateInitialization} from '../../../functions/api/persistence-core.mjs';
 const migration = name => readFileSync(new URL(`../../../migrations/${name}`,import.meta.url),'utf8');
 const stamp='2026-09-21T01:00:00.000Z';
@@ -205,4 +206,64 @@ test('amendment fails closed on missing D1 safeguards, disallowed fields, malfor
   });
   assert.equal(response.status,503,'Admin amendment requires the 0007 provenance migration.');
   assert.equal(f.native.prepare('SELECT COUNT(*) AS n FROM gate_archive_amendments').get().n,0);
+});
+
+
+test('single persistence flag cannot disable legacy initialization and closeout before cutover authorization',async()=>{
+  const f=fixture();delete f.env.GATE_PERSISTENCE_CUTOVER_READY;
+  const health=await f.get();
+  assert.equal(health.body.enabled,false);
+  const prereq=await f.get('cutover_preflight');
+  assert.equal(prereq.body.ready,true);
+  assert.equal(prereq.body.cutover_authorized,false);
+  const started=await f.post(legacyInput());
+  assert.equal(started.status,200,JSON.stringify(started.body));
+  const legacy=await legacyCloseoutPost({request:new Request('https://gate.example/api/legacy-closeout',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({week_group:draft.proposed_week_group,request_id:'01234567-89ab-4cde-8fab-0123456789ab'})
+  }),env:f.env,data:{session:{role:'instructor'}}});
+  const closed=await legacy.json();
+  assert.equal(legacy.status,200,JSON.stringify(closed));
+  assert.equal(closed.closed,true);
+  assert.equal(f.native.prepare("SELECT COUNT(*) AS n FROM records WHERE type='archive'").get().n,1);
+  assert.equal(f.native.prepare("SELECT COUNT(*) AS n FROM records WHERE type='dorm'").get().n,0);
+  assert.equal((await f.post(draft)).status,503,'staged draft writes must remain disabled until authorized cutover');
+});
+
+test('cutover preflight remains read-only and reports absent schema before turning on either flag',async()=>{
+  const f=fixture({migrate:false});f.env.GATE_PERSISTENCE_ENABLED='false';
+  const status=await f.get('cutover_preflight');
+  assert.equal(status.status,200);
+  assert.equal(status.body.ready,false);
+  assert.ok(status.body.missing_tables.includes('gate_week_groups'));
+  assert.ok(status.body.missing_triggers.includes('gate_mirror_records_insert'));
+  assert.equal(f.native.prepare("SELECT COUNT(*) AS n FROM records").get().n,0);
+  f.env.GATE_PERSISTENCE_ENABLED='true';
+  assert.equal((await f.post(draft)).status,503);
+});
+
+test('cutover refuses source/mirror divergence, inert triggers and lifecycle mismatches without clearing records',async()=>{
+  const f=fixture();
+  assert.equal((await f.get('cutover_preflight')).body.ready,true);
+  addRecord(f.native,'orphan','dorm','WG26041',{dorm_name:'A01'});
+  let check=await f.get('cutover_preflight');
+  assert.equal(check.body.ready,false,'live records must be scoped to active configuration');
+  assert.equal((await f.post(draft)).status,503);
+  f.native.prepare("DELETE FROM records WHERE id='orphan'").run();
+  f.native.exec('DROP TRIGGER gate_mirror_records_update; CREATE TRIGGER gate_mirror_records_update AFTER UPDATE ON records BEGIN SELECT 1; END;');
+  check=await f.get('cutover_preflight');
+  assert.equal(check.body.ready,false);
+  assert.ok(check.body.invalid_triggers.includes('gate_mirror_records_update'));
+  assert.equal((await f.post(draft)).status,503);
+});
+
+test('cutover preflight detects a valid mirror with lifecycle/config drift before closeout mutation',async()=>{
+  const f=fixture(),{started}=await startCycle(f);
+  f.native.prepare("UPDATE records SET data=json_set(data,'$.value','WG26099') WHERE type='config' AND json_extract(data,'$.key')='week_group'").run();
+  const check=await f.get('cutover_preflight');
+  assert.equal(check.body.ready,false);
+  const before=f.native.prepare("SELECT COUNT(*) AS n FROM records WHERE type='dorm'").get().n;
+  assert.equal((await f.post({action:'closeout',cycle_id:started.body.cycle_id})).status,503);
+  assert.equal(f.native.prepare("SELECT COUNT(*) AS n FROM records WHERE type='dorm'").get().n,before);
+  assert.equal(f.native.prepare("SELECT COUNT(*) AS n FROM records WHERE type='archive'").get().n,0);
 });

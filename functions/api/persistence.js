@@ -1,10 +1,10 @@
 import { withdrawnArchiveIds } from './archive-dispositions.mjs';
-import { PersistenceValidationError, normalizeDraft, validateInitialization, buildDormRows, parseOperationalRow, buildArchivePayload } from './persistence-core.mjs';
+import { cutoverRequested, PersistenceValidationError, normalizeDraft, validateInitialization, buildDormRows, parseOperationalRow, buildArchivePayload } from './persistence-core.mjs';
 
 const WINDOWS = ['receiving_day_one_start','receiving_day_one_end','receiving_day_two_start','receiving_day_two_end'];
 const nowIso = () => new Date().toISOString();
 const uuid = () => crypto.randomUUID();
-const enabled = env => env?.GATE_PERSISTENCE_ENABLED === 'true';
+const enabled = cutoverRequested;
 const role = data => String(data?.session?.role || '').toLowerCase();
 const reply = (body, status = 200) => new Response(JSON.stringify(body), { status, headers:{'Content-Type':'application/json','Cache-Control':'no-store'} });
 const error = (code, message, status) => reply({isOk:false,code,error:message},status);
@@ -65,14 +65,64 @@ function publicDraft(row) {
     receiving_windows:JSON.parse(row.receiving_windows_json),import_review:JSON.parse(row.import_review_json),
     status:row.status,revision:row.revision,updated_at:row.updated_at,consumed_at:row.consumed_at} : null;
 }
+// Read-only cutover verification is available BEFORE either flag is enabled.
+// Never infer production schema parity from local migrations or CI fixtures.
+const CUTOVER_TABLES = Object.freeze([
+  'gate_v2_buses','gate_v2_dorms','gate_v2_archives','gate_v2_config','gate_v2_sound_events',
+  'gate_input_drafts','gate_week_groups','gate_workflow_operations','gate_audit_events','gate_archive_amendments'
+]);
+const CUTOVER_TRIGGERS = Object.freeze([
+  'gate_mirror_records_insert','gate_mirror_records_update','gate_mirror_records_delete',
+  'gate_record_audit_insert','gate_record_audit_update','gate_record_audit_delete',
+  'trg_gate_audit_no_update','trg_gate_audit_no_delete',
+  'trg_gate_amend_no_update','trg_gate_amend_no_delete',
+  'prevent_audit_event_update','prevent_audit_event_delete'
+]);
+export async function verifyCutoverReadiness(env) {
+  const base={ready:false,cutover_authorized:enabled(env),runtime_script:'/js/gate-persistence-runtime.js',
+    missing_tables:[],missing_triggers:[]};
+  if (!env?.DB || !env.AUTH_SECRET) return {...base,message:'A verified D1 DB binding and AUTH_SECRET are required.'};
+  try {
+    const schema=await env.DB.prepare("SELECT name,type,sql FROM sqlite_master WHERE (type='table' AND name LIKE 'gate_%') OR (type='trigger' AND (name LIKE 'gate_%' OR name LIKE 'trg_gate_%' OR name LIKE 'prevent_audit_event_%'))").all();
+    const entries=new Map((schema.results||[]).map(row=>[row.name,row]));
+    const missingTables=CUTOVER_TABLES.filter(name=>entries.get(name)?.type!=='table');
+    const missingTriggers=CUTOVER_TRIGGERS.filter(name=>entries.get(name)?.type!=='trigger');
+    // Names alone do not prove integrity; catch inert/replaced triggers as well.
+    const invalidTriggers=CUTOVER_TRIGGERS.filter(name=>{
+      const sql=String(entries.get(name)?.sql||'');
+      return entries.has(name) && (!/BEGIN[\s\S]+END/i.test(sql) ||
+        (name.startsWith('trg_') || name.startsWith('prevent_') ? !/RAISE\s*\(\s*ABORT/i.test(sql) : !/INSERT|DELETE/i.test(sql)));
+    });
+    if(missingTables.length||missingTriggers.length||invalidTriggers.length)
+      return {...base,missing_tables:missingTables,missing_triggers:missingTriggers,invalid_triggers:invalidTriggers,
+        message:'D1 schema or required trigger definitions do not match the cutover contract.'};
+    const parity=await mirrorStatus(env),config=await configRecord(env),cycle=await activeCycle(env);
+    const legacy=configValue(config);
+    const live=await env.DB.prepare("SELECT week_group,type,COUNT(*) AS n FROM records WHERE type IN ('bus','dorm') GROUP BY week_group,type").all();
+    const liveRows=live.results||[];
+    const foreign=liveRows.some(row=>!legacy || row.week_group!==legacy);
+    const dormCount=liveRows.filter(row=>row.week_group===legacy && row.type==='dorm').reduce((n,row)=>n+Number(row.n||0),0);
+    const lifecycleValid=(!cycle||cycle.state==='active') &&
+      (!cycle||cycle.week_group===legacy) &&
+      (!legacy||dormCount>0) && !foreign &&
+      (!(cycle&&!legacy));
+    const ready=parity.ready && lifecycleValid;
+    return {...base,...parity,ready,missing_tables:[],missing_triggers:[],invalid_triggers:[],
+      legacy_week_group:legacy,
+      cycle:cycle?{cycle_id:cycle.cycle_id,week_group:cycle.week_group,state:cycle.state,revision:cycle.revision}:null,
+      adoption_required:Boolean(legacy&&!cycle),
+      message:ready?'Cutover prerequisites verified in this D1 binding.':
+        !lifecycleValid?'Live records, configuration, and lifecycle must be reconciled before cutover.':
+        'Source/mirror parity or audit triggers are incomplete.'};
+  }catch(error) {
+    console.error('D1 cutover preflight failed:',error);
+    return {...base,message:'D1 cutover schema, record parity, or lifecycle could not be verified.'};
+  }
+}
 async function health(env) {
-  if (!enabled(env)) return {isOk:true,enabled:false,ready:false,message:'Persistence is disabled.'};
-  const parity = await mirrorStatus(env), config = await configRecord(env), cycle = await activeCycle(env);
-  const legacy = configValue(config);
-  return {isOk:true,enabled:true,...parity,legacy_week_group:legacy,
-    cycle:cycle?{cycle_id:cycle.cycle_id,week_group:cycle.week_group,state:cycle.state,revision:cycle.revision}:null,
-    adoption_required:Boolean(legacy&&!cycle),
-    message:parity.ready?'':'Migration triggers or record parity are incomplete. Lifecycle is not available.'};
+  if (!enabled(env)) return {isOk:true,enabled:false,ready:false,message:'Transactional cutover is not authorized; legacy lifecycle remains active.'};
+  const status=await verifyCutoverReadiness(env);
+  return {isOk:true,enabled:true,...status};
 }
 function sameOrigin(request) {
   const origin = request.headers.get('Origin');
@@ -367,6 +417,7 @@ export async function onRequestGet({request,env,data}) {
   const mode=new URL(request.url).searchParams.get('mode')||'health';
   try {
     if (mode==='health') return reply(await health(env));
+    if (mode==='cutover_preflight') return reply({isOk:true,...await verifyCutoverReadiness(env)});
     if (mode==='legacy_initialization') {
       if (role(data)!=='instructor') return deny();
       if (enabled(env)) return conflict('Legacy initialization is unavailable after persistence activation.');
@@ -398,7 +449,9 @@ export async function onRequestPost({request,env,data}) {
     // Await dispatch inside the catch boundary: asynchronous validation failures must return 400, not an uncaught 500.
     if (payload.action==='initialize_legacy') return await initializeLegacy(env,payload,role(data));
     if (payload.action==='amend_archive') return await amendArchive(env,payload,role(data));
-    if (!enabled(env)) return unavailable('Persistence is disabled.');
+    if (!enabled(env)) return unavailable('Transactional cutover is not authorized.');
+    const preflight=await verifyCutoverReadiness(env);
+    if (!preflight.ready) return unavailable(preflight.message);
     if (payload.action==='save_draft') return await saveDraft(env,payload);
     if (payload.action==='adopt') return await adopt(env,role(data));
     if (payload.action==='initialize') return await initialize(env,payload,role(data));

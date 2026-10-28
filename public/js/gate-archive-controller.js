@@ -73,6 +73,14 @@
     try { return ['instructor','admin'].includes(currentRole); } catch (_) { return false; }
   }
 
+  function canAmendArchive() {
+    const role = document.body?.dataset.gateSessionRole || (typeof currentRole === 'undefined' ? '' : currentRole);
+    return role === 'instructor';
+  }
+
+  let amendmentSaveInProgress = false;
+  let amendmentOutcomeUnknown = false;
+
   function setEditArchiveId(id) {
     try { editArchiveId = id || null; } catch (_) { window.editArchiveId = id || null; }
   }
@@ -86,7 +94,8 @@
   }
 
   function archiveById(id = getEditArchiveId()) {
-    return records().find(record => record && record.type === 'archive' && record.__backendId === id) || null;
+    // The canonical archive read model applies all recorded amendments.
+    return archiveDetailCache.get(String(id || ''))?.archive || null;
   }
 
   function archiveTime(archive) {
@@ -538,7 +547,7 @@
     event?.preventDefault?.();
     event?.stopPropagation?.();
     event?.stopImmediatePropagation?.();
-    if (!isInstructor()) return;
+    if (!canAmendArchive() || amendmentOutcomeUnknown) return;
     const archive = archiveById(id);
     if (!archive) return;
     setEditArchiveId(id);
@@ -548,11 +557,12 @@
     setField('archive-edit-dorm-count', n(archive.dorm_count));
     setField('archive-edit-bus-count', n(archive.bus_count));
     setField('archive-edit-total-arrived', n(archive.total_arrived));
+    setField('archive-edit-total-expected', n(archive.total_expected));
+    setField('archive-edit-total-loaded', n(archive.total_loaded));
     setField('archive-edit-female-total', n(archive.female_total));
     setField('archive-edit-nat-total', n(archive.nat_total));
-    setField('archive-edit-dorm-data', safeJsonPretty(archive.dorm_data, []));
-    setField('archive-edit-bus-data', safeJsonPretty(archive.bus_data, []));
-    WINDOW_FIELDS.forEach(key => setField(`archive-edit-${key}`, archive[key] || ''));
+    setField('archive-edit-reason', '');
+    WINDOW_FIELDS.forEach(key => setField('archive-edit-'+key, String(archive[key]||'').slice(0,16)));
     showArchiveMessage('', false);
     const modal = document.getElementById('archive-edit-modal');
     if (modal) {
@@ -565,6 +575,7 @@
 
   function closeArchiveEditModalCanonical(event) {
     event?.preventDefault?.();
+    if (amendmentSaveInProgress || amendmentOutcomeUnknown) return;
     const modal = document.getElementById('archive-edit-modal');
     if (modal) {
       modal.classList.add('hidden');
@@ -575,24 +586,28 @@
   }
 
   function readArchiveEditPayload(archive) {
-    const dormData = parseFieldJson('archive-edit-dorm-data', []);
-    const busData = parseFieldJson('archive-edit-bus-data', []);
-    const windows = {};
-    WINDOW_FIELDS.forEach(key => { windows[key] = document.getElementById(`archive-edit-${key}`)?.value || archive[key] || ''; });
-    return Object.assign({}, archive, windows, {
-      week_group: document.getElementById('archive-edit-wg')?.value.trim() || archive.week_group,
-      archived_at: document.getElementById('archive-edit-archived-at')?.value.trim() || archive.archived_at,
-      dorm_count: n(document.getElementById('archive-edit-dorm-count')?.value),
-      bus_count: n(document.getElementById('archive-edit-bus-count')?.value),
-      total_arrived: n(document.getElementById('archive-edit-total-arrived')?.value),
-      female_total: n(document.getElementById('archive-edit-female-total')?.value),
-      nat_total: n(document.getElementById('archive-edit-nat-total')?.value),
-      space_force_total: busData.reduce((sum, bus) => sum + n(bus.space_force_count), 0),
-      dorm_data: JSON.stringify(dormData),
-      bus_data: JSON.stringify(busData),
-      archive_schema_version: archive.archive_schema_version || 'gate-archive-schema-v3-canonical',
-      updated_at: new Date().toISOString()
+    const changes = {};
+    const fields = {
+      total_arrived:'archive-edit-total-arrived',
+      total_expected:'archive-edit-total-expected',
+      total_loaded:'archive-edit-total-loaded',
+      female_total:'archive-edit-female-total',
+      nat_total:'archive-edit-nat-total'
+    };
+    for (const [field,id] of Object.entries(fields)) {
+      const raw=String(document.getElementById(id)?.value ?? '');
+      if (!/^\d+$/.test(raw)||!Number.isSafeInteger(Number(raw))) throw new Error('Invalid '+field+' value.');
+      const value=Number(raw);
+      if (value!==Number(archive[field]||0)) changes[field]=value;
+    }
+    WINDOW_FIELDS.forEach(key=>{
+      const value=String(document.getElementById('archive-edit-'+key)?.value||'');
+      if (value!==String(archive[key]||'').slice(0,16)) changes[key]=value;
     });
+    if (!Object.keys(changes).length) throw new Error('No changed fields. Enter a correction before saving.');
+    const reason=String(document.getElementById('archive-edit-reason')?.value||'').trim();
+    if (reason.length<5||reason.length>2000) throw new Error('Explain the correction in at least five characters.');
+    return {reason,changes};
   }
 
   async function saveArchiveEdit(event) {
@@ -600,19 +615,60 @@
     event.preventDefault();
     event.stopPropagation();
     event.stopImmediatePropagation?.();
-    if (!isInstructor()) return;
-    const archive = archiveById();
-    if (!archive) return;
+    if (!canAmendArchive()||amendmentSaveInProgress||amendmentOutcomeUnknown) return;
+    const id=getEditArchiveId();
+    const detail=archiveDetailCache.get(id);
+    if (!detail?.archive||!Array.isArray(detail.amendments)) return showArchiveMessage('Reload the archive detail before amending.',true);
+    const submit=event.target.querySelector('[type="submit"]');
+    amendmentSaveInProgress=true;
+    if(submit) submit.disabled=true;
     try {
-      const payload = readArchiveEditPayload(archive);
-      const result = await window.dataSdk.update(payload);
-      if (!result?.isOk) throw new Error(result?.error || 'Failed to save archive.');
-      syncLocalRecord(result.data || payload);
+      const {reason,changes}=readArchiveEditPayload(detail.archive);
+      const requestId=window.crypto?.randomUUID?.();
+      if (!requestId) throw new Error('Secure amendment identity is unavailable.');
+      const payload={action:'amend_archive',archive_id:id,request_id:requestId,
+        expected_amendment_count:detail.amendments.length,reason,changes};
+      let committed=false;
+      let response;
+      try {
+        response=await fetch('/api/persistence',{
+          method:'POST',credentials:'same-origin',cache:'no-store',
+          headers:{'Content-Type':'application/json',Accept:'application/json'},
+          body:JSON.stringify(payload),signal:AbortSignal.timeout(30000)
+        });
+        const result=await response.json();
+        if(!response.ok||!result?.isOk){
+          const failure=new Error(result?.error||'Archive amendment was rejected.');
+          failure.definitive=response.status>=400&&response.status<500;
+          throw failure;
+        }
+        committed=true;
+      }catch(error){
+        if(error.definitive)throw error;
+        // Unknown network outcome: verify this exact amendment ID, never POST again.
+        try {
+          const check=await archiveApi('/api/archives?id='+encodeURIComponent(id));
+          committed=Array.isArray(check.amendments)&&check.amendments.some(item=>item.amendment_id===requestId);
+        }catch(_){}
+        if(!committed){
+          amendmentOutcomeUnknown=true;
+          throw new Error('Amendment outcome is unconfirmed. Reload the archive to verify its history before making another correction.');
+        }
+      }
+      archiveDetailCache.delete(id);
+      archiveIndexLoaded=false;
       closeArchiveEditModalCanonical();
-      renderArchiveManagementView();
-      try { window.runGateHooks?.('afterDataChanged', { source: 'gate-archive-edit-save' }); } catch (_) {}
-    } catch (error) {
-      showArchiveMessage(`Archive save failed: ${error.message}`, true);
+      // A committed correction is not reversed by an unavailable GET.
+      try{
+        await Promise.all([refreshArchiveIndex(true),loadArchiveDetail(id,true)]);
+      }catch(_){
+        showArchiveMessage('Amendment saved in D1. Refresh the archive to display the correction.',true);
+      }
+    }catch(error){
+      showArchiveMessage(error?.message||'Unable to save amendment.',true);
+    }finally{
+      amendmentSaveInProgress=false;
+      if(submit)submit.disabled=amendmentOutcomeUnknown;
     }
   }
 
@@ -682,7 +738,7 @@
   async function loadArchiveDetail(id, force = false) {
     const key = String(id || '');
     if (!key) return null;
-    if (!force && archiveDetailCache.has(key)) return archiveDetailCache.get(key);
+    if (!force && archiveDetailCache.has(key) && archiveDetailCache.get(key)?.isOk!==false) return archiveDetailCache.get(key);
     if (!force && archiveDetailPromises.has(key)) return archiveDetailPromises.get(key);
     const promise = archiveApi(`/api/archives?id=${encodeURIComponent(key)}`)
       .then(payload => {
@@ -873,8 +929,10 @@
       '<header class="gate-archive-detail-head"><div><span class="gate-archive-kicker">Historical Receiving Record</span>' +
       '<h2>' + esc(archive.week_group || 'Archived Week Group') + '</h2>' +
       '<p>Archived ' + esc(formatDateTime(archive.archived_at)) + '</p></div>' +
+      '<div class="gate-archive-detail-actions">' +
+      (canAmendArchive() ? '<button type="button" class="gate-archive-print-action" data-archive-amend-id="' + esc(selectedArchiveId) + '">CREATE AMENDMENT</button>' : '') +
       '<button type="button" class="gate-archive-print-action" data-archive-print-id="' +
-      esc(selectedArchiveId) + '">PRINT / PDF</button></header>' +
+      esc(selectedArchiveId) + '">PRINT / PDF</button></div></header>' +
       '<div class="gate-archive-overview" aria-label="Week Group summary">' + stats + '</div>' +
       '<p class="gate-archive-overview-secondary">' + esc(smallerStats) + '</p>' +
       '<div class="gate-archive-detail-sections">' +
@@ -1337,6 +1395,11 @@
     const current = event.target?.closest?.('#print-current-summary-btn');
     if (current) {
       void printCurrentSummaryReport(event);
+      return;
+    }
+    const archiveAmend=event.target?.closest?.('[data-archive-amend-id]');
+    if(archiveAmend){
+      openArchiveEditModalCanonical(event,archiveAmend.dataset.archiveAmendId);
       return;
     }
     const archivePrint = event.target?.closest?.('[data-archive-print-id]');

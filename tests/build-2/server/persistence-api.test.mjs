@@ -53,6 +53,27 @@ test('sparse source indices retain original Input slots and reject ambiguous ord
     [{...rows[0],rowIndex:'3'},rows[1]]
   ]) assert.throws(()=>normalizeDraft({...draft,rows:invalid}),/source index/);
 });
+test('shared initializer refuses missing identities and flag-only draft rows',()=>{
+  for(const row of [
+    {...draft.rows[0],dorm_name:''},
+    {...draft.rows[0],sdq:''},
+    {...draft.rows[0],dorm_name:'INVALID'},
+    {rowIndex:3,band:true}
+  ]) {
+    const normalized=normalizeDraft({...draft,rows:[row]});
+    assert.throws(()=>validateInitialization(normalized),/requires a Squadron and valid three-character dorm/);
+  }
+});
+test('staged initialization never creates a fallback dorm from an incomplete saved draft',async()=>{
+  const f=fixture();
+  const saved=await f.post({...draft,rows:[{...draft.rows[0],rowIndex:3,dorm_name:''}]});
+  assert.equal(saved.status,201);
+  const attempt=await f.post({action:'initialize',draft_id:saved.body.draft.draft_id,revision:saved.body.draft.revision});
+  assert.equal(attempt.status,400,JSON.stringify(attempt.body));
+  assert.equal(f.native.prepare("SELECT COUNT(*) AS n FROM records").get().n,0);
+  assert.equal(f.native.prepare("SELECT COUNT(*) AS n FROM gate_week_groups").get().n,0);
+  assert.equal(f.native.prepare("SELECT status FROM gate_input_drafts").get().status,'draft');
+});
 test('transactional initialization preserves sparse source positions and original attributes',async()=>{
   const f=fixture();
   const rows=[{...draft.rows[0],rowIndex:3},{...draft.rows[1],rowIndex:7}];

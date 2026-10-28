@@ -10,11 +10,13 @@ const draft={action:'save_draft',proposed_week_group:'WG26051',rows:[
   {sdq:'321 TRS',sec:'01',inter_sec:'02',dorm_name:'A01',sex:'female',band:true,space_force:false,load:42},
   {sdq:'322 TRS',sec:'03',dorm_name:'B02',sex:'male',band:false,space_force:true,load:48}
 ],receiving_windows:{receiving_day_one_start:'2026-09-22T17:00',receiving_day_one_end:'2026-09-22T21:00'},import_review:{published_total:90,band_decision:'some'}};
-function fixture(){
+function fixture({migrate=true}={}){
   const native=new DatabaseSync(':memory:');
   native.exec('PRAGMA foreign_keys=ON;CREATE TABLE records(id TEXT PRIMARY KEY,type TEXT NOT NULL,week_group TEXT,data TEXT NOT NULL,created_at TEXT NOT NULL,updated_at TEXT NOT NULL);');
-  native.exec(migration('0003_gate_persistence_foundation.sql'));
-  native.exec(migration('0004_gate_record_audit_triggers.sql'));
+  if(migrate){
+    native.exec(migration('0003_gate_persistence_foundation.sql'));
+    native.exec(migration('0004_gate_record_audit_triggers.sql'));
+  }
   let failWrite=false;
   const DB={prepare(sql){let args=[];return {
     bind(...values){args=values;return this;},
@@ -42,3 +44,79 @@ test('injected archive insert failure rolls back without deleting or consuming c
 test('oversized archive fails closed without truncation or deleting sources',async()=>{const f=fixture(),{started}=await startCycle(f);addRecord(f.native,'large-bus','bus','WG26051',{status:'active',custom_payload:'x'.repeat(1850000)});const failed=await f.post({action:'closeout',cycle_id:started.body.cycle_id});assert.equal(failed.status,409);assert.equal(f.native.prepare("SELECT COUNT(*) AS n FROM records WHERE type='bus'").get().n,1);assert.equal(f.native.prepare("SELECT COUNT(*) AS n FROM records WHERE type='archive'").get().n,0);assert.equal(f.native.prepare('SELECT state FROM gate_week_groups').get().state,'active');});
 test('injected initialization failure retains original state and unconsumed draft',async()=>{const f=fixture(),saved=await f.post(draft);f.failNextWrite();assert.equal((await f.post({action:'initialize',draft_id:saved.body.draft.draft_id,revision:1})).status,409);assert.equal(f.native.prepare('SELECT COUNT(*) AS n FROM records').get().n,0);assert.equal(f.native.prepare('SELECT COUNT(*) AS n FROM gate_week_groups').get().n,0);assert.equal(f.native.prepare('SELECT status FROM gate_input_drafts').get().status,'draft');});
 test('legacy active-cycle adoption does not duplicate live records or cycles',async()=>{const f=fixture();addRecord(f.native,'dorm','dorm','WG26050',{dorm_name:'A01',max_load:48});addRecord(f.native,'config','config','',{key:'week_group',value:'WG26050'});assert.equal((await f.get()).body.adoption_required,true);const adopted=await f.post({action:'adopt'});assert.equal(adopted.status,200,JSON.stringify(adopted.body));assert.equal((await f.post({action:'adopt'})).body.adopted,false);assert.equal(f.native.prepare('SELECT COUNT(*) AS n FROM gate_week_groups').get().n,1);assert.equal(f.native.prepare("SELECT COUNT(*) AS n FROM records WHERE type='dorm'").get().n,1);});
+
+
+const LEGACY_REQUEST='28ec3c1f-9c5a-4acd-9e39-b136f3d36d7f';
+const SECOND_REQUEST='d4892abb-35b8-41da-a8ea-384c87829122';
+const legacyInput=(request_id=LEGACY_REQUEST)=>({
+  action:'initialize_legacy',request_id,week_group:draft.proposed_week_group,
+  rows:draft.rows,receiving_windows:draft.receiving_windows
+});
+
+test('legacy Input initializes all dorms and Week Group in one records-only D1 transaction',async()=>{
+  const f=fixture({migrate:false});
+  f.env.GATE_PERSISTENCE_ENABLED='false';
+  const initialized=await f.post(legacyInput());
+  assert.equal(initialized.status,200,JSON.stringify(initialized.body));
+  assert.equal(initialized.body.dorm_count,2);
+  const config=f.native.prepare("SELECT data FROM records WHERE type='config'").get();
+  const active=JSON.parse(config.data);
+  assert.equal(active.value,'WG26051');
+  assert.equal(active.initialization_request_id,LEGACY_REQUEST);
+  assert.equal(active.initialization_dorm_count,2);
+  const dorms=f.native.prepare("SELECT data FROM records WHERE type='dorm' ORDER BY json_extract(data,'$.display_order')").all().map(row=>JSON.parse(row.data));
+  assert.equal(dorms.length,2);
+  assert.deepEqual(dorms.map(d=>d.display_order),[1,2]);
+  assert.deepEqual(dorms.map(d=>d.dorm_name),['A01','B02']);
+  assert.deepEqual(dorms.map(d=>d.space_force),['false','true']);
+  assert.deepEqual(dorms.map(d=>d.band),['true','false']);
+  assert.ok(dorms.every(d=>d.initialization_request_id===LEGACY_REQUEST && !Object.hasOwn(d,'cycle_id')));
+  assert.equal(dorms[0].receiving_day_one_start,draft.receiving_windows.receiving_day_one_start);
+  assert.equal(f.native.prepare("SELECT COUNT(*) AS n FROM records WHERE type='archive'").get().n,0);
+});
+
+test('injected legacy initialization failure rolls back dorms and config together without migrations',async()=>{
+  const f=fixture({migrate:false});f.env.GATE_PERSISTENCE_ENABLED='false';
+  f.failNextWrite();
+  const failed=await f.post(legacyInput());
+  assert.equal(failed.status,409);
+  assert.equal(f.native.prepare("SELECT COUNT(*) AS n FROM records").get().n,0);
+  const recovered=await f.get('legacy_initialization&request_id='+LEGACY_REQUEST);
+  assert.equal(recovered.body.initialized,false);
+  assert.equal((await f.post(legacyInput())).status,200);
+});
+
+test('legacy initialization is idempotent and recovered by request ID without a second dorm insert',async()=>{
+  const f=fixture({migrate:false});f.env.GATE_PERSISTENCE_ENABLED='false';
+  const first=await f.post(legacyInput());
+  assert.equal(first.status,200);
+  const status=await f.get('legacy_initialization&request_id='+LEGACY_REQUEST);
+  assert.equal(status.body.initialized,true);
+  assert.equal(status.body.dorm_count,2);
+  const retried=await f.post(legacyInput());
+  assert.equal(retried.body.idempotent,true);
+  assert.equal(f.native.prepare("SELECT COUNT(*) AS n FROM records WHERE type='dorm'").get().n,2);
+  const conflicting=await f.post(legacyInput(SECOND_REQUEST));
+  assert.equal(conflicting.status,409);
+  assert.equal(f.native.prepare("SELECT COUNT(*) AS n FROM records WHERE type='config'").get().n,1);
+});
+
+test('legacy initialization refuses residual records, malformed rows, and a registered cycle',async()=>{
+  const f=fixture();f.env.GATE_PERSISTENCE_ENABLED='false';
+  addRecord(f.native,'leftover','dorm','WG26049',{dorm_name:'A01'});
+  assert.equal((await f.post(legacyInput())).status,409);
+  f.native.prepare("DELETE FROM records WHERE id='leftover'").run();
+  assert.equal((await f.post({...legacyInput(),rows:[{...draft.rows[0],sdq:''}]})).status,400);
+  assert.equal((await f.post({...legacyInput(),rows:[{...draft.rows[0],dorm_name:'INVALID'}]})).status,400);
+  assert.equal(f.native.prepare("SELECT COUNT(*) AS n FROM records").get().n,0);
+  f.native.prepare("INSERT INTO gate_week_groups(cycle_id,week_group,state) VALUES('cycle','WG26048','active')").run();
+  assert.equal((await f.post(legacyInput())).status,409);
+  assert.equal(f.native.prepare("SELECT COUNT(*) AS n FROM records").get().n,0);
+});
+
+test('gated transactional persistence cannot be bypassed with the legacy initialization action',async()=>{
+  const f=fixture();
+  const denied=await f.post(legacyInput());
+  assert.equal(denied.status,409);
+  assert.equal(f.native.prepare("SELECT COUNT(*) AS n FROM records").get().n,0);
+});

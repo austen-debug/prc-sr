@@ -83,7 +83,8 @@ export function buildDormRows(draft, cycleId, now, makeId, actorRole = 'instruct
     const order = row.rowIndex + 1;
     const id = makeId();
     const data = {
-      ...draft.receiving_windows, type:'dorm', week_group:draft.proposed_week_group, cycle_id:cycleId,
+      ...draft.receiving_windows, type:'dorm', week_group:draft.proposed_week_group,
+      ...(cycleId ? { cycle_id:cycleId } : {}),
       dorm_name:name, sdq:row.sdq, section:row.sec, inter_sec:row.inter_sec,
       max_load:row.load, current_load:0, sex:row.sex,
       band:row.band?'true':'false', space_force:row.space_force?'true':'false', is_space_force:row.space_force?'true':'false',

@@ -737,6 +737,8 @@ async function refresh(force = false) {
 }
 
     window.dataSdk = {
+      // Reuse the SDK's authoritative snapshot refresh after atomic server writes.
+      refresh() { return refresh(true); },
       async init(handler) {
         handlerRef = handler;
 

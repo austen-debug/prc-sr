@@ -33,6 +33,7 @@ export function normalizeDraft(payload = {}) {
   const proposedWeekGroup = bounded(payload.proposed_week_group, 24, 'Week Group ID').toUpperCase();
   if (proposedWeekGroup && !/^[A-Z0-9_-]{1,24}$/.test(proposedWeekGroup)) throw new PersistenceValidationError('Invalid Week Group identifier.');
   if (!Array.isArray(payload.rows) || payload.rows.length > 100) throw new PersistenceValidationError('Draft must contain at most 100 rows.');
+  let priorSourceIndex = -1;
   const rows = payload.rows.map((row, index) => {
     if (!row || typeof row !== 'object' || Array.isArray(row)) throw new PersistenceValidationError(`Invalid row ${index + 1}.`);
     noUnknownKeys(row, ROW_FIELDS, `row ${index + 1}`);
@@ -42,9 +43,13 @@ export function normalizeDraft(payload = {}) {
     const spaceForce = flag(row.space_force, 'Space Force');
     if (band && spaceForce) throw new PersistenceValidationError(`Row ${index + 1} cannot be both Band and Space Force.`);
     if (row.sex !== undefined && row.sex !== '' && row.sex !== 'male' && row.sex !== 'female') throw new PersistenceValidationError(`Invalid sex on row ${index + 1}.`);
-    if (row.rowIndex !== undefined && row.rowIndex !== index) throw new PersistenceValidationError(`Row ${index + 1} has an unexpected source index.`);
+    // Legacy Input sends populated rows only; preserve their original slot numbers.
+    const sourceIndex = row.rowIndex === undefined ? index : row.rowIndex;
+    if (!Number.isInteger(sourceIndex) || sourceIndex < 0 || sourceIndex >= 100 || sourceIndex <= priorSourceIndex)
+      throw new PersistenceValidationError(`Row ${index + 1} has an invalid or out-of-order source index.`);
+    priorSourceIndex = sourceIndex;
     return {
-      rowIndex: index, sdq: bounded(row.sdq, 48, 'Squadron'), sec: bounded(row.sec, 48, 'Section'),
+      rowIndex: sourceIndex, sdq: bounded(row.sdq, 48, 'Squadron'), sec: bounded(row.sec, 48, 'Section'),
       inter_sec: bounded(row.inter_sec, 64, 'Intermediate section'), dorm_name: bounded(row.dorm_name, 80, 'Dorm name'),
       sex: row.sex === 'female' ? 'female' : 'male', band, space_force: spaceForce, load
     };
@@ -68,12 +73,14 @@ export function normalizeDraft(payload = {}) {
 export function validateInitialization(draft) {
   if (!draft.proposed_week_group) throw new PersistenceValidationError('Week Group ID is required.');
   validateReceivingWindows(draft.receiving_windows);
-  const populated = draft.rows.filter(row => row.sdq || row.sec || row.inter_sec || row.dorm_name || row.load !== '');
+  const populated = draft.rows.filter(row => row.sdq || row.sec || row.inter_sec || row.dorm_name || row.load !== '' || row.band || row.space_force);
   if (!populated.length) throw new PersistenceValidationError('At least one dorm must be configured.');
   const seen = new Set();
   for (const row of populated) {
+    if (!row.sdq || !/^(?:[0-9][A-Za-z][0-9]|[A-Za-z][0-9]{2})$/.test(row.dorm_name))
+      throw new PersistenceValidationError(`Input row ${row.rowIndex + 1} requires a Squadron and valid three-character dorm designation.`);
     if (!Number.isInteger(row.load) || row.load < 1 || row.load > 100) throw new PersistenceValidationError('Each configured dorm requires a load from 1 to 100.');
-    const key = `${row.sdq.toUpperCase()}::${(row.dorm_name || `DORM ${row.rowIndex + 1}`).toUpperCase()}`;
+    const key = `${row.sdq.toUpperCase()}::${row.dorm_name.toUpperCase()}`;
     if (seen.has(key)) throw new PersistenceValidationError(`Duplicate Squadron/Dorm: ${key}.`);
     seen.add(key);
   }
@@ -81,7 +88,7 @@ export function validateInitialization(draft) {
 }
 export function buildDormRows(draft, cycleId, now, makeId, actorRole = 'instructor') {
   return validateInitialization(draft).map(row => {
-    const name = row.dorm_name || `Dorm ${row.rowIndex + 1}`;
+    const name = row.dorm_name;
     const order = row.rowIndex + 1;
     const id = makeId();
     const data = {

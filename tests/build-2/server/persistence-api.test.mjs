@@ -39,6 +39,54 @@ test('legacy writes mirror without deleting source data',()=>{const f=fixture();
 test('one active cycle and append-only audit/amendment protections',()=>{const f=fixture();f.native.prepare("INSERT INTO gate_week_groups(cycle_id,week_group,state) VALUES('one','WG26050','active')").run();assert.throws(()=>f.native.prepare("INSERT INTO gate_week_groups(cycle_id,week_group,state) VALUES('two','WG26051','active')").run(),/UNIQUE/);f.native.prepare("INSERT INTO gate_audit_events(event_id,entity_type,entity_id,event_type,actor_role) VALUES('audit','bus','id','created','instructor')").run();assert.throws(()=>f.native.prepare("DELETE FROM gate_audit_events WHERE event_id='audit'").run(),/append-only/);f.native.prepare("INSERT INTO gate_archive_amendments(amendment_id,archive_id,amendment_number,amendment_type,reason,changes_json,actor_role) VALUES('amend','archive',1,'correction','Valid reason','{}','instructor')").run();assert.throws(()=>f.native.prepare("UPDATE gate_archive_amendments SET reason='wrong' WHERE amendment_id='amend'").run(),/append-only/);});
 test('draft revision conflict does not overwrite current save',async()=>{const f=fixture(),saved=await f.post(draft);assert.equal(saved.status,201);const id=saved.body.draft.draft_id;const changed=await f.post({...draft,draft_id:id,revision:1,rows:[{...draft.rows[0],load:43}]});assert.equal(changed.status,200);assert.equal(changed.body.draft.revision,2);assert.equal((await f.post({...draft,draft_id:id,revision:1})).status,409);assert.equal((await f.get('draft')).body.draft.rows[0].load,43);});
 test('invalid input fails rather than truncate, discard, or coerce',()=>{assert.throws(()=>normalizeDraft({...draft,proposed_week_group:'WG'+'1'.repeat(30)}),/exceeds/);assert.throws(()=>normalizeDraft({...draft,rows:[{...draft.rows[0],sdq:'x'.repeat(49)}]}),/exceeds/);assert.throws(()=>normalizeDraft({...draft,rows:[{...draft.rows[0],extra:'retain'}]}),/silently discarded/);assert.throws(()=>normalizeDraft({...draft,rows:[{...draft.rows[0],sex:'invalid'}]}),/Invalid sex/);assert.throws(()=>normalizeDraft({...draft,rows:[{...draft.rows[0],band:true,space_force:true}]}),/Band and Space Force/);assert.throws(()=>validateInitialization(normalizeDraft({...draft,receiving_windows:{receiving_day_one_start:'2026-09-22T21:00',receiving_day_one_end:'2026-09-22T17:00'}})),/Receiving window/);assert.throws(()=>validateInitialization(normalizeDraft({...draft,rows:[draft.rows[0],draft.rows[0]]})),/Duplicate/);});
+test('sparse source indices retain original Input slots and reject ambiguous ordering',()=>{
+  const rows=[{...draft.rows[0],rowIndex:3},{...draft.rows[1],rowIndex:7}];
+  const normalized=normalizeDraft({...draft,rows});
+  assert.deepEqual(normalized.rows.map(row=>row.rowIndex),[3,7]);
+  assert.equal(validateInitialization(normalized).length,2);
+  for(const invalid of [
+    [{...rows[0],rowIndex:-1},rows[1]],
+    [rows[0],{...rows[1],rowIndex:3}],
+    [{...rows[0],rowIndex:8},{...rows[1],rowIndex:7}],
+    [{...rows[0],rowIndex:100},rows[1]],
+    [{...rows[0],rowIndex:2.5},rows[1]],
+    [{...rows[0],rowIndex:'3'},rows[1]]
+  ]) assert.throws(()=>normalizeDraft({...draft,rows:invalid}),/source index/);
+});
+test('shared initializer refuses missing identities and flag-only draft rows',()=>{
+  for(const row of [
+    {...draft.rows[0],dorm_name:''},
+    {...draft.rows[0],sdq:''},
+    {...draft.rows[0],dorm_name:'INVALID'},
+    {rowIndex:3,band:true}
+  ]) {
+    const normalized=normalizeDraft({...draft,rows:[row]});
+    assert.throws(()=>validateInitialization(normalized),/requires a Squadron and valid three-character dorm/);
+  }
+});
+test('staged initialization never creates a fallback dorm from an incomplete saved draft',async()=>{
+  const f=fixture();
+  const saved=await f.post({...draft,rows:[{...draft.rows[0],rowIndex:3,dorm_name:''}]});
+  assert.equal(saved.status,201);
+  const attempt=await f.post({action:'initialize',draft_id:saved.body.draft.draft_id,revision:saved.body.draft.revision});
+  assert.equal(attempt.status,400,JSON.stringify(attempt.body));
+  assert.equal(f.native.prepare("SELECT COUNT(*) AS n FROM records").get().n,0);
+  assert.equal(f.native.prepare("SELECT COUNT(*) AS n FROM gate_week_groups").get().n,0);
+  assert.equal(f.native.prepare("SELECT status FROM gate_input_drafts").get().status,'draft');
+});
+test('transactional initialization preserves sparse source positions and original attributes',async()=>{
+  const f=fixture();
+  const rows=[{...draft.rows[0],rowIndex:3},{...draft.rows[1],rowIndex:7}];
+  const saved=await f.post({...draft,rows});assert.equal(saved.status,201,JSON.stringify(saved.body));
+  const started=await f.post({action:'initialize',draft_id:saved.body.draft.draft_id,revision:saved.body.draft.revision});
+  assert.equal(started.status,200,JSON.stringify(started.body));
+  const dorms=f.native.prepare("SELECT data FROM records WHERE type='dorm' ORDER BY json_extract(data,'$.display_order')").all().map(row=>JSON.parse(row.data));
+  assert.deepEqual(dorms.map(row=>[row.display_order,row.input_order,row.source_row_index]),[[4,4,3],[8,8,7]]);
+  assert.deepEqual(dorms.map(row=>row.dorm_name),['A01','B02']);
+  assert.deepEqual(dorms.map(row=>row.space_force),['false','true']);
+  assert.equal(dorms[0].receiving_day_one_start,draft.receiving_windows.receiving_day_one_start);
+  assert.equal((await f.get()).body.ready,true);
+});
 test('a partially entered receiving window is persisted and recovered but cannot initialize',async()=>{const f=fixture(),partial={...draft,receiving_windows:{receiving_day_one_start:'2026-09-22T17:00'}};const saved=await f.post(partial);assert.equal(saved.status,201);const recovered=(await f.get('draft')).body.draft;assert.equal(recovered.receiving_windows.receiving_day_one_start,'2026-09-22T17:00');assert.equal(recovered.receiving_windows.receiving_day_one_end,'');assert.equal((await f.post({action:'initialize',draft_id:recovered.draft_id,revision:recovered.revision})).status,400);const completed=await f.post({...draft,draft_id:recovered.draft_id,revision:recovered.revision});assert.equal(completed.status,200);assert.equal((await f.post({action:'initialize',draft_id:recovered.draft_id,revision:completed.body.draft.revision})).status,200);});
 test('initialization creates only one active cycle and consumes one draft',async()=>{const f=fixture(),{saved,started}=await startCycle(f);const repeat=await f.post({action:'initialize',draft_id:saved.body.draft.draft_id,revision:1});assert.equal(repeat.status,200);assert.equal(repeat.body.idempotent,true);assert.equal(f.native.prepare("SELECT COUNT(*) AS n FROM records WHERE type='dorm'").get().n,2);assert.equal(f.native.prepare('SELECT COUNT(*) AS n FROM gate_v2_dorms').get().n,2);assert.equal(f.native.prepare('SELECT status FROM gate_input_drafts').get().status,'consumed');assert.equal((await f.post(draft)).status,409);assert.equal((await f.get()).body.ready,true);assert.ok(started.body.cycle_id);});
 test('closeout preserves byte-exact source records including sound events and custom fields; replay is idempotent even after next cycle starts',async()=>{const f=fixture(),{started}=await startCycle(f);const dorm=f.native.prepare("SELECT id,data FROM records WHERE type='dorm' ORDER BY id LIMIT 1").get();f.native.prepare('UPDATE records SET data=? WHERE id=?').run(JSON.stringify({...JSON.parse(dorm.data),custom_dorm_field:'preserve',notes:'original notes'}),dorm.id);addRecord(f.native,'bus1','bus','WG26051',{status:'arrived',otw_count:23,custom_bus_field:'keep'});addRecord(f.native,'sound1','sound_event','WG26051',{event:'alert',custom_sound_field:'keep'});const original=f.native.prepare("SELECT id,type,week_group,data,created_at,updated_at FROM records WHERE week_group='WG26051' AND type IN ('dorm','bus','sound_event') ORDER BY created_at,id").all();const close=await f.post({action:'closeout',cycle_id:started.body.cycle_id});assert.equal(close.status,200,JSON.stringify(close.body));const archive=JSON.parse(f.native.prepare("SELECT data FROM records WHERE type='archive'").get().data);assert.deepEqual(JSON.parse(archive.source_records_json),JSON.parse(JSON.stringify(original)));assert.equal(archive.source_record_count,original.length);assert.equal(archive.source_snapshot_format,'lossless-record-rows-v1');assert.equal(JSON.parse(archive.dorm_data).length,2);assert.equal(archive.total_expected,90);assert.equal(f.native.prepare("SELECT COUNT(*) AS n FROM records WHERE type IN ('dorm','bus','sound_event')").get().n,0);assert.equal(f.native.prepare('SELECT state FROM gate_week_groups WHERE cycle_id=?').get(started.body.cycle_id).state,'closed');const retry=await f.post({action:'closeout',cycle_id:started.body.cycle_id});assert.equal(retry.status,200);assert.equal(retry.body.idempotent,true);assert.equal(retry.body.archive_id,close.body.archive_id);const next=await f.post({...draft,proposed_week_group:'WG26052'});assert.equal(next.status,201);const newCycle=await f.post({action:'initialize',draft_id:next.body.draft.draft_id,revision:1});assert.equal(newCycle.status,200);assert.equal((await f.post({action:'closeout',cycle_id:started.body.cycle_id})).body.archive_id,close.body.archive_id);assert.equal(f.native.prepare("SELECT COUNT(*) AS n FROM records WHERE type='dorm'").get().n,2);assert.equal((await f.post({action:'closeout',cycle_id:'wrong-cycle'})).status,409);});
@@ -77,6 +125,23 @@ test('legacy Input initializes all dorms and Week Group in one records-only D1 t
   assert.equal(f.native.prepare("SELECT COUNT(*) AS n FROM records WHERE type='archive'").get().n,0);
 });
 
+test('legacy initialization preserves sparse Input positions, row attributes and recovery',async()=>{
+  const f=fixture({migrate:false});f.env.GATE_PERSISTENCE_ENABLED='false';
+  const rows=[{...draft.rows[0],rowIndex:3},{...draft.rows[1],rowIndex:7}];
+  const request= {...legacyInput(),rows};
+  const started=await f.post(request);
+  assert.equal(started.status,200,JSON.stringify(started.body));
+  const dorms=f.native.prepare("SELECT data FROM records WHERE type='dorm' ORDER BY json_extract(data,'$.display_order')").all().map(row=>JSON.parse(row.data));
+  assert.deepEqual(dorms.map(row=>[row.display_order,row.input_order,row.source_row_index]),[[4,4,3],[8,8,7]]);
+  assert.deepEqual(dorms.map(row=>row.dorm_name),['A01','B02']);
+  assert.equal(dorms[0].band,'true');
+  assert.equal(dorms[1].space_force,'true');
+  assert.equal(dorms[1].receiving_day_one_end,draft.receiving_windows.receiving_day_one_end);
+  const status=await f.get('legacy_initialization&request_id='+LEGACY_REQUEST);
+  assert.equal(status.body.initialized,true);
+  assert.equal((await f.post(request)).body.idempotent,true);
+  assert.equal(f.native.prepare("SELECT COUNT(*) AS n FROM records WHERE type='dorm'").get().n,2);
+});
 test('injected legacy initialization failure rolls back dorms and config together without migrations',async()=>{
   const f=fixture({migrate:false});f.env.GATE_PERSISTENCE_ENABLED='false';
   f.failNextWrite();

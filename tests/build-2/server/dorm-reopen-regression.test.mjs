@@ -120,11 +120,11 @@ test('Server closed-dorm manual reopen preserves current load and provenance whi
 
 test('Admin writes remain fail-closed pending verified migration; Instructor requires active Week Group',async()=>{
  const {DB}=sqliteFixture(),body=JSON.stringify({__backendId:'dorm-fixture',type:'dorm',state:'open',manual_reopen_override:'true'});
- const make=role=>apiMiddleware({env:{DB,GATE_PERSISTENCE_ENABLED:'true',AUTH_SECRET:'test-only'},data:{session:{role}},
+ const make=role=>apiMiddleware({env:{DB,GATE_PERSISTENCE_ENABLED:'true',GATE_PERSISTENCE_CUTOVER_READY:'true',AUTH_SECRET:'test-only'},data:{session:{role}},
   request:new Request('https://gate.example/api/records',{method:'PUT',headers:{'Content-Type':'application/json'},body}),
   next:async()=>new Response('bypassed security',{status:209})});
  const admin=await make('admin');
  assert.equal(admin.status,503);assert.equal((await admin.json()).code,'admin_schema_required');
  const instructor=await make('instructor');
- assert.equal(instructor.status,409);assert.equal((await instructor.json()).code,'lifecycle_required');
+ assert.equal(instructor.status,503);assert.equal((await instructor.json()).code,'cutover_not_ready');
 });

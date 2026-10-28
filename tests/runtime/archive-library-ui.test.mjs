@@ -93,6 +93,8 @@ test('Visible archive correction uses canonical append-only form and retires com
   assert.match(handler,/action:'amend_archive'/);
   assert.match(handler,/expected_amendment_count:detail\.amendments\.length/);
   assert.match(handler,/request_id:requestId/);
+  assert.match(handler,/response\?\.status===409/);
+  assert.match(handler,/void loadArchiveDetail\(id,true\)/);
   assert.match(handler,/amendment\.amendment_id|item\.amendment_id===requestId/);
   assert.doesNotMatch(handler,/dataSdk\.update\(/);
   assert.match(html,/id="archive-edit-reason" required minlength="5"/);

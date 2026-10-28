@@ -1,3 +1,5 @@
+import { cutoverRequested } from './persistence-core.mjs';
+import { verifyCutoverReadiness } from './persistence.js';
 import { verifyRequestSession } from './session-contract.mjs';
 import { recordDiagnostic, safeRoute } from './diagnostic-store.mjs';
 
@@ -18,13 +20,15 @@ function squadronApiAllowed(pathname, method) {
 async function guardPersistence(context) {
   const { request, env } = context;
   const url = new URL(request.url);
-  if (env.GATE_PERSISTENCE_ENABLED !== 'true') return null;
+  if (!cutoverRequested(env)) return null;
   if (!env.AUTH_SECRET) return restricted('AUTH_SECRET must be configured before enabling persistence.', 'configuration_required', 503);
 
   if (url.pathname === '/api/archive-delete' && request.method !== 'GET') {
     return restricted('Archived history is immutable. Record a correction through the amendment workflow.');
   }
   if (url.pathname !== '/api/records' || !['POST', 'PUT', 'DELETE'].includes(request.method)) return null;
+  const preflight=await verifyCutoverReadiness(env);
+  if (!preflight.ready) return restricted(preflight.message,'cutover_not_ready',503);
 
   let body;
   try { body = await request.clone().json(); }

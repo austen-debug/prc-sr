@@ -124,15 +124,85 @@ async function adopt(env,actor) {
     return reply({isOk:true,adopted:true,cycle_id:id,week_group:group});
   } catch { return conflict('Active-cycle registration changed concurrently. Refresh state.'); }
 }
-function configStatements(env,row,key,value,now,actor) {
+function configStatements(env,row,key,value,now,actor,extra={}) {
   const original = row?JSON.parse(row.data):{}, id=row?.id||uuid();
-  const data=JSON.stringify({...original,type:'config',key,value,__backendId:id,
+  const data=JSON.stringify({...original,...extra,type:'config',key,value,__backendId:id,
     record_version:Math.max(0,Number(original.record_version)||0)+1,
     created_by_role:row?(original.created_by_role||'unknown'):actor,updated_by_role:actor,
     created_at:row?.created_at||now,updated_at:now});
   if (!row) return [env.DB.prepare("INSERT INTO records(id,type,week_group,data,created_at,updated_at) VALUES(?,'config','',?,?,?)").bind(id,data,now,now)];
   return [env.DB.prepare('UPDATE records SET data=?,updated_at=? WHERE id=? AND data=?').bind(data,now,row.id,row.data),assertOne(env)];
 }
+// Flag-off Input uses this same persistence endpoint, but only the original
+// records table. It does not activate the gated lifecycle or require new tables.
+async function legacyInitializationState(env,requestId) {
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(requestId))
+    return error('validation','Valid initialization request ID required.',400);
+  const config=await configRecord(env);
+  const stored=config?JSON.parse(config.data):{};
+  if (stored.initialization_request_id!==requestId)
+    return reply({isOk:true,initialized:false});
+  const weekGroup=configValue(config);
+  const expected=Number(stored.initialization_dorm_count);
+  if (!weekGroup||!Number.isSafeInteger(expected)||expected<1)
+    return unavailable('Recorded initialization has invalid configuration; inspect D1 before retrying.');
+  const result=await env.DB.prepare("SELECT COUNT(*) AS total, COUNT(CASE WHEN json_extract(data,'$.initialization_request_id')=? THEN 1 END) AS owned FROM records WHERE type='dorm' AND week_group=?")
+    .bind(requestId,weekGroup).first();
+  if (Number(result?.total)!==expected||Number(result?.owned)!==expected)
+    return unavailable('Initialized dorm records no longer match the committed manifest; inspect D1.');
+  return reply({isOk:true,initialized:true,idempotent:true,week_group:weekGroup,dorm_count:expected});
+}
+
+async function initializeLegacy(env,payload,actor) {
+  if (enabled(env)) return conflict('Transactional persistence is enabled; use the saved-draft initialization workflow.');
+  if (actor!=='instructor') return deny();
+  const requestId=String(payload.request_id||'');
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(requestId))
+    return error('validation','Valid initialization request ID required.',400);
+  const config=await configRecord(env);
+  if (config && JSON.parse(config.data).initialization_request_id===requestId)
+    return legacyInitializationState(env,requestId);
+  if (configValue(config)) return conflict('Close out the currently active Week Group before initializing another.');
+  const schema=await env.DB.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='gate_week_groups'").first();
+  if (schema && await activeCycle(env))
+    return conflict('A transactional Week Group cycle is registered; reconcile lifecycle state before using legacy initialization.');
+  const activeRows=await env.DB.prepare("SELECT COUNT(*) AS n FROM records WHERE type IN ('bus','dorm')").first();
+  if (Number(activeRows?.n)!==0)
+    return conflict('Unarchived bus or dorm records exist; initialization did not change them.');
+
+  const draft=normalizeDraft({
+    proposed_week_group:payload.week_group,
+    rows:payload.rows,
+    receiving_windows:payload.receiving_windows
+  });
+  const configured=validateInitialization(draft);
+  if (configured.some(row=>!row.sdq||!/^(?:[0-9][A-Za-z][0-9]|[A-Za-z][0-9]{2})$/.test(row.dorm_name)))
+    return error('validation','Each configured row requires a Squadron and a valid three-character dorm designation.',400);
+
+  const now=nowIso();
+  const dormRows=buildDormRows(draft,'',now,uuid,actor).map(row=>({
+    ...row,data:JSON.stringify({...JSON.parse(row.data),initialization_request_id:requestId})
+  }));
+  const statements=[
+    failUnless(env,"NOT EXISTS(SELECT 1 FROM records WHERE type IN ('bus','dorm')) AND (SELECT COUNT(*) FROM records WHERE type='config' AND json_extract(data,'$.key')='week_group')=? AND NOT EXISTS(SELECT 1 FROM records WHERE type='config' AND json_extract(data,'$.key')='week_group' AND COALESCE(json_extract(data,'$.value'),'')<>'')",config?1:0),
+    ...(schema?[failUnless(env,"NOT EXISTS(SELECT 1 FROM gate_week_groups WHERE state<>'closed')")]:[]),
+    env.DB.prepare("INSERT INTO records(id,type,week_group,data,created_at,updated_at) SELECT json_extract(value,'$.id'),json_extract(value,'$.type'),json_extract(value,'$.week_group'),json_extract(value,'$.data'),json_extract(value,'$.created_at'),json_extract(value,'$.updated_at') FROM json_each(?)")
+      .bind(JSON.stringify(dormRows)),
+    failUnless(env,"(SELECT COUNT(*) FROM records WHERE type='dorm' AND week_group=?)=? AND (SELECT COUNT(*) FROM records WHERE type='dorm' AND week_group=? AND json_extract(data,'$.initialization_request_id')=?)=?",draft.proposed_week_group,dormRows.length,draft.proposed_week_group,requestId,dormRows.length),
+    ...configStatements(env,config,'week_group',draft.proposed_week_group,now,actor,{
+      initialization_request_id:requestId,initialization_dorm_count:dormRows.length
+    }),
+    failUnless(env,"(SELECT COUNT(*) FROM records WHERE type='config' AND json_extract(data,'$.key')='week_group' AND json_extract(data,'$.value')=? AND json_extract(data,'$.initialization_request_id')=?)=1",draft.proposed_week_group,requestId)
+  ];
+  try {
+    await env.DB.batch(statements);
+    return reply({isOk:true,initialized:true,week_group:draft.proposed_week_group,dorm_count:dormRows.length});
+  } catch(e) {
+    console.error('Atomic legacy initialization rejected:',e);
+    return conflict('Initialization was not confirmed. Verify the request ID before considering another attempt.');
+  }
+}
+
 async function initialize(env,payload,actor) {
   const id=String(payload.draft_id||''), revision=Number(payload.revision);
   if (!/^[A-Za-z0-9_-]{1,100}$/.test(id)||!Number.isSafeInteger(revision)||revision<1) return error('validation','Saved draft ID and revision are required.',400);
@@ -254,6 +324,11 @@ export async function onRequestGet({request,env,data}) {
   const mode=new URL(request.url).searchParams.get('mode')||'health';
   try {
     if (mode==='health') return reply(await health(env));
+    if (mode==='legacy_initialization') {
+      if (role(data)!=='instructor') return deny();
+      if (enabled(env)) return conflict('Legacy initialization is unavailable after persistence activation.');
+      return await legacyInitializationState(env,new URL(request.url).searchParams.get('request_id')||'');
+    }
     if (!enabled(env)) return unavailable('Persistence is disabled.');
     if (mode==='draft') return reply({isOk:true,draft:publicDraft(await draftRow(env,new URL(request.url).searchParams.get('id')||''))});
     if (mode==='amendments') {
@@ -269,7 +344,6 @@ export async function onRequestGet({request,env,data}) {
 }
 export async function onRequestPost({request,env,data}) {
   if (!['admin','instructor'].includes(role(data))) return deny();
-  if (!enabled(env)) return unavailable('Persistence is disabled.');
   try {
     sameOrigin(request);
     const raw=await request.text();
@@ -277,6 +351,8 @@ export async function onRequestPost({request,env,data}) {
     const payload=JSON.parse(raw);
     if (!payload||typeof payload!=='object'||Array.isArray(payload)) return error('validation','Invalid request body.',400);
     // Await dispatch inside the catch boundary: asynchronous validation failures must return 400, not an uncaught 500.
+    if (payload.action==='initialize_legacy') return await initializeLegacy(env,payload,role(data));
+    if (!enabled(env)) return unavailable('Persistence is disabled.');
     if (payload.action==='save_draft') return await saveDraft(env,payload);
     if (payload.action==='adopt') return await adopt(env,role(data));
     if (payload.action==='initialize') return await initialize(env,payload,role(data));

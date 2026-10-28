@@ -306,8 +306,13 @@ async function amendmentReady(env) {
   return ['gate_archive_amendments','gate_audit_events','trg_gate_amend_no_update','trg_gate_amend_no_delete','trg_gate_audit_no_update','trg_gate_audit_no_delete'].every(name=>found.has(name));
 }
 async function amendArchive(env,payload,actor) {
-  if (actor!=='instructor') return deny();
+  if (!['instructor','admin'].includes(actor)) return deny();
   if (!(await amendmentReady(env))) return unavailable('Append-only amendment tables and immutability triggers are not verified. The archive remains read-only.');
+  if (actor==='admin') {
+    const schema=await env.DB.prepare("SELECT name,sql FROM sqlite_master WHERE type='table' AND name IN ('gate_archive_amendments','gate_audit_events')").all();
+    if ((schema.results||[]).length!==2 || schema.results.some(row=>!String(row.sql||'').includes("'admin'")))
+      return unavailable('Admin amendment provenance requires the verified 0007 migration.');
+  }
   const id=String(payload.archive_id||'').trim(),reason=String(payload.reason||'').trim(),changes=payload.changes;
   const requestId=String(payload.request_id||'').trim(),expected=payload.expected_amendment_count;
   if (!/^[-a-zA-Z0-9_]{1,100}$/.test(id)||
@@ -344,10 +349,10 @@ async function amendArchive(env,payload,actor) {
     await env.DB.batch([
       failUnless(env,"(SELECT data FROM records WHERE id=? AND type='archive')=? AND (SELECT COALESCE(MAX(amendment_number),0) FROM gate_archive_amendments WHERE archive_id=?)=?",
         id,archive.data,id,expected),
-      env.DB.prepare("INSERT INTO gate_archive_amendments(amendment_id,archive_id,cycle_id,amendment_number,amendment_type,reason,changes_json,actor_role,created_at) VALUES(?,?,?,?,'correction',?,?,'instructor',?)")
-        .bind(requestId,id,cycle?.cycle_id||null,sequence,reason,JSON.stringify(changes),now),
-      env.DB.prepare("INSERT INTO gate_audit_events(event_id,cycle_id,entity_type,entity_id,event_type,actor_role,prior_version,resulting_version,metadata_json,occurred_at) VALUES(?,?,'archive',?,'archive_amended','instructor',?,?,?,?)")
-        .bind(audit,cycle?.cycle_id||null,id,expected,sequence,JSON.stringify({amendment_id:requestId,amendment_number:sequence,fields:Object.keys(changes)}),now),
+      env.DB.prepare("INSERT INTO gate_archive_amendments(amendment_id,archive_id,cycle_id,amendment_number,amendment_type,reason,changes_json,actor_role,created_at) VALUES(?,?,?,?,'correction',?,?,?,?)")
+        .bind(requestId,id,cycle?.cycle_id||null,sequence,reason,JSON.stringify(changes),actor,now),
+      env.DB.prepare("INSERT INTO gate_audit_events(event_id,cycle_id,entity_type,entity_id,event_type,actor_role,prior_version,resulting_version,metadata_json,occurred_at) VALUES(?,?,'archive',?,'archive_amended',?,?,?,?,?)")
+        .bind(audit,cycle?.cycle_id||null,id,actor,expected,sequence,JSON.stringify({amendment_id:requestId,amendment_number:sequence,fields:Object.keys(changes)}),now),
       failUnless(env,"(SELECT COUNT(*) FROM gate_archive_amendments WHERE amendment_id=? AND archive_id=? AND amendment_number=?)=1 AND (SELECT data FROM records WHERE id=? AND type='archive')=?",
         requestId,id,sequence,id,archive.data)
     ]);

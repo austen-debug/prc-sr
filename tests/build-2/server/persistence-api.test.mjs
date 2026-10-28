@@ -180,10 +180,11 @@ test('append-only amendment is idempotent, enforces revision CAS and cannot rewr
 
 test('amendment batch failure rolls back correction and its audit while preserving immutable archive',async()=>{
   const f=archivedFixture(),original=f.native.prepare("SELECT data FROM records WHERE id='historical-archive'").get().data;
+  const priorAudits=f.native.prepare('SELECT COUNT(*) AS n FROM gate_audit_events').get().n;
   f.failNextWrite();
   assert.equal((await f.post(correction())).status,409);
   assert.equal(f.native.prepare('SELECT COUNT(*) AS n FROM gate_archive_amendments').get().n,0);
-  assert.equal(f.native.prepare('SELECT COUNT(*) AS n FROM gate_audit_events').get().n,0);
+  assert.equal(f.native.prepare('SELECT COUNT(*) AS n FROM gate_audit_events').get().n,priorAudits);
   assert.equal(f.native.prepare("SELECT data FROM records WHERE id='historical-archive'").get().data,original);
   assert.equal((await f.post(correction())).status,201);
 });

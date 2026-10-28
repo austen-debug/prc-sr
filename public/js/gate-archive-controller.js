@@ -644,7 +644,14 @@
         }
         committed=true;
       }catch(error){
-        if(error.definitive)throw error;
+        if(error.definitive){
+          if(response?.status===409){
+            // Another operator amended this archive: discard stale revision before retry.
+            archiveDetailCache.delete(id);
+            void loadArchiveDetail(id,true);
+          }
+          throw error;
+        }
         // Unknown network outcome: verify this exact amendment ID, never POST again.
         try {
           const check=await archiveApi('/api/archives?id='+encodeURIComponent(id));

@@ -657,6 +657,7 @@
       }
       archiveDetailCache.delete(id);
       archiveIndexLoaded=false;
+      amendmentSaveInProgress=false;
       closeArchiveEditModalCanonical();
       // A committed correction is not reversed by an unavailable GET.
       try{

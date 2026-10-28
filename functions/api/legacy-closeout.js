@@ -1,3 +1,4 @@
+import { cutoverRequested } from './persistence-core.mjs';
 // Legacy Week Group closeout: a single authoritative D1 transaction, with no
 // browser-directed per-record DELETEs. No migration or new tables are required.
 // Legacy closeout is unavailable while transactional persistence is enabled.
@@ -43,7 +44,7 @@ export async function onRequestGet({request,env,data}){
 
 export async function onRequestPost({request,env,data}){
   if(!allowed(data))return refuse('forbidden','Instructor access required.',403);
-  if(env?.GATE_PERSISTENCE_ENABLED==='true')
+  if(cutoverRequested(env))
     return refuse('transactional_required','Use the canonical transactional closeout workflow.');
   if(!env?.DB)return refuse('database_unavailable','Database is unavailable.',503);
   if(request.headers.get('Origin') && request.headers.get('Origin')!==new URL(request.url).origin)

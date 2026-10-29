@@ -22,7 +22,7 @@ function sdkFixture(updateBody){
  const end=html.indexOf('</script>',start);
  assert.ok(start>=0&&end>start,'Canonical D1 dataSdk implementation exists');
  const javascript=html.slice(start,end);
- let reads=0,writes=0;
+ let reads=0,writes=0,lastWrite=null;
  const warnings=[];
  const context={
   window:{},setInterval(){},console:{warn:(...args)=>warnings.push(args.map(String).join(' '))},
@@ -34,11 +34,12 @@ function sdkFixture(updateBody){
    }
    assert.equal(opts.method,'PUT');
    writes++;
+   lastWrite=opts;
    return {json:async()=>updateBody};
   }
  };
  runInNewContext(javascript,context);
- return {sdk:context.window.dataSdk,warnings,counts:()=>({reads,writes})};
+ return {sdk:context.window.dataSdk,warnings,counts:()=>({reads,writes}),lastWrite:()=>lastWrite};
 }
 
 function sqliteFixture(){
@@ -97,6 +98,15 @@ test('A rejected update remains a rejected update and does not trigger an author
  assert.deepEqual(f.counts(),{reads:1,writes:1});
 });
 
+test('active D1 SDK passes stored record versions and keeps explicit field patches unchanged',async()=>{
+ const f=sdkFixture({isOk:true,data:{__backendId:'dorm-fixture',record_version:5,type:'dorm',phase:'LOBBY'}});
+ await f.sdk.init({onDataChanged(){}});
+ const payload={__backendId:'dorm-fixture',type:'dorm',record_version:4,__changes:{phase:'LOBBY'},__base_values:{phase:'OPEN'}};
+ const result=await f.sdk.update(payload);
+ assert.equal(result.isOk,true);
+ assert.equal(f.lastWrite().headers['If-Match'],'4');
+ assert.deepEqual(JSON.parse(f.lastWrite().body),payload);
+});
 test('Server closed-dorm manual reopen preserves current load and provenance while clearing the closure',async()=>{
  const {db,DB}=sqliteFixture();
  const request=new Request('https://gate.example/api/records',{method:'PUT',headers:{'Content-Type':'application/json','If-Match':'"3"'},

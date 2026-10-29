@@ -257,7 +257,7 @@ test('Admin can reopen a closed dorm as ADMIN with a verified audit actor and th
  add.run('weekgroup-config','config',wg,JSON.stringify(config),now,now);
  add.run('admin-dorm-fixture','dorm',wg,JSON.stringify(dorm),now,now);
  const env={DB:cloudflare(native),AUTH_SECRET:'test-secret',GATE_PERSISTENCE_ENABLED:'true',GATE_PERSISTENCE_CUTOVER_READY:'true',GATE_ADMIN_WRITES_ENABLED:'false'};
- const request=new Request('https://gate.example/api/records',{method:'PUT',headers:{'Content-Type':'application/json'},
+ const request=new Request('https://gate.example/api/records',{method:'PUT',headers:{'Content-Type':'application/json','If-Match':'1'},
    body:JSON.stringify({__backendId:'admin-dorm-fixture',type:'dorm',week_group:wg,state:'open',phase:'OPEN',
      closed_at:'',closed_timer:'',manual_reopen_override:'true',current_load:15,max_load:42})});
  const {onRequestPut}=await import('../../../functions/api/records.js');

@@ -388,6 +388,8 @@
     if (options.fields) {
       const changes=Object.fromEntries(options.fields.filter(key=>JSON.stringify(payload[key] ?? null)!==JSON.stringify(base[key] ?? null))
         .map(key=>[key,payload[key] ?? null]));
+      if (Object.hasOwn(changes,'closed_timer') && String(base.state).toLowerCase()==='closed')
+        changes.manual_closed_timer_override='true';
       if (!Object.keys(changes).length) return {isOk:true,data:base};
       payload={__backendId:base.__backendId,type:'dorm',record_version:base.record_version,
         __changes:changes,__base_values:Object.fromEntries(Object.keys(changes).map(key=>[key,base[key] ?? null]))};

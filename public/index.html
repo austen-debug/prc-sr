@@ -765,12 +765,12 @@ async function refresh(force = false) {
       },
 
       async update(record) {
+        const version = Number(record?.record_version);
+        const headers = { 'Content-Type': 'application/json', 'Accept': 'application/json' };
+        if (Number.isSafeInteger(version) && version >= 0) headers['If-Match'] = String(version);
         const response = await fetch(API_URL, {
           method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-          },
+          headers,
           body: JSON.stringify(record)
         });
 
@@ -791,12 +791,12 @@ async function refresh(force = false) {
       },
 
       async delete(record) {
+        const version = Number(record?.record_version);
+        const headers = { 'Content-Type': 'application/json', 'Accept': 'application/json' };
+        if (Number.isSafeInteger(version) && version >= 0) headers['If-Match'] = String(version);
         const response = await fetch(API_URL, {
           method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-          },
+          headers,
           body: JSON.stringify(record)
         });
 

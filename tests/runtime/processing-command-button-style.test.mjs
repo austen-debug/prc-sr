@@ -39,7 +39,9 @@ test('Assignment adapter updates nested label without replacing live save button
   assert.match(adapter, /button\.disabled = true/);
   assert.match(adapter, /button\.setAttribute\('aria-busy', 'true'\)/);
   assert.match(adapter, /button\.removeAttribute\('aria-busy'\)/);
-  assert.match(adapter, /controller\.updateDorm\(payload, \{ source: 'processing-assignment-location-update' \}\)/);
+  assert.match(adapter, /controller\.updateDorm\(payload, \{ source: 'processing-assignment-location-update'/);
+  assert.match(adapter, /baseline:assignmentBaseline/);
+  assert.match(adapter, /fields:\['assigned_airman','auditorium_location'\]/);
 });
 
 test('Button styling is scoped to existing stylesheet and respects theme, focus and motion', async () => {

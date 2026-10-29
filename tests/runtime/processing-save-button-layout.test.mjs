@@ -20,6 +20,8 @@ test('Processing assignment Save button has a contained two-state presentation w
  assert.match(source,/setAssignmentSaveLabel\(button, originalText\)/);
  assert.match(source,/button\.setAttribute\('aria-busy', 'true'\)/);
  assert.match(source,/window\.saveAssignedAirman = saveProcessingAssignmentAndLocation/);
- assert.match(source,/controller\.updateDorm\(payload, \{ source: 'processing-assignment-location-update' \}\)/);
+ assert.match(source,/controller\.updateDorm\(payload, \{ source: 'processing-assignment-location-update'/);
+ assert.match(source,/baseline:assignmentBaseline/);
+ assert.match(source,/fields:\['assigned_airman','auditorium_location'\]/);
  assert.match(source,/if \(getModalDormIdSafe\(\) === boundId\) controller\.closeDormModal\?\.\(\)/);
 });

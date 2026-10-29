@@ -8,6 +8,7 @@
   let passScheduled = false;
   let modalObserver = null;
   let saveInFlight = false;
+  let assignmentBaseline = null;
 
   function esc(value) {
     if (typeof escapeHtml === 'function') return escapeHtml(value);
@@ -120,6 +121,7 @@
   }
 
   function clearProcessingModalState() {
+    assignmentBaseline = null;
     const modal = processingModal();
     const airman = document.getElementById('modal-airman-input');
     const location = document.getElementById('modal-auditorium-input');
@@ -139,6 +141,7 @@
     const dorm = getDormById(id);
 
     if (!input || !modal || !id || !dorm) {
+      assignmentBaseline = null;
       if (input) {
         input.value = '';
         delete input.dataset.dormId;
@@ -147,6 +150,7 @@
       return false;
     }
 
+    assignmentBaseline = { ...dorm };
     const location = normalizeLocation(dorm.auditorium_location || '');
     input.value = location;
     input.dataset.dormId = id;
@@ -231,7 +235,9 @@
     }
 
     try {
-      const result = await controller.updateDorm(payload, { source: 'processing-assignment-location-update' });
+      const result = await controller.updateDorm(payload, { source: 'processing-assignment-location-update',
+        baseline:assignmentBaseline?.__backendId===boundId ? assignmentBaseline : dorm,
+        fields:['assigned_airman','auditorium_location'] });
       if (!result?.isOk) {
         console.warn('GATE Processing assignment/location save failed.', result?.error || result);
         if (getModalDormIdSafe() === boundId) setAssignmentFeedback('Unable to save the Airman and auditorium location. Try again.');

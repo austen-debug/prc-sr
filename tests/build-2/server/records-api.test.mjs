@@ -180,6 +180,67 @@ test('conditional update increments version and stale writes receive stable conf
   assert.equal(staleBody.currentRecordVersion, 2);
 });
 
+test('operational PUT and DELETE require an explicit expected version',async()=>{
+  const db=createD1([{__backendId:'bus-1',type:'bus',week_group:'WG',record_version:1,status:'active'}]);
+  for(const method of ['PUT','DELETE']){
+    const handler=method==='PUT'?onRequestPut:onRequestDelete;
+    const response=await handler({env:{DB:db},data:roleData('instructor'),
+      request:request(method,{__backendId:'bus-1',type:'bus',status:'arrived'})});
+    assert.equal(response.status,428);
+    assert.equal((await json(response)).code,'record_version_required');
+    assert.equal(JSON.parse(db.rows[0].data).status,'active');
+  }
+});
+test('stale edits to disjoint bus fields rebase without reverting another operator; same-field edits require review',async()=>{
+  const db=createD1([{__backendId:'bus-1',type:'bus',week_group:'WG',record_version:1,status:'active',otw_count:30}]);
+  const put=(version,changes,base)=>onRequestPut({env:{DB:db},data:roleData('instructor'),
+    request:request('PUT',{__backendId:'bus-1',record_version:version,__changes:changes,__base_values:base},
+      {'If-Match':String(version)})});
+  let response=await put(1,{status:'arrived'},{status:'active'});
+  assert.equal(response.status,200,JSON.stringify(await response.clone().json()));
+  assert.equal((await json(response)).data.record_version,2);
+  response=await put(1,{otw_count:32},{otw_count:30});
+  assert.equal(response.status,200,JSON.stringify(await response.clone().json()));
+  let record=(await json(response)).data;
+  assert.equal(record.record_version,3);
+  assert.equal(record.status,'arrived');
+  assert.equal(record.otw_count,32);
+  response=await put(1,{otw_count:29},{otw_count:30});
+  assert.equal(response.status,409);
+  assert.equal((await json(response)).code,'record_version_conflict');
+  assert.equal(JSON.parse(db.rows[0].data).otw_count,32);
+  response=await put(3,{otw_count:29},{otw_count:32});
+  assert.equal(response.status,200);
+  record=(await json(response)).data;
+  assert.equal(record.otw_count,29);
+  assert.equal(record.status,'arrived');
+  assert.equal(record.record_version,4);
+});
+test('processing phase and dorm loading from separate operators retain both successful field edits',async()=>{
+  const db=createD1([
+    {__backendId:'bus-1',type:'bus',week_group:'WG',status:'arrived',otw_count:40,record_version:1},
+    {__backendId:'dorm-1',type:'dorm',week_group:'WG',state:'open',phase:'OPEN',max_load:50,current_load:0,record_version:1}
+  ]);
+  const write=(changes,base)=>onRequestPut({env:{DB:db},data:roleData('instructor'),
+    request:request('PUT',{__backendId:'dorm-1',__changes:changes,__base_values:base},{'If-Match':'1'})});
+  const phase=await write({phase:'AUDITORIUM'},{phase:'OPEN'});
+  assert.equal(phase.status,200);
+  const load=await write({current_load:20},{current_load:0});
+  assert.equal(load.status,200,JSON.stringify(await load.clone().json()));
+  const dorm=(await json(load)).data;
+  assert.equal(dorm.current_load,20);
+  assert.equal(dorm.phase,'AUDITORIUM');
+  assert.equal(dorm.record_version,3);
+});
+test('field changes cannot alter protected record identity, provenance, or metadata',async()=>{
+  const db=createD1([{__backendId:'bus-1',type:'bus',week_group:'WG',record_version:1,status:'active'}]);
+  for(const key of ['type','week_group','__backendId','record_version','updated_by_role']){
+    const response=await onRequestPut({env:{DB:db},data:roleData('instructor'),
+      request:request('PUT',{__backendId:'bus-1',__changes:{[key]:'tamper'}},{'If-Match':'1'})});
+    assert.equal(response.status,400);
+  }
+  assert.equal(JSON.parse(db.rows[0].data).record_version,1);
+});
 test('legacy updates without If-Match remain compatible but still advance server version', async () => {
   const db = createD1([{ __backendId: 'cfg-1', type: 'config', key: 'week_group', value: 'WG', record_version: 0 }]);
   const response = await onRequestPut({

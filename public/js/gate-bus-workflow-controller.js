@@ -6,6 +6,7 @@
   let installed = false;
   let hooksRegistered = false;
   let refreshQueued = false;
+  let editBusBaseline = null;
   const MAX_BUS_PAX = 60;
 
   function n(value) {
@@ -81,6 +82,7 @@
     const id = record?.__backendId;
     if (!id || !Array.isArray(list)) return;
     const index = list.findIndex(item => item.__backendId === id);
+    if (index >= 0 && Number(list[index].record_version || 0) > Number(record.record_version || 0)) return;
     if (index >= 0) list[index] = { ...list[index], ...record };
     else list.push(record);
   }
@@ -424,6 +426,7 @@
     if (!bus) return;
 
     ensureFields();
+    editBusBaseline = { ...bus };
     try { editBusId = id; } catch (_) { window.editBusId = id; }
 
     const title = document.getElementById('airport-bus-edit-title');
@@ -461,6 +464,7 @@
       modal.setAttribute('aria-hidden', 'true');
     }
     try { editBusId = null; } catch (_) { window.editBusId = null; }
+    editBusBaseline = null;
     document.body.classList.remove('gate-modal-open');
   }
 
@@ -483,15 +487,16 @@
     }
     if (!validateCounts('edit-bus', total, females, naturals, spaceForce)) return;
 
-    const payload = {
-      ...bus,
+    const originalBus = editBusBaseline?.__backendId === bus.__backendId ? editBusBaseline : bus;
+    const proposed = {
       ...(bus.bus_type === 'local' ? { destination: identity, originating_destination: identity } : { bus_id: identity }),
-      otw_count: total,
-      female_count: females,
-      nat_count: naturals,
-      space_force_count: spaceForce,
-      updated_at: new Date().toISOString()
+      otw_count: total, female_count: females, nat_count: naturals, space_force_count: spaceForce
     };
+    const changes=Object.fromEntries(Object.entries(proposed)
+      .filter(([key,value])=>JSON.stringify(value ?? null)!==JSON.stringify(originalBus[key] ?? null)));
+    if (!Object.keys(changes).length) { closeAirportBusEditModalCanonical(); return; }
+    const payload={__backendId:bus.__backendId,type:'bus',record_version:originalBus.record_version,
+      __changes:changes,__base_values:Object.fromEntries(Object.keys(changes).map(key=>[key,originalBus[key] ?? null]))};
 
     const submit = form.querySelector('button[type="submit"]');
     const original = submit ? submit.textContent : '';
@@ -538,12 +543,9 @@
       : `Bus #${bus.bus_id || ''}`;
 
     confirmAction(`Confirm ${busLabel} has arrived at PRC?`, async () => {
-      const payload = {
-        ...bus,
-        status: 'arrived',
-        arrived_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
+      const payload = {__backendId:bus.__backendId,type:'bus',record_version:bus.record_version,
+        __changes:{status:'arrived',arrived_at:new Date().toISOString()},
+        __base_values:{status:bus.status ?? null,arrived_at:bus.arrived_at ?? null}};
       const result = await window.dataSdk.update(payload);
       if (result?.isOk) {
         updateCache(result.data || payload);

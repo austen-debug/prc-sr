@@ -176,7 +176,9 @@ test('Airman SAVE remains bound to the active dorm and displays failures in a li
   assert.match(adapter, /activeId !== modalId \|\| activeId !== inputId/);
   assert.match(adapter, /setAssignmentSaveLabel\(button, 'SAVING\.\.\.'\)/);
   assert.match(adapter, /setAssignmentFeedback\('Unable to save the Airman and auditorium location\. Try again\.'\)/);
-  assert.match(adapter, /controller\.updateDorm\(payload, \{ source: 'processing-assignment-location-update' \}\)/);
+  assert.match(adapter, /controller\.updateDorm\(payload, \{ source: 'processing-assignment-location-update'/);
+  assert.match(adapter, /baseline:assignmentBaseline/);
+  assert.match(adapter, /fields:\['assigned_airman','auditorium_location'\]/);
   for (const id of ['modal-assignment-feedback', 'modal-load-feedback', 'modal-action-feedback'])
     assert.ok(html.includes('id="' + id + '"'));
 });

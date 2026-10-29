@@ -6,6 +6,7 @@
   let installed = false;
   let hooksRegistered = false;
   let refreshQueued = false;
+  let editBusBaseline = null;
   const MAX_BUS_PAX = 60;
 
   function n(value) {
@@ -424,6 +425,7 @@
     if (!bus) return;
 
     ensureFields();
+    editBusBaseline = { ...bus };
     try { editBusId = id; } catch (_) { window.editBusId = id; }
 
     const title = document.getElementById('airport-bus-edit-title');
@@ -461,6 +463,7 @@
       modal.setAttribute('aria-hidden', 'true');
     }
     try { editBusId = null; } catch (_) { window.editBusId = null; }
+    editBusBaseline = null;
     document.body.classList.remove('gate-modal-open');
   }
 
@@ -483,15 +486,16 @@
     }
     if (!validateCounts('edit-bus', total, females, naturals, spaceForce)) return;
 
-    const payload = {
-      ...bus,
+    const original = editBusBaseline?.__backendId === bus.__backendId ? editBusBaseline : bus;
+    const proposed = {
       ...(bus.bus_type === 'local' ? { destination: identity, originating_destination: identity } : { bus_id: identity }),
-      otw_count: total,
-      female_count: females,
-      nat_count: naturals,
-      space_force_count: spaceForce,
-      updated_at: new Date().toISOString()
+      otw_count: total, female_count: females, nat_count: naturals, space_force_count: spaceForce
     };
+    const changes=Object.fromEntries(Object.entries(proposed)
+      .filter(([key,value])=>JSON.stringify(value ?? null)!==JSON.stringify(original[key] ?? null)));
+    if (!Object.keys(changes).length) { closeAirportBusEditModalCanonical(); return; }
+    const payload={__backendId:bus.__backendId,type:'bus',record_version:original.record_version,
+      __changes:changes,__base_values:Object.fromEntries(Object.keys(changes).map(key=>[key,original[key] ?? null]))};
 
     const submit = form.querySelector('button[type="submit"]');
     const original = submit ? submit.textContent : '';
@@ -538,12 +542,9 @@
       : `Bus #${bus.bus_id || ''}`;
 
     confirmAction(`Confirm ${busLabel} has arrived at PRC?`, async () => {
-      const payload = {
-        ...bus,
-        status: 'arrived',
-        arrived_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
+      const payload = {__backendId:bus.__backendId,type:'bus',record_version:bus.record_version,
+        __changes:{status:'arrived',arrived_at:new Date().toISOString()},
+        __base_values:{status:bus.status ?? null,arrived_at:bus.arrived_at ?? null}};
       const result = await window.dataSdk.update(payload);
       if (result?.isOk) {
         updateCache(result.data || payload);

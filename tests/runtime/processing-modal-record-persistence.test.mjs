@@ -32,7 +32,9 @@ test('Processing assignment save is bound to one exact dorm record', async () =>
   assert.match(adapter, /const dorm = getDormById\(boundId\)/);
   assert.match(adapter, /assigned_airman: normalizeAirman\(airmanInput\.value\)/);
   assert.match(adapter, /auditorium_location: normalizeLocation\(locationInput\.value\)/);
-  assert.match(adapter, /controller\.updateDorm\(payload, \{ source: 'processing-assignment-location-update' \}\)/);
+  assert.match(adapter, /controller\.updateDorm\(payload, \{ source: 'processing-assignment-location-update'/);
+  assert.match(adapter, /baseline:assignmentBaseline/);
+  assert.match(adapter, /fields:\['assigned_airman','auditorium_location'\]/);
   assert.doesNotMatch(adapter, /window\.dataSdk\.update/);
 });
 
@@ -126,4 +128,23 @@ test('Processing modal validation reuses the canonical stylesheet and does not r
   assert.match(lifecycle, /military-glass-terminal\.css/);
   assert.doesNotMatch(lifecycle, /gate-processing-modal-workspace\.css/);
   assert.doesNotMatch(lifecycle, /createElement\(['"]link['"]\)/);
+});
+
+test('Processing and Airport updates use changed-field CAS with latest-version-only local reconciliation',async()=>{
+ const processing=await source('public/js/gate-processing-controller.js');
+ const airport=await source('public/js/gate-bus-workflow-controller.js');
+ const adapter=await source('public/js/prc-dash-auditorium-location.js');
+ assert.match(processing,/__changes:changes,__base_values:/);
+ assert.match(processing,/record_version:base\.record_version/);
+ assert.match(processing,/options\.fields\.filter/);
+ assert.match(processing,/editDormBaseline = \{ \.\.\.dorm \}/);
+ assert.match(processing,/fields:\['phase'\]/);
+ assert.match(processing,/manual_closed_timer_override='true'/);
+ assert.match(processing,/Number\(list\[index\]\.record_version \|\| 0\) > Number\(record\.record_version \|\| 0\)/);
+ assert.match(airport,/editBusBaseline = \{ \.\.\.bus \}/);
+ assert.match(airport,/__changes:changes,__base_values:/);
+ assert.match(airport,/record_version:originalBus\.record_version/);
+ assert.match(airport,/Number\(list\[index\]\.record_version \|\| 0\) > Number\(record\.record_version \|\| 0\)/);
+ assert.match(adapter,/assignmentBaseline = \{ \.\.\.dorm \}/);
+ assert.match(adapter,/fields:\['assigned_airman','auditorium_location'\]/);
 });

@@ -115,6 +115,7 @@
     if (!record || !record.__backendId) return;
     const list = records();
     const index = list.findIndex(item => item && item.__backendId === record.__backendId);
+    if (index >= 0 && Number(list[index].record_version || 0) > Number(record.record_version || 0)) return;
     if (index >= 0) list[index] = { ...list[index], ...record };
     else list.push(record);
   }
@@ -406,8 +407,9 @@
     const id = activeModalDormId();
     const dorm = id ? dormById(id) : null;
     if (!dorm) return;
-    await updateDorm({ ...dorm, phase }, { source: 'processing-phase-update', fields:['phase'] });
-    closeDormModalCanonical();
+    const result = await updateDorm({ ...dorm, phase }, { source: 'processing-phase-update', fields:['phase'] });
+    if (result?.isOk) closeDormModalCanonical();
+    else setModalFeedback('modal-action-feedback', result?.error || 'Dorm changed. Review its latest status before retrying.');
   }
 
   function modLoadCanonical(delta) {
@@ -481,8 +483,9 @@
     const dorm = dormById(activeModalDormId());
     const input = document.getElementById('modal-airman-input');
     if (!dorm || !input) return;
-    await updateDorm({ ...dorm, assigned_airman: normalizeUpper(input.value) }, { source: 'processing-airman-update', fields:['assigned_airman'] });
-    closeDormModalCanonical();
+    const result = await updateDorm({ ...dorm, assigned_airman: normalizeUpper(input.value) }, { source: 'processing-airman-update', fields:['assigned_airman'] });
+    if (result?.isOk) closeDormModalCanonical();
+    else setModalFeedback('modal-action-feedback', result?.error || 'Dorm changed. Review its latest status before retrying.');
   }
 
   async function openDormCanonical(id) {
@@ -490,7 +493,7 @@
     const dorm = dormById(id);
     if (!dorm) return;
     const now = new Date().toISOString();
-    await updateDorm({
+    const result = await updateDorm({
       ...dorm,
       state: 'open',
       phase: 'OPEN',
@@ -506,7 +509,8 @@
       soundType: 'dorm_open',
       soundPayload: { dorm_id: id, dorm_name: dorm.dorm_name || '', action: 'open_dorm' }
     });
-    closeDormModalCanonical();
+    if (result?.isOk) closeDormModalCanonical();
+    else setModalFeedback('modal-action-feedback', result?.error || 'Dorm changed. Review its latest status before retrying.');
   }
 
   async function closeDormCanonical(id) {
@@ -515,7 +519,7 @@
     if (!dorm) return;
     const finalTime = computeFinalTime(dorm);
     const now = new Date().toISOString();
-    await updateDorm({
+    const result = await updateDorm({
       ...dorm,
       state: 'closed',
       phase: 'Closed',
@@ -528,7 +532,8 @@
       soundType: 'dorm_closed',
       soundPayload: { dorm_id: id, dorm_name: dorm.dorm_name || '', final_time: finalTime, action: 'close_dorm' }
     });
-    closeDormModalCanonical();
+    if (result?.isOk) closeDormModalCanonical();
+    else setModalFeedback('modal-action-feedback', result?.error || 'Dorm changed. Review its latest status before retrying.');
   }
 
   // The API and middleware return structured reasons for refused writes. Never

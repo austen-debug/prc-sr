@@ -91,7 +91,9 @@ test('female permanent exterior and BAND/SPACE semantic colors remain independen
 test('auditorium augmentation targets Processing center without taking over persistence', () => {
   assert.match(adapter, /card\.querySelector\('\[data-processing-location-slot\]'\)/);
   assert.match(adapter, /if \(processingSlot\) processingSlot\.insertAdjacentHTML\('beforeend', html\)/);
-  assert.match(adapter, /controller\.updateDorm\(payload, \{ source: 'processing-assignment-location-update' \}\)/);
+  assert.match(adapter, /controller\.updateDorm\(payload, \{ source: 'processing-assignment-location-update'/);
+  assert.match(adapter, /baseline:assignmentBaseline/);
+  assert.match(adapter, /fields:\['assigned_airman','auditorium_location'\]/);
 });
 
 test('all three revised asset references remain coordinated across middleware, budget and Squadron', async () => {

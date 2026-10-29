@@ -76,6 +76,7 @@ const CUTOVER_TRIGGERS = Object.freeze([
   'gate_record_audit_insert','gate_record_audit_update','gate_record_audit_delete',
   'trg_gate_audit_no_update','trg_gate_audit_no_delete',
   'trg_gate_amend_no_update','trg_gate_amend_no_delete',
+  'trg_gate_archive_source_no_update','trg_gate_archive_source_no_delete','trg_gate_archive_source_no_replace',
   'prevent_audit_event_update','prevent_audit_event_delete'
 ]);
 export async function verifyCutoverReadiness(env) {

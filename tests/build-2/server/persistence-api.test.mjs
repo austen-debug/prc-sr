@@ -18,6 +18,7 @@ function fixture({migrate=true}={}){
   if(migrate){
     native.exec(migration('0003_gate_persistence_foundation.sql'));
     native.exec(migration('0004_gate_record_audit_triggers.sql'));
+    native.exec(migration('0011_gate_archive_source_immutability.sql'));
   }
   let failWrite=false;
   const DB={prepare(sql){let args=[];return {
@@ -34,7 +35,27 @@ function fixture({migrate=true}={}){
 }
 function addRecord(db,id,type,wg,extra={}){const data=JSON.stringify({__backendId:id,type,week_group:wg,...extra});db.prepare('INSERT INTO records(id,type,week_group,data,created_at,updated_at) VALUES(?,?,?,?,?,?)').run(id,type,wg,data,stamp,stamp);}
 async function startCycle(f){const saved=await f.post(draft);assert.equal(saved.status,201);const started=await f.post({action:'initialize',draft_id:saved.body.draft.draft_id,revision:1});assert.equal(started.status,200,JSON.stringify(started.body));return {saved,started};}
-test('exact ten tables and twelve triggers; health requires parity and both migrations',async()=>{const f=fixture();assert.equal(f.native.prepare("SELECT COUNT(*) AS n FROM sqlite_master WHERE type='table' AND name LIKE 'gate_%'").get().n,10);assert.equal(f.native.prepare("SELECT COUNT(*) AS n FROM sqlite_master WHERE type='trigger'").get().n,12);assert.equal((await f.get()).body.ready,true);});
+test('exact ten tables and fifteen triggers; health requires source/archive protections',async()=>{const f=fixture();assert.equal(f.native.prepare("SELECT COUNT(*) AS n FROM sqlite_master WHERE type='table' AND name LIKE 'gate_%'").get().n,10);assert.equal(f.native.prepare("SELECT COUNT(*) AS n FROM sqlite_master WHERE type='trigger'").get().n,15);assert.equal((await f.get()).body.ready,true);});
+test('D1 prohibits archive overwrite, deletion, retype and REPLACE without altering snapshots',()=>{
+  const f=fixture();
+  const source=JSON.stringify({type:'archive',week_group:'WG26031',total_arrived:50,source_records_json:'exact-original'});
+  f.native.prepare("INSERT INTO records(id,type,week_group,data,created_at,updated_at) VALUES(?,?,?,?,?,?)").run('original','archive','WG26031',source,stamp,stamp);
+  const before=f.native.prepare("SELECT data FROM records WHERE id='original'").get().data;
+  assert.throws(()=>f.native.prepare("UPDATE records SET data=? WHERE id='original'").run('{"type":"archive","tampered":true}'),/archive source records are immutable/);
+  assert.throws(()=>f.native.prepare("UPDATE records SET type='bus' WHERE id='original'").run(),/archive source records are immutable/);
+  assert.throws(()=>f.native.prepare("DELETE FROM records WHERE id='original'").run(),/archive source records are immutable/);
+  assert.throws(()=>f.native.prepare("INSERT OR REPLACE INTO records(id,type,week_group,data,created_at,updated_at) VALUES(?,?,?,?,?,?)").run('original','archive','WG26031','{"tampered":true}',stamp,stamp),/archive source records are immutable/);
+  assert.equal(f.native.prepare("SELECT data FROM records WHERE id='original'").get().data,before);
+  f.native.prepare("INSERT INTO records(id,type,week_group,data,created_at,updated_at) VALUES(?,?,?,?,?,?)").run('new-archive','archive','WG26032',source,stamp,stamp);
+  assert.equal(f.native.prepare("SELECT COUNT(*) AS n FROM records WHERE type='archive'").get().n,2);
+});
+test('cutover refuses missing archive-source triggers even when legacy source/mirror parity is intact',async()=>{
+  const f=fixture();
+  f.native.exec('DROP TRIGGER trg_gate_archive_source_no_delete;');
+  const check=await f.get('cutover_preflight');
+  assert.equal(check.body.ready,false);
+  assert.ok(check.body.missing_triggers.includes('trg_gate_archive_source_no_delete'));
+});
 test('legacy writes mirror without deleting source data',()=>{const f=fixture();addRecord(f.native,'bus1','bus','WG26050',{status:'active'});addRecord(f.native,'dorm1','dorm','WG26050',{state:'empty'});addRecord(f.native,'cfg','config','',{key:'week_group',value:'WG26050'});assert.equal(f.native.prepare('SELECT COUNT(*) AS n FROM records').get().n,3);assert.equal(f.native.prepare('SELECT COUNT(*) AS n FROM gate_v2_buses').get().n,1);const payload=JSON.stringify({type:'bus',week_group:'WG26050',status:'arrived'});f.native.prepare('UPDATE records SET data=? WHERE id=?').run(payload,'bus1');assert.equal(f.native.prepare('SELECT data FROM gate_v2_buses WHERE id=?').get('bus1').data,payload);f.native.prepare('DELETE FROM records WHERE id=?').run('bus1');assert.equal(f.native.prepare('SELECT COUNT(*) AS n FROM gate_v2_buses').get().n,0);assert.equal(f.native.prepare('SELECT COUNT(*) AS n FROM records').get().n,2);});
 test('one active cycle and append-only audit/amendment protections',()=>{const f=fixture();f.native.prepare("INSERT INTO gate_week_groups(cycle_id,week_group,state) VALUES('one','WG26050','active')").run();assert.throws(()=>f.native.prepare("INSERT INTO gate_week_groups(cycle_id,week_group,state) VALUES('two','WG26051','active')").run(),/UNIQUE/);f.native.prepare("INSERT INTO gate_audit_events(event_id,entity_type,entity_id,event_type,actor_role) VALUES('audit','bus','id','created','instructor')").run();assert.throws(()=>f.native.prepare("DELETE FROM gate_audit_events WHERE event_id='audit'").run(),/append-only/);f.native.prepare("INSERT INTO gate_archive_amendments(amendment_id,archive_id,amendment_number,amendment_type,reason,changes_json,actor_role) VALUES('amend','archive',1,'correction','Valid reason','{}','instructor')").run();assert.throws(()=>f.native.prepare("UPDATE gate_archive_amendments SET reason='wrong' WHERE amendment_id='amend'").run(),/append-only/);});
 test('draft revision conflict does not overwrite current save',async()=>{const f=fixture(),saved=await f.post(draft);assert.equal(saved.status,201);const id=saved.body.draft.draft_id;const changed=await f.post({...draft,draft_id:id,revision:1,rows:[{...draft.rows[0],load:43}]});assert.equal(changed.status,200);assert.equal(changed.body.draft.revision,2);assert.equal((await f.post({...draft,draft_id:id,revision:1})).status,409);assert.equal((await f.get('draft')).body.draft.rows[0].load,43);});

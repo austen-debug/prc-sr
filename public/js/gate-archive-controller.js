@@ -857,8 +857,9 @@
   function archiveAmendments(amendments) {
     if (!amendments.length) return '<div class="gate-archive-amendment-empty">No corrections or amendments recorded.</div>';
     return `<ol class="gate-archive-amendment-list">${amendments.map(amendment => {
-      const fields = Object.keys(amendment.changes || {});
-      return `<li><div><strong>Amendment #${n(amendment.amendment_number)}</strong><span>${esc(formatDateTime(amendment.created_at))}</span></div><p>${esc(amendment.reason || 'Correction recorded.')}</p><small>${fields.length ? `Fields: ${esc(fields.join(', '))}` : 'No display fields listed.'}</small></li>`;
+      const fields = Object.entries(amendment.changes || {}).map(([field, value]) =>
+        `${field}: ${String(amendment.previous_values?.[field] ?? '—')} → ${String(value ?? '—')}`);
+      return `<li><div><strong>Amendment #${n(amendment.amendment_number)}</strong><span>${esc(formatDateTime(amendment.created_at))} · ${esc(amendment.actor_role || 'unknown role')}</span></div><p>${esc(amendment.reason || 'Correction recorded.')}</p><small>${fields.length ? esc(fields.join(' · ')) : 'No display fields listed.'}</small></li>`;
     }).join('')}</ol>`;
   }
 
@@ -1154,7 +1155,7 @@
     return `<section class="report-page"><div class="report-classification">UNCLASSIFIED / NO PII / STATUS COUNTS ONLY</div><header class="report-header"><div><span class="report-kicker">Gateway Arrival Tracking Environment</span><h1>${esc(title)}</h1><p>Pfingston Reception Center · Week Group ${esc(weekGroup)}</p></div><div class="report-meta"><div><span>Page</span><strong>${esc(pageLabel)}</strong></div><div><span>Data As Of</span><strong>${esc(asOf)}</strong></div></div></header><main class="report-body">${body}</main><footer class="report-footer"><span>Prepared by GATE</span><span>Historical source data remains retained in D1.</span></footer><div class="report-classification">UNCLASSIFIED / NO PII / STATUS COUNTS ONLY</div></section>`;
   }
 
-  function printableHtml({ title, weekGroup, archivedAt = '', dorms, buses, windows, summary = null }) {
+  function printableHtml({ title, weekGroup, archivedAt = '', dorms, buses, windows, summary = null, amendments = [] }) {
     const metrics = reportMetrics(dorms, buses, summary);
     const generated = new Date().toLocaleString();
     const asOf = archivedAt ? formatDateTime(archivedAt) : generated;
@@ -1162,7 +1163,7 @@
     const sortedBuses = [...buses].sort((a, b) => (timestamp(busTime(a))?.getTime() || 0) - (timestamp(busTime(b))?.getTime() || 0));
     const dormPages = chunks(sortedDorms, 19);
     const busPages = chunks(sortedBuses, 21);
-    const totalPages = 1 + dormPages.length + busPages.length;
+    const totalPages = 1 + dormPages.length + busPages.length + amendments.length;
     let pageNumber = 1;
 
     const metricHtml = [
@@ -1174,7 +1175,7 @@
       ['Space Force', metrics.sf]
     ].map(([label, value]) => `<div class="report-metric"><span>${esc(label)}</span><strong>${n(value)}</strong></div>`).join('');
 
-    const summaryBody = `<section class="report-metrics">${metricHtml}</section><section class="report-section"><div class="report-section-title">Receiving Processing Summary</div><div class="report-night-grid">${receivingSummary(dorms, buses, windows)}</div></section><section class="report-summary-note"><strong>Report Basis</strong><span>Receiving Day totals include only ARRIVED bus records and classify them exclusively by ARRIVED AT time within the configured PRC Central-time window. En-route buses, departure times, and dorm processing times do not determine Receiving Day credit.</span></section>`;
+    const summaryBody = `<section class="report-metrics">${metricHtml}</section><section class="report-section"><div class="report-section-title">Receiving Processing Summary</div><div class="report-night-grid">${receivingSummary(dorms, buses, windows)}</div></section><section class="report-summary-note"><strong>Report Basis</strong><span>Receiving Day totals include only ARRIVED bus records and classify them exclusively by ARRIVED AT time within the configured PRC Central-time window. En-route buses, departure times, and dorm processing times do not determine Receiving Day credit. ${amendments.length ? `This historical report includes ${amendments.length} append-only correction(s); the corresponding provenance pages follow the source detail.` : 'No historical corrections are recorded.'}</span></section>`;
     const pages = [reportChrome({
       title,
       weekGroup,
@@ -1197,6 +1198,13 @@
         : '<tr><td colspan="9" class="empty-row">No bus records retained.</td></tr>';
       const body = `<div class="report-section-title">Bus / Arrival Detail · ${index + 1} of ${busPages.length}</div><table class="report-table report-bus-table"><colgroup><col style="width:20%"><col style="width:10%"><col style="width:11%"><col style="width:11%"><col style="width:12%"><col style="width:9%"><col style="width:9%"><col style="width:9%"><col style="width:9%"></colgroup><thead><tr><th>Bus / Source</th><th>Type</th><th>Departed</th><th>Arrived</th><th>Status</th><th>Total</th><th>F</th><th>NAT</th><th>SF</th></tr></thead><tbody>${bodyRows}</tbody></table>`;
       pages.push(reportChrome({ title, weekGroup, pageLabel: `${pageNumber++} of ${totalPages}`, asOf, body }));
+    });
+
+    amendments.forEach(amendment => {
+      const lines = Object.entries(amendment.changes || {}).map(([field, value]) =>
+        `<tr><td>${esc(field)}</td><td>${esc(String(amendment.previous_values?.[field] ?? '—'))}</td><td>${esc(String(value ?? '—'))}</td></tr>`).join('');
+      const body = `<div class="report-section-title">Historical Amendment #${n(amendment.amendment_number)}</div><p style="font-size:9pt;line-height:1.5;overflow-wrap:anywhere"><strong>Recorded:</strong> ${esc(formatDateTime(amendment.created_at))} · <strong>Actor role:</strong> ${esc(amendment.actor_role || 'unknown')} · <strong>Amendment ID:</strong> ${esc(amendment.amendment_id || '—')}</p><p style="font-size:9pt;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere"><strong>Reason:</strong> ${esc(amendment.reason || 'Not recorded')}</p><table class="report-table" style="margin-top:12px"><thead><tr><th>Corrected field</th><th>Previous value</th><th>Corrected value</th></tr></thead><tbody>${lines}</tbody></table><p style="font-size:8pt;margin-top:14px">These changes are append-only. The original source archive and per-bus/per-dorm records were not rewritten.</p>`;
+      pages.push(reportChrome({title,weekGroup,pageLabel:`${pageNumber++} of ${totalPages}`,asOf,body}));
     });
 
     const css = `@page{size:11in 8.5in;margin:.35in}*{box-sizing:border-box}html,body{margin:0;padding:0;background:#e2e8f0;color:#0f172a;font-family:Arial,Helvetica,sans-serif}.screen-controls{position:fixed;top:12px;right:12px;z-index:10}.screen-controls button{padding:10px 14px;border:0;border-radius:6px;background:#0f172a;color:#fff;font-weight:800;cursor:pointer}.report-page{width:10.3in;height:7.8in;margin:18px auto;background:#fff;display:flex;flex-direction:column;overflow:hidden;break-after:page;page-break-after:always;box-shadow:0 8px 30px rgba(15,23,42,.16)}.report-page:last-of-type{break-after:auto;page-break-after:auto}.report-classification{height:.24in;flex:0 0 .24in;display:flex;align-items:center;justify-content:center;background:#166534;color:#fff;border:1px solid #14532d;font-size:7.5pt;font-weight:900;letter-spacing:.12em;text-transform:uppercase}.report-header{display:grid;grid-template-columns:minmax(0,1fr) 2.75in;gap:.22in;align-items:start;padding:.14in .08in .12in;border-bottom:2px solid #0f172a}.report-kicker{font-size:7.5pt;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#475569}.report-header h1{margin:.035in 0 0;font-size:17pt;line-height:1;text-transform:uppercase}.report-header p{margin:.055in 0 0;font-size:8.5pt;font-weight:700;color:#475569}.report-meta{display:grid;grid-template-columns:1fr 1fr;gap:.06in}.report-meta div{border:1px solid #cbd5e1;background:#f8fafc;padding:.07in}.report-meta span{display:block;font-size:6.5pt;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#64748b}.report-meta strong{display:block;margin-top:.025in;font-size:8pt}.report-body{flex:1;min-height:0;padding:.1in .08in;overflow:hidden}.report-metrics{display:grid;grid-template-columns:repeat(6,1fr);gap:.07in}.report-metric{border:1px solid #cbd5e1;background:#f8fafc;padding:.08in;min-height:.62in}.report-metric span{display:block;font-size:6.5pt;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#64748b}.report-metric strong{display:block;margin-top:.04in;font-size:18pt;line-height:1}.report-section{margin-top:.16in}.report-section-title{margin:0 0 .07in;padding-bottom:.035in;border-bottom:1px solid #94a3b8;font-size:8pt;font-weight:900;letter-spacing:.09em;text-transform:uppercase}.report-night-grid{display:grid;grid-template-columns:1fr 1fr;gap:.1in}.report-night{border:1px solid #cbd5e1;background:#f8fafc;padding:.09in;min-height:1.15in}.report-night-head{display:flex;justify-content:space-between;gap:.12in;align-items:baseline}.report-night-head strong{font-size:8pt;text-transform:uppercase}.report-night-head span{font-size:6.8pt;color:#64748b}.report-night p{margin:.08in 0 0;font-size:8pt;line-height:1.4;font-weight:600}.report-summary-note{display:grid;grid-template-columns:1.15in 1fr;gap:.1in;margin-top:.14in;padding:.08in;border:1px solid #cbd5e1}.report-summary-note strong{font-size:7pt;text-transform:uppercase}.report-summary-note span{font-size:7.5pt;line-height:1.35;color:#475569}.report-table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:8pt}.report-table thead{display:table-header-group}.report-table tr{break-inside:avoid;page-break-inside:avoid}.report-table th,.report-table td{border:1px solid #cbd5e1;padding:.052in .045in;text-align:left;vertical-align:middle;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.report-table th{background:#e2e8f0;font-size:6.5pt;font-weight:900;letter-spacing:.055em;text-transform:uppercase}.report-table td.num,.report-table th.num{text-align:right;font-variant-numeric:tabular-nums}.empty-row{text-align:center!important;color:#64748b}.report-footer{height:.27in;flex:0 0 .27in;display:flex;align-items:center;justify-content:space-between;gap:.2in;padding:.04in .08in;border-top:1px solid #94a3b8;font-size:6.5pt;font-weight:700;color:#64748b}@media print{html,body{background:#fff}.screen-controls{display:none!important}.report-page{margin:0;width:10.3in;height:7.8in;box-shadow:none}.report-classification,.report-metric,.report-night,.report-meta div,.report-table th{-webkit-print-color-adjust:exact;print-color-adjust:exact}}`;
@@ -1244,7 +1252,8 @@
           dorms,
           buses,
           windows,
-          summary: archive
+          summary: archive,
+          amendments: Array.isArray(detail.amendments) ? detail.amendments : []
         }),
         `gate-archive-report/${encodeURIComponent(weekGroup)}`
       );

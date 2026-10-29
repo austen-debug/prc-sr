@@ -47,6 +47,7 @@ function sqliteFixture(){
  db.exec('CREATE TABLE records (id TEXT PRIMARY KEY, type TEXT NOT NULL, week_group TEXT, data TEXT NOT NULL, created_at TEXT NOT NULL, updated_at TEXT NOT NULL)');
  db.exec(root('../../../migrations/0003_gate_persistence_foundation.sql'));
  db.exec(root('../../../migrations/0004_gate_record_audit_triggers.sql'));
+ db.exec(root('../../../migrations/0011_gate_archive_source_immutability.sql'));
  const sql=statement=>{
   const p=db.prepare(statement);let bound=[];
   return {

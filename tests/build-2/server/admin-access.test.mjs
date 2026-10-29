@@ -18,7 +18,7 @@ function fixture(){
   const native=new DatabaseSync(':memory:');
   native.exec('PRAGMA foreign_keys=ON');
   native.exec('CREATE TABLE records(id TEXT PRIMARY KEY,type TEXT NOT NULL,week_group TEXT,data TEXT NOT NULL,created_at TEXT NOT NULL,updated_at TEXT NOT NULL)');
-  for(const name of ['0003_gate_persistence_foundation.sql','0004_gate_record_audit_triggers.sql','0005_gate_squadron_notices.sql','0006_gate_squadron_information_revisions.sql'])native.exec(sql(name));
+  for(const name of ['0003_gate_persistence_foundation.sql','0004_gate_record_audit_triggers.sql','0005_gate_squadron_notices.sql','0006_gate_squadron_information_revisions.sql','0011_gate_archive_source_immutability.sql'])native.exec(sql(name));
   return native;
 }
 function cloudflare(native){

@@ -14,6 +14,7 @@ function database() {
   native.exec('CREATE TABLE records(id TEXT PRIMARY KEY,type TEXT NOT NULL,week_group TEXT,data TEXT NOT NULL,created_at TEXT NOT NULL,updated_at TEXT NOT NULL)');
   native.exec(migration('0003_gate_persistence_foundation.sql'));
   native.exec(migration('0004_gate_record_audit_triggers.sql'));
+  native.exec(migration('0011_gate_archive_source_immutability.sql'));
   return native;
 }
 

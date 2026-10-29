@@ -82,6 +82,7 @@
     const id = record?.__backendId;
     if (!id || !Array.isArray(list)) return;
     const index = list.findIndex(item => item.__backendId === id);
+    if (index >= 0 && Number(list[index].record_version || 0) > Number(record.record_version || 0)) return;
     if (index >= 0) list[index] = { ...list[index], ...record };
     else list.push(record);
   }

@@ -11,6 +11,7 @@
   let editSubmitBound = false;
   let loadSaveInFlight = false;
   let reopenInFlight = false;
+  let editDormBaseline = null;
 
   function n(value) {
     const parsed = Number(value || 0);
@@ -381,6 +382,15 @@
 
   async function updateDorm(payload, options = {}) {
     if (!payload || payload.type !== 'dorm' || !payload.__backendId) return { isOk: false, error: 'Missing dorm record.' };
+    const base = options.baseline || dormById(payload.__backendId);
+    if (options.fields && !base) return {isOk:false,error:'Authoritative dorm baseline is unavailable.'};
+    if (options.fields) {
+      const changes=Object.fromEntries(options.fields.filter(key=>JSON.stringify(payload[key] ?? null)!==JSON.stringify(base[key] ?? null))
+        .map(key=>[key,payload[key] ?? null]));
+      if (!Object.keys(changes).length) return {isOk:true,data:base};
+      payload={__backendId:base.__backendId,type:'dorm',record_version:base.record_version,
+        __changes:changes,__base_values:Object.fromEntries(Object.keys(changes).map(key=>[key,base[key] ?? null]))};
+    }
     const result = await window.dataSdk.update(payload);
     if (result?.isOk) {
       syncLocalRecord(result.data || payload);
@@ -396,7 +406,7 @@
     const id = activeModalDormId();
     const dorm = id ? dormById(id) : null;
     if (!dorm) return;
-    await updateDorm({ ...dorm, phase, updated_at: new Date().toISOString() }, { source: 'processing-phase-update' });
+    await updateDorm({ ...dorm, phase }, { source: 'processing-phase-update', fields:['phase'] });
     closeDormModalCanonical();
   }
 
@@ -452,7 +462,7 @@
     loadSaveInFlight = true;
     setModalCommandBusy(button, true, 'SAVING...');
     try {
-      const result = await updateDorm({ ...dorm, current_load: requested, updated_at: new Date().toISOString() }, { source: 'processing-load-update' });
+      const result = await updateDorm({ ...dorm, current_load: requested, updated_at: new Date().toISOString() }, { source: 'processing-load-update', fields:['current_load'] });
       if (!result?.isOk && activeModalDormId() === dormId) {
         setModalFeedback('modal-load-feedback', 'Unable to save the dorm load. Check the record and try again.');
       }
@@ -471,7 +481,7 @@
     const dorm = dormById(activeModalDormId());
     const input = document.getElementById('modal-airman-input');
     if (!dorm || !input) return;
-    await updateDorm({ ...dorm, assigned_airman: normalizeUpper(input.value), updated_at: new Date().toISOString() }, { source: 'processing-airman-update' });
+    await updateDorm({ ...dorm, assigned_airman: normalizeUpper(input.value) }, { source: 'processing-airman-update', fields:['assigned_airman'] });
     closeDormModalCanonical();
   }
 
@@ -492,6 +502,7 @@
       updated_at: now
     }, {
       source: 'processing-open-dorm',
+      fields:['state','phase','opened_at','closed_at','closed_timer','overtime_sound_sent','overtime_sound_at'],
       soundType: 'dorm_open',
       soundPayload: { dorm_id: id, dorm_name: dorm.dorm_name || '', action: 'open_dorm' }
     });
@@ -513,6 +524,7 @@
       updated_at: now
     }, {
       source: 'processing-close-dorm',
+      fields:['state','phase','closed_timer','closed_at'],
       soundType: 'dorm_closed',
       soundPayload: { dorm_id: id, dorm_name: dorm.dorm_name || '', final_time: finalTime, action: 'close_dorm' }
     });
@@ -602,6 +614,7 @@
         updated_at: now
       }, {
         source: 'processing-reopen-dorm',
+        fields:['state','phase','opened_at','closed_at','closed_timer','manual_reopen_override'],
         soundType: 'dorm_open',
         soundPayload: { dorm_id: dorm.__backendId, dorm_name: dorm.dorm_name || '', action: 'reopen_dorm' }
       });
@@ -676,6 +689,7 @@
     if (!dorm) return;
     ensureEditExtensionFields();
     setActiveEditDorm(id);
+    editDormBaseline = { ...dorm };
 
     const setValue = (fieldId, value) => { const el = document.getElementById(fieldId); if (el) el.value = value ?? ''; };
     const setChecked = (fieldId, value) => { const el = document.getElementById(fieldId); if (el) el.checked = Boolean(value); };
@@ -711,6 +725,7 @@
       modal.setAttribute('aria-hidden', 'true');
     }
     setActiveEditDorm('');
+    editDormBaseline = null;
   }
 
   function readEditPayload(dorm) {
@@ -752,7 +767,7 @@
     const dorm = dormById(activeEditDormId());
     if (!dorm) return;
 
-    const payload = readEditPayload(dorm);
+    const payload = readEditPayload(editDormBaseline || dorm);
     if (String(payload.state || '').toLowerCase() === 'closed' && !/^\d{1,5}:\d{2}$/.test(String(payload.closed_timer || ''))) {
       setEditMessage('Final Time must use MM:SS format, such as 60:00.', true);
       return;
@@ -766,7 +781,8 @@
     }
 
     try {
-      const result = await updateDorm(payload, { source: 'processing-edit-save' });
+      const result = await updateDorm(payload, { source: 'processing-edit-save', baseline:editDormBaseline || dorm,
+        fields:['dorm_name','sdq','section','inter_sec','sex','band','max_load','current_load','notes','assigned_airman','auditorium_location','closed_timer'] });
       if (!result?.isOk) {
         setEditMessage(result?.error || 'Failed to save changes.', true);
         return;

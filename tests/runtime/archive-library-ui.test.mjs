@@ -111,3 +111,20 @@ test('Failed archive detail requests remain retryable rather than permanently ca
   assert.match(loader,/archiveDetailCache\.get\(key\)\?\.isOk!==false/);
   assert.match(loader,/archiveDetailPromises\.delete\(key\)/);
 });
+
+test('Archive correction details and printed reports retain append-only before/after provenance',async()=>{
+  const js=await load('public/js/gate-archive-controller.js');
+  const details=js.slice(js.indexOf('  function archiveAmendments('),js.indexOf('  function archiveBackButton('));
+  const print=js.slice(js.indexOf('  function printableHtml('),js.indexOf('  function openPrintWindow('));
+  const handler=js.slice(js.indexOf('  async function printArchiveReport('),js.indexOf('  async function printCurrentSummaryReport('));
+  assert.match(details,/previous_values/);
+  assert.match(details,/actor_role/);
+  assert.match(details,/amendment\.reason/);
+  assert.match(print,/amendments\.forEach\(amendment =>/);
+  assert.match(print,/Historical Amendment/);
+  assert.match(print,/Previous value/);
+  assert.match(print,/Corrected value/);
+  assert.match(print,/amendment\.amendment_id/);
+  assert.match(print,/amendments\.length/);
+  assert.match(handler,/amendments: Array\.isArray\(detail\.amendments\)/);
+});

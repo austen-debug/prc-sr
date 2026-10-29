@@ -47,6 +47,23 @@ function invalidExpectedVersion() {
   }, 400);
 }
 
+// Field-level edits are rebased only when their original values still match D1.
+// Whole-record stale saves never overwrite newer operator work.
+function fieldChangeRequest(record) {
+  if (!Object.hasOwn(record,'__changes')) return null;
+  const changes=record.__changes, base=record.__base_values;
+  if (!changes || typeof changes!=='object' || Array.isArray(changes) || !Object.keys(changes).length)
+    throw Object.assign(new Error('Changed fields must be a non-empty object.'),{status:400,code:'validation'});
+  const protectedKeys=/^(?:__.*|id|type|week_group|record_version|recordVersion|created_at|updated_at|created_by_role|updated_by_role)$/;
+  if (Object.entries(changes).some(([key,value])=>protectedKeys.test(key) || value !== null && typeof value==='object'))
+    throw Object.assign(new Error('Field changes include protected or unsupported values.'),{status:400,code:'validation'});
+  if (base !== undefined && (!base || typeof base!=='object' || Array.isArray(base) ||
+      Object.keys(base).length!==Object.keys(changes).length ||
+      Object.keys(changes).some(key=>!Object.hasOwn(base,key) || base[key] !== null && typeof base[key]==='object')))
+    throw Object.assign(new Error('Original values must cover exactly the changed fields.'),{status:400,code:'validation'});
+  return {changes,base};
+}
+
 function safeParseRecord(row) {
   try {
     const data = JSON.parse(row.data || '{}');
@@ -413,7 +430,12 @@ export async function onRequestPut({ request, env, data }) {
     }
 
     const currentVersion = recordVersionOf(existingRecord);
-    if (expected.supplied && expected.value !== currentVersion) {
+    if (['bus','dorm'].includes(existingRow.type) && !expected.supplied)
+      return jsonResponse({isOk:false,code:'record_version_required',error:'An If-Match record version is required for operational updates.'},428);
+    const patch=fieldChangeRequest(record);
+    if (expected.supplied && expected.value !== currentVersion &&
+        (!patch?.base || Object.entries(patch.changes).some(([key]) =>
+          JSON.stringify(existingRecord[key]) !== JSON.stringify(patch.base[key])))) {
       return jsonResponse(conflictResponseBody({
         expectedRecordVersion: expected.value,
         currentRecordVersion: currentVersion
@@ -421,7 +443,8 @@ export async function onRequestPut({ request, env, data }) {
     }
 
     const now = new Date().toISOString();
-    const normalized = normalizeDormUpdate(record, existingRecord, now);
+    const incoming = patch ? { ...existingRecord, ...patch.changes } : record;
+    const normalized = normalizeDormUpdate(incoming, existingRecord, now);
     await enforceOperationalAccountingMutation(env, existingRecord, normalized);
     const storedRecord = stampUpdatedRecord(existingRecord, {
       ...normalized,
@@ -496,6 +519,8 @@ export async function onRequestDelete({ request, env, data }) {
     }
 
     const currentVersion = recordVersionOf(existingRecord);
+    if (['bus','dorm'].includes(existingRow.type) && !expected.supplied)
+      return jsonResponse({isOk:false,code:'record_version_required',error:'An If-Match record version is required for operational deletion.'},428);
     if (expected.supplied && expected.value !== currentVersion) {
       return jsonResponse(conflictResponseBody({
         expectedRecordVersion: expected.value,

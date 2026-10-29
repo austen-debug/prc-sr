@@ -435,7 +435,7 @@ export async function onRequestPut({ request, env, data }) {
     const patch=fieldChangeRequest(record);
     if (expected.supplied && expected.value !== currentVersion &&
         (!patch?.base || Object.entries(patch.changes).some(([key]) =>
-          JSON.stringify(existingRecord[key]) !== JSON.stringify(patch.base[key])))) {
+          JSON.stringify(existingRecord[key] ?? null) !== JSON.stringify(patch.base[key])))) {
       return jsonResponse(conflictResponseBody({
         expectedRecordVersion: expected.value,
         currentRecordVersion: currentVersion

@@ -486,16 +486,16 @@
     }
     if (!validateCounts('edit-bus', total, females, naturals, spaceForce)) return;
 
-    const original = editBusBaseline?.__backendId === bus.__backendId ? editBusBaseline : bus;
+    const originalBus = editBusBaseline?.__backendId === bus.__backendId ? editBusBaseline : bus;
     const proposed = {
       ...(bus.bus_type === 'local' ? { destination: identity, originating_destination: identity } : { bus_id: identity }),
       otw_count: total, female_count: females, nat_count: naturals, space_force_count: spaceForce
     };
     const changes=Object.fromEntries(Object.entries(proposed)
-      .filter(([key,value])=>JSON.stringify(value ?? null)!==JSON.stringify(original[key] ?? null)));
+      .filter(([key,value])=>JSON.stringify(value ?? null)!==JSON.stringify(originalBus[key] ?? null)));
     if (!Object.keys(changes).length) { closeAirportBusEditModalCanonical(); return; }
-    const payload={__backendId:bus.__backendId,type:'bus',record_version:original.record_version,
-      __changes:changes,__base_values:Object.fromEntries(Object.keys(changes).map(key=>[key,original[key] ?? null]))};
+    const payload={__backendId:bus.__backendId,type:'bus',record_version:originalBus.record_version,
+      __changes:changes,__base_values:Object.fromEntries(Object.keys(changes).map(key=>[key,originalBus[key] ?? null]))};
 
     const submit = form.querySelector('button[type="submit"]');
     const original = submit ? submit.textContent : '';

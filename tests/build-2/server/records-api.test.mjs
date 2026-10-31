@@ -48,6 +48,11 @@ function createD1(seed = []) {
         // Pre-migration D1 contains no Admin disposition table. Model that
         // catalog lookup without changing existing record fixture semantics.
         if (normalized.includes('FROM sqlite_master')) return null;
+        if (normalized.includes("FROM gate_week_groups WHERE")) return null;
+        if (normalized.includes("WHERE type='dorm' AND week_group=?"))
+          return clone(rows.find(item=>item.type==='dorm' && item.week_group===bound[0] &&
+            JSON.parse(item.data).initialization_request_id===bound[1] &&
+            Date.parse(item.created_at)>Date.parse(bound[2]))||null);
         if (normalized.includes("WHERE type='archive' AND week_group=?")) {
           return clone(rows.find(item=>item.type==='archive' && item.week_group===bound[0])||null);
         }
@@ -461,4 +466,21 @@ test('generic records API rejects creation, update and deletion for an already a
   }
   assert.equal(db.rows.length,3);
   assert.equal(JSON.parse(db.rows.find(item=>item.id==='bus-1').data).status,'arrived');
+});
+
+test('a genuinely reinitialized historical label remains writable after the prior archive',async()=>{
+  const older='2026-10-20T10:00:00.000Z';
+  const current='2026-10-27T10:00:00.000Z';
+  const init='5a0e48e0-0123-4123-8123-012345678901';
+  const db=createD1([
+    {__backendId:'old-archive',type:'archive',week_group:'WG',archived_at:older,created_at:older},
+    {__backendId:'active-cfg',type:'config',key:'week_group',value:'WG',
+      initialization_request_id:init,updated_at:current},
+    {__backendId:'current-dorm',type:'dorm',week_group:'WG',dorm_name:'3A1',
+      initialization_request_id:init,created_at:current}
+  ]);
+  const response=await onRequestPost({env:{DB:db},data:roleData('instructor'),
+    request:request('POST',{type:'bus',week_group:'WG',status:'active',otw_count:2})});
+  assert.equal(response.status,201,await response.clone().text());
+  assert.equal(db.rows.filter(row=>row.type==='bus').length,1);
 });

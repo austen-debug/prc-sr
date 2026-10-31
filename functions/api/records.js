@@ -266,7 +266,7 @@ function accountingWriteGuard(env, before, after) {
         THEN -CAST(COALESCE(json_extract(data,'$.otw_count'),0) AS INTEGER)
       WHEN type='dorm'
         THEN CAST(COALESCE(json_extract(data,'$.current_load'),0) AS INTEGER)
-      ELSE 0 END),0)) + ?
+      ELSE 0 END),0) + ?)
     FROM records WHERE week_group=? AND type IN ('bus','dorm')
   ) <= (
     SELECT MAX(0, COALESCE(SUM(CASE

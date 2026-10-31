@@ -9,7 +9,8 @@ const board = readFileSync(new URL('../../public/js/gate-status-board-controller
 const begin = html.indexOf('    function getBoardWeekState() {');
 const end = html.indexOf('    function getBoardWG() {', begin + 1);
 assert.ok(begin > 0 && end > begin, 'server-rendered application must expose board reconciliation state');
-const getState = new Function('allData', 'getActiveWG', html.slice(begin, end) + '\nreturn getBoardWeekState();');
+const stateFn = new Function('allData', 'getActiveWG', 'window', html.slice(begin, end) + '\nreturn getBoardWeekState();');
+const getState = (records, active, server={}) => stateFn(records, active, {gateCloseoutRecovery:null,...server});
 
 const config = (time, value='WG27003') => ({ type:'config', key:'week_group', value, updated_at:time });
 const archived = (time, group='WG27003') => ({ type:'archive', week_group:group, archived_at:time });
@@ -21,6 +22,13 @@ test('archived group with no dorms is suppressed from live board, but recovery r
   assert.deepEqual(state, {weekGroup:'',recoveryRequired:true,archivedWeekGroup:'WG27003'});
   assert.match(html, /CLOSEOUT REQUIRES RECONCILIATION/);
   assert.match(html, /boardState\.recoveryRequired \? 'CLOSEOUT PENDING'/);
+});
+
+test('live-only polling uses authoritative server recovery metadata without archived records', () => {
+  const state=getState([config('2026-10-26T10:00:00Z'),bus()], ()=>'WG27003',
+    {gateCloseoutRecovery:{recovery_required:true,week_group:'WG27003',residual_buses:27}});
+  assert.deepEqual(state,{weekGroup:'',recoveryRequired:true,archivedWeekGroup:'WG27003'});
+  assert.match(html,/window.gateCloseoutRecovery = result.closeout_recovery \|\| null/);
 });
 
 test('active group retains live visibility when its dorms exist', () => {

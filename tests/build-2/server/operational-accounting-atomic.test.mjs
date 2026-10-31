@@ -54,3 +54,17 @@ test('per-record capacity and total arrival accounting remain independent',async
   assert.equal(result.status,409);
   assert.equal(db.prepare("SELECT json_extract(data,'$.current_load') AS n FROM records WHERE id='dorm-a'").get().n,0);
 });
+
+test('malformed bus totals cannot enter or corrupt authoritative arrival accounting',async()=>{
+  const {db,env}=setup();
+  const {onRequestPost}=await import('../../../functions/api/records.js');
+  const response=await onRequestPost({env,data:{session:{role:'instructor'}},
+    request:new Request('https://gate.example/api/records',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({type:'bus',week_group:'26003',status:'arrived',
+        otw_count:12,female_count:13,arrived_at:'2026-10-30T13:00:00Z'})
+    })
+  });
+  assert.equal(response.status,400);
+  assert.equal(db.prepare("SELECT COUNT(*) AS n FROM records WHERE type='bus'").get().n,1);
+});

@@ -1145,7 +1145,7 @@ function playOperationalSound(soundKey) {
 
 function processSoundEvents() {
   const events = getRecords('sound_event')
-    .filter(e => e.week_group === getActiveWG())
+    .filter(e => e.week_group === getBoardWG())
     .sort((a, b) => new Date(a.created_at || 0) - new Date(b.created_at || 0));
 
   for (const event of events) {

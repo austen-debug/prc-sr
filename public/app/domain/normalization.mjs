@@ -141,5 +141,6 @@ export function normalizeDormRecord(entity = {}) {
 
 export function matchesWeekGroup(normalizedRecord, weekGroup) {
   const requested = normalizeWeekGroup(weekGroup);
-  return !requested || normalizedRecord?.weekGroup === requested;
+  // No active Week Group means no live operational projection.
+  return Boolean(requested) && normalizedRecord?.weekGroup === requested;
 }

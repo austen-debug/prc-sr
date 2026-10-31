@@ -232,8 +232,14 @@
   };
 
   const SOUND_ENABLED_KEY = 'prc_sr_sound_enabled_v1';
-  const ERROR_TEXT_PATTERN = /(failed|failure|error|required|cannot|must|invalid|unable|unavailable|record limit|limit reached|no active|initialize|select a time|closeout cancelled)/i;
-  const recentErrorSignals = new Map();
+  // Idle lifecycle prompts ("no active", "initialize") are not operational errors.
+  // Real initialization failures still match "failed", "unable", etc.
+  const ERROR_TEXT_PATTERN = /(failed|failure|error|required|cannot|must|invalid|unable|unavailable|record limit|limit reached|select a time|closeout cancelled)/i;
+  // Element identity, not an elapsed timer, owns a displayed error's audible
+  // transition. Refreshes of an unchanged status must remain silent.
+  const recentErrorSignals = new WeakMap();
+  const recentGlobalErrorSignals = new Map();
+  const GLOBAL_ERROR_SOUND_COOLDOWN_MS = 60000;
   let observerStarted = false;
   let clickPatchReady = false;
   let hooksRegistered = false;
@@ -519,15 +525,16 @@
   }
 
   function signalErrorFromElement(el) {
-    if (!elementLooksLikeError(el)) return;
+    if (!el || el.nodeType !== 1) return;
+    if (!elementLooksLikeError(el)) {
+      recentErrorSignals.delete(el);
+      return;
+    }
 
     const text = String(el.textContent || '').trim();
     const key = `${el.id || el.className || el.tagName}:${text}`;
-    const now = Date.now();
-    const last = recentErrorSignals.get(key) || 0;
-    if (now - last < 1800) return;
-
-    recentErrorSignals.set(key, now);
+    if (recentErrorSignals.get(el) === key) return;
+    recentErrorSignals.set(el, key);
     playGateErrorSound();
   }
 
@@ -567,11 +574,33 @@
     scanVisibleErrors(document);
   }
 
+  function signalGlobalError(event) {
+    // A recurrent poll or script failure must not become an audio alarm loop.
+    // Distinct errors still sound immediately and all errors remain visible in
+    // the console/status UI regardless of the audio cooldown.
+    const signature = String(
+      event?.message || event?.error?.message ||
+      event?.reason?.message || event?.reason ||
+      event?.type || 'unknown'
+    ).slice(0, 512);
+    const now = Date.now();
+    const previous = recentGlobalErrorSignals.get(signature);
+    if (previous !== undefined && now - previous < GLOBAL_ERROR_SOUND_COOLDOWN_MS) return;
+    recentGlobalErrorSignals.set(signature, now);
+    if (recentGlobalErrorSignals.size > 64) {
+      for (const [key, time] of recentGlobalErrorSignals) {
+        if (now - time >= GLOBAL_ERROR_SOUND_COOLDOWN_MS) recentGlobalErrorSignals.delete(key);
+      }
+      if (recentGlobalErrorSignals.size > 64) recentGlobalErrorSignals.delete(recentGlobalErrorSignals.keys().next().value);
+    }
+    playGateErrorSound();
+  }
+
   function patchGlobalErrorSounds() {
     if (window.__gateGlobalErrorSoundPatched === true) return;
     window.__gateGlobalErrorSoundPatched = true;
-    window.addEventListener('error', () => playGateErrorSound());
-    window.addEventListener('unhandledrejection', () => playGateErrorSound());
+    window.addEventListener('error', signalGlobalError);
+    window.addEventListener('unhandledrejection', signalGlobalError);
   }
 
   function registerHooksOnce() {

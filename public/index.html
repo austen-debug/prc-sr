@@ -708,12 +708,13 @@ body > * {
         throw new Error(result.error || 'Failed to fetch records.');
       }
 
+      window.gateCloseoutRecovery = result.closeout_recovery || null;
       return result.records || [];
     }
 
 async function refresh(force = false) {
   const records = await fetchRecords();
-  const payload = JSON.stringify(records);
+  const payload = JSON.stringify({ records, closeoutRecovery: window.gateCloseoutRecovery });
 
   if (!force && payload === lastPayload) {
     return records;
@@ -978,6 +979,8 @@ renderAll();
     function getBoardWeekState() {
       const weekGroup = getActiveWG();
       if (!weekGroup) return { weekGroup:'', recoveryRequired:false, archivedWeekGroup:'' };
+      if (window.gateCloseoutRecovery?.recovery_required && window.gateCloseoutRecovery.week_group === weekGroup)
+        return { weekGroup:'', recoveryRequired:true, archivedWeekGroup:weekGroup };
       const dorms = allData.filter(r => r?.type === 'dorm' && r.week_group === weekGroup);
       if (dorms.length) return { weekGroup, recoveryRequired:false, archivedWeekGroup:'' };
       const config = allData.find(r => r?.type === 'config' && r.key === 'week_group');

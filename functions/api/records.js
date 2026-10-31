@@ -98,6 +98,21 @@ async function getRecordRow(env, id) {
   ).bind(id).first();
 }
 
+// An archived Week Group must be immutable at the generic records boundary.
+ // Lifecycle transactions use D1 directly; this blocks stale browser sessions
+ // from recreating or modifying records after closeout.
+async function archivedWeekGroup(env, type, weekGroup) {
+  if (!['bus','dorm','sound_event'].includes(String(type || ''))) return false;
+  const label=String(weekGroup || '').trim().toUpperCase();
+  if (!label) return false;
+  const archived=await env.DB.prepare("SELECT id FROM records WHERE type='archive' AND week_group=? LIMIT 1").bind(label).first();
+  return Boolean(archived);
+}
+function archivedRecordConflict() {
+  return jsonResponse({isOk:false,code:'week_group_archived',
+    error:'This Week Group has an archive. Operational records are locked pending lifecycle reconciliation.'},409);
+}
+
 function changedRows(result) {
   const changes = Number(result?.meta?.changes ?? result?.changes);
   return Number.isFinite(changes) ? changes : 0;
@@ -437,6 +452,8 @@ export async function onRequestPost({ request, env, data }) {
       }
     }
 
+    if (await archivedWeekGroup(env,type,record.week_group)) return archivedRecordConflict();
+
     const id = makeId();
     const now = new Date().toISOString();
     const storedRecord = type === 'audit_event'
@@ -484,6 +501,7 @@ export async function onRequestPut({ request, env, data }) {
       return jsonResponse({ isOk: false, code: 'append_only', error: 'Audit events are append-only.' }, 405);
     }
 
+    if (await archivedWeekGroup(env,existingRow.type,existingRow.week_group)) return archivedRecordConflict();
     const currentVersion = recordVersionOf(existingRecord);
     if (['bus','dorm'].includes(existingRow.type) && !expected.supplied)
       return jsonResponse({isOk:false,code:'record_version_required',error:'An If-Match record version is required for operational updates.'},428);
@@ -567,6 +585,7 @@ export async function onRequestDelete({ request, env, data }) {
       return jsonResponse({ isOk: false, code: 'append_only', error: 'Audit events are append-only.' }, 405);
     }
 
+    if (await archivedWeekGroup(env,existingRow.type,existingRow.week_group)) return archivedRecordConflict();
     const currentVersion = recordVersionOf(existingRecord);
     if (['bus','dorm'].includes(existingRow.type) && !expected.supplied)
       return jsonResponse({isOk:false,code:'record_version_required',error:'An If-Match record version is required for operational deletion.'},428);

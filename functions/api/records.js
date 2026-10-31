@@ -437,9 +437,35 @@ export async function onRequestGet({ request, env, data }) {
       .map(record => sanitizeRecordForRole(record, role))
       .filter(Boolean);
 
+    // Live polling excludes archive payloads by design. Expose only a small
+    // authoritative closeout-integrity hint so stale archived buses cannot
+    // masquerade as current arrivals on the Status Board.
+    let closeoutRecovery = null;
+    if (liveOnly) {
+      const config = records.find(record => record?.type === 'config' && record.key === 'week_group');
+      const weekGroup = String(config?.value || '').trim().toUpperCase();
+      if (weekGroup && !records.some(record => record?.type === 'dorm' && record.week_group === weekGroup)) {
+        const archived = await env.DB.prepare(
+          "SELECT id,json_extract(data,'$.archived_at') AS archived_at FROM records WHERE type='archive' AND week_group=? ORDER BY created_at DESC LIMIT 1"
+        ).bind(weekGroup).first();
+        const archivedTime = Date.parse(archived?.archived_at || '');
+        const configTime = Date.parse(config?.updated_at || '') || 0;
+        if (Number.isFinite(archivedTime) && archivedTime >= configTime) {
+          closeoutRecovery = {
+            recovery_required: true,
+            week_group: weekGroup,
+            archive_id: archived.id,
+            residual_buses: records.filter(record => record?.type === 'bus' && record.week_group === weekGroup).length,
+            residual_sound_events: records.filter(record => record?.type === 'sound_event' && record.week_group === weekGroup).length
+          };
+        }
+      }
+    }
+
     return jsonResponse({
       isOk: true,
       records,
+      closeout_recovery: closeoutRecovery,
       capabilities: RECORDS_API_CAPABILITIES,
       scope: liveOnly ? 'live' : 'all'
     });

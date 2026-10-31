@@ -29,7 +29,7 @@
       ?{credentials:'same-origin',cache:'no-store',headers:{Accept:'application/json'}}
       :{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json',Accept:'application/json'},body:JSON.stringify({action,...body})});
     const contentType=response.headers?.get?.('content-type')||'';
-    if(contentType&&!/\\bapplication\\/(?:[a-z0-9.+-]*\\+)?json\\b/i.test(contentType)){
+    if(contentType&&!/\bapplication\/(?:[a-z0-9.+-]*\+)?json\b/i.test(contentType)){
       const failure=new Error('Persistence service returned non-JSON (HTTP '+response.status+'). Inspect lifecycle state before retrying.');
       failure.code='invalid_response';throw failure;
     }

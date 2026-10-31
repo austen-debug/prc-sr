@@ -98,6 +98,49 @@ async function getRecordRow(env, id) {
   ).bind(id).first();
 }
 
+// An archived Week Group must be immutable at the generic records boundary.
+ // Lifecycle transactions use D1 directly; this blocks stale browser sessions
+ // from recreating or modifying records after closeout.
+async function archivedWeekGroup(env, type, weekGroup) {
+  if (!['bus','dorm','sound_event'].includes(String(type || ''))) return false;
+  const label=String(weekGroup || '').trim().toUpperCase();
+  if (!label) return false;
+  const archiveRows=await env.DB.prepare("SELECT data,created_at FROM records WHERE type='archive' AND week_group=?").bind(label).all();
+  const archives=archiveRows.results||[];
+  if (!archives.length) return false;
+
+  // Historical Week Group labels can legitimately be reused. Only permit
+  // writes on a demonstrably NEW initialization after all prior archives.
+  const lastArchive=Math.max(...archives.map(row=>{
+    try { return Date.parse(JSON.parse(row.data).archived_at || row.created_at); }
+    catch { return NaN; }
+  }));
+  if (!Number.isFinite(lastArchive)) return true;
+  const configs=await env.DB.prepare("SELECT data,updated_at FROM records WHERE type='config' AND json_extract(data,'$.key')='week_group' LIMIT 2").all();
+  if (configs.results?.length!==1) return true;
+  const config=configs.results[0];
+  let value, initializationId;
+  try {
+    const parsed=JSON.parse(config.data);
+    value=String(parsed.value||'').trim().toUpperCase();
+    initializationId=String(parsed.initialization_request_id||'');
+  } catch { return true; }
+  if (value!==label) return true;
+
+  // Transactional registration has a distinct cycle identity.
+  const cycle=await env.DB.prepare("SELECT activated_at FROM gate_week_groups WHERE week_group=? AND state='active' LIMIT 1").bind(label).first();
+  if (cycle && Date.parse(cycle.activated_at)>lastArchive) return false;
+
+  if (!initializationId || Date.parse(config.updated_at)<=lastArchive) return true;
+  const newDorm=await env.DB.prepare("SELECT id FROM records WHERE type='dorm' AND week_group=? AND json_extract(data,'$.initialization_request_id')=? AND julianday(created_at)>julianday(?) LIMIT 1")
+    .bind(label,initializationId,new Date(lastArchive).toISOString()).first();
+  return !newDorm;
+}
+function archivedRecordConflict() {
+  return jsonResponse({isOk:false,code:'week_group_archived',
+    error:'This Week Group has an archive. Operational records are locked pending lifecycle reconciliation.'},409);
+}
+
 function changedRows(result) {
   const changes = Number(result?.meta?.changes ?? result?.changes);
   return Number.isFinite(changes) ? changes : 0;
@@ -394,9 +437,35 @@ export async function onRequestGet({ request, env, data }) {
       .map(record => sanitizeRecordForRole(record, role))
       .filter(Boolean);
 
+    // Live polling excludes archive payloads by design. Expose only a small
+    // authoritative closeout-integrity hint so stale archived buses cannot
+    // masquerade as current arrivals on the Status Board.
+    let closeoutRecovery = null;
+    if (liveOnly) {
+      const config = records.find(record => record?.type === 'config' && record.key === 'week_group');
+      const weekGroup = String(config?.value || '').trim().toUpperCase();
+      if (weekGroup && !records.some(record => record?.type === 'dorm' && record.week_group === weekGroup)) {
+        const archived = await env.DB.prepare(
+          "SELECT id,json_extract(data,'$.archived_at') AS archived_at FROM records WHERE type='archive' AND week_group=? ORDER BY created_at DESC LIMIT 1"
+        ).bind(weekGroup).first();
+        const archivedTime = Date.parse(archived?.archived_at || '');
+        const configTime = Date.parse(config?.updated_at || '') || 0;
+        if (Number.isFinite(archivedTime) && archivedTime >= configTime) {
+          closeoutRecovery = {
+            recovery_required: true,
+            week_group: weekGroup,
+            archive_id: archived.id,
+            residual_buses: records.filter(record => record?.type === 'bus' && record.week_group === weekGroup).length,
+            residual_sound_events: records.filter(record => record?.type === 'sound_event' && record.week_group === weekGroup).length
+          };
+        }
+      }
+    }
+
     return jsonResponse({
       isOk: true,
       records,
+      closeout_recovery: closeoutRecovery,
       capabilities: RECORDS_API_CAPABILITIES,
       scope: liveOnly ? 'live' : 'all'
     });
@@ -436,6 +505,8 @@ export async function onRequestPost({ request, env, data }) {
         return jsonResponse({ isOk: false, code: error.code || 'validation', error: error.message }, error.status || 400);
       }
     }
+
+    if (await archivedWeekGroup(env,type,record.week_group)) return archivedRecordConflict();
 
     const id = makeId();
     const now = new Date().toISOString();
@@ -484,6 +555,7 @@ export async function onRequestPut({ request, env, data }) {
       return jsonResponse({ isOk: false, code: 'append_only', error: 'Audit events are append-only.' }, 405);
     }
 
+    if (await archivedWeekGroup(env,existingRow.type,existingRow.week_group)) return archivedRecordConflict();
     const currentVersion = recordVersionOf(existingRecord);
     if (['bus','dorm'].includes(existingRow.type) && !expected.supplied)
       return jsonResponse({isOk:false,code:'record_version_required',error:'An If-Match record version is required for operational updates.'},428);
@@ -567,6 +639,7 @@ export async function onRequestDelete({ request, env, data }) {
       return jsonResponse({ isOk: false, code: 'append_only', error: 'Audit events are append-only.' }, 405);
     }
 
+    if (await archivedWeekGroup(env,existingRow.type,existingRow.week_group)) return archivedRecordConflict();
     const currentVersion = recordVersionOf(existingRecord);
     if (['bus','dorm'].includes(existingRow.type) && !expected.supplied)
       return jsonResponse({isOk:false,code:'record_version_required',error:'An If-Match record version is required for operational deletion.'},428);

@@ -38,12 +38,24 @@ function createD1(seed = []) {
       },
       async all() {
         if (!normalized.startsWith('SELECT')) throw new Error(`Unsupported all SQL: ${normalized}`);
+        if (normalized.includes("WHERE type='archive' AND week_group=?"))
+          return {results:clone(rows.filter(item=>item.type==='archive' && item.week_group===bound[0]))};
+        if (normalized.includes("WHERE type='config' AND json_extract(data,'$.key')='week_group'"))
+          return {results:clone(rows.filter(item=>item.type==='config' && JSON.parse(item.data).key==='week_group'))};
         return { results: clone(rows) };
       },
       async first() {
         // Pre-migration D1 contains no Admin disposition table. Model that
         // catalog lookup without changing existing record fixture semantics.
         if (normalized.includes('FROM sqlite_master')) return null;
+        if (normalized.includes("FROM gate_week_groups WHERE")) return null;
+        if (normalized.includes("WHERE type='dorm' AND week_group=?"))
+          return clone(rows.find(item=>item.type==='dorm' && item.week_group===bound[0] &&
+            JSON.parse(item.data).initialization_request_id===bound[1] &&
+            Date.parse(item.created_at)>Date.parse(bound[2]))||null);
+        if (normalized.includes("WHERE type='archive' AND week_group=?")) {
+          return clone(rows.find(item=>item.type==='archive' && item.week_group===bound[0])||null);
+        }
         if (!normalized.startsWith('SELECT') || !normalized.includes('WHERE id = ?')) {
           throw new Error(`Unsupported first SQL: ${normalized}`);
         }
@@ -436,4 +448,39 @@ test('schema and migration enforce audit append-only triggers', async () => {
     assert.match(source, /prevent_audit_event_delete/);
     assert.match(source, /RAISE\(ABORT, 'audit events are append-only'\)/);
   }
+});
+
+test('generic records API rejects creation, update and deletion for an already archived Week Group',async()=>{
+  const db=createD1([
+    {__backendId:'archived-week',type:'archive',week_group:'WG',record_version:1},
+    {__backendId:'bus-1',type:'bus',week_group:'WG',status:'arrived',otw_count:3,record_version:1},
+    {__backendId:'sound-1',type:'sound_event',week_group:'WG',record_version:1}
+  ]);
+  const env={DB:db},data=roleData('instructor');
+  const create=await onRequestPost({env,data,request:request('POST',{type:'bus',week_group:'WG',otw_count:2,status:'active'})});
+  const update=await onRequestPut({env,data,request:request('PUT',{__backendId:'bus-1',week_group:'WG',status:'active'},{'If-Match':'1'})});
+  const remove=await onRequestDelete({env,data,request:request('DELETE',{__backendId:'sound-1'})});
+  for(const result of [create,update,remove]){
+    assert.equal(result.status,409);
+    assert.equal((await result.json()).code,'week_group_archived');
+  }
+  assert.equal(db.rows.length,3);
+  assert.equal(JSON.parse(db.rows.find(item=>item.id==='bus-1').data).status,'arrived');
+});
+
+test('a genuinely reinitialized historical label remains writable after the prior archive',async()=>{
+  const older='2026-10-20T10:00:00.000Z';
+  const current='2026-10-27T10:00:00.000Z';
+  const init='5a0e48e0-0123-4123-8123-012345678901';
+  const db=createD1([
+    {__backendId:'old-archive',type:'archive',week_group:'WG',archived_at:older,created_at:older},
+    {__backendId:'active-cfg',type:'config',key:'week_group',value:'WG',
+      initialization_request_id:init,updated_at:current},
+    {__backendId:'current-dorm',type:'dorm',week_group:'WG',dorm_name:'3A1',
+      initialization_request_id:init,created_at:current}
+  ]);
+  const response=await onRequestPost({env:{DB:db},data:roleData('instructor'),
+    request:request('POST',{type:'bus',week_group:'WG',status:'active',otw_count:2})});
+  assert.equal(response.status,201,await response.clone().text());
+  assert.equal(db.rows.filter(row=>row.type==='bus').length,1);
 });

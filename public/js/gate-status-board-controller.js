@@ -50,7 +50,7 @@
   }
 
   function activeWeekGroup() {
-    try { return typeof getActiveWG === 'function' ? getActiveWG() : ''; } catch (_) { return ''; }
+    try { return typeof getBoardWG === 'function' ? getBoardWG() : (typeof getActiveWG === 'function' ? getActiveWG() : ''); } catch (_) { return ''; }
   }
 
   function records() {

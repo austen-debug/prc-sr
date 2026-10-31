@@ -411,8 +411,9 @@
     const el = document.getElementById('week-group-display');
     if (!el) return;
     let wg = '';
-    try { wg = typeof getActiveWG === 'function' ? getActiveWG() : ''; } catch (_) { wg = ''; }
-    const text = wg || 'No WG';
+    try { wg = typeof getBoardWG === 'function' ? getBoardWG() : (typeof getActiveWG === 'function' ? getActiveWG() : ''); } catch (_) { wg = ''; }
+    const recovering = Boolean(window.gateCloseoutRecovery?.recovery_required);
+    const text = recovering ? 'CLOSEOUT PENDING' : (wg || 'No WG');
     const cleaned = String(wg || '').replace(/^WG\s*/i, '').trim();
     el.textContent = usesResponsiveMenu() && cleaned ? `WG ${cleaned}` : text;
     el.title = text;

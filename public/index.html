@@ -708,12 +708,13 @@ body > * {
         throw new Error(result.error || 'Failed to fetch records.');
       }
 
+      window.gateCloseoutRecovery = result.closeout_recovery || null;
       return result.records || [];
     }
 
 async function refresh(force = false) {
   const records = await fetchRecords();
-  const payload = JSON.stringify(records);
+  const payload = JSON.stringify({ records, closeoutRecovery: window.gateCloseoutRecovery });
 
   if (!force && payload === lastPayload) {
     return records;
@@ -972,6 +973,45 @@ renderAll();
     function getConfig(key) { const r = allData.find(d => d.type === 'config' && d.key === key); return r ? r.value : ''; }
     function getActiveWG() { return getConfig('week_group') || ''; }
 
+    // Render-only protection for historical closeouts that were archived before
+    // the legacy browser completed clearing live records. Do not falsify D1
+    // configuration or suppress the recovery-required condition.
+    function getBoardWeekState() {
+      const weekGroup = getActiveWG();
+      if (!weekGroup) return { weekGroup:'', recoveryRequired:false, archivedWeekGroup:'' };
+      if (window.gateCloseoutRecovery?.recovery_required && window.gateCloseoutRecovery.week_group === weekGroup)
+        return { weekGroup:'', recoveryRequired:true, archivedWeekGroup:weekGroup };
+      const dorms = allData.filter(r => r?.type === 'dorm' && r.week_group === weekGroup);
+      if (dorms.length) return { weekGroup, recoveryRequired:false, archivedWeekGroup:'' };
+      const config = allData.find(r => r?.type === 'config' && r.key === 'week_group');
+      const configTime = Date.parse(config?.updated_at || '') || 0;
+      const archive = allData.filter(r => r?.type === 'archive' && r.week_group === weekGroup)
+        .find(r => Number.isFinite(Date.parse(r.archived_at || '')) &&
+          Date.parse(r.archived_at) >= configTime);
+      if (!archive) return { weekGroup, recoveryRequired:false, archivedWeekGroup:'' };
+      // The report exists and all dorms were cleared; surviving buses/events
+      // must not be presented as current arrival operations.
+      return { weekGroup:'', recoveryRequired:true, archivedWeekGroup:weekGroup };
+    }
+    function getBoardWG() { return getBoardWeekState().weekGroup; }
+    function updateCloseoutRecoveryNotice(state) {
+      const board = document.getElementById('page-board');
+      if (!board) return;
+      let banner = document.getElementById('gate-closeout-recovery-notice');
+      if (!state.recoveryRequired) { banner?.remove(); return; }
+      if (!banner) {
+        banner = document.createElement('div');
+        banner.id = 'gate-closeout-recovery-notice';
+        banner.setAttribute('role', 'alert');
+        banner.style.cssText = 'padding:12px 18px;border:1px solid #d6a356;border-radius:10px;margin:12px 18px;color:#f5cf8a;background:#322719;font-weight:650;';
+        const header = board.querySelector('.board-header');
+        if (header) header.insertAdjacentElement('afterend', banner);
+        else board.prepend(banner);
+      }
+      banner.textContent = 'CLOSEOUT REQUIRES RECONCILIATION — Archived Week Group ' +
+        state.archivedWeekGroup + ' has residual operational records. Historical totals are preserved; do not initialize a new group until resolved.';
+    }
+
  function getLocalTime24() {
   const now = new Date();
   const hours = String(now.getHours()).padStart(2, '0');
@@ -1105,7 +1145,7 @@ function playOperationalSound(soundKey) {
 
 function processSoundEvents() {
   const events = getRecords('sound_event')
-    .filter(e => e.week_group === getActiveWG())
+    .filter(e => e.week_group === getBoardWG())
     .sort((a, b) => new Date(a.created_at || 0) - new Date(b.created_at || 0));
 
   for (const event of events) {
@@ -1197,8 +1237,10 @@ function getElapsedTimer(openedAt) {
 }
    
     function renderAll() {
-      const wg = getActiveWG();
-      document.getElementById('week-group-display').textContent = wg || 'No WG';
+      const boardState = getBoardWeekState();
+      const wg = boardState.weekGroup;
+      document.getElementById('week-group-display').textContent = boardState.recoveryRequired ? 'CLOSEOUT PENDING' : (wg || 'No WG');
+      updateCloseoutRecoveryNotice(boardState);
       const dorms = getRecords('dorm').filter(d => d.week_group === wg);
       const buses = getRecords('bus').filter(b => b.week_group === wg);
       const totalExpected = dorms.reduce((s, d) => s + (Number(d.max_load) || 0), 0);
@@ -1865,50 +1907,10 @@ closed_timer: d.state === 'closed'
     }
 
     async function initializeWeekGroup() {
-      const wg = document.getElementById('wg-batch-input').value.trim();
-      if (!wg) { showBatchMsg('Week Group ID required', true); return; }
-      const filledRows = batchRows.filter(r => r.load && parseInt(r.load) > 0);
-      if (filledRows.length === 0) { showBatchMsg('At least one row with Load required', true); return; }
-      if (allData.length + filledRows.length + 1 >= 999) { showBatchMsg('Record limit reached', true); return; }
-
-      const btn = document.getElementById('init-wg-btn');
-      btn.disabled = true; btn.textContent = 'Initializing...';
-
-      const existing = allData.find(d => d.type === 'config' && d.key === 'week_group');
-      if (existing) await window.dataSdk.update({...existing, value: wg});
-      else await window.dataSdk.create({type: 'config', key: 'week_group', value: wg});
-
-      let ok = 0;
-      for (const row of filledRows) {
-        const r = await window.dataSdk.create({
-                type: 'dorm',
-                dorm_name: row.dorm_name.trim() || `Dorm ${row.rowIndex+1}`,
-                section: row.sec.trim(),
-                sdq: row.sdq.trim(),
-                inter_sec: row.inter_sec.trim(),
-                max_load: parseInt(row.load) || 0,
-                current_load: 0,
-                sex: row.sex,
-                band: row.band ? 'true' : 'false',
-                state: 'empty',
-                phase: '',
-                opened_at: '',
-                closed_timer: '',
-                closed_at: '',
-                notes: '',
-                assigned_airman: '',
-                overtime_sound_sent: 'false',
-                overtime_sound_at: '',
-                week_group: wg,
-                created_at: new Date().toISOString(),
-                destination: '',
-                bus_type: ''
-              });
-        if (r.isOk) ok++;
-      }
-      btn.disabled = false; btn.textContent = 'INITIALIZE WEEK GROUP';
-      if (ok === filledRows.length) document.getElementById('init-success-overlay').classList.remove('hidden');
-      else showBatchMsg(`${ok}/${filledRows.length} created`, true);
+      // Fail closed if the canonical Input controller fails to load or loses
+      // event ownership. Never partially initialize a Week Group via many
+      // browser-directed writes to config and dorm records.
+      showBatchMsg('Verified initialization is unavailable. Reload GATE; no records were changed.', true);
     }
 
     function returnToBoard() {
@@ -2101,77 +2103,12 @@ function closeAirportBusEditModal() {
     }
    
     function initiateCloseout() {
-      showConfirm('Close out this week group? This archives all data.', async () => {
-        const wg = getActiveWG();
-        const dorms = getRecords('dorm').filter(d => d.week_group === wg);
-        const buses = getRecords('bus').filter(b => b.week_group === wg);
-        const soundEvents = getRecords('sound_event').filter(e => e.week_group === wg);
-        const arrivedBuses = buses.filter(b => b.status === 'arrived');
-        const totalArrived = arrivedBuses.reduce((s, b) => s + (Number(b.otw_count) || 0), 0);
-        const dormHistory = dorms.map(d => ({
-  name: d.dorm_name,
-  dorm_name: d.dorm_name,
-  sdq: d.sdq || '',
-  section: d.section || '',
-  inter_sec: d.inter_sec || '',
-  sex: d.sex || '',
-  band: d.band || 'false',
-  current_load: Number(d.current_load || 0),
-  max_load: Number(d.max_load || 0),
-  state: d.state || '',
-  phase: d.phase || '',
-  notes: d.notes || '',
-  assigned_airman: d.assigned_airman || '',
-  opened_at: d.opened_at || '',
-  closed_at: d.closed_at || '',
-  open_time: d.opened_at ? new Date(d.opened_at).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : '—',
-  close_time: d.closed_at ? new Date(d.closed_at).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : '—',
-  elapsed: d.closed_timer || '—'
-}));
-
-const busHistory = buses.map(b => ({
-  bus_id: b.bus_id || '',
-  bus_type: b.bus_type || 'airport',
-  originating_destination: b.originating_destination || b.destination || '',
-  destination: b.destination || '',
-  departed_at: b.created_at || '',
-  arrived_at: b.arrived_at || '',
-  otw_count: Number(b.otw_count || 0),
-  female_count: Number(b.female_count || 0),
-  nat_count: Number(b.nat_count || 0),
-  status: b.status || ''
-}));
-
-const femaleTotal = buses.reduce((s, b) => s + Number(b.female_count || 0), 0);
-const natTotal = buses.reduce((s, b) => s + Number(b.nat_count || 0), 0);
-const loadedTotal = dorms.reduce((s, d) => s + Number(d.current_load || 0), 0);
-const expectedTotal = dorms.reduce((s, d) => s + Number(d.max_load || 0), 0);
-
-if (allData.length < 999) {
-  await window.dataSdk.create({
-    type: 'archive',
-    week_group: wg,
-    archived_at: new Date().toISOString(),
-    dorm_count: dorms.length,
-    bus_count: buses.length,
-    total_arrived: totalArrived,
-    total_loaded: loadedTotal,
-    total_expected: expectedTotal,
-    female_total: femaleTotal,
-    nat_total: natTotal,
-    dorm_data: JSON.stringify(dormHistory),
-    bus_data: JSON.stringify(busHistory)
-  });
-}
-        for (const rec of [...dorms, ...buses, ...soundEvents]) await window.dataSdk.delete(rec);
-        const lastAirport = allData.find(d => d.type === 'config' && d.key === 'last_airport');
-        if (lastAirport) await window.dataSdk.update({...lastAirport, value: ''});
-        const activeWgConfig = allData.find(d => d.type === 'config' && d.key === 'week_group');
-        if (activeWgConfig) await window.dataSdk.update({...activeWgConfig, value: ''});
-        document.getElementById('wg-batch-input').value = '';
-        batchRows = Array.from({length: 25}, (_, i) => ({rowIndex: i, sdq:'', sec:'', inter_sec:'', dorm_name:'', sex:'male', band:false, load:''}));
-        initBatchGrid(); updateTotalLoadCalc();
-      });
+      // Fail closed if the canonical archive controller is unavailable. An
+      // archive-then-delete browser loop can irreversibly strand a Week Group.
+      const message = 'Verified closeout is unavailable. Reload GATE; no records were changed.';
+      const el = document.getElementById('closeout-safety-msg');
+      if (el) el.textContent = message;
+      else window.alert(message);
     }
 
     function showMsg(elId, msg, isErr) {

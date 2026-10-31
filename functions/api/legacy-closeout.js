@@ -64,7 +64,7 @@ export async function onRequestPost({request,env,data}){
       return send(await checkCompleted(env,requestId));
     }
 
-    const active=await env.DB.prepare("SELECT id,data FROM records WHERE type='config' AND json_extract(data,'$.key')='week_group' LIMIT 2").all();
+    const active=await env.DB.prepare("SELECT id,data,updated_at FROM records WHERE type='config' AND json_extract(data,'$.key')='week_group' LIMIT 2").all();
     if(active.results?.length!==1||String(JSON.parse(active.results[0].data).value||'').trim().toUpperCase()!==weekGroup)
       return refuse('lifecycle_conflict','The active Week Group does not match. No records were changed.');
     const activeCycle=await env.DB.prepare("SELECT cycle_id FROM gate_week_groups WHERE state<>'closed' LIMIT 1").first();
@@ -74,26 +74,52 @@ export async function onRequestPost({request,env,data}){
     const rows=source.results||[];
     const dorms=rows.filter(row=>row.type==='dorm').map(parseOperationalRow);
     const buses=rows.filter(row=>row.type==='bus').map(parseOperationalRow);
-    if(!dorms.length&&!buses.length)return refuse('incomplete_closeout','No live dorm or bus records remain. Check archive history before retrying.');
-
     // Older client-side closeouts may have saved an archive and only deleted
     // some records. Never create a second archive over that partial state.
-    const oldest=rows.map(row=>row.created_at).sort()[0]||nowIso();
-    const existing=await env.DB.prepare("SELECT id FROM records WHERE type='archive' AND week_group=? AND (julianday(json_extract(data,'$.archived_at'))>=julianday(?) OR julianday(json_extract(data,'$.archived_at'))>=julianday('now','-1 day')) LIMIT 1").bind(weekGroup,oldest).first();
-    if(existing){
+    // Labels can be reused in independently initialized cycles. A historical
+    // archive is unrelated ONLY when the current active configuration and a
+    // current dorm both prove a fresh initialization after that archive.
+    const archiveList=await env.DB.prepare("SELECT id,data,created_at FROM records WHERE type='archive' AND week_group=?").bind(weekGroup).all();
+    const configured=JSON.parse(active.results[0].data);
+    const initializationId=String(configured.initialization_request_id||'');
+    const archives=(archiveList.results||[]).filter(row=>{
+      let archiveTime;
+      try { archiveTime=Date.parse(JSON.parse(row.data).archived_at||row.created_at); }
+      catch { return true; }
+      if(!Number.isFinite(archiveTime)) return true;
+      const fresh=initializationId && Date.parse(active.results[0].updated_at)>archiveTime &&
+        dorms.some(dorm=>dorm.initialization_request_id===initializationId &&
+          Number.isFinite(Date.parse(dorm.created_at)) && Date.parse(dorm.created_at)>archiveTime);
+      return !fresh;
+    });
+    if(archives.length){
       // An older closeout may have persisted the archive and then stopped partway
       // through browser-driven cleanup. Only resume when the archive contains a
       // lossless, immutable snapshot proving that EVERY remaining row belongs to it.
       // Reporting-only archives cannot establish that proof.
-      const archives=await env.DB.prepare("SELECT id,data FROM records WHERE type='archive' AND week_group=? AND (julianday(json_extract(data,'$.archived_at'))>=julianday(?) OR julianday(json_extract(data,'$.archived_at'))>=julianday('now','-1 day')) LIMIT 2").bind(weekGroup,oldest).all();
-      if(archives.results?.length===1){
-        const candidate=archives.results[0];
-        let saved;
+      if(archives.length===1){
+        const candidate=archives[0];
+        let saved, archived;
         try{
-          const parsed=JSON.parse(candidate.data);
-          saved=JSON.parse(parsed.source_records_json);
+          archived=JSON.parse(candidate.data);
+          saved=JSON.parse(archived.source_records_json);
         }catch(_){}
-        if(Array.isArray(saved) && saved.length>0 && saved.every(item=>item && typeof item.id==='string' && typeof item.data==='string')){
+        // Only a complete, validated source snapshot can authorize recovery.
+        // Reporting-only archives and changed/newer records fail closed.
+        const eligible=archived?.source_snapshot_format==='lossless-record-rows-v1' &&
+          Array.isArray(saved) && saved.length>0 &&
+          Number.isSafeInteger(archived.source_record_count) &&
+          archived.source_record_count===saved.length &&
+          archived.dorm_count===saved.filter(item=>item?.type==='dorm').length &&
+          archived.bus_count===saved.filter(item=>item?.type==='bus').length &&
+          Number.isFinite(Date.parse(archived.archived_at)) &&
+          saved.every(item=>item && typeof item.id==='string' && typeof item.data==='string' &&
+            ['dorm','bus','sound_event'].includes(item.type) && item.week_group===weekGroup &&
+            typeof item.created_at==='string' && typeof item.updated_at==='string' &&
+            Number.isFinite(Date.parse(item.created_at)) && Number.isFinite(Date.parse(item.updated_at)) &&
+            Date.parse(item.created_at)<=Date.parse(archived.archived_at) &&
+            Date.parse(item.updated_at)<=Date.parse(archived.archived_at));
+        if(eligible){
           const byId=new Map(saved.map(item=>[item.id,item]));
           const matches=byId.size===saved.length && rows.every(row=>{
             const original=byId.get(row.id);
@@ -136,6 +162,8 @@ export async function onRequestPost({request,env,data}){
       return refuse('existing_archive',`An archive already exists. ${dorms.length} dorm, ${buses.length} bus, and ${sounds} sound-event records remain. Automatic recovery requires exact archived source-record proof; records were not changed.`);
     }
 
+    if(!dorms.length&&!buses.length)return refuse('incomplete_closeout','No live dorm or bus records remain. Check archive history before retrying.');
+
     const fields=['receiving_day_one_start','receiving_day_one_end','receiving_day_two_start','receiving_day_two_end'];
     const windows={};
     for(const field of fields){
@@ -168,8 +196,8 @@ export async function onRequestPost({request,env,data}){
           AND json_extract(data,'$.key')='week_group' AND json_extract(data,'$.value')=?)
         AND NOT EXISTS(SELECT 1 FROM gate_week_groups WHERE state<>'closed')
         AND NOT EXISTS(SELECT 1 FROM records WHERE type='archive' AND week_group=?
-          AND (julianday(json_extract(data,'$.archived_at'))>=julianday(?) OR julianday(json_extract(data,'$.archived_at'))>=julianday('now','-1 day')))`,
-        weekGroup,rows.length,snapshot,originalConfig.id,weekGroup,weekGroup,oldest),
+          AND (julianday(json_extract(data,'$.archived_at'))>=julianday(?) OR json_extract(data,'$.archived_at') IS NULL))`,
+        weekGroup,rows.length,snapshot,originalConfig.id,weekGroup,weekGroup,originalConfig.updated_at),
       env.DB.prepare("INSERT INTO records(id,type,week_group,data,created_at,updated_at) VALUES(?,'archive',?,?,?,?)")
         .bind(archiveId,weekGroup,archiveJson,now,now),
       assertion(env,"(SELECT data FROM records WHERE id=? AND type='archive')=? AND (SELECT json_extract(data,'$.source_records_json') FROM records WHERE id=?)=?",

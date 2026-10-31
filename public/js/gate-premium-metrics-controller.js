@@ -22,7 +22,7 @@
   }
 
   function getActiveWeekGroupSafe() {
-    try { return typeof getActiveWG === 'function' ? getActiveWG() : ''; } catch (_) { return ''; }
+    try { return typeof getBoardWG === 'function' ? getBoardWG() : (typeof getActiveWG === 'function' ? getActiveWG() : ''); } catch (_) { return ''; }
   }
 
   function getLocalTimeSafe() {
@@ -44,7 +44,7 @@
     const totalArrived = accounting
       ? accounting.arrived
       : arrivedBuses.reduce((sum, bus) => sum + (Number(bus.otw_count) || 0), 0);
-    const lastAirport = records.find(record => record?.type === 'config' && record.key === 'last_airport')?.value || '—';
+    const lastAirport = wg ? (records.find(record => record?.type === 'config' && record.key === 'last_airport')?.value || '—') : '—';
 
     return {
       arrived: totalArrived,

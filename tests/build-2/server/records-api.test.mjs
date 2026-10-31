@@ -38,6 +38,10 @@ function createD1(seed = []) {
       },
       async all() {
         if (!normalized.startsWith('SELECT')) throw new Error(`Unsupported all SQL: ${normalized}`);
+        if (normalized.includes("WHERE type='archive' AND week_group=?"))
+          return {results:clone(rows.filter(item=>item.type==='archive' && item.week_group===bound[0]))};
+        if (normalized.includes("WHERE type='config' AND json_extract(data,'$.key')='week_group'"))
+          return {results:clone(rows.filter(item=>item.type==='config' && JSON.parse(item.data).key==='week_group'))};
         return { results: clone(rows) };
       },
       async first() {

@@ -522,17 +522,16 @@ export async function onRequestPut({ request, env, data }) {
     );
 
     const result = await statement.run();
-    if (guard && changedRows(result) !== 1) {
-      return jsonResponse({isOk:false,code:'operational_invariant',
-        error:'Concurrent operational assignments changed the available arrivals. Refresh and retry the assignment.'},409);
-    }
-    if (expected.supplied && changedRows(result) !== 1) {
+    if (changedRows(result) !== 1 && (expected.supplied || guard)) {
       const currentRow = await getRecordRow(env, id);
       const latestVersion = recordVersionOf(parseStoredRecord(currentRow) || {});
-      return jsonResponse(conflictResponseBody({
-        expectedRecordVersion: expected.value,
-        currentRecordVersion: latestVersion
-      }), 409);
+      if (expected.supplied && latestVersion !== currentVersion)
+        return jsonResponse(conflictResponseBody({
+          expectedRecordVersion: expected.value,
+          currentRecordVersion: latestVersion
+        }), 409);
+      return jsonResponse({isOk:false,code:'operational_invariant',
+        error:'Operational counts changed before the write committed. Refresh and retry the assignment.'},409);
     }
 
     return jsonResponse({ isOk: true, data: storedRecord }, 200, { ETag: `"${storedRecord.record_version}"` });

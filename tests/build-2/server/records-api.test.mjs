@@ -44,6 +44,9 @@ function createD1(seed = []) {
         // Pre-migration D1 contains no Admin disposition table. Model that
         // catalog lookup without changing existing record fixture semantics.
         if (normalized.includes('FROM sqlite_master')) return null;
+        if (normalized.includes("WHERE type='archive' AND week_group=?")) {
+          return clone(rows.find(item=>item.type==='archive' && item.week_group===bound[0])||null);
+        }
         if (!normalized.startsWith('SELECT') || !normalized.includes('WHERE id = ?')) {
           throw new Error(`Unsupported first SQL: ${normalized}`);
         }
@@ -436,4 +439,22 @@ test('schema and migration enforce audit append-only triggers', async () => {
     assert.match(source, /prevent_audit_event_delete/);
     assert.match(source, /RAISE\(ABORT, 'audit events are append-only'\)/);
   }
+});
+
+test('generic records API rejects creation, update and deletion for an already archived Week Group',async()=>{
+  const db=createD1([
+    {__backendId:'archived-week',type:'archive',week_group:'WG',record_version:1},
+    {__backendId:'bus-1',type:'bus',week_group:'WG',status:'arrived',otw_count:3,record_version:1},
+    {__backendId:'sound-1',type:'sound_event',week_group:'WG',record_version:1}
+  ]);
+  const env={DB:db},data=roleData('instructor');
+  const create=await onRequestPost({env,data,request:request('POST',{type:'bus',week_group:'WG',otw_count:2,status:'active'})});
+  const update=await onRequestPut({env,data,request:request('PUT',{__backendId:'bus-1',week_group:'WG',status:'active'},{'If-Match':'1'})});
+  const remove=await onRequestDelete({env,data,request:request('DELETE',{__backendId:'sound-1'})});
+  for(const result of [create,update,remove]){
+    assert.equal(result.status,409);
+    assert.equal((await result.json()).code,'week_group_archived');
+  }
+  assert.equal(db.rows.length,3);
+  assert.equal(JSON.parse(db.rows.find(item=>item.id==='bus-1').data).status,'arrived');
 });

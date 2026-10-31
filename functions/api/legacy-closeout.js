@@ -64,7 +64,7 @@ export async function onRequestPost({request,env,data}){
       return send(await checkCompleted(env,requestId));
     }
 
-    const active=await env.DB.prepare("SELECT id,data FROM records WHERE type='config' AND json_extract(data,'$.key')='week_group' LIMIT 2").all();
+    const active=await env.DB.prepare("SELECT id,data,updated_at FROM records WHERE type='config' AND json_extract(data,'$.key')='week_group' LIMIT 2").all();
     if(active.results?.length!==1||String(JSON.parse(active.results[0].data).value||'').trim().toUpperCase()!==weekGroup)
       return refuse('lifecycle_conflict','The active Week Group does not match. No records were changed.');
     const activeCycle=await env.DB.prepare("SELECT cycle_id FROM gate_week_groups WHERE state<>'closed' LIMIT 1").first();
@@ -76,17 +76,29 @@ export async function onRequestPost({request,env,data}){
     const buses=rows.filter(row=>row.type==='bus').map(parseOperationalRow);
     // Older client-side closeouts may have saved an archive and only deleted
     // some records. Never create a second archive over that partial state.
-    // An older archive with this label is still a potential partial closeout,
-    // regardless of the timestamps of surviving operational records.
-    const existing=await env.DB.prepare("SELECT id FROM records WHERE type='archive' AND week_group=? LIMIT 1").bind(weekGroup).first();
-    if(existing){
+    // Labels can be reused in independently initialized cycles. A historical
+    // archive is unrelated ONLY when the current active configuration and a
+    // current dorm both prove a fresh initialization after that archive.
+    const archiveList=await env.DB.prepare("SELECT id,data,created_at FROM records WHERE type='archive' AND week_group=?").bind(weekGroup).all();
+    const configured=JSON.parse(active.results[0].data);
+    const initializationId=String(configured.initialization_request_id||'');
+    const archives=(archiveList.results||[]).filter(row=>{
+      let archiveTime;
+      try { archiveTime=Date.parse(JSON.parse(row.data).archived_at||row.created_at); }
+      catch { return true; }
+      if(!Number.isFinite(archiveTime)) return true;
+      const fresh=initializationId && Date.parse(active.results[0].updated_at)>archiveTime &&
+        dorms.some(dorm=>dorm.initialization_request_id===initializationId &&
+          Number.isFinite(Date.parse(dorm.created_at)) && Date.parse(dorm.created_at)>archiveTime);
+      return !fresh;
+    });
+    if(archives.length){
       // An older closeout may have persisted the archive and then stopped partway
       // through browser-driven cleanup. Only resume when the archive contains a
       // lossless, immutable snapshot proving that EVERY remaining row belongs to it.
       // Reporting-only archives cannot establish that proof.
-      const archives=await env.DB.prepare("SELECT id,data FROM records WHERE type='archive' AND week_group=? LIMIT 2").bind(weekGroup).all();
-      if(archives.results?.length===1){
-        const candidate=archives.results[0];
+      if(archives.length===1){
+        const candidate=archives[0];
         let saved, archived;
         try{
           archived=JSON.parse(candidate.data);
@@ -183,8 +195,9 @@ export async function onRequestPost({request,env,data}){
         AND EXISTS(SELECT 1 FROM records WHERE id=? AND type='config'
           AND json_extract(data,'$.key')='week_group' AND json_extract(data,'$.value')=?)
         AND NOT EXISTS(SELECT 1 FROM gate_week_groups WHERE state<>'closed')
-        AND NOT EXISTS(SELECT 1 FROM records WHERE type='archive' AND week_group=?)`,
-        weekGroup,rows.length,snapshot,originalConfig.id,weekGroup,weekGroup),
+        AND NOT EXISTS(SELECT 1 FROM records WHERE type='archive' AND week_group=?
+          AND (julianday(json_extract(data,'$.archived_at'))>=julianday(?) OR json_extract(data,'$.archived_at') IS NULL))`,
+        weekGroup,rows.length,snapshot,originalConfig.id,weekGroup,weekGroup,originalConfig.updated_at),
       env.DB.prepare("INSERT INTO records(id,type,week_group,data,created_at,updated_at) VALUES(?,'archive',?,?,?,?)")
         .bind(archiveId,weekGroup,archiveJson,now,now),
       assertion(env,"(SELECT data FROM records WHERE id=? AND type='archive')=? AND (SELECT json_extract(data,'$.source_records_json') FROM records WHERE id=?)=?",

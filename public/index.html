@@ -972,6 +972,43 @@ renderAll();
     function getConfig(key) { const r = allData.find(d => d.type === 'config' && d.key === key); return r ? r.value : ''; }
     function getActiveWG() { return getConfig('week_group') || ''; }
 
+    // Render-only protection for historical closeouts that were archived before
+    // the legacy browser completed clearing live records. Do not falsify D1
+    // configuration or suppress the recovery-required condition.
+    function getBoardWeekState() {
+      const weekGroup = getActiveWG();
+      if (!weekGroup) return { weekGroup:'', recoveryRequired:false, archivedWeekGroup:'' };
+      const dorms = allData.filter(r => r?.type === 'dorm' && r.week_group === weekGroup);
+      if (dorms.length) return { weekGroup, recoveryRequired:false, archivedWeekGroup:'' };
+      const config = allData.find(r => r?.type === 'config' && r.key === 'week_group');
+      const configTime = Date.parse(config?.updated_at || '') || 0;
+      const archive = allData.filter(r => r?.type === 'archive' && r.week_group === weekGroup)
+        .find(r => Number.isFinite(Date.parse(r.archived_at || '')) &&
+          Date.parse(r.archived_at) >= configTime);
+      if (!archive) return { weekGroup, recoveryRequired:false, archivedWeekGroup:'' };
+      // The report exists and all dorms were cleared; surviving buses/events
+      // must not be presented as current arrival operations.
+      return { weekGroup:'', recoveryRequired:true, archivedWeekGroup:weekGroup };
+    }
+    function getBoardWG() { return getBoardWeekState().weekGroup; }
+    function updateCloseoutRecoveryNotice(state) {
+      const board = document.getElementById('page-board');
+      if (!board) return;
+      let banner = document.getElementById('gate-closeout-recovery-notice');
+      if (!state.recoveryRequired) { banner?.remove(); return; }
+      if (!banner) {
+        banner = document.createElement('div');
+        banner.id = 'gate-closeout-recovery-notice';
+        banner.setAttribute('role', 'alert');
+        banner.style.cssText = 'padding:12px 18px;border:1px solid #d6a356;border-radius:10px;margin:12px 18px;color:#f5cf8a;background:#322719;font-weight:650;';
+        const header = board.querySelector('.board-header');
+        if (header) header.insertAdjacentElement('afterend', banner);
+        else board.prepend(banner);
+      }
+      banner.textContent = 'CLOSEOUT REQUIRES RECONCILIATION — Archived Week Group ' +
+        state.archivedWeekGroup + ' has residual operational records. Historical totals are preserved; do not initialize a new group until resolved.';
+    }
+
  function getLocalTime24() {
   const now = new Date();
   const hours = String(now.getHours()).padStart(2, '0');
@@ -1197,8 +1234,10 @@ function getElapsedTimer(openedAt) {
 }
    
     function renderAll() {
-      const wg = getActiveWG();
-      document.getElementById('week-group-display').textContent = wg || 'No WG';
+      const boardState = getBoardWeekState();
+      const wg = boardState.weekGroup;
+      document.getElementById('week-group-display').textContent = boardState.recoveryRequired ? 'CLOSEOUT PENDING' : (wg || 'No WG');
+      updateCloseoutRecoveryNotice(boardState);
       const dorms = getRecords('dorm').filter(d => d.week_group === wg);
       const buses = getRecords('bus').filter(b => b.week_group === wg);
       const totalExpected = dorms.reduce((s, d) => s + (Number(d.max_load) || 0), 0);

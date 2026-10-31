@@ -483,7 +483,7 @@
       // failure instead of presenting an unhelpful JSON parsing exception.
       const contentType = response.headers?.get?.('content-type') || '';
       let result;
-      if (contentType && !/\\bapplication\\/(?:[a-z0-9.+-]*\\+)?json\\b/i.test(contentType)) {
+      if (contentType && !/\bapplication\/(?:[a-z0-9.+-]*\+)?json\b/i.test(contentType)) {
         throw new Error('Closeout response was not JSON (HTTP ' + (response.status || 'unknown') + '). Verify the archive before retrying.');
       }
       try { result = await response.json(); }
@@ -712,7 +712,7 @@
       credentials: 'same-origin'
     });
     const contentType = response.headers?.get?.('content-type') || '';
-    if (contentType && !/\\bapplication\\/(?:[a-z0-9.+-]*\\+)?json\\b/i.test(contentType))
+    if (contentType && !/\bapplication\/(?:[a-z0-9.+-]*\+)?json\b/i.test(contentType))
       throw new Error('Archive service returned a non-JSON response (HTTP ' + (response.status || 'unknown') + ').');
     let payload;
     try { payload = await response.json(); }

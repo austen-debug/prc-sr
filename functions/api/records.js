@@ -105,8 +105,36 @@ async function archivedWeekGroup(env, type, weekGroup) {
   if (!['bus','dorm','sound_event'].includes(String(type || ''))) return false;
   const label=String(weekGroup || '').trim().toUpperCase();
   if (!label) return false;
-  const archived=await env.DB.prepare("SELECT id FROM records WHERE type='archive' AND week_group=? LIMIT 1").bind(label).first();
-  return Boolean(archived);
+  const archiveRows=await env.DB.prepare("SELECT data,created_at FROM records WHERE type='archive' AND week_group=?").bind(label).all();
+  const archives=archiveRows.results||[];
+  if (!archives.length) return false;
+
+  // Historical Week Group labels can legitimately be reused. Only permit
+  // writes on a demonstrably NEW initialization after all prior archives.
+  const lastArchive=Math.max(...archives.map(row=>{
+    try { return Date.parse(JSON.parse(row.data).archived_at || row.created_at); }
+    catch { return NaN; }
+  }));
+  if (!Number.isFinite(lastArchive)) return true;
+  const configs=await env.DB.prepare("SELECT data,updated_at FROM records WHERE type='config' AND json_extract(data,'$.key')='week_group' LIMIT 2").all();
+  if (configs.results?.length!==1) return true;
+  const config=configs.results[0];
+  let value, initializationId;
+  try {
+    const parsed=JSON.parse(config.data);
+    value=String(parsed.value||'').trim().toUpperCase();
+    initializationId=String(parsed.initialization_request_id||'');
+  } catch { return true; }
+  if (value!==label) return true;
+
+  // Transactional registration has a distinct cycle identity.
+  const cycle=await env.DB.prepare("SELECT activated_at FROM gate_week_groups WHERE week_group=? AND state='active' LIMIT 1").bind(label).first();
+  if (cycle && Date.parse(cycle.activated_at)>lastArchive) return false;
+
+  if (!initializationId || Date.parse(config.updated_at)<=lastArchive) return true;
+  const newDorm=await env.DB.prepare("SELECT id FROM records WHERE type='dorm' AND week_group=? AND json_extract(data,'$.initialization_request_id')=? AND julianday(created_at)>julianday(?) LIMIT 1")
+    .bind(label,initializationId,new Date(lastArchive).toISOString()).first();
+  return !newDorm;
 }
 function archivedRecordConflict() {
   return jsonResponse({isOk:false,code:'week_group_archived',

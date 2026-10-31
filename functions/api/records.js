@@ -209,6 +209,21 @@ function normalizeDormUpdate(incomingRecord, existingRecord, now) {
 }
 
 
+function validateBusCounts(record) {
+  const fields = ['otw_count','female_count','nat_count','space_force_count'];
+  for (const field of fields) {
+    if (record[field] === undefined || record[field] === null || record[field] === '') continue;
+    const amount = Number(record[field]);
+    if (!Number.isSafeInteger(amount) || amount < 0)
+      throw operationalInvariant('Bus ' + field + ' must be a non-negative whole number.', 400);
+  }
+  const total = Number(record.otw_count ?? 0);
+  for (const field of ['female_count','nat_count','space_force_count']) {
+    if (Number(record[field] ?? 0) > total)
+      throw operationalInvariant('Bus ' + field + ' cannot exceed total passengers.', 400);
+  }
+}
+
 function operationalCount(value) {
   const parsed = Number(value);
   if (!Number.isFinite(parsed)) return 0;
@@ -410,9 +425,10 @@ export async function onRequestPost({ request, env, data }) {
       }
     }
 
-    if (type === 'dorm') {
+    if (type === 'dorm' || type === 'bus') {
       try {
-        validateDormLoadShape(record);
+        if (type === 'dorm') validateDormLoadShape(record);
+        else validateBusCounts(record);
       } catch (error) {
         return jsonResponse({ isOk: false, code: error.code || 'validation', error: error.message }, error.status || 400);
       }
@@ -481,6 +497,7 @@ export async function onRequestPut({ request, env, data }) {
     const now = new Date().toISOString();
     const incoming = patch ? { ...existingRecord, ...patch.changes } : record;
     const normalized = normalizeDormUpdate(incoming, existingRecord, now);
+    if (existingRow.type === 'bus') validateBusCounts(normalized);
     await enforceOperationalAccountingMutation(env, existingRecord, normalized);
     const storedRecord = stampUpdatedRecord(existingRecord, {
       ...normalized,

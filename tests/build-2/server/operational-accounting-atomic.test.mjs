@@ -68,3 +68,19 @@ test('malformed bus totals cannot enter or corrupt authoritative arrival account
   assert.equal(response.status,400);
   assert.equal(db.prepare("SELECT COUNT(*) AS n FROM records WHERE type='bus'").get().n,1);
 });
+
+test('deleting arrived bus cannot strand an already assigned dorm',async()=>{
+  const {db,env}=setup();
+  const record=JSON.parse(db.prepare("SELECT data FROM records WHERE id='dorm-a'").get().data);
+  record.current_load=25;
+  db.prepare("UPDATE records SET data=? WHERE id='dorm-a'").run(JSON.stringify(record));
+  const {onRequestDelete}=await import('../../../functions/api/records.js');
+  const response=await onRequestDelete({env,data:{session:{role:'instructor'}},
+    request:new Request('https://gate.example/api/records',{
+      method:'DELETE',headers:{'Content-Type':'application/json','If-Match':'1'},
+      body:JSON.stringify({__backendId:'bus'})
+    })
+  });
+  assert.equal(response.status,409);
+  assert.equal(db.prepare("SELECT COUNT(*) AS n FROM records WHERE id='bus'").get().n,1);
+});

@@ -734,14 +734,18 @@ async function refresh(force = false) {
       async init(handler) {
         handlerRef = handler;
 
-        await refresh(true);
-
+        // Start recovery polling even if the first read fails. Initial
+        // availability is not a prerequisite for reconnecting to D1.
         setInterval(() => {
           refresh().catch(err => {
             console.error('PRC-SR refresh failed:', err);
           });
         }, 3000);
-
+        try {
+          await refresh(true);
+        } catch (err) {
+          console.warn('Initial GATE records read failed; automatic retry remains active:', err);
+        }
         return { isOk: true };
       },
 
@@ -758,7 +762,10 @@ async function refresh(force = false) {
         const result = await response.json();
 
         if (result.isOk) {
-          await refresh(true);
+          // The write acknowledgment is authoritative. Never report an already
+          // committed bus creation as failed because the follow-up read failed.
+          try { await refresh(true); }
+          catch (error) { console.warn('GATE record creation committed; refresh will retry:', error); }
         }
 
         return result;

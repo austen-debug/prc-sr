@@ -214,3 +214,18 @@ test('Tampered source-count or format cannot authorize recovery',async()=>{
     assert.equal(count(f.db,'archive','WG26053'),1);
   }
 });
+
+test('A separately initialized reused Week Group label may close without modifying prior archive',async()=>{
+  const f=setup();
+  const prior=JSON.stringify({type:'archive',week_group:'WG26053',archived_at:'2026-10-20T10:00:00.000Z',archive_schema_version:'gate-archive-schema-v3-canonical'});
+  f.db.prepare("INSERT INTO records VALUES(?,?,?,?,?,?)").run('prior-cycle-archive','archive','WG26053',prior,'2026-10-20T10:00:00.000Z','2026-10-20T10:00:00.000Z');
+  const req='5a0e48e0-0123-4123-8123-012345678901';
+  const config=JSON.parse(f.db.prepare("SELECT data FROM records WHERE id='active-wg'").get().data);
+  f.db.prepare("UPDATE records SET data=? WHERE id='active-wg'").run(JSON.stringify({...config,initialization_request_id:req}));
+  const dorm=JSON.parse(f.db.prepare("SELECT data FROM records WHERE id='dorm-one'").get().data);
+  f.db.prepare("UPDATE records SET data=? WHERE id='dorm-one'").run(JSON.stringify({...dorm,initialization_request_id:req,created_at:f.stamp}));
+  const response=await f.close();
+  assert.equal(response.status,200,await response.clone().text());
+  assert.equal(count(f.db,'archive','WG26053'),2);
+  assert.equal(f.db.prepare("SELECT data FROM records WHERE id='prior-cycle-archive'").get().data,prior);
+});

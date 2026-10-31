@@ -217,9 +217,9 @@ async function initializeLegacy(env,payload,actor) {
   const schema=await env.DB.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='gate_week_groups'").first();
   if (schema && await activeCycle(env))
     return conflict('A transactional Week Group cycle is registered; reconcile lifecycle state before using legacy initialization.');
-  const activeRows=await env.DB.prepare("SELECT COUNT(*) AS n FROM records WHERE type IN ('bus','dorm')").first();
+  const activeRows=await env.DB.prepare("SELECT COUNT(*) AS n FROM records WHERE type IN ('bus','dorm','sound_event')").first();
   if (Number(activeRows?.n)!==0)
-    return conflict('Unarchived bus or dorm records exist; initialization did not change them.');
+    return conflict('Unarchived bus, dorm, or sound-event records exist; initialization did not change them.');
 
   const draft=normalizeDraft({
     proposed_week_group:payload.week_group,
@@ -232,7 +232,7 @@ async function initializeLegacy(env,payload,actor) {
     ...row,data:JSON.stringify({...JSON.parse(row.data),initialization_request_id:requestId})
   }));
   const statements=[
-    failUnless(env,"NOT EXISTS(SELECT 1 FROM records WHERE type IN ('bus','dorm')) AND (SELECT COUNT(*) FROM records WHERE type='config' AND json_extract(data,'$.key')='week_group')=? AND NOT EXISTS(SELECT 1 FROM records WHERE type='config' AND json_extract(data,'$.key')='week_group' AND COALESCE(json_extract(data,'$.value'),'')<>'')",config?1:0),
+    failUnless(env,"NOT EXISTS(SELECT 1 FROM records WHERE type IN ('bus','dorm','sound_event')) AND (SELECT COUNT(*) FROM records WHERE type='config' AND json_extract(data,'$.key')='week_group')=? AND NOT EXISTS(SELECT 1 FROM records WHERE type='config' AND json_extract(data,'$.key')='week_group' AND COALESCE(json_extract(data,'$.value'),'')<>'')",config?1:0),
     ...(schema?[failUnless(env,"NOT EXISTS(SELECT 1 FROM gate_week_groups WHERE state<>'closed')")]:[]),
     env.DB.prepare("INSERT INTO records(id,type,week_group,data,created_at,updated_at) SELECT json_extract(value,'$.id'),json_extract(value,'$.type'),json_extract(value,'$.week_group'),json_extract(value,'$.data'),json_extract(value,'$.created_at'),json_extract(value,'$.updated_at') FROM json_each(?)")
       .bind(JSON.stringify(dormRows)),
@@ -261,15 +261,15 @@ async function initialize(env,payload,actor) {
   if (!(await mirrorStatus(env)).ready) return unavailable('Migration parity or triggers are incomplete.');
   const config=await configRecord(env);
   if (configValue(config)||await activeCycle(env)) return conflict('Close out the active Week Group first.');
-  const existing=await env.DB.prepare("SELECT COUNT(*) AS n FROM records WHERE type IN ('bus','dorm')").first();
-  if (Number(existing.n)>0) return conflict('Unarchived buses or dorms remain.');
+  const existing=await env.DB.prepare("SELECT COUNT(*) AS n FROM records WHERE type IN ('bus','dorm','sound_event')").first();
+  if (Number(existing.n)>0) return conflict('Unarchived buses, dorms, or sound events remain.');
   const saved=await draftRow(env,id);
   if (!saved||saved.status!=='draft'||saved.revision!==revision) return conflict('Saved Input draft changed; reload before initializing.');
   const draft=normalizeDraft({proposed_week_group:saved.proposed_week_group,rows:JSON.parse(saved.rows_json),receiving_windows:JSON.parse(saved.receiving_windows_json),import_review:JSON.parse(saved.import_review_json)});
   const now=nowIso(), cycleId=uuid(), operation=uuid(), audit=uuid();
   const dormRows=buildDormRows(draft,cycleId,now,uuid,actor);
   const statements=[
-    failUnless(env,"NOT EXISTS(SELECT 1 FROM records WHERE type IN ('bus','dorm')) AND NOT EXISTS(SELECT 1 FROM records WHERE type='config' AND json_extract(data,'$.key')='week_group' AND COALESCE(json_extract(data,'$.value'),'')<>'') AND NOT EXISTS(SELECT 1 FROM gate_week_groups WHERE state<>'closed')"),
+    failUnless(env,"NOT EXISTS(SELECT 1 FROM records WHERE type IN ('bus','dorm','sound_event')) AND NOT EXISTS(SELECT 1 FROM records WHERE type='config' AND json_extract(data,'$.key')='week_group' AND COALESCE(json_extract(data,'$.value'),'')<>'') AND NOT EXISTS(SELECT 1 FROM gate_week_groups WHERE state<>'closed')"),
     env.DB.prepare("INSERT INTO gate_week_groups(cycle_id,week_group,state,source_draft_id,receiving_windows_json,revision,created_at,updated_at,activated_at) VALUES(?,?,'active',?,?,1,?,?,?)")
       .bind(cycleId,draft.proposed_week_group,id,JSON.stringify(draft.receiving_windows),now,now,now),
     env.DB.prepare("UPDATE gate_input_drafts SET status='consumed',consumed_at=?,revision=revision+1,updated_at=? WHERE draft_id=? AND revision=? AND status='draft'").bind(now,now,id,revision),

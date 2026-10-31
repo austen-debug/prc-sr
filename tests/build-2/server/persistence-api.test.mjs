@@ -353,3 +353,28 @@ test('cutover preflight detects a valid mirror with lifecycle/config drift befor
   assert.equal(f.native.prepare("SELECT COUNT(*) AS n FROM records WHERE type='dorm'").get().n,before);
   assert.equal(f.native.prepare("SELECT COUNT(*) AS n FROM records WHERE type='archive'").get().n,0);
 });
+
+test('legacy initialization refuses an orphan sound event without writing dorm or config records',async()=>{
+  const f=fixture();
+  f.env.GATE_PERSISTENCE_ENABLED='false';
+  f.env.GATE_PERSISTENCE_CUTOVER_READY='false';
+  addRecord(f.native,'orphan-sound','sound_event','WG27003',{event_type:'overtime'});
+  const outcome=await f.post({
+    action:'initialize_legacy',request_id:'5a0e48e0-0123-4123-8123-012345678901',
+    week_group:'WG27004',rows:draft.rows,receiving_windows:draft.receiving_windows
+  });
+  assert.equal(outcome.status,409,JSON.stringify(outcome.body));
+  assert.equal(f.native.prepare("SELECT COUNT(*) AS n FROM records WHERE type='dorm'").get().n,0);
+  assert.equal(f.native.prepare("SELECT COUNT(*) AS n FROM records WHERE type='sound_event'").get().n,1);
+});
+
+test('transactional initialization refuses orphaned sound-event records',async()=>{
+  const f=fixture();
+  addRecord(f.native,'orphan-sound','sound_event','WG27003',{event_type:'overtime'});
+  const saved=await f.post(draft);
+  assert.equal(saved.status,201,JSON.stringify(saved.body));
+  const attempted=await f.post({action:'initialize',draft_id:saved.body.draft.draft_id,revision:saved.body.draft.revision});
+  assert.equal(attempted.status,409,JSON.stringify(attempted.body));
+  assert.equal(f.native.prepare("SELECT COUNT(*) AS n FROM records WHERE type='sound_event'").get().n,1);
+  assert.equal(f.native.prepare("SELECT COUNT(*) AS n FROM records WHERE type='dorm'").get().n,0);
+});

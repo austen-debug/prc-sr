@@ -28,8 +28,18 @@
     const response=await fetch(read?`${ENDPOINT}?mode=${action}`:ENDPOINT,read
       ?{credentials:'same-origin',cache:'no-store',headers:{Accept:'application/json'}}
       :{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json',Accept:'application/json'},body:JSON.stringify({action,...body})});
-    const payload=await response.json();
-    if(!response.ok||!payload.isOk){
+    const contentType=response.headers?.get?.('content-type')||'';
+    if(contentType&&!/\\bapplication\\/(?:[a-z0-9.+-]*\\+)?json\\b/i.test(contentType)){
+      const failure=new Error('Persistence service returned non-JSON (HTTP '+response.status+'). Inspect lifecycle state before retrying.');
+      failure.code='invalid_response';throw failure;
+    }
+    let payload;
+    try{payload=await response.json();}
+    catch{
+      const failure=new Error('Persistence service returned malformed JSON (HTTP '+response.status+'). Inspect lifecycle state before retrying.');
+      failure.code='invalid_response';throw failure;
+    }
+    if(!payload||!response.ok||!payload.isOk){
       const failure=new Error(payload.error||`Persistence request failed (HTTP ${response.status}).`);
       failure.code=payload.code||'request_failed';throw failure;
     }

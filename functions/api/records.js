@@ -209,6 +209,21 @@ function normalizeDormUpdate(incomingRecord, existingRecord, now) {
 }
 
 
+function validateBusCounts(record) {
+  const fields = ['otw_count','female_count','nat_count','space_force_count'];
+  for (const field of fields) {
+    if (record[field] === undefined || record[field] === null || record[field] === '') continue;
+    const amount = Number(record[field]);
+    if (!Number.isSafeInteger(amount) || amount < 0)
+      throw operationalInvariant('Bus ' + field + ' must be a non-negative whole number.', 400);
+  }
+  const total = Number(record.otw_count ?? 0);
+  for (const field of ['female_count','nat_count','space_force_count']) {
+    if (Number(record[field] ?? 0) > total)
+      throw operationalInvariant('Bus ' + field + ' cannot exceed total passengers.', 400);
+  }
+}
+
 function operationalCount(value) {
   const parsed = Number(value);
   if (!Number.isFinite(parsed)) return 0;
@@ -244,6 +259,45 @@ export function calculateOperationalAccounting(records = [], weekGroup = '') {
 
 function operationalInvariant(message, status = 409) {
   return Object.assign(new Error(message), { code: 'operational_invariant', status });
+}
+
+// A single D1 UPDATE statement evaluates aggregate accounting at write time.
+// Per-record CAS alone cannot serialize updates to two different dorms.
+function accountingWriteGuard(env, before, after) {
+  if (!before || !['dorm','bus'].includes(before.type)) return null;
+  const week = normalizedOperationalWeek(before.week_group);
+  // Legacy unscoped rows cannot participate in a Week Group aggregate.
+  // Preserve compatible record-version behavior for those rows.
+  if (!week) return null;
+  if (after && normalizedOperationalWeek(after.week_group) !== week)
+    throw operationalInvariant('Operational Week Group cannot change during an edit.', 409);
+  const contribution = record => record.type === 'dorm'
+    ? operationalCount(record.current_load)
+    : (String(record.status || '').trim().toLowerCase() === 'arrived' ? -operationalCount(record.otw_count) : 0);
+  const delta = (after ? contribution(after) : 0) - contribution(before);
+  if (delta <= 0) return null;
+  // The following predicate is part of the UPDATE itself, not a prior SELECT.
+  // SQLite evaluates competing writes against the committed state in write order.
+  const sql = `(
+    SELECT MAX(0, COALESCE(SUM(CASE
+      WHEN type='bus' AND LOWER(TRIM(json_extract(data,'$.status')))='arrived'
+        THEN -CAST(COALESCE(json_extract(data,'$.otw_count'),0) AS INTEGER)
+      WHEN type='dorm'
+        THEN CAST(COALESCE(json_extract(data,'$.current_load'),0) AS INTEGER)
+      ELSE 0 END),0) + ?)
+    FROM records WHERE week_group=? AND type IN ('bus','dorm')
+  ) <= (
+    SELECT MAX(0, COALESCE(SUM(CASE
+      WHEN type='bus' AND LOWER(TRIM(json_extract(data,'$.status')))='arrived'
+        THEN -CAST(COALESCE(json_extract(data,'$.otw_count'),0) AS INTEGER)
+      WHEN type='dorm'
+        THEN CAST(COALESCE(json_extract(data,'$.current_load'),0) AS INTEGER)
+      ELSE 0 END),0))
+    FROM records WHERE week_group=? AND type IN ('bus','dorm')
+  )`;
+  // If there is already an overassignment, a new mutation cannot worsen it.
+  // If there is spare arrival capacity, the mutation cannot exceed that capacity.
+  return { sql, values:[delta,week,week] };
 }
 
 function dormLoadShapeChanged(existingRecord, replacement) {
@@ -374,9 +428,10 @@ export async function onRequestPost({ request, env, data }) {
       }
     }
 
-    if (type === 'dorm') {
+    if (type === 'dorm' || type === 'bus') {
       try {
-        validateDormLoadShape(record);
+        if (type === 'dorm') validateDormLoadShape(record);
+        else validateBusCounts(record);
       } catch (error) {
         return jsonResponse({ isOk: false, code: error.code || 'validation', error: error.message }, error.status || 400);
       }
@@ -445,6 +500,7 @@ export async function onRequestPut({ request, env, data }) {
     const now = new Date().toISOString();
     const incoming = patch ? { ...existingRecord, ...patch.changes } : record;
     const normalized = normalizeDormUpdate(incoming, existingRecord, now);
+    if (existingRow.type === 'bus') validateBusCounts(normalized);
     await enforceOperationalAccountingMutation(env, existingRecord, normalized);
     const storedRecord = stampUpdatedRecord(existingRecord, {
       ...normalized,
@@ -452,40 +508,33 @@ export async function onRequestPut({ request, env, data }) {
       __backendId: id
     }, { role, now });
 
-    const statement = expected.supplied
-      ? env.DB.prepare(
-        `UPDATE records
-         SET type = ?, week_group = ?, data = ?, updated_at = ?
-         WHERE id = ?
-           AND COALESCE(CAST(json_extract(data, '$.record_version') AS INTEGER), 0) = ?`
-      ).bind(
-        String(storedRecord.type || ''),
-        String(storedRecord.week_group || ''),
-        JSON.stringify(storedRecord),
-        now,
-        id,
-        currentVersion
-      )
-      : env.DB.prepare(
-        `UPDATE records
-         SET type = ?, week_group = ?, data = ?, updated_at = ?
-         WHERE id = ?`
-      ).bind(
-        String(storedRecord.type || ''),
-        String(storedRecord.week_group || ''),
-        JSON.stringify(storedRecord),
-        now,
-        id
-      );
+    const guard = accountingWriteGuard(env, existingRecord, storedRecord);
+    const statement = env.DB.prepare(
+      `UPDATE records
+       SET type = ?, week_group = ?, data = ?, updated_at = ?
+       WHERE id = ?${expected.supplied ? " AND COALESCE(CAST(json_extract(data, '$.record_version') AS INTEGER), 0) = ?" : ''}
+         ${guard ? ' AND ' + guard.sql : ''}`
+    ).bind(
+      String(storedRecord.type || ''),
+      String(storedRecord.week_group || ''),
+      JSON.stringify(storedRecord),
+      now,
+      id,
+      ...(expected.supplied ? [currentVersion] : []),
+      ...(guard?.values || [])
+    );
 
     const result = await statement.run();
-    if (expected.supplied && changedRows(result) !== 1) {
+    if (changedRows(result) !== 1 && (expected.supplied || guard)) {
       const currentRow = await getRecordRow(env, id);
       const latestVersion = recordVersionOf(parseStoredRecord(currentRow) || {});
-      return jsonResponse(conflictResponseBody({
-        expectedRecordVersion: expected.value,
-        currentRecordVersion: latestVersion
-      }), 409);
+      if (expected.supplied && latestVersion !== currentVersion)
+        return jsonResponse(conflictResponseBody({
+          expectedRecordVersion: expected.value,
+          currentRecordVersion: latestVersion
+        }), 409);
+      return jsonResponse({isOk:false,code:'operational_invariant',
+        error:'Operational counts changed before the write committed. Refresh and retry the assignment.'},409);
     }
 
     return jsonResponse({ isOk: true, data: storedRecord }, 200, { ETag: `"${storedRecord.record_version}"` });
@@ -530,13 +579,12 @@ export async function onRequestDelete({ request, env, data }) {
 
     await enforceOperationalAccountingMutation(env, existingRecord, null, { deleting: true });
 
-    const statement = expected.supplied
-      ? env.DB.prepare(
-        `DELETE FROM records
-         WHERE id = ?
-           AND COALESCE(CAST(json_extract(data, '$.record_version') AS INTEGER), 0) = ?`
-      ).bind(id, currentVersion)
-      : env.DB.prepare('DELETE FROM records WHERE id = ?').bind(id);
+    const guard = accountingWriteGuard(env, existingRecord, null);
+    const statement = env.DB.prepare(
+      `DELETE FROM records WHERE id = ?
+       ${expected.supplied ? " AND COALESCE(CAST(json_extract(data, '$.record_version') AS INTEGER), 0) = ?" : ''}
+       ${guard ? ' AND ' + guard.sql : ''}`
+    ).bind(id, ...(expected.supplied ? [currentVersion] : []), ...(guard?.values || []));
 
     // The existing delete trigger records a SYSTEM observation without authenticated attribution.
     // For Admin, the verified actor audit must be in the same transaction as the delete.
@@ -560,13 +608,16 @@ export async function onRequestDelete({ request, env, data }) {
     } else {
       result = await statement.run();
     }
-    if (expected.supplied && changedRows(result) !== 1) {
+    if ((expected.supplied || guard) && changedRows(result) !== 1) {
       const currentRow = await getRecordRow(env, id);
       const latestVersion = recordVersionOf(parseStoredRecord(currentRow) || {});
-      return jsonResponse(conflictResponseBody({
-        expectedRecordVersion: expected.value,
-        currentRecordVersion: latestVersion
-      }), 409);
+      if (expected.supplied && latestVersion !== currentVersion)
+        return jsonResponse(conflictResponseBody({
+          expectedRecordVersion: expected.value,
+          currentRecordVersion: latestVersion
+        }), 409);
+      return jsonResponse({isOk:false,code:'operational_invariant',
+        error:'Operational counts changed before deletion committed. Refresh and retry.'},409);
     }
 
     return jsonResponse({ isOk: true, id, deletedRecordVersion: currentVersion });

@@ -281,10 +281,13 @@ test('authoritative records refresh contract remains live and mutation-confirmed
   const html = await source('public/index.html');
   assert.match(html, /const API_URL = ['"]\/api\/records['"]/);
   assert.match(html, /const LIVE_API_URL = ['"]\/api\/records\?scope=live['"]/);
-  assert.match(html, /await refresh\(true\);[\s\S]*setInterval\(\(\) => \{[\s\S]*refresh\(\)/);
-  assert.match(html, /\}, 3000\);/);
-  // Create/delete still request a synchronous authoritative refresh.
-  assert.ok((html.match(/if \(result\.isOk\) \{\s*await refresh\(true\);\s*\}/g) || []).length >= 2);
+  // Polling must initialize before attempting the first potentially failing GET.
+  assert.match(html, /setInterval\(\(\) => \{[\s\S]*refresh\(\)[\s\S]*\}, 3000\);[\s\S]*try \{\s*await refresh\(true\)/);
+  // A committed create, update or delete is acknowledged independently of its
+  // follow-up refresh. A retrying poll remains active after transient read errors.
+  const create = html.slice(html.indexOf('async create(record) {'), html.indexOf('async update(record) {'));
+  assert.match(create, /if \(result\.isOk\) \{[\s\S]*try \{ await refresh\(true\); \}[\s\S]*catch \(error\)/);
+  assert.match(create, /return result;/);
   // A committed PUT must not become an apparent failure if its subsequent GET
   // is temporarily unavailable. The existing polling loop will retry reads.
   const update = html.slice(html.indexOf('async update(record) {'), html.indexOf('async delete(record) {'));

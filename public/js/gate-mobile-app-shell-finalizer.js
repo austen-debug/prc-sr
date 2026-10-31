@@ -89,7 +89,7 @@
     wg.setAttribute('aria-label', `Active week group: ${raw || 'No week group'}`);
     if (isMobile()) {
       const cleaned = raw.replace(/^week\s*group\s*[:\-]?\s*/i, '').trim();
-      wg.textContent = cleaned ? `WG ${cleaned.replace(/^WG\s*/i, '')}` : 'No WG';
+      wg.textContent = /^CLOSEOUT PENDING$/i.test(raw) ? raw : (cleaned ? `WG ${cleaned.replace(/^WG\s*/i, '')}` : 'No WG');
     }
   }
 

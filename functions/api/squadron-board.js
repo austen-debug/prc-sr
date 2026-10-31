@@ -214,6 +214,15 @@ async function activeWeekGroup(env) {
   return (await resolveLiveWeekGroup(env)).week_group;
 }
 
+async function readSquadronInformation(env) {
+  try {
+    return await env.DB.prepare('SELECT id,instructions_json,published_at FROM gate_squadron_information_revisions ORDER BY id DESC LIMIT 1').first();
+  } catch (error) {
+    if (!/no such table:\\s*gate_squadron_information_revisions\\b/i.test(String(error?.message || ''))) throw error;
+    return null;
+  }
+}
+
 async function readBoard(env) {
   const information = await readSquadronInformation(env);
   const weekGroup = await activeWeekGroup(env);

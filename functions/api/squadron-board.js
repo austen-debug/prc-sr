@@ -1,3 +1,4 @@
+import { resolveLiveWeekGroup } from './live-week-group.mjs';
 import { calculatePhysicalArrivalTotals } from '../../public/app/domain/operational-metrics.mjs';
 import { normalizePersistedRecords } from '../../public/app/data/record-normalizer.mjs';
 
@@ -208,30 +209,9 @@ export function buildSquadronSnapshot({ weekGroup = '', records = [], now = new 
 }
 
 async function activeWeekGroup(env) {
-  const lifecycle = await env.DB.prepare("SELECT week_group FROM gate_week_groups WHERE state='active' LIMIT 2").all();
-  const live = lifecycle.results || [];
-  if (live.length > 1) throw Object.assign(new Error('Multiple active Week Groups.'), { code: 'integrity_error' });
-  const configured = await env.DB.prepare("SELECT json_extract(data,'$.value') AS week_group FROM records WHERE type='config' AND json_extract(data,'$.key')='week_group' LIMIT 2").all();
-  const configs = configured.results || [];
-  if (configs.length > 1) throw Object.assign(new Error('Multiple Week Group configurations.'), { code: 'integrity_error' });
-  const cycle = String(live[0]?.week_group || '').trim().toUpperCase();
-  const config = String(configs[0]?.week_group || '').trim().toUpperCase();
-  if (cycle && config && cycle !== config) throw Object.assign(new Error('Week Group lifecycle/config mismatch.'), { code: 'integrity_error' });
-  if (!cycle && config) {
-    // Legacy unregistered active weeks remain readable; a known closed cycle never reappears as active.
-    const known = await env.DB.prepare('SELECT state FROM gate_week_groups WHERE week_group=? LIMIT 1').bind(config).first();
-    if (known) return '';
-  }
-  return cycle || config;
-}
-
-async function readSquadronInformation(env) {
-  try {
-    return await env.DB.prepare('SELECT id,instructions_json,published_at FROM gate_squadron_information_revisions ORDER BY id DESC LIMIT 1').first();
-  } catch (error) {
-    if (!/no such table:\s*gate_squadron_information_revisions\b/i.test(String(error?.message || ''))) throw error;
-    return null;
-  }
+  // Squadron and the instructor-facing live API share exactly one lifecycle rule.
+  // Closed/stranded historical data cannot be projected as new CQ assignments.
+  return (await resolveLiveWeekGroup(env)).week_group;
 }
 
 async function readBoard(env) {

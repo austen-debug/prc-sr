@@ -264,14 +264,14 @@ function operationalInvariant(message, status = 409) {
 // A single D1 UPDATE statement evaluates aggregate accounting at write time.
 // Per-record CAS alone cannot serialize updates to two different dorms.
 function accountingWriteGuard(env, before, after) {
-  if (!before || !after || !['dorm','bus'].includes(before.type)) return null;
+  if (!before || !['dorm','bus'].includes(before.type)) return null;
   const week = normalizedOperationalWeek(before.week_group);
-  if (!week || normalizedOperationalWeek(after.week_group) !== week)
+  if (!week || (after && normalizedOperationalWeek(after.week_group) !== week))
     throw operationalInvariant('Operational Week Group cannot change during an edit.', 409);
   const contribution = record => record.type === 'dorm'
     ? operationalCount(record.current_load)
     : (String(record.status || '').trim().toLowerCase() === 'arrived' ? -operationalCount(record.otw_count) : 0);
-  const delta = contribution(after) - contribution(before);
+  const delta = (after ? contribution(after) : 0) - contribution(before);
   if (delta <= 0) return null;
   // The following predicate is part of the UPDATE itself, not a prior SELECT.
   // SQLite evaluates competing writes against the committed state in write order.
@@ -576,13 +576,12 @@ export async function onRequestDelete({ request, env, data }) {
 
     await enforceOperationalAccountingMutation(env, existingRecord, null, { deleting: true });
 
-    const statement = expected.supplied
-      ? env.DB.prepare(
-        `DELETE FROM records
-         WHERE id = ?
-           AND COALESCE(CAST(json_extract(data, '$.record_version') AS INTEGER), 0) = ?`
-      ).bind(id, currentVersion)
-      : env.DB.prepare('DELETE FROM records WHERE id = ?').bind(id);
+    const guard = accountingWriteGuard(env, existingRecord, null);
+    const statement = env.DB.prepare(
+      `DELETE FROM records WHERE id = ?
+       ${expected.supplied ? " AND COALESCE(CAST(json_extract(data, '$.record_version') AS INTEGER), 0) = ?" : ''}
+       ${guard ? ' AND ' + guard.sql : ''}`
+    ).bind(id, ...(expected.supplied ? [currentVersion] : []), ...(guard?.values || []));
 
     // The existing delete trigger records a SYSTEM observation without authenticated attribution.
     // For Admin, the verified actor audit must be in the same transaction as the delete.
@@ -606,13 +605,16 @@ export async function onRequestDelete({ request, env, data }) {
     } else {
       result = await statement.run();
     }
-    if (expected.supplied && changedRows(result) !== 1) {
+    if ((expected.supplied || guard) && changedRows(result) !== 1) {
       const currentRow = await getRecordRow(env, id);
       const latestVersion = recordVersionOf(parseStoredRecord(currentRow) || {});
-      return jsonResponse(conflictResponseBody({
-        expectedRecordVersion: expected.value,
-        currentRecordVersion: latestVersion
-      }), 409);
+      if (expected.supplied && latestVersion !== currentVersion)
+        return jsonResponse(conflictResponseBody({
+          expectedRecordVersion: expected.value,
+          currentRecordVersion: latestVersion
+        }), 409);
+      return jsonResponse({isOk:false,code:'operational_invariant',
+        error:'Operational counts changed before deletion committed. Refresh and retry.'},409);
     }
 
     return jsonResponse({ isOk: true, id, deletedRecordVersion: currentVersion });

@@ -221,9 +221,9 @@ test('notice publication is MTI-only, origin checked, conditional, append-only a
 
 test('instructor writes self-bootstrap missing storage for a valid legacy active Week Group without granting Squadron mutations', async () => {
   const DB=sqliteD1({notices:false,information:false});
-  // Production can still have a readable legacy active Week Group represented only by the config record.
-  // Notice publication must use the same activeWeekGroup resolution instead of requiring a lifecycle row.
+  // Legacy active Week Groups lack a lifecycle row but must have a dorm manifest.
   DB.sqlite.prepare('INSERT INTO records VALUES (?,?,?,?,?,?)').run('config-wg','config','WG26050',JSON.stringify({ key:'week_group',value:'WG26050' }),'2026-09-21T00:00:00Z','2026-09-21T00:00:00Z');
+  DB.sqlite.prepare('INSERT INTO records VALUES (?,?,?,?,?,?)').run('dorm-legacy','dorm','WG26050',JSON.stringify(dorm({id:'dorm-legacy'})),'2026-09-21T00:00:00Z','2026-09-21T00:00:00Z');
 
   const before=await onRequestGet({env:{DB},data:{session:{role:'squadron'}}});
   assert.equal(before.status,200);

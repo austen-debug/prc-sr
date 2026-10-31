@@ -18,21 +18,22 @@ function forbidden() {
 }
 
 function safeObject(value) {
-  try {
-    const parsed = JSON.parse(String(value || '{}'));
-    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
-  } catch {
-    return {};
-  }
+  // Archive source JSON is immutable evidence. Invalid bytes must fail closed;
+  // rendering fabricated zero counts would conceal a damaged historical record.
+  const parsed = JSON.parse(String(value ?? ''));
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed))
+    throw new Error('Archive source payload is not an object.');
+  return parsed;
 }
 
 function safeArray(value) {
-  try {
-    const parsed = typeof value === 'string' ? JSON.parse(value || '[]') : value;
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
+  // Legacy archives may omit detail fields, but a present malformed field
+  // must not be presented as an empty dorm or bus history.
+  if (value === undefined || value === null || value === '') return [];
+  const parsed = typeof value === 'string' ? JSON.parse(value) : value;
+  if (!Array.isArray(parsed) || parsed.some(item => !item || typeof item !== 'object' || Array.isArray(item)))
+    throw new Error('Archive detail snapshot is malformed.');
+  return parsed;
 }
 
 function number(value) {

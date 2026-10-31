@@ -479,9 +479,17 @@
         if (timeout !== null) window.clearTimeout(timeout);
         timeout = null;
       }
-      const result = await response.json();
+      // A proxy or server error can return HTML/plain text. Preserve the HTTP
+      // failure instead of presenting an unhelpful JSON parsing exception.
+      const contentType = response.headers?.get?.('content-type') || '';
+      let result;
+      if (contentType && !/\bapplication\/(?:[a-z0-9.+-]*\+)?json\b/i.test(contentType)) {
+        throw new Error('Closeout response was not JSON (HTTP ' + (response.status || 'unknown') + '). Verify the archive before retrying.');
+      }
+      try { result = await response.json(); }
+      catch { throw new Error('Closeout returned invalid JSON (HTTP ' + (response.status || 'unknown') + '). Verify the archive before retrying.'); }
       if (!response.ok || !result?.isOk || !result.closed)
-        throw new Error(result?.error || 'Archive and clearance were not confirmed. No second closeout was attempted.');
+        throw new Error(result?.error || 'Archive and clearance were not confirmed (HTTP ' + (response.status || 'unknown') + '). No second closeout was attempted.');
       committed = true;
       updateCloseoutProgress('Archive committed; active records cleared atomically.');
       showCloseoutMessage(`Week Group ${weekGroup} archived as ${result.archive_id}; live records cleared.`);
@@ -703,8 +711,13 @@
       cache: 'no-store',
       credentials: 'same-origin'
     });
-    const payload = await response.json();
-    if (!response.ok || !payload?.isOk) throw new Error(payload?.error || 'Unable to load archive records.');
+    const contentType = response.headers?.get?.('content-type') || '';
+    if (contentType && !/\bapplication\/(?:[a-z0-9.+-]*\+)?json\b/i.test(contentType))
+      throw new Error('Archive service returned a non-JSON response (HTTP ' + (response.status || 'unknown') + ').');
+    let payload;
+    try { payload = await response.json(); }
+    catch { throw new Error('Archive service returned invalid JSON (HTTP ' + (response.status || 'unknown') + ').'); }
+    if (!response.ok || !payload?.isOk) throw new Error(payload?.error || 'Unable to load archive records (HTTP ' + (response.status || 'unknown') + ').');
     return payload;
   }
 

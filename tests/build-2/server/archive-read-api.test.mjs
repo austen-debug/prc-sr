@@ -233,3 +233,29 @@ test('generic records mutations cannot create, spoof-overwrite or delete archive
   }
   assert.equal(f.native.prepare("SELECT COUNT(*) AS n FROM records WHERE type='archive'").get().n,1);
 });
+
+
+test('malformed immutable archive JSON fails closed on index and detail without changing source',async()=>{
+  const f=fixture();
+  f.native.prepare("UPDATE records SET data='not-json' WHERE id='archive-1'").run();
+  for(const url of ['https://gate.example/api/archives','https://gate.example/api/archives?id=archive-1']){
+    const result=await json(await archiveGet({request:new Request(url),env:f.env,data:{session:{role:'instructor'}}}));
+    assert.equal(result.status,500);
+    assert.equal(result.body.code,'archive_read_failed');
+  }
+  assert.equal(f.native.prepare("SELECT data FROM records WHERE id='archive-1'").get().data,'not-json');
+});
+
+test('invalid archived dorm and bus snapshots cannot silently render as empty detail tables',async()=>{
+  for(const field of ['dorm_data','bus_data']){
+    const f=fixture();
+    const previous=JSON.parse(f.native.prepare("SELECT data FROM records WHERE id='archive-1'").get().data);
+    previous[field]='[invalid-json';
+    const retained=JSON.stringify(previous);
+    f.native.prepare("UPDATE records SET data=? WHERE id='archive-1'").run(retained);
+    const result=await json(await archiveGet({request:new Request('https://gate.example/api/archives?id=archive-1'),env:f.env,data:{session:{role:'instructor'}}}));
+    assert.equal(result.status,500);
+    assert.equal(result.body.code,'archive_read_failed');
+    assert.equal(f.native.prepare("SELECT data FROM records WHERE id='archive-1'").get().data,retained);
+  }
+});

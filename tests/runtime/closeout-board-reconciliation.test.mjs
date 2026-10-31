@@ -5,6 +5,8 @@ import { readFileSync } from 'node:fs';
 const html = readFileSync(new URL('../../public/index.html', import.meta.url), 'utf8');
 const metrics = readFileSync(new URL('../../public/js/gate-premium-metrics-controller.js', import.meta.url), 'utf8');
 const board = readFileSync(new URL('../../public/js/gate-status-board-controller.js', import.meta.url), 'utf8');
+const shell = readFileSync(new URL('../../public/js/gate-app-shell-controller.js', import.meta.url), 'utf8');
+const mobile = readFileSync(new URL('../../public/js/gate-mobile-app-shell-finalizer.js', import.meta.url), 'utf8');
 
 const begin = html.indexOf('    function getBoardWeekState() {');
 const end = html.indexOf('    function getBoardWG() {', begin + 1);
@@ -53,4 +55,6 @@ test('all authoritative status-board metrics and dorm/bus render paths honor boa
   assert.match(metrics, /typeof getBoardWG === 'function' \? getBoardWG\(\)/);
   assert.match(board, /typeof getBoardWG === 'function' \? getBoardWG\(\)/);
   assert.match(html, /const wg = boardState\.weekGroup/);
+  assert.match(shell, /typeof getBoardWG === 'function' \? getBoardWG\(\)/);
+  assert.match(mobile, /\^CLOSEOUT PENDING\$/);
 });

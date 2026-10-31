@@ -28,7 +28,7 @@ export async function resolveLiveWeekGroup(env) {
   let cycles=[];
   try {
     const result=await env.DB.prepare(
-      "SELECT cycle_id,week_group,state,activated_at FROM gate_week_groups WHERE state<>'closed' LIMIT 2"
+      "SELECT * FROM gate_week_groups WHERE state<>'closed' LIMIT 2"
     ).all();
     cycles=result.results||[];
   } catch(error) {

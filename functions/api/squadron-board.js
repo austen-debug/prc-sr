@@ -240,6 +240,7 @@ export async function onRequestGet({ env, data }) {
   try {
     return reply({ isOk: true, editor: ['admin','instructor'].includes(role), board: await readBoard(env) });
   } catch (error) {
+    console.error('Squadron read failed:', error?.name || 'error', error?.message || 'unknown');
     return reply({ isOk: false, code: error?.code || 'squadron_board_failed', error: error?.code === 'integrity_error' ? error.message : 'Squadron data unavailable.' }, error?.code === 'integrity_error' ? 503 : 500);
   }
 }

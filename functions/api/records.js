@@ -266,7 +266,10 @@ function operationalInvariant(message, status = 409) {
 function accountingWriteGuard(env, before, after) {
   if (!before || !['dorm','bus'].includes(before.type)) return null;
   const week = normalizedOperationalWeek(before.week_group);
-  if (!week || (after && normalizedOperationalWeek(after.week_group) !== week))
+  // Legacy unscoped rows cannot participate in a Week Group aggregate.
+  // Preserve compatible record-version behavior for those rows.
+  if (!week) return null;
+  if (after && normalizedOperationalWeek(after.week_group) !== week)
     throw operationalInvariant('Operational Week Group cannot change during an edit.', 409);
   const contribution = record => record.type === 'dorm'
     ? operationalCount(record.current_load)

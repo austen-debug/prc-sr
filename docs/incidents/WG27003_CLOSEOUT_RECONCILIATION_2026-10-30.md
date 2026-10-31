@@ -107,3 +107,28 @@ If the archive lacks `source_records_json`, do **not** assume that the surviving
 - `docs/D1_PERSISTENCE_CUTOVER.md`: production recovery and feature flag conditions.
 
 This document does not authorize a production write. Never infer successful deployment or D1 access from GitHub changes.
+
+## Operator-verified production SQL results (October 30, 2026)
+
+These observations were supplied from the production D1 Console; they are **not** an independent API read by GitHub and are not a current snapshot after further writes.
+
+- Stale \`records\` configuration: \`week_group=WG27003\`, row last updated \`2026-10-19T14:27:15.612Z\`.
+- \`gate_week_groups\` has **zero rows**; WG27003 was a legacy, not registered transactional, lifecycle.
+- WG27003 archive ID \`2c24a1d6-b366-48a5-bb3d-c503a0766c4b\`, archived \`2026-10-27T16:09:33.858Z\`, 29 buses and 893 arrived, 893 loaded, 903 expected.
+- Residual WG27003: 27 buses totaling 858 arrived, 67 sound events, zero dorms; all records were created and last updated **before** the archive.
+- Multiset comparison using bus type, ID, status, passenger/subgroup counts and arrival timestamp matched **all 27 residual buses** to the 29 reporting-snapshot buses, leaving 2 archived-only buses with 35 arrivals, and no unmatched live buses. This is operational-field equality, **not** original-row/ID equality.
+- Other historical residuals: WG26037 68 sound events, WG26038 4, WG26051 26, WG27002 14. Across five archived labels, 27 buses and 179 sound events = **206 historical residual operational records**, none created or updated after the corresponding archived_at.
+- All five historical archives have **no** \`source_records_json\` / \`source_snapshot_format\` / \`source_record_count\`; the 179 sound events were not proved preserved within those archive payloads. The repository's automatic recovery must remain blocked.
+- Operator-provided \`sqlite_master\` schema showed mirror and record-audit triggers, but **not** the three archive source immutability triggers from migration 0011. Do not enable transactional cutover on this schema.
+
+### Recovery execution gate
+
+1. Quiesce writes and verify the production Pages D1 binding. Record \`npx wrangler d1 time-travel info <DATABASE_NAME>\` output (bookmark valid within the account's Time Travel window), and produce an **independent full SQL export** using \`npx wrangler d1 export <DATABASE_NAME> --remote --output=./gate-before-recovery.sql\`. Do not publish the export, which contains operational and session material.
+2. Verify the exported SQL is complete and restorable **off production**. Keep a second protected copy; a Time Travel bookmark alone is a time-limited rollback reference.
+3. Repeat the read-only preflight after the write freeze. Preserve all original source rows from the five groups, particularly 179 sound-event payloads, in the protected export.
+4. Design a dedicated **single D1 batch transaction**: assert all five archive IDs/unchanged payload hashes and exact 206 source IDs/counts/contents and zero post-archive writes; preserve the original rows in an immutable recovery-evidence store; clear only verified residual source records; conditionally clear WG27003 config (and global last_airport if unaltered); assert no residual rows; emit audit metadata and verify archives unchanged. Do not perform a series of naked DELETEs in the console.
+5. In isolated D1 staging restored from a production export, test successful cleanup, injected failure rollback, stale state rejection, duplicate invocation and read parity of archived reports. Obtain explicit production authorization before executing.
+6. After an approved production recovery, verify \`records\` and five \`gate_v2_*\` mirror parity, historical archive accessibility, zero residual sources for the five labels, config blank, all live boards blank, and that a newly initialized test Week Group appears and closes atomically.
+
+The source fix that isolates stranded records from live API projections is **not** proof that the 206 records have been deleted or the stale production config has been corrected.
+

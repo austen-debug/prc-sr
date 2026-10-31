@@ -58,3 +58,9 @@ test('all authoritative status-board metrics and dorm/bus render paths honor boa
   assert.match(shell, /typeof getBoardWG === 'function' \? getBoardWG\(\)/);
   assert.match(mobile, /\^CLOSEOUT PENDING\$/);
 });
+
+test('server recovery banner survives effective live config being blanked', () => {
+  const state=getState([config('2026-10-26T10:00:00Z','')], ()=>'',
+    {gateCloseoutRecovery:{recovery_required:true,week_group:'WG27003',residual_buses:27}});
+  assert.deepEqual(state,{weekGroup:'',recoveryRequired:true,archivedWeekGroup:'WG27003'});
+});

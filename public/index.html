@@ -977,10 +977,13 @@ renderAll();
     // the legacy browser completed clearing live records. Do not falsify D1
     // configuration or suppress the recovery-required condition.
     function getBoardWeekState() {
+      // Recovery metadata survives the safe empty Week Group projection returned
+      // by the server; keep the warning visible without reviving archived data.
+      const recovery = window.gateCloseoutRecovery;
+      if (recovery?.recovery_required)
+        return { weekGroup:'', recoveryRequired:true, archivedWeekGroup:recovery.week_group || '' };
       const weekGroup = getActiveWG();
       if (!weekGroup) return { weekGroup:'', recoveryRequired:false, archivedWeekGroup:'' };
-      if (window.gateCloseoutRecovery?.recovery_required && window.gateCloseoutRecovery.week_group === weekGroup)
-        return { weekGroup:'', recoveryRequired:true, archivedWeekGroup:weekGroup };
       const dorms = allData.filter(r => r?.type === 'dorm' && r.week_group === weekGroup);
       if (dorms.length) return { weekGroup, recoveryRequired:false, archivedWeekGroup:'' };
       const config = allData.find(r => r?.type === 'config' && r.key === 'week_group');

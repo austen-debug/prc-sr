@@ -195,7 +195,7 @@ test('live record polling excludes archive payloads while the default records AP
   const liveBody = await live.json();
   assert.equal(live.status,200);
   assert.equal(liveBody.scope,'live');
-  assert.deepEqual(liveBody.records.map(record => record.type),['dorm']);
+  assert.deepEqual(liveBody.records.map(record => record.type),[], 'unregistered archive fixture must not appear on live pages');
 
   const all = await recordsGet({
     request:new Request('https://gate.example/api/records'),

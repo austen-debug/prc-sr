@@ -1,4 +1,5 @@
 import { withdrawnArchiveIds } from './archive-dispositions.mjs';
+import { resolveLiveWeekGroup } from './live-week-group.mjs';
 import {
   RECORDS_API_CAPABILITIES,
   conflictResponseBody,
@@ -69,6 +70,9 @@ function safeParseRecord(row) {
     const data = JSON.parse(row.data || '{}');
     return {
       ...data,
+      // SQL columns, not payload JSON, own record type and Week Group.
+      type: row.type,
+      week_group: row.week_group,
       __backendId: row.id,
       record_version: recordVersionOf(data),
       created_at: data.created_at || row.created_at,
@@ -414,63 +418,45 @@ export async function onRequestGet({ request, env, data }) {
   try {
     const scope = request ? (new URL(request.url).searchParams.get('scope') || '') : '';
     const liveOnly = scope === 'live';
-    const result = await env.DB.prepare(
-      liveOnly
-        ? `SELECT id, type, week_group, data, created_at, updated_at
-           FROM records
-           WHERE type <> 'archive'
-           ORDER BY created_at ASC`
-        : `SELECT id, type, week_group, data, created_at, updated_at
-           FROM records
-           ORDER BY created_at ASC`
-    ).all();
+    // A failed lifecycle check never falls back to unscoped operational reads.
+    const liveState = liveOnly ? await resolveLiveWeekGroup(env) : null;
+    const activeWeek = liveState?.week_group || '';
+    const sql = liveOnly
+      ? "SELECT id,type,week_group,data,created_at,updated_at FROM records WHERE type <> 'archive' ORDER BY created_at ASC"
+      : "SELECT id,type,week_group,data,created_at,updated_at FROM records ORDER BY created_at ASC";
+    const result = await env.DB.prepare(sql).all();
 
-    // A withdrawn archive must not remain visible through the legacy all-records
-    // read path after it has been removed from the canonical archive library.
-    // The live-only path is untouched for existing operational workflows.
+    // Default all-record reads retain legacy administrative visibility.
+    // scope=live projects only the single verified active Week Group.
     const withdrawn = role === 'instructor' && !liveOnly
-      ? await withdrawnArchiveIds(env)
-      : new Set();
+      ? await withdrawnArchiveIds(env) : new Set();
+    const operational = new Set(['bus','dorm','sound_event']);
     const records = (result.results || [])
       .map(safeParseRecord)
       .filter(record => !(record?.type === 'archive' && withdrawn.has(String(record.__backendId || record.id || ''))))
+      .filter(record => !liveOnly || !operational.has(record?.type) ||
+        (activeWeek && String(record.week_group || '').trim().toUpperCase() === activeWeek))
+      .map(record => {
+        if (!liveOnly || record?.type !== 'config') return record;
+        // Read-only projection. Actual stale config remains in D1 for recovery.
+        if (record.key === 'week_group') return { ...record, value: activeWeek };
+        if (record.key === 'last_airport' && !activeWeek) return { ...record, value: '' };
+        return record;
+      })
       .map(record => sanitizeRecordForRole(record, role))
       .filter(Boolean);
-
-    // Live polling excludes archive payloads by design. Expose only a small
-    // authoritative closeout-integrity hint so stale archived buses cannot
-    // masquerade as current arrivals on the Status Board.
-    let closeoutRecovery = null;
-    if (liveOnly) {
-      const config = records.find(record => record?.type === 'config' && record.key === 'week_group');
-      const weekGroup = String(config?.value || '').trim().toUpperCase();
-      if (weekGroup && !records.some(record => record?.type === 'dorm' && record.week_group === weekGroup)) {
-        const archived = await env.DB.prepare(
-          "SELECT id,json_extract(data,'$.archived_at') AS archived_at FROM records WHERE type='archive' AND week_group=? ORDER BY created_at DESC LIMIT 1"
-        ).bind(weekGroup).first();
-        const archivedTime = Date.parse(archived?.archived_at || '');
-        const configTime = Date.parse(config?.updated_at || '') || 0;
-        if (Number.isFinite(archivedTime) && archivedTime >= configTime) {
-          closeoutRecovery = {
-            recovery_required: true,
-            week_group: weekGroup,
-            archive_id: archived.id,
-            residual_buses: records.filter(record => record?.type === 'bus' && record.week_group === weekGroup).length,
-            residual_sound_events: records.filter(record => record?.type === 'sound_event' && record.week_group === weekGroup).length
-          };
-        }
-      }
-    }
 
     return jsonResponse({
       isOk: true,
       records,
-      closeout_recovery: closeoutRecovery,
+      live_state: liveState ? {week_group:activeWeek,status:liveState.status} : null,
+      closeout_recovery: liveState?.recovery || null,
       capabilities: RECORDS_API_CAPABILITIES,
       scope: liveOnly ? 'live' : 'all'
     });
   } catch (error) {
-    return jsonResponse({ isOk: false, error: error.message || 'Failed to load records.' }, 500);
+    console.error('GATE live records resolution failed:',error?.code || error?.name || 'error');
+    return jsonResponse({ isOk: false, code:'integrity_error', error:'Unable to verify the active Week Group; live records withheld.' }, 503);
   }
 }
 

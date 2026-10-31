@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { DatabaseSync } from 'node:sqlite';
 import { readFileSync } from 'node:fs';
 import { onRequestPost, onRequestGet } from '../../../functions/api/legacy-closeout.js';
+import { buildArchivePayload, parseOperationalRow } from '../../../functions/api/persistence-core.mjs';
 
 const migration=name=>readFileSync(new URL('../../../migrations/'+name,import.meta.url),'utf8');
 function setup(){
@@ -119,4 +120,97 @@ test('Admin or Airman role cannot use Instructor legacy closeout',async()=>{
   const response=await onRequestPost({request:req,env:f.env,data:{session:{role:'admin'}}});
   assert.equal(response.status,403);
   assert.equal(count(f.db,'dorm','WG26053'),1);
+});
+
+function seedLosslessArchive(f) {
+  const rows=f.db.prepare("SELECT id,type,week_group,data,created_at,updated_at FROM records WHERE week_group='WG26053' AND type IN ('dorm','bus','sound_event') ORDER BY created_at,id").all();
+  const archive=buildArchivePayload({
+    cycleId:'',weekGroup:'WG26053',
+    dorms:rows.filter(row=>row.type==='dorm').map(parseOperationalRow),
+    buses:rows.filter(row=>row.type==='bus').map(parseOperationalRow),
+    sourceRecords:rows,windows:{},now:'2026-10-28T10:00:00.000Z'
+  });
+  f.db.prepare("INSERT INTO records VALUES(?,?,?,?,?,?)").run(
+    'old-complete-archive','archive','WG26053',JSON.stringify(archive),
+    '2026-10-28T10:00:00.000Z','2026-10-28T10:00:00.000Z'
+  );
+  return archive;
+}
+
+test('Recovery requires complete exact archive provenance and clears only verified residual rows',async()=>{
+  const f=setup();
+  seedLosslessArchive(f);
+  // Simulate an interrupted old closeout where one source record was already deleted.
+  f.db.prepare("DELETE FROM records WHERE id='dorm-one'").run();
+  const response=await f.close();
+  assert.equal(response.status,200,await response.clone().text());
+  const payload=await response.json();
+  assert.equal(payload.recovered,true);
+  assert.equal(payload.archive_id,'old-complete-archive');
+  assert.equal(count(f.db,'archive','WG26053'),1);
+  for(const type of ['bus','dorm','sound_event'])assert.equal(count(f.db,type,'WG26053'),0);
+  assert.equal(JSON.parse(f.db.prepare("SELECT data FROM records WHERE id='active-wg'").get().data).value,'');
+});
+
+test('Recovery can retire remaining sound events after all live buses and dorms were already removed',async()=>{
+  const f=setup();
+  seedLosslessArchive(f);
+  f.db.prepare("DELETE FROM records WHERE id IN ('bus-one','dorm-one')").run();
+  const response=await f.close();
+  assert.equal(response.status,200,await response.clone().text());
+  assert.equal((await response.json()).recovered,true);
+  assert.equal(count(f.db,'sound_event','WG26053'),0);
+  assert.equal(count(f.db,'archive','WG26053'),1);
+});
+
+test('Recovery refuses modified live records even with a complete archived source snapshot',async()=>{
+  const f=setup();
+  seedLosslessArchive(f);
+  f.db.prepare("UPDATE records SET updated_at='2026-10-29T10:00:00.000Z' WHERE id='bus-one'").run();
+  const response=await f.close();
+  assert.equal(response.status,409);
+  assert.equal((await response.json()).code,'existing_archive');
+  assert.equal(count(f.db,'bus','WG26053'),1);
+  assert.equal(count(f.db,'archive','WG26053'),1);
+});
+
+test('Existing older archive is detected even when surviving records have newer creation timestamps',async()=>{
+  const f=setup();
+  // A reporting-only legacy archive must NEVER be bypassed because of age.
+  const archive=JSON.stringify({type:'archive',week_group:'WG26053',archived_at:'2026-10-20T10:00:00.000Z'});
+  f.db.prepare("INSERT INTO records VALUES(?,?,?,?,?,?)").run('older-archive','archive','WG26053',archive,f.stamp,f.stamp);
+  f.db.prepare("UPDATE records SET created_at='2026-10-29T10:00:00.000Z' WHERE type IN ('bus','dorm','sound_event')").run();
+  const response=await f.close();
+  assert.equal(response.status,409);
+  assert.equal((await response.json()).code,'existing_archive');
+  assert.equal(count(f.db,'archive','WG26053'),1);
+});
+
+test('Duplicate archive candidates refuse recovery without changing residual records',async()=>{
+  const f=setup();
+  const saved=seedLosslessArchive(f);
+  f.db.prepare("INSERT INTO records VALUES(?,?,?,?,?,?)").run(
+    'second-archive','archive','WG26053',JSON.stringify(saved),
+    '2026-10-28T11:00:00.000Z','2026-10-28T11:00:00.000Z');
+  const response=await f.close();
+  assert.equal(response.status,409);
+  assert.equal(count(f.db,'archive','WG26053'),2);
+  assert.equal(count(f.db,'dorm','WG26053'),1);
+});
+
+test('Tampered source-count or format cannot authorize recovery',async()=>{
+  for(const mutate of [
+    archive=>{archive.source_record_count=archive.source_record_count-1;},
+    archive=>{archive.source_snapshot_format='unknown';},
+    archive=>{archive.dorm_count=0;}
+  ]){
+    const f=setup();
+    const archive=seedLosslessArchive(f);
+    mutate(archive);
+    f.db.prepare("UPDATE records SET data=? WHERE id='old-complete-archive'").run(JSON.stringify(archive));
+    const response=await f.close();
+    assert.equal(response.status,409);
+    assert.equal(count(f.db,'dorm','WG26053'),1);
+    assert.equal(count(f.db,'archive','WG26053'),1);
+  }
 });

@@ -246,6 +246,42 @@ function operationalInvariant(message, status = 409) {
   return Object.assign(new Error(message), { code: 'operational_invariant', status });
 }
 
+// A single D1 UPDATE statement evaluates aggregate accounting at write time.
+// Per-record CAS alone cannot serialize updates to two different dorms.
+function accountingWriteGuard(env, before, after) {
+  if (!before || !after || !['dorm','bus'].includes(before.type)) return null;
+  const week = normalizedOperationalWeek(before.week_group);
+  if (!week || normalizedOperationalWeek(after.week_group) !== week)
+    throw operationalInvariant('Operational Week Group cannot change during an edit.', 409);
+  const contribution = record => record.type === 'dorm'
+    ? operationalCount(record.current_load)
+    : (String(record.status || '').trim().toLowerCase() === 'arrived' ? -operationalCount(record.otw_count) : 0);
+  const delta = contribution(after) - contribution(before);
+  if (delta <= 0) return null;
+  // The following predicate is part of the UPDATE itself, not a prior SELECT.
+  // SQLite evaluates competing writes against the committed state in write order.
+  const sql = `(
+    SELECT MAX(0, COALESCE(SUM(CASE
+      WHEN type='bus' AND LOWER(TRIM(json_extract(data,'$.status')))='arrived'
+        THEN -CAST(COALESCE(json_extract(data,'$.otw_count'),0) AS INTEGER)
+      WHEN type='dorm'
+        THEN CAST(COALESCE(json_extract(data,'$.current_load'),0) AS INTEGER)
+      ELSE 0 END),0)) + ?
+    FROM records WHERE week_group=? AND type IN ('bus','dorm')
+  ) <= (
+    SELECT MAX(0, COALESCE(SUM(CASE
+      WHEN type='bus' AND LOWER(TRIM(json_extract(data,'$.status')))='arrived'
+        THEN -CAST(COALESCE(json_extract(data,'$.otw_count'),0) AS INTEGER)
+      WHEN type='dorm'
+        THEN CAST(COALESCE(json_extract(data,'$.current_load'),0) AS INTEGER)
+      ELSE 0 END),0))
+    FROM records WHERE week_group=? AND type IN ('bus','dorm')
+  )`;
+  // If there is already an overassignment, a new mutation cannot worsen it.
+  // If there is spare arrival capacity, the mutation cannot exceed that capacity.
+  return { sql, values:[delta,week,week] };
+}
+
 function dormLoadShapeChanged(existingRecord, replacement) {
   return operationalCount(existingRecord?.current_load) !== operationalCount(replacement?.current_load) ||
     operationalCount(existingRecord?.max_load) !== operationalCount(replacement?.max_load);
@@ -452,33 +488,27 @@ export async function onRequestPut({ request, env, data }) {
       __backendId: id
     }, { role, now });
 
-    const statement = expected.supplied
-      ? env.DB.prepare(
-        `UPDATE records
-         SET type = ?, week_group = ?, data = ?, updated_at = ?
-         WHERE id = ?
-           AND COALESCE(CAST(json_extract(data, '$.record_version') AS INTEGER), 0) = ?`
-      ).bind(
-        String(storedRecord.type || ''),
-        String(storedRecord.week_group || ''),
-        JSON.stringify(storedRecord),
-        now,
-        id,
-        currentVersion
-      )
-      : env.DB.prepare(
-        `UPDATE records
-         SET type = ?, week_group = ?, data = ?, updated_at = ?
-         WHERE id = ?`
-      ).bind(
-        String(storedRecord.type || ''),
-        String(storedRecord.week_group || ''),
-        JSON.stringify(storedRecord),
-        now,
-        id
-      );
+    const guard = accountingWriteGuard(env, existingRecord, storedRecord);
+    const statement = env.DB.prepare(
+      `UPDATE records
+       SET type = ?, week_group = ?, data = ?, updated_at = ?
+       WHERE id = ?${expected.supplied ? " AND COALESCE(CAST(json_extract(data, '$.record_version') AS INTEGER), 0) = ?" : ''}
+         ${guard ? ' AND ' + guard.sql : ''}`
+    ).bind(
+      String(storedRecord.type || ''),
+      String(storedRecord.week_group || ''),
+      JSON.stringify(storedRecord),
+      now,
+      id,
+      ...(expected.supplied ? [currentVersion] : []),
+      ...(guard?.values || [])
+    );
 
     const result = await statement.run();
+    if (guard && changedRows(result) !== 1) {
+      return jsonResponse({isOk:false,code:'operational_invariant',
+        error:'Concurrent operational assignments changed the available arrivals. Refresh and retry the assignment.'},409);
+    }
     if (expected.supplied && changedRows(result) !== 1) {
       const currentRow = await getRecordRow(env, id);
       const latestVersion = recordVersionOf(parseStoredRecord(currentRow) || {});

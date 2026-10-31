@@ -81,8 +81,59 @@ export async function onRequestPost({request,env,data}){
     const oldest=rows.map(row=>row.created_at).sort()[0]||nowIso();
     const existing=await env.DB.prepare("SELECT id FROM records WHERE type='archive' AND week_group=? AND (julianday(json_extract(data,'$.archived_at'))>=julianday(?) OR julianday(json_extract(data,'$.archived_at'))>=julianday('now','-1 day')) LIMIT 1").bind(weekGroup,oldest).first();
     if(existing){
+      // An older closeout may have persisted the archive and then stopped partway
+      // through browser-driven cleanup. Only resume when the archive contains a
+      // lossless, immutable snapshot proving that EVERY remaining row belongs to it.
+      // Reporting-only archives cannot establish that proof.
+      const archives=await env.DB.prepare("SELECT id,data FROM records WHERE type='archive' AND week_group=? AND (julianday(json_extract(data,'$.archived_at'))>=julianday(?) OR julianday(json_extract(data,'$.archived_at'))>=julianday('now','-1 day')) LIMIT 2").bind(weekGroup,oldest).all();
+      if(archives.results?.length===1){
+        const candidate=archives.results[0];
+        let saved;
+        try{
+          const parsed=JSON.parse(candidate.data);
+          saved=JSON.parse(parsed.source_records_json);
+        }catch(_){}
+        if(Array.isArray(saved) && saved.length>0 && saved.every(item=>item && typeof item.id==='string' && typeof item.data==='string')){
+          const byId=new Map(saved.map(item=>[item.id,item]));
+          const matches=byId.size===saved.length && rows.every(row=>{
+            const original=byId.get(row.id);
+            return original && ['dorm','bus','sound_event'].includes(original.type) &&
+              original.type===row.type && original.week_group===row.week_group &&
+              original.data===row.data && original.created_at===row.created_at &&
+              original.updated_at===row.updated_at;
+          });
+          if(matches){
+            const snapshot=JSON.stringify(rows);
+            const now=nowIso();
+            const originalConfig=active.results[0];
+            const airport=await env.DB.prepare("SELECT id FROM records WHERE type='config' AND json_extract(data,'$.key')='last_airport' LIMIT 2").all();
+            if((airport.results||[]).length>1)return refuse('integrity_error','Duplicate last-airport configuration.');
+            const statements=[
+              assertion(env,`(SELECT COUNT(*) FROM records WHERE week_group=? AND type IN ('bus','dorm','sound_event'))=?
+                AND NOT EXISTS(SELECT 1 FROM json_each(?) e LEFT JOIN records r ON r.id=json_extract(e.value,'$.id')
+                  WHERE r.id IS NULL OR r.type IS NOT json_extract(e.value,'$.type')
+                    OR r.week_group IS NOT json_extract(e.value,'$.week_group')
+                    OR r.data IS NOT json_extract(e.value,'$.data')
+                    OR r.created_at IS NOT json_extract(e.value,'$.created_at')
+                    OR r.updated_at IS NOT json_extract(e.value,'$.updated_at'))
+                AND (SELECT data FROM records WHERE id=? AND type='archive')=?
+                AND EXISTS(SELECT 1 FROM records WHERE id=? AND type='config' AND json_extract(data,'$.value')=?)
+                AND NOT EXISTS(SELECT 1 FROM gate_week_groups WHERE state<>'closed')`,
+                weekGroup,rows.length,snapshot,candidate.id,candidate.data,originalConfig.id,weekGroup),
+              env.DB.prepare("DELETE FROM records WHERE week_group=? AND type IN ('bus','dorm','sound_event')").bind(weekGroup),
+              assertion(env,"NOT EXISTS(SELECT 1 FROM records WHERE week_group=? AND type IN ('bus','dorm','sound_event'))",weekGroup),
+              env.DB.prepare("UPDATE records SET data=json_set(data,'$.value','', '$.updated_by_role','instructor', '$.record_version',COALESCE(CAST(json_extract(data,'$.record_version') AS INTEGER),0)+1),updated_at=? WHERE id=? AND type='config' AND json_extract(data,'$.key')='week_group' AND json_extract(data,'$.value')=?").bind(now,originalConfig.id,weekGroup),
+              assertion(env,"changes()=1"),
+              ...(airport.results?.length?[env.DB.prepare("UPDATE records SET data=json_set(data,'$.value','', '$.updated_by_role','instructor', '$.record_version',COALESCE(CAST(json_extract(data,'$.record_version') AS INTEGER),0)+1),updated_at=? WHERE id=? AND type='config' AND json_extract(data,'$.key')='last_airport'").bind(now,airport.results[0].id)]:[]),
+              assertion(env,"NOT EXISTS(SELECT 1 FROM records WHERE type='config' AND json_extract(data,'$.key')='week_group' AND json_extract(data,'$.value')=?)",weekGroup)
+            ];
+            await env.DB.batch(statements);
+            return send({isOk:true,closed:true,archive_id:candidate.id,week_group:weekGroup,recovered:true,source_record_count:rows.length});
+          }
+        }
+      }
       const sounds=rows.filter(row=>row.type==='sound_event').length;
-      return refuse('existing_archive',`An archive already exists. ${dorms.length} dorm, ${buses.length} bus, and ${sounds} sound-event records remain. No additional archive or deletion was attempted. Reconcile the previous closeout first.`);
+      return refuse('existing_archive',`An archive already exists. ${dorms.length} dorm, ${buses.length} bus, and ${sounds} sound-event records remain. Automatic recovery requires exact archived source-record proof; records were not changed.`);
     }
 
     const fields=['receiving_day_one_start','receiving_day_one_end','receiving_day_two_start','receiving_day_two_end'];

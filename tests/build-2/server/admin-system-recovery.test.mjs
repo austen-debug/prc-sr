@@ -21,6 +21,8 @@ function setup(){
     "CREATE TABLE gate_audit_events(event_id TEXT PRIMARY KEY,cycle_id TEXT,operation_id TEXT,entity_type TEXT,entity_id TEXT,event_type TEXT,actor_role TEXT,prior_version INTEGER,resulting_version INTEGER,metadata_json TEXT,occurred_at TEXT);"
   );
   db.exec(readFileSync(new URL('../../../migrations/0012_gate_admin_system_control.sql',import.meta.url),'utf8'));
+  db.exec(readFileSync(new URL('../../../migrations/0011_gate_archive_source_immutability.sql',import.meta.url),'utf8'));
+
   function record(id,type,week_group,data){
     db.prepare("INSERT INTO records(id,type,week_group,data,created_at,updated_at) VALUES(?,?,?,?,?,?)")
       .run(id,type,week_group,JSON.stringify(data),iso,iso);

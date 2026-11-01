@@ -114,11 +114,13 @@ test('Registered transactional cycles cannot pass through legacy closeout',async
   assert.equal(count(f.db,'archive','WG26053'),0);
 });
 
-test('Admin or Airman role cannot use Instructor legacy closeout',async()=>{
+test('Admin inherits Instructor legacy closeout while Airman remains forbidden',async()=>{
   const f=setup();
   const req=new Request('https://gate.example/api/legacy-closeout',{method:'POST',body:'{}'});
   const response=await onRequestPost({request:req,env:f.env,data:{session:{role:'admin'}}});
-  assert.equal(response.status,403);
+  assert.notEqual(response.status,403, 'Admin may reach the legacy closeout handler');
+  const airman=await onRequestPost({request:new Request('https://gate.example/api/legacy-closeout',{method:'POST',body:'{}'}),env:f.env,data:{session:{role:'airman'}}});
+  assert.equal(airman.status,403);
   assert.equal(count(f.db,'dorm','WG26053'),1);
 });
 

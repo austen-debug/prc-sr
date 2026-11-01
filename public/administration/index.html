@@ -32,6 +32,7 @@ main{padding-bottom:calc(1.5rem + 36px + env(safe-area-inset-bottom,0px))}
 <button data-tab="sessions" aria-selected="false">Live Sessions &amp; Devices</button>
 <button data-tab="issues" aria-selected="false">System Issues &amp; Debugging</button>
 <button data-tab="integrity" aria-selected="false">Data Integrity</button>
+<button data-tab="control" aria-selected="false">System Control</button>
 <button data-tab="lifecycle" aria-selected="false">Lifecycle</button>
 <button data-tab="audit" aria-selected="false">Audit History</button>
 <button data-tab="future" aria-selected="false">Configuration &amp; Security</button>
@@ -107,6 +108,29 @@ main{padding-bottom:calc(1.5rem + 36px + env(safe-area-inset-bottom,0px))}
 <div class="grid" id="integrity-grid"></div>
 <button id="refresh-integrity" type="button">Refresh integrity inspection</button>
 </section>
+<section id="panel-control" class="panel hidden">
+<h2>System Control</h2>
+<p>Authenticated Site Lock and controlled emergency Week Group recovery. Lock the site before initiating a reset. All actions are server-enforced, audited, and require a recent Admin sign-in.</p>
+<div class="panel">
+<h3>Site Access</h3>
+<div class="notice"><strong id="site-lock-state">Checking…</strong> · Revision <span id="site-lock-revision">—</span><p id="site-lock-details">Reading authoritative D1 state.</p></div>
+<button id="site-lock-button" type="button" class="danger" disabled>Loading lock status…</button>
+<div class="small">The Admin account retains all operational pages while non-Admin users are restricted to maintenance and logout.</div>
+</div>
+<div class="panel" style="margin-top:1rem">
+<h3>Emergency Recovery</h3>
+<div class="notice"><strong id="admin-recovery-group">Checking active group…</strong><p id="admin-recovery-counts"></p></div>
+<p id="admin-recovery-manifest" class="small"></p>
+<div class="toolbar">
+<button id="admin-reset-week" type="button" class="danger" disabled>RESET WEEK GROUP</button>
+<button id="admin-archive-zero" type="button" class="danger" disabled>ARCHIVE &amp; ZERO</button>
+</div>
+<p class="small">RESET preserves original Input setup, creates immutable recovery evidence, and restarts receiving. ARCHIVE &amp; ZERO creates a verified historical archive and returns GATE to no active group. Both require Site Lock.</p>
+<div id="admin-recovery-status" role="status" class="notice"></div>
+</div>
+<div class="toolbar" style="margin-top:1rem"><button type="button" id="admin-system-refresh">Refresh system state</button></div>
+<div id="admin-system-action-status" role="status" class="status"></div>
+</section>
 <section id="panel-lifecycle" class="panel hidden">
 <h2>Lifecycle &amp; Recovery Inspection</h2>
 <p>Read-only view of authoritative Week Group lifecycle state. Abnormal recovery is held for a separately verified administrative command package.</p>
@@ -127,6 +151,19 @@ main{padding-bottom:calc(1.5rem + 36px + env(safe-area-inset-bottom,0px))}
 <p>Credentials remain in Cloudflare environment bindings. This interface does not expose secret values or unrestricted database operations.</p>
 </section>
 </main>
+<dialog id="admin-system-confirm" aria-labelledby="admin-system-confirm-title">
+<form id="admin-system-confirm-form" autocomplete="off">
+<h2 id="admin-system-confirm-title">Confirm Admin command</h2>
+<p id="admin-system-confirm-impact"></p>
+<label>Administrative reason (10–1000 characters)
+<textarea name="reason" minlength="10" maxlength="1000" required placeholder="Document the operational reason without PII."></textarea></label>
+<label><span id="admin-system-confirm-label">Confirmation phrase</span>
+<input name="confirmation" required autocomplete="off"></label>
+<p class="small">You must have signed in as Admin within the last five minutes. Execution is recorded and cannot be undone by closing the dialog.</p>
+<div id="admin-system-confirm-status" class="status" role="status"></div>
+<div class="toolbar"><button id="admin-system-confirm-submit" class="danger" type="submit">CONFIRM OPERATION</button>
+<button id="admin-system-confirm-cancel" type="button">Cancel</button></div>
+</form></dialog>
 <dialog id="session-details-dialog" aria-labelledby="session-details-title">
 <div class="toolbar"><h2 id="session-details-title">Session Details</h2><button id="session-details-close" type="button">Close</button></div>
 <p class="small">Identity and location are inferred from the session's network and browser at login. Location is approximate, not GPS. Labels are manually assigned; they are not verified hostnames.</p>
@@ -148,6 +185,7 @@ main{padding-bottom:calc(1.5rem + 36px + env(safe-area-inset-bottom,0px))}
 </dialog>
 <footer>GATE Admin access is server-authorized. This interface does not provide general database edit or SQL capabilities.</footer>
 <script src="/js/gate-issue-reporter.js" defer></script>
+<script src="/js/gate-admin-system-controls.js?v=site-lock-recovery-20261101" defer></script>
 <script>
 'use strict';
 const byId=id=>document.getElementById(id);

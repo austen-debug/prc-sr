@@ -490,6 +490,8 @@ test('Squadron SITREP ships current canonical assets and preserves lightweight c
   }) });
   assert.equal(auth.status, 200);
   const cookie = auth.headers.get('set-cookie').split(';')[0];
+  // This historical HTML-asset test has no D1; model optional migration absent.
+  env.DB={prepare(){return {async first(){throw new Error('no such table: gate_admin_system_control');}}}};
   const response = await onRequest({ env,
     request:new Request('https://gate.example/board/', {headers:{Cookie:cookie}}),
     next:async () => new Response(index, {headers:{'Content-Type':'text/html; charset=UTF-8'}})

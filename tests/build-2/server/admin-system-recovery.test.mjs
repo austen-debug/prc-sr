@@ -98,7 +98,7 @@ test('reset requires lock, verifies original Input manifest, and preserves all p
   assert.equal(count(f.db,'bus'),1);
   assert.equal((await f.postSite('lock',0)).status,200);
   const preview=await recoveryGet({env:f.env,data:f.data});
-  assert.equal(preview.status,200,await preview.text());
+  assert.equal(preview.status,200);
   const summary=await preview.json();
   assert.equal(summary.reset_available,true);
   assert.equal(summary.source_record_count,4);

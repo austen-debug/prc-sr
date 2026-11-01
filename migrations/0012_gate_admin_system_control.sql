@@ -51,3 +51,19 @@ BEGIN SELECT RAISE(ABORT,'Admin recovery evidence is immutable'); END;
 CREATE TRIGGER IF NOT EXISTS trg_gate_admin_reset_evidence_immutable_delete
 BEFORE DELETE ON gate_admin_reset_evidence
 BEGIN SELECT RAISE(ABORT,'Admin recovery evidence is immutable'); END;
+
+-- Immutable initialization source for reset_week_group. A live dorm row is NOT
+-- an acceptable substitute for the originally approved Input configuration.
+CREATE TABLE IF NOT EXISTS gate_admin_input_manifests (
+  initialization_id TEXT PRIMARY KEY,
+  cycle_id TEXT NOT NULL DEFAULT '',
+  week_group TEXT NOT NULL,
+  manifest_json TEXT NOT NULL CHECK(json_valid(manifest_json) AND json_type(manifest_json)='object'),
+  created_at TEXT NOT NULL
+);
+CREATE TRIGGER IF NOT EXISTS trg_gate_admin_input_manifests_no_update
+BEFORE UPDATE ON gate_admin_input_manifests
+BEGIN SELECT RAISE(ABORT,'original Input manifest is immutable'); END;
+CREATE TRIGGER IF NOT EXISTS trg_gate_admin_input_manifests_no_delete
+BEFORE DELETE ON gate_admin_input_manifests
+BEGIN SELECT RAISE(ABORT,'original Input manifest is immutable'); END;

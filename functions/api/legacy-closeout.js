@@ -206,9 +206,9 @@ export async function onRequestPost({request,env,data}){
       env.DB.prepare("DELETE FROM records WHERE week_group=? AND type IN ('bus','dorm','sound_event')").bind(weekGroup),
       assertion(env,"NOT EXISTS(SELECT 1 FROM records WHERE week_group=? AND type IN ('bus','dorm','sound_event'))",weekGroup),
       env.DB.prepare("UPDATE records SET data=json_set(data,'$.value','', '$.updated_by_role',?, '$.record_version',COALESCE(CAST(json_extract(data,'$.record_version') AS INTEGER),0)+1),updated_at=? WHERE id=? AND type='config' AND json_extract(data,'$.key')='week_group' AND json_extract(data,'$.value')=?")
-        .bind(now,originalConfig.id,weekGroup),
+        .bind(actor,now,originalConfig.id,weekGroup),
       assertion(env,'changes()=1'),
-      ...(airport.results?.length?[env.DB.prepare("UPDATE records SET data=json_set(data,'$.value','', '$.updated_by_role',?, '$.record_version',COALESCE(CAST(json_extract(data,'$.record_version') AS INTEGER),0)+1),updated_at=? WHERE id=? AND type='config' AND json_extract(data,'$.key')='last_airport'").bind(now,airport.results[0].id)]:[]),
+      ...(airport.results?.length?[env.DB.prepare("UPDATE records SET data=json_set(data,'$.value','', '$.updated_by_role',?, '$.record_version',COALESCE(CAST(json_extract(data,'$.record_version') AS INTEGER),0)+1),updated_at=? WHERE id=? AND type='config' AND json_extract(data,'$.key')='last_airport'").bind(actor,now,airport.results[0].id)]:[]),
       assertion(env,"NOT EXISTS(SELECT 1 FROM records WHERE type='config' AND json_extract(data,'$.key')='week_group' AND json_extract(data,'$.value')=?)",weekGroup)
     ];
     await env.DB.batch(statements);

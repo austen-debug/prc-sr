@@ -85,9 +85,15 @@ async function checkReady(env) {
   const status=await readSiteLock(env);
   if(!status.installed||!status.locked)throw Error('Site Lock must be engaged before emergency recovery');
   const sql=await env.DB.prepare(
-    "SELECT name FROM sqlite_master WHERE type='table' AND name IN ('gate_admin_reset_evidence','gate_admin_system_events','gate_audit_events')"
+    "SELECT name,type,sql FROM sqlite_master WHERE (type='table' AND name IN ('gate_admin_reset_evidence','gate_admin_system_events','gate_audit_events','gate_admin_input_manifests')) OR (type='trigger' AND name IN ('trg_gate_admin_reset_evidence_immutable_update','trg_gate_admin_reset_evidence_immutable_delete','trg_gate_admin_system_events_immutable_update','trg_gate_admin_system_events_immutable_delete','trg_gate_admin_input_manifests_no_update','trg_gate_admin_input_manifests_no_delete','trg_gate_archive_source_no_update','trg_gate_archive_source_no_delete','trg_gate_archive_source_no_replace'))"
   ).all();
-  if((sql.results||[]).length!==3)throw Error('Recovery or audit schema is incomplete');
+  const schema=new Map((sql.results||[]).map(row=>[row.name,row]));
+  const necessary=['gate_admin_reset_evidence','gate_admin_system_events','gate_audit_events','gate_admin_input_manifests',
+    'trg_gate_admin_reset_evidence_immutable_update','trg_gate_admin_reset_evidence_immutable_delete',
+    'trg_gate_admin_system_events_immutable_update','trg_gate_admin_system_events_immutable_delete',
+    'trg_gate_admin_input_manifests_no_update','trg_gate_admin_input_manifests_no_delete',
+    'trg_gate_archive_source_no_update','trg_gate_archive_source_no_delete','trg_gate_archive_source_no_replace'];
+  if(necessary.some(name=>!schema.has(name)))throw Error('Recovery schema or immutable triggers are incomplete');
   return status;
 }
 export async function onRequestGet({env,data}) {
@@ -178,6 +184,8 @@ export async function onRequestPost({request,env,data}) {
       guard(env,"EXISTS(SELECT 1 FROM gate_admin_system_control WHERE id=1 AND locked=1 AND revision=?)",lock.revision),
       guard(env,"EXISTS(SELECT 1 FROM records WHERE id=? AND data=? AND updated_at=?)",state.wg.id,state.wg.data,state.wg.updated_at),
       guard(env,"NOT EXISTS(SELECT 1 FROM gate_admin_system_events WHERE operation_id=?)",operationId),
+      ...(manifest?[guard(env,"EXISTS(SELECT 1 FROM gate_admin_input_manifests WHERE initialization_id=? AND manifest_json=?)",
+        state.cycle?.cycle_id||state.wg.payload.initialization_request_id,manifestJson)]:[]),
       ...(state.cycle?[guard(env,"EXISTS(SELECT 1 FROM gate_week_groups WHERE cycle_id=? AND state='active' AND revision=?)",
         state.cycle.cycle_id,expectedRevision)]:[guard(env,"NOT EXISTS(SELECT 1 FROM gate_week_groups WHERE state<>'closed')")]),
       env.DB.prepare("INSERT INTO gate_admin_reset_evidence(evidence_id,operation_id,action,week_group,cycle_id,manifest_json,source_records_json,source_record_count,archive_id,created_at) VALUES(?,?,?,?,?,?,?,?,?,?)")
@@ -191,6 +199,10 @@ export async function onRequestPost({request,env,data}) {
         guard(env,"(SELECT COUNT(*) FROM records WHERE type='dorm' AND week_group=?)=?",state.group,generated.length)]:[]),
       ...(action==='archive_and_zero'?clearConfig(env,state.wg,'week_group',state.group,newTime):[]),
       ...(state.airport?clearConfig(env,state.airport,'last_airport',String(state.airport.payload.value||''),newTime):[]),
+      ...(action==='archive_and_zero'?[guard(env,
+        "EXISTS(SELECT 1 FROM records WHERE id=? AND type='config' AND json_extract(data,'$.value')='')",state.wg.id)]:[]),
+      ...(state.airport?[guard(env,
+        "EXISTS(SELECT 1 FROM records WHERE id=? AND type='config' AND json_extract(data,'$.value')='')",state.airport.id)]:[]),
       ...(state.cycle?[env.DB.prepare(
         action==='archive_and_zero'
           ?"UPDATE gate_week_groups SET state='closed',archive_id=?,closed_at=?,revision=revision+1,updated_at=? WHERE cycle_id=? AND state='active' AND revision=?"

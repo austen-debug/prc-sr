@@ -52,23 +52,18 @@ async function currentState(env) {
   return {group,cycle,wg,airport,sources,dorms,buses,archiveCount:(archived.results||[]).length};
 }
 async function originalManifest(env,state) {
-  let proposed;
-  if(state.cycle?.source_draft_id) {
-    const row=await env.DB.prepare(
-      "SELECT proposed_week_group,rows_json,receiving_windows_json,status FROM gate_input_drafts WHERE draft_id=?"
-    ).bind(state.cycle.source_draft_id).first();
-    if(!row||row.status!=='consumed'||row.proposed_week_group!==state.group)
-      throw Error('Verified original Input draft is unavailable');
-    proposed={proposed_week_group:row.proposed_week_group,rows:JSON.parse(row.rows_json),receiving_windows:JSON.parse(row.receiving_windows_json)};
-  }else {
-    proposed=state.wg?.payload?.admin_reset_manifest;
-    if(!proposed || !state.wg?.payload?.initialization_request_id)
-      throw Error('This legacy Week Group predates a verified Input manifest; reset is unavailable');
-  }
-  const result=normalizeDraft(proposed);
-  if(result.proposed_week_group!==state.group)throw Error('Original Input manifest Week Group mismatch');
+  const initializedId=state.cycle?.cycle_id||state.wg?.payload?.initialization_request_id||'';
+  if(!initializedId)throw Error('Original initialization identity is not available');
+  const row=await env.DB.prepare(
+    'SELECT cycle_id,week_group,manifest_json FROM gate_admin_input_manifests WHERE initialization_id=?'
+  ).bind(initializedId).first();
+  if(!row||row.week_group!==state.group||row.cycle_id!==String(state.cycle?.cycle_id||''))
+    throw Error('Immutable original Input manifest is not available for this Week Group');
+  const result=normalizeDraft(JSON.parse(row.manifest_json));
+  if(result.proposed_week_group!==state.group)throw Error('Input manifest Week Group mismatch');
   return result;
 }
+
 function sourceCheckSql() {
   return "(SELECT COUNT(*) FROM records WHERE type IN ('bus','dorm','sound_event'))=? AND NOT EXISTS("+
     "SELECT 1 FROM json_each(?) expected LEFT JOIN records actual ON actual.id=json_extract(expected.value,'$.id') "+

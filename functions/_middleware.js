@@ -30,6 +30,7 @@ const UI_INLINE_ASSETS = [];
 const CUTOVER_RUNTIME_SCRIPT = '<script src="/js/gate-persistence-runtime.js?v=cutover-readiness-20261028" defer></script>';
 
 const UI_HEAD_SCRIPTS = [
+  '<script src="/js/gate-site-lock-watch.js?v=admin-site-lock-20261101" defer></script>',
   '<script src="/js/gate-record-display-contract.js?v=record-display-integrity-20260714b" defer></script>',
   '<script src="/js/gate-component-contracts.js?v=status-board-reference-20261016-v1" defer></script>',
   '<script src="/js/gate-ui-hooks.js?v=port-clear-board-stability-20261017-v1" defer></script>',

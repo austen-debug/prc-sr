@@ -5,6 +5,8 @@ import {DatabaseSync} from 'node:sqlite';
 import {onRequestGet as siteGet,onRequestPost as sitePost} from '../../../functions/api/admin-system.js';
 import {onRequestGet as recoveryGet,onRequestPost as recoveryPost} from '../../../functions/api/admin-recovery.js';
 import {readSiteLock,siteMaintenancePage} from '../../../functions/api/site-lock-core.mjs';
+import {onRequest as rootMiddleware} from '../../../functions/_middleware.js';
+import {roleSigningSecret} from '../../../functions/api/session-contract.mjs';
 import {buildDormRows,normalizeDraft} from '../../../functions/api/persistence-core.mjs';
 
 const iso='2026-11-01T20:00:00.000Z';
@@ -147,5 +149,49 @@ test('no original Input manifest means reset is rejected without record mutation
   assert.equal(count(f.db,'bus'),1);
   assert.equal(count(f.db,'dorm'),2);
   assert.equal(f.db.prepare('SELECT COUNT(*) AS n FROM gate_admin_reset_evidence').get().n,0);
+  f.db.close();
+});
+
+test('locked server blocks all non-Admin pages and APIs while keeping logout/status and Admin access',async()=>{
+  const f=setup();
+  Object.assign(f.env,{
+    AUTH_SECRET:'lock-route-test',
+    ADMIN_USERNAME:'administrator',ADMIN_PASSWORD:'admin-pass',
+    MTI_USERNAME:'mti',MTI_PASSWORD:'mti-pass',
+    AIRMAN_USERNAME:'airman',AIRMAN_PASSWORD:'airman-pass',
+    SQUADRON_USERNAME:'squadron',SQUADRON_PASSWORD:'squadron-pass'
+  });
+  assert.equal((await f.postSite('lock',0)).status,200);
+  async function cookie(role){
+    const names={admin:'administrator',instructor:'mti',airman:'airman',squadron:'squadron'};
+    const at=Date.now(),payload={username:names[role],role,iat:at,exp:at+20*60*1000};
+    const base=btoa(JSON.stringify(payload)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/g,'');
+    const key=await crypto.subtle.importKey('raw',new TextEncoder().encode(roleSigningSecret(role,f.env)),
+      {name:'HMAC',hash:'SHA-256'},false,['sign']);
+    const sig=await crypto.subtle.sign('HMAC',key,new TextEncoder().encode(base));
+    let raw='';for(const c of new Uint8Array(sig))raw+=String.fromCharCode(c);
+    return 'prc_sr_session='+base+'.'+btoa(raw).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/g,'');
+  }
+  async function hit(path,role,method='GET'){
+    return rootMiddleware({env:f.env,
+      request:new Request('https://gate.example'+path,{
+        method,headers:{Cookie:await cookie(role)}
+      }),
+      next:async()=>new Response('APP',{status:200,headers:{'Content-Type':'text/plain'}})});
+  }
+  for(const role of ['instructor','airman','squadron']){
+    const route=role==='squadron'?'/squadron/':'/board/';
+    const page=await hit(route,role);
+    assert.equal(page.status,200);
+    assert.match(await page.text(),/GATE is currently down for maintenance/);
+    const api=await hit('/api/records',role);
+    assert.equal(api.status,423);
+    assert.equal((await api.json()).code,'site_locked');
+    assert.equal((await hit('/api/site-status',role)).status,200);
+    assert.equal((await hit('/api/logout',role,'POST')).status,200);
+  }
+  const admin=await hit('/administration/', 'admin');
+  assert.equal(admin.status,200);
+  assert.equal(await admin.text(),'APP');
   f.db.close();
 });

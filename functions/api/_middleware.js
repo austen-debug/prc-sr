@@ -12,6 +12,7 @@ const RECORD_TYPES = new Set(['bus', 'dorm', 'archive', 'config', 'sound_event',
 
 function squadronApiAllowed(pathname, method) {
   if (pathname === '/api/session') return method === 'GET';
+  if (pathname === '/api/site-status') return method === 'GET';
   if (pathname === '/api/logout') return method === 'POST';
   if (pathname === '/api/squadron-board') return method === 'GET';
   return false;

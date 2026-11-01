@@ -144,7 +144,8 @@
     ensureSquadronPageIfNeeded();
     const pages = allowedPagesForRole();
     const active = activePageId() || firstAllowedPage();
-    container.innerHTML = pages.map(page => navButtonMarkup(page, page === active)).join('');
+    container.innerHTML = pages.map(page => navButtonMarkup(page, page === active)).join('') +
+      (role() === 'admin' ? '<a href="/administration/" class="nav-btn gate-admin-nav-link" aria-label="System Administration">ADMINISTRATION</a>' : '');
     container.dataset.owner = 'gate-access-control-controller';
     container.dataset.role = role();
 

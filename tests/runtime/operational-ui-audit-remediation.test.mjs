@@ -423,7 +423,7 @@ test('middleware delivers one canonical stylesheet and no retired CSS assets', a
 
 
 test('Squadron SITREP ships current canonical assets and preserves lightweight communication UI', async () => {
-  const scriptUrl = '/js/prc-dash-final-audit.js?v=squadron-help-centered-20261016-v2';
+
   const [middleware, standalone, budgetText, stack, css, controller, index] = await Promise.all([
     source('functions/_middleware.js'), source('public/squadron/index.html'),
     source('docs/build-2/ACTIVE_RUNTIME_BUDGET.json'), source('docs/ACTIVE_RUNTIME_STACK.md'),
@@ -431,6 +431,7 @@ test('Squadron SITREP ships current canonical assets and preserves lightweight c
     source('public/index.html')
   ]);
   const budget = JSON.parse(budgetText);
+  const scriptUrl=budget.currentDirectScripts.find(url=>url.startsWith('/js/prc-dash-final-audit.js?v='));
   const url = budget.currentDirectStyles.find(asset => asset.startsWith('/css/military-glass-terminal.css?v='));
   assert.ok(url && middleware.includes(url), 'instructor middleware must reference the manifest-owned CSS');
   assert.ok(standalone.includes(url), 'standalone must use the same CSS version');
@@ -489,6 +490,8 @@ test('Squadron SITREP ships current canonical assets and preserves lightweight c
   }) });
   assert.equal(auth.status, 200);
   const cookie = auth.headers.get('set-cookie').split(';')[0];
+  // This historical HTML-asset test has no D1; model optional migration absent.
+  env.DB={prepare(){return {async first(){throw new Error('no such table: gate_admin_system_control');}}}};
   const response = await onRequest({ env,
     request:new Request('https://gate.example/board/', {headers:{Cookie:cookie}}),
     next:async () => new Response(index, {headers:{'Content-Type':'text/html; charset=UTF-8'}})
@@ -565,7 +568,7 @@ test('Squadron Access requires a non-dismissible acknowledgment once per authent
     return response.headers.get('set-cookie').split(';')[0];
   };
   const serveSquadron = async cookie => onRequest({
-    env,
+    env:{...env,DB:{prepare(){return {async first(){throw new Error('no such table: gate_admin_system_control');}}}}},
     request:new Request('https://gate.example/squadron/', {headers:{Cookie:cookie}}),
     next:async () => new Response(standalone, {headers:{'Content-Type':'text/html; charset=UTF-8'}})
   });

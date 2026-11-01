@@ -41,7 +41,7 @@ Injected by middleware in current order on the Flight Alert feature branch:
 6. `/js/prc-dash-sat-arrivals.js?v=board-stability-20261017-v1`
 7. `/js/prc-dash-space-force.js`
 8. `/js/prc-dash-dorm-reopen.js?v=popup-plop-sounds-20260928`
-9. `/js/prc-dash-final-audit.js?v=squadron-help-centered-20261016-v2`
+9. `/js/prc-dash-final-audit.js?v=site-lock-watch-20261101`
 10. `/js/gate-status-board-controller.js?v=status-board-spacing-20261017-v1`
 11. `/js/gate-processing-controller.js?v=processing-dorm-cards-20261016-v2`
 12. `/js/prc-dash-dorm-flag-validation.js?v=status-board-reference-20261016-v1`

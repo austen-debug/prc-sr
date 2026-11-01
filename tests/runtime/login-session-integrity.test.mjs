@@ -126,6 +126,8 @@ test('middleware preserves durable app routes across refresh and enforces role b
   const instructorCookie = await cookie(env.MTI_USERNAME, env.MTI_PASSWORD);
   const airmanCookie = await cookie(env.AIRMAN_USERNAME, env.AIRMAN_PASSWORD);
   const squadronCookie = await cookie(env.SQUADRON_USERNAME, env.SQUADRON_PASSWORD);
+  // Site Lock is an optional additive migration in this role-routing fixture.
+  env.DB={prepare(){return {async first(){throw new Error('no such table: gate_admin_system_control');}}}};
 
   async function request(path, authCookie = '', assetBody = index) {
     let assetPath = null;

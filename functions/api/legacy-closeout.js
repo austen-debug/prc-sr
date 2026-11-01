@@ -8,7 +8,7 @@ const send = (body, status=200) => new Response(JSON.stringify(body), {
   status, headers:{'Content-Type':'application/json','Cache-Control':'no-store'}
 });
 const refuse = (code,error,status=409) => send({isOk:false,code,error},status);
-const allowed = data => data?.session?.role === 'instructor';
+const allowed = data => ['instructor','admin'].includes(data?.session?.role);
 const keyOk = value => typeof value==='string' && /^[a-f\d-]{36}$/i.test(value);
 const nowIso = () => new Date().toISOString();
 const assertion = (env,condition,...args) => {
@@ -52,6 +52,7 @@ export async function onRequestPost({request,env,data}){
 
   let payload;
   try{payload=await request.json();}catch{return refuse('validation','Invalid JSON request.',400);}
+  const actor=data.session.role;
   const weekGroup=String(payload?.week_group||'').trim().toUpperCase();
   const requestId=payload?.request_id;
   if(!/^[A-Z0-9_-]{1,100}$/.test(weekGroup)||!keyOk(requestId))
@@ -148,9 +149,9 @@ export async function onRequestPost({request,env,data}){
                 weekGroup,rows.length,snapshot,candidate.id,candidate.data,originalConfig.id,weekGroup),
               env.DB.prepare("DELETE FROM records WHERE week_group=? AND type IN ('bus','dorm','sound_event')").bind(weekGroup),
               assertion(env,"NOT EXISTS(SELECT 1 FROM records WHERE week_group=? AND type IN ('bus','dorm','sound_event'))",weekGroup),
-              env.DB.prepare("UPDATE records SET data=json_set(data,'$.value','', '$.updated_by_role','instructor', '$.record_version',COALESCE(CAST(json_extract(data,'$.record_version') AS INTEGER),0)+1),updated_at=? WHERE id=? AND type='config' AND json_extract(data,'$.key')='week_group' AND json_extract(data,'$.value')=?").bind(now,originalConfig.id,weekGroup),
+              env.DB.prepare("UPDATE records SET data=json_set(data,'$.value','', '$.updated_by_role',?, '$.record_version',COALESCE(CAST(json_extract(data,'$.record_version') AS INTEGER),0)+1),updated_at=? WHERE id=? AND type='config' AND json_extract(data,'$.key')='week_group' AND json_extract(data,'$.value')=?").bind(actor,now,originalConfig.id,weekGroup),
               assertion(env,"changes()=1"),
-              ...(airport.results?.length?[env.DB.prepare("UPDATE records SET data=json_set(data,'$.value','', '$.updated_by_role','instructor', '$.record_version',COALESCE(CAST(json_extract(data,'$.record_version') AS INTEGER),0)+1),updated_at=? WHERE id=? AND type='config' AND json_extract(data,'$.key')='last_airport'").bind(now,airport.results[0].id)]:[]),
+              ...(airport.results?.length?[env.DB.prepare("UPDATE records SET data=json_set(data,'$.value','', '$.updated_by_role',?, '$.record_version',COALESCE(CAST(json_extract(data,'$.record_version') AS INTEGER),0)+1),updated_at=? WHERE id=? AND type='config' AND json_extract(data,'$.key')='last_airport'").bind(actor,now,airport.results[0].id)]:[]),
               assertion(env,"NOT EXISTS(SELECT 1 FROM records WHERE type='config' AND json_extract(data,'$.key')='week_group' AND json_extract(data,'$.value')=?)",weekGroup)
             ];
             await env.DB.batch(statements);
@@ -173,7 +174,7 @@ export async function onRequestPost({request,env,data}){
       windows[field]=incoming||dorms.find(dorm=>dorm[field])?.[field]||'';
     }
     const now=nowIso(),archiveId=crypto.randomUUID();
-    const archive=buildArchivePayload({cycleId:'',weekGroup,dorms,buses,sourceRecords:rows,windows,now,actorRole:'instructor'});
+    const archive=buildArchivePayload({cycleId:'',weekGroup,dorms,buses,sourceRecords:rows,windows,now,actorRole:actor});
     archive.__backendId=archiveId;
     archive.legacy_closeout_request_id=requestId;
     const archiveJson=JSON.stringify(archive);
@@ -204,10 +205,10 @@ export async function onRequestPost({request,env,data}){
         archiveId,archiveJson,archiveId,archive.source_records_json),
       env.DB.prepare("DELETE FROM records WHERE week_group=? AND type IN ('bus','dorm','sound_event')").bind(weekGroup),
       assertion(env,"NOT EXISTS(SELECT 1 FROM records WHERE week_group=? AND type IN ('bus','dorm','sound_event'))",weekGroup),
-      env.DB.prepare("UPDATE records SET data=json_set(data,'$.value','', '$.updated_by_role','instructor', '$.record_version',COALESCE(CAST(json_extract(data,'$.record_version') AS INTEGER),0)+1),updated_at=? WHERE id=? AND type='config' AND json_extract(data,'$.key')='week_group' AND json_extract(data,'$.value')=?")
-        .bind(now,originalConfig.id,weekGroup),
+      env.DB.prepare("UPDATE records SET data=json_set(data,'$.value','', '$.updated_by_role',?, '$.record_version',COALESCE(CAST(json_extract(data,'$.record_version') AS INTEGER),0)+1),updated_at=? WHERE id=? AND type='config' AND json_extract(data,'$.key')='week_group' AND json_extract(data,'$.value')=?")
+        .bind(actor,now,originalConfig.id,weekGroup),
       assertion(env,'changes()=1'),
-      ...(airport.results?.length?[env.DB.prepare("UPDATE records SET data=json_set(data,'$.value','', '$.updated_by_role','instructor', '$.record_version',COALESCE(CAST(json_extract(data,'$.record_version') AS INTEGER),0)+1),updated_at=? WHERE id=? AND type='config' AND json_extract(data,'$.key')='last_airport'").bind(now,airport.results[0].id)]:[]),
+      ...(airport.results?.length?[env.DB.prepare("UPDATE records SET data=json_set(data,'$.value','', '$.updated_by_role',?, '$.record_version',COALESCE(CAST(json_extract(data,'$.record_version') AS INTEGER),0)+1),updated_at=? WHERE id=? AND type='config' AND json_extract(data,'$.key')='last_airport'").bind(actor,now,airport.results[0].id)]:[]),
       assertion(env,"NOT EXISTS(SELECT 1 FROM records WHERE type='config' AND json_extract(data,'$.key')='week_group' AND json_extract(data,'$.value')=?)",weekGroup)
     ];
     await env.DB.batch(statements);

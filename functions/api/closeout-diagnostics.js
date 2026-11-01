@@ -6,7 +6,7 @@ const send=(body,status=200)=>new Response(JSON.stringify(body),{
 const number=value=>Number.isFinite(Number(value))?Number(value):0;
 
 export async function onRequestGet({request,env,data}){
-  if (data?.session?.role!=='instructor') return send({isOk:false,code:'forbidden'},403);
+  if (!['admin','instructor'].includes(data?.session?.role)) return send({isOk:false,code:'forbidden'},403);
   if (!env?.DB) return send({isOk:false,code:'database_unavailable'},503);
   const weekGroup=String(new URL(request.url).searchParams.get('week_group')||'').trim().toUpperCase();
   if (!/^[A-Z0-9_-]{1,100}$/.test(weekGroup)) return send({isOk:false,code:'validation',error:'Valid Week Group required.'},400);

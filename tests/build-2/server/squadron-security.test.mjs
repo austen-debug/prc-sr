@@ -65,6 +65,7 @@ test('root routing never serves operational app shell to Squadron and fails clos
   const secret = 'route-test-secret';
   const cookie = await sessionCookie(secret);
   const env = roleEnv(secret);
+  env.DB={prepare(){return {async first(){throw new Error('no such table: gate_admin_system_control');}}}};
   const root = await rootMiddleware({ request: request('/', cookie), env, next: async () => new Response('APP') });
   assert.equal(root.status, 302);
   assert.equal(root.headers.get('location'), 'https://gate.example/squadron/');

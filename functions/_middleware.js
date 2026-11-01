@@ -1,5 +1,6 @@
 import { verifyRequestSession } from './api/session-contract.mjs';
 import { cutoverRequested } from './api/persistence-core.mjs';
+import { readSiteLock, siteLockBlockedApi, siteMaintenancePage } from './api/site-lock-core.mjs';
 
 const APP_ROUTES = Object.freeze({
   '/board/': Object.freeze({ page: 'board', roles: Object.freeze(['admin', 'instructor', 'airman']) }),
@@ -37,7 +38,7 @@ const UI_HEAD_SCRIPTS = [
   '<script src="/js/prc-dash-sat-arrivals.js?v=board-stability-20261017-v1" defer></script>',
   '<script src="/js/prc-dash-space-force.js" defer></script>',
   '<script src="/js/prc-dash-dorm-reopen.js?v=popup-plop-sounds-20260928" defer></script>',
-  '<script src="/js/prc-dash-final-audit.js?v=squadron-help-centered-20261016-v2" defer></script>',
+  '<script src="/js/prc-dash-final-audit.js?v=site-lock-watch-20261101" defer></script>',
   '<script src="/js/gate-status-board-controller.js?v=status-board-spacing-20261017-v1" defer></script>',
   '<script src="/js/gate-processing-controller.js?v=processing-dorm-cards-20261016-v2" defer></script>',
   '<script src="/js/prc-dash-dorm-flag-validation.js?v=status-board-reference-20261016-v1" defer></script>',
@@ -387,6 +388,26 @@ export async function onRequest(context) {
         pathname === '/administration' || pathname.startsWith('/administration/'))
       return redirectToLogin(url, pathname);
     return redirectToLogin(url);
+  }
+
+  // Authentication remains intact during maintenance; non-Admin application
+  // routes never serve the operational document or process protected API calls.
+  // The status/logout endpoints are the only non-Admin maintenance exemptions.
+  if (session.role !== 'admin') {
+    try {
+      const lock = await readSiteLock(context.env);
+      if (lock.locked) {
+        if (pathname === '/api/site-status' && context.request.method === 'GET') return context.next();
+        if (pathname === '/api/logout' && context.request.method === 'POST') return context.next();
+        if (pathname === '/api/session' && context.request.method === 'GET') return context.next();
+        if (pathname.startsWith('/api/')) return siteLockBlockedApi();
+        return siteMaintenancePage();
+      }
+    } catch (error) {
+      console.error('Site Lock verification unavailable:',error?.name||'error');
+      if (pathname.startsWith('/api/')) return siteLockBlockedApi();
+      return siteMaintenancePage();
+    }
   }
 
   if (session.role === 'squadron') {

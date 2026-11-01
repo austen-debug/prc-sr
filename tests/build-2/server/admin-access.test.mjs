@@ -214,6 +214,9 @@ test('Admin interface route protects direct physical index document and all non-
   };
   const cookies={admin:await sign('administrator','admin-pass'),instructor:await sign('instructor','instructor-pass'),
     airman:await sign('airman','airman-pass'),squadron:await sign('squadron','squadron-pass')};
+  // The legacy role-routing fixture predates D1 Site Lock; expose the absent
+  // optional migration explicitly rather than an unbound D1 connection.
+  env.DB={prepare(){return {async first(){throw new Error('no such table: gate_admin_system_control');}}}};
   const request=(path,cookie)=>root({request:new Request('https://gate.example'+path,
     {headers:cookie?{Cookie:cookie}:{}}),env,next:async()=>new Response('<html>ADMIN</html>',{status:200,headers:{'Content-Type':'text/html'}})});
   for(const path of ['/administration/','/administration/index.html']){

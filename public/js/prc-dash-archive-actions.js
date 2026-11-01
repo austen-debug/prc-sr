@@ -126,7 +126,7 @@
     }
 
     try {
-      if (typeof currentRole !== 'undefined' && currentRole !== 'instructor') return;
+      if (typeof currentRole !== 'undefined' && !['instructor','admin'].includes(currentRole)) return;
     } catch (_) {}
 
     const archive = getArchive(id);

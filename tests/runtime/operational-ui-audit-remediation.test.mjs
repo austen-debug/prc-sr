@@ -364,7 +364,6 @@ test('GateAppShell owns durable page URLs without adding a second routing runtim
     source('docs/build-2/ACTIVE_RUNTIME_BUDGET.json')
   ]);
   const budget = JSON.parse(budgetText);
-  const scriptUrl=budget.currentDirectScripts.find(url=>url.startsWith('/js/prc-dash-final-audit.js?v='));
 
   for (const [page, path] of [
     ['board','/board/'],
@@ -432,6 +431,7 @@ test('Squadron SITREP ships current canonical assets and preserves lightweight c
     source('public/index.html')
   ]);
   const budget = JSON.parse(budgetText);
+  const scriptUrl=budget.currentDirectScripts.find(url=>url.startsWith('/js/prc-dash-final-audit.js?v='));
   const url = budget.currentDirectStyles.find(asset => asset.startsWith('/css/military-glass-terminal.css?v='));
   assert.ok(url && middleware.includes(url), 'instructor middleware must reference the manifest-owned CSS');
   assert.ok(standalone.includes(url), 'standalone must use the same CSS version');

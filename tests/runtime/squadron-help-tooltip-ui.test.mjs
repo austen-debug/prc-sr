@@ -71,7 +71,7 @@ test('the standalone Squadron page and app shell use the same fresh tooltip CSS/
   const budget = JSON.parse(await source('docs/build-2/ACTIVE_RUNTIME_BUDGET.json'));
   for (const uri of [
     budget.currentDirectStyles.find(url => url.startsWith('/css/military-glass-terminal.css?v=')),
-    '/js/prc-dash-final-audit.js?v=squadron-help-centered-20261016-v2'
+    budget.currentDirectScripts.find(url => url.startsWith('/js/prc-dash-final-audit.js?v='))
   ]) {
     assert.ok(mw.includes(uri), 'Middleware lacks latest Squadron UI asset ' + uri);
     assert.ok(standalone.includes(uri), 'Standalone Squadron route lacks latest UI asset ' + uri);

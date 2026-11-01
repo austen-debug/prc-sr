@@ -93,7 +93,9 @@ async function requireAdminWriteCompatibility(context,session) {
   if(session?.role!=='admin'||!['POST','PUT','PATCH','DELETE'].includes(context.request.method))return null;
   const path=new URL(context.request.url).pathname;
   // Identity revocation and sanitized issue reporting are independent of archive migration.
-  if(['/api/logout','/api/admin-sessions','/api/admin-session-label','/api/client-diagnostics'].includes(path))return null;
+  // Site Lock uses its own Admin-only, CAS-audited control table and switch;
+  // recovery commands remain under the full Admin audit/provenance gate.
+  if(['/api/logout','/api/admin-sessions','/api/admin-session-label','/api/client-diagnostics','/api/admin-system'].includes(path))return null;
   const inheritedOperationalWrite=INHERITED_ADMIN_WRITES[path]?.has(context.request.method)===true;
   if(!inheritedOperationalWrite && context.env?.GATE_ADMIN_WRITES_ENABLED!=='true')
     return restricted('Privileged Admin actions are disabled pending authorization.','admin_writes_disabled',503);

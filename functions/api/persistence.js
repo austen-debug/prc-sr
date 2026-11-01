@@ -206,7 +206,7 @@ async function legacyInitializationState(env,requestId) {
 
 async function initializeLegacy(env,payload,actor) {
   if (enabled(env)) return conflict('Transactional persistence is enabled; use the saved-draft initialization workflow.');
-  if (actor!=='instructor') return deny();
+  if (!['instructor','admin'].includes(actor)) return deny();
   const requestId=String(payload.request_id||'');
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(requestId))
     return error('validation','Valid initialization request ID required.',400);
@@ -238,7 +238,9 @@ async function initializeLegacy(env,payload,actor) {
       .bind(JSON.stringify(dormRows)),
     failUnless(env,"(SELECT COUNT(*) FROM records WHERE type='dorm' AND week_group=?)=? AND (SELECT COUNT(*) FROM records WHERE type='dorm' AND week_group=? AND json_extract(data,'$.initialization_request_id')=?)=?",draft.proposed_week_group,dormRows.length,draft.proposed_week_group,requestId,dormRows.length),
     ...configStatements(env,config,'week_group',draft.proposed_week_group,now,actor,{
-      initialization_request_id:requestId,initialization_dorm_count:dormRows.length
+      initialization_request_id:requestId,initialization_dorm_count:dormRows.length,
+      // Frozen original Input configuration for an auditable emergency reset.
+      admin_reset_manifest:{proposed_week_group:draft.proposed_week_group,rows:draft.rows,receiving_windows:draft.receiving_windows}
     }),
     failUnless(env,"(SELECT COUNT(*) FROM records WHERE type='config' AND json_extract(data,'$.key')='week_group' AND json_extract(data,'$.value')=? AND json_extract(data,'$.initialization_request_id')=?)=1",draft.proposed_week_group,requestId)
   ];

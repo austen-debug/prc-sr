@@ -268,7 +268,7 @@
     return records()
       .filter(record => record?.type === 'audit_event' && record.event_type === EVENT_TYPE &&
         record.week_group === group && record.entity_id === group &&
-        record.created_by_role === 'instructor' && record.actor_role === 'instructor' && record.__backendId)
+        ['instructor','admin'].includes(record.created_by_role) && record.actor_role === record.created_by_role && record.__backendId)
       .sort((a, b) => Date.parse(b.created_at || '') - Date.parse(a.created_at || ''))[0] || null;
   }
 
@@ -526,7 +526,7 @@
         week_group: group, prior_version: 0, resulting_version: 0,
         metadata: { receiving_day: window.day, receiving_day_end: window.endValue }
       });
-      if (!result?.isOk || result.data?.created_by_role !== 'instructor') {
+      if (!result?.isOk || !['instructor','admin'].includes(result.data?.created_by_role)) {
         throw new Error(result?.error || 'PORT CLEAR could not be sent.');
       }
       message('PORT CLEAR sent to all open GATE sessions.', false);

@@ -228,6 +228,7 @@ async function initializeLegacy(env,payload,actor) {
   });
 
   const now=nowIso();
+  const manifestReady=Boolean(await env.DB.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='gate_admin_input_manifests'").first());
   const dormRows=buildDormRows(draft,'',now,uuid,actor).map(row=>({
     ...row,data:JSON.stringify({...JSON.parse(row.data),initialization_request_id:requestId})
   }));
@@ -237,6 +238,8 @@ async function initializeLegacy(env,payload,actor) {
     env.DB.prepare("INSERT INTO records(id,type,week_group,data,created_at,updated_at) SELECT json_extract(value,'$.id'),json_extract(value,'$.type'),json_extract(value,'$.week_group'),json_extract(value,'$.data'),json_extract(value,'$.created_at'),json_extract(value,'$.updated_at') FROM json_each(?)")
       .bind(JSON.stringify(dormRows)),
     failUnless(env,"(SELECT COUNT(*) FROM records WHERE type='dorm' AND week_group=?)=? AND (SELECT COUNT(*) FROM records WHERE type='dorm' AND week_group=? AND json_extract(data,'$.initialization_request_id')=?)=?",draft.proposed_week_group,dormRows.length,draft.proposed_week_group,requestId,dormRows.length),
+    ...(manifestReady?[env.DB.prepare("INSERT INTO gate_admin_input_manifests(initialization_id,cycle_id,week_group,manifest_json,created_at) VALUES(?,'',?,?,?)")
+      .bind(requestId,draft.proposed_week_group,JSON.stringify(draft),now)]:[]),
     ...configStatements(env,config,'week_group',draft.proposed_week_group,now,actor,{
       initialization_request_id:requestId,initialization_dorm_count:dormRows.length,
       // Frozen original Input configuration for an auditable emergency reset.
@@ -270,6 +273,7 @@ async function initialize(env,payload,actor) {
   const draft=normalizeDraft({proposed_week_group:saved.proposed_week_group,rows:JSON.parse(saved.rows_json),receiving_windows:JSON.parse(saved.receiving_windows_json),import_review:JSON.parse(saved.import_review_json)});
   const now=nowIso(), cycleId=uuid(), operation=uuid(), audit=uuid();
   const dormRows=buildDormRows(draft,cycleId,now,uuid,actor);
+  const manifestReady=Boolean(await env.DB.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='gate_admin_input_manifests'").first());
   const statements=[
     failUnless(env,"NOT EXISTS(SELECT 1 FROM records WHERE type IN ('bus','dorm','sound_event')) AND NOT EXISTS(SELECT 1 FROM records WHERE type='config' AND json_extract(data,'$.key')='week_group' AND COALESCE(json_extract(data,'$.value'),'')<>'') AND NOT EXISTS(SELECT 1 FROM gate_week_groups WHERE state<>'closed')"),
     env.DB.prepare("INSERT INTO gate_week_groups(cycle_id,week_group,state,source_draft_id,receiving_windows_json,revision,created_at,updated_at,activated_at) VALUES(?,?,'active',?,?,1,?,?,?)")
@@ -277,6 +281,8 @@ async function initialize(env,payload,actor) {
     env.DB.prepare("UPDATE gate_input_drafts SET status='consumed',consumed_at=?,revision=revision+1,updated_at=? WHERE draft_id=? AND revision=? AND status='draft'").bind(now,now,id,revision),
     assertOne(env),
     ...configStatements(env,config,'week_group',draft.proposed_week_group,now,actor),
+    ...(manifestReady?[env.DB.prepare("INSERT INTO gate_admin_input_manifests(initialization_id,cycle_id,week_group,manifest_json,created_at) VALUES(?,?,?,?,?)")
+      .bind(cycleId,cycleId,draft.proposed_week_group,JSON.stringify(draft),now)]:[]),
     env.DB.prepare(`INSERT INTO records(id,type,week_group,data,created_at,updated_at)
       SELECT json_extract(value,'$.id'),json_extract(value,'$.type'),json_extract(value,'$.week_group'),json_extract(value,'$.data'),json_extract(value,'$.created_at'),json_extract(value,'$.updated_at') FROM json_each(?)`)
       .bind(JSON.stringify(dormRows)),

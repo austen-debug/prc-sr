@@ -424,7 +424,7 @@ export async function onRequestGet({request,env,data}) {
     if (mode==='health') return reply(await health(env));
     if (mode==='cutover_preflight') return reply({isOk:true,...await verifyCutoverReadiness(env)});
     if (mode==='legacy_initialization') {
-      if (role(data)!=='instructor') return deny();
+      if (!['instructor','admin'].includes(role(data))) return deny();
       if (enabled(env)) return conflict('Legacy initialization is unavailable after persistence activation.');
       return await legacyInitializationState(env,new URL(request.url).searchParams.get('request_id')||'');
     }

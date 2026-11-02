@@ -23,6 +23,7 @@ function setup(){
     "CREATE TABLE gate_audit_events(event_id TEXT PRIMARY KEY,cycle_id TEXT,operation_id TEXT,entity_type TEXT,entity_id TEXT,event_type TEXT,actor_role TEXT,prior_version INTEGER,resulting_version INTEGER,metadata_json TEXT,occurred_at TEXT);"
   );
   db.exec(readFileSync(new URL('../../../migrations/0012_gate_admin_system_control.sql',import.meta.url),'utf8'));
+  db.exec(readFileSync(new URL('../../../migrations/0013_gate_admin_week_group_rename.sql',import.meta.url),'utf8'));
   db.exec(readFileSync(new URL('../../../migrations/0011_gate_archive_source_immutability.sql',import.meta.url),'utf8'));
 
   function record(id,type,week_group,data){
@@ -193,5 +194,25 @@ test('locked server blocks all non-Admin pages and APIs while keeping logout/sta
   const admin=await hit('/administration/', 'admin');
   assert.equal(admin.status,200);
   assert.equal(await admin.text(),'APP');
+  f.db.close();
+});
+
+test('Admin recovery honors an immutable Input manifest after an audited Week Group rename',async()=>{
+  const f=setup();
+  const corrected='WG27005';
+  f.db.prepare("UPDATE gate_week_groups SET week_group=? WHERE cycle_id=?").run(corrected,cycleId);
+  f.db.prepare("UPDATE records SET data=json_set(data,'$.value',?) WHERE id='config-week'").run(corrected);
+  f.db.prepare("UPDATE records SET week_group=?,data=json_set(data,'$.week_group',?,'$.dorm_identity',replace(json_extract(data,'$.dorm_identity'),?,?)) WHERE type='dorm'")
+    .run(corrected,corrected,group+'::',corrected+'::');
+  f.db.prepare("UPDATE records SET week_group=?,data=json_set(data,'$.week_group',?) WHERE type IN ('bus','sound_event')")
+    .run(corrected,corrected);
+  f.db.prepare("INSERT INTO gate_admin_week_group_renames(operation_id,initialization_id,old_week_group,new_week_group,actor_role,reason,snapshot_json,source_record_count,created_at) VALUES(?,?,?,?,'admin',?,'[]',4,?)")
+    .run(crypto.randomUUID(),cycleId,group,corrected,'Correcting a verified Week Group typo',iso);
+  assert.equal((await f.postSite('lock',0)).status,200);
+  const preview=await recoveryGet({env:f.env,data:f.data});
+  const report=await preview.json();
+  assert.equal(preview.status,200,JSON.stringify(report));
+  assert.equal(report.week_group,corrected);
+  assert.equal(report.reset_available,true,report.reset_unavailable_reason);
   f.db.close();
 });

@@ -118,6 +118,17 @@ main{padding-bottom:calc(1.5rem + 36px + env(safe-area-inset-bottom,0px))}
 <div class="small">The Admin account retains all operational pages while non-Admin users are restricted to maintenance and logout.</div>
 </div>
 <div class="panel" style="margin-top:1rem">
+<h3>Edit Active Week Group</h3>
+<p>Correct an initialized Week Group identifier without resetting dorms, buses, or arrivals. Preview is read-only while the site is live. Applying a correction requires Site Lock, a recent Admin sign-in, an explicit feature switch, and an audited confirmation.</p>
+<div class="notice"><strong id="admin-rename-group">Checking active Week Group…</strong><p id="admin-rename-counts"></p><p id="admin-rename-readiness" class="small"></p></div>
+<div class="form-grid">
+<label for="admin-rename-target">Corrected Week Group ID
+<input id="admin-rename-target" maxlength="24" autocomplete="off" spellcheck="false" placeholder="WG27005"></label>
+</div>
+<div class="toolbar"><button id="admin-rename-week" type="button" disabled>EDIT WEEK GROUP ID</button></div>
+<div id="admin-rename-status" role="status" class="notice">No operational data will be changed until confirmed.</div>
+</div>
+<div class="panel" style="margin-top:1rem">
 <h3>Emergency Recovery</h3>
 <div class="notice"><strong id="admin-recovery-group">Checking active group…</strong><p id="admin-recovery-counts"></p></div>
 <p id="admin-recovery-manifest" class="small"></p>
@@ -185,7 +196,7 @@ main{padding-bottom:calc(1.5rem + 36px + env(safe-area-inset-bottom,0px))}
 </dialog>
 <footer>GATE Admin access is server-authorized. This interface does not provide general database edit or SQL capabilities.</footer>
 <script src="/js/gate-issue-reporter.js" defer></script>
-<script src="/js/gate-admin-system-controls.js?v=site-lock-recovery-20261101" defer></script>
+<script src="/js/gate-admin-system-controls.js?v=admin-week-group-rename-20261102" defer></script>
 <script>
 'use strict';
 const byId=id=>document.getElementById(id);

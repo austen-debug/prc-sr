@@ -57,11 +57,19 @@ async function originalManifest(env,state) {
   const row=await env.DB.prepare(
     'SELECT cycle_id,week_group,manifest_json FROM gate_admin_input_manifests WHERE initialization_id=?'
   ).bind(initializedId).first();
-  if(!row||row.week_group!==state.group||row.cycle_id!==String(state.cycle?.cycle_id||''))
+  if(!row||row.cycle_id!==String(state.cycle?.cycle_id||''))
     throw Error('Immutable original Input manifest is not available for this Week Group');
-  const result=normalizeDraft(JSON.parse(row.manifest_json));
-  if(result.proposed_week_group!==state.group)throw Error('Input manifest Week Group mismatch');
-  return result;
+  const original=normalizeDraft(JSON.parse(row.manifest_json));
+  if(original.proposed_week_group!==row.week_group)throw Error('Immutable Input manifest identity mismatch');
+  if(row.week_group===state.group)return original;
+  // A verified Admin rename changes only the operational identity. Keep the
+  // signed original Input manifest immutable; reconstruct with its new alias.
+  const rename=await env.DB.prepare(
+    'SELECT old_week_group,new_week_group FROM gate_admin_week_group_renames WHERE initialization_id=? AND new_week_group=?'
+  ).bind(initializedId,state.group).first();
+  if(!rename||rename.old_week_group!==row.week_group)
+    throw Error('No audited Week Group rename connects original Input to current receiving identity');
+  return normalizeDraft({...original,proposed_week_group:state.group});
 }
 
 function sourceCheckSql() {

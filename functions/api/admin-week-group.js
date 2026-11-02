@@ -11,7 +11,10 @@ const fresh=data=>{const age=Date.now()-Number(data?.session?.iat);return Number
 const assertSql=(env,sql,...args)=>env.DB.prepare(
   "SELECT CASE WHEN ("+sql+") THEN 1 ELSE json_extract('invalid-json','$') END"
 ).bind(...args);
-const getRows=async(env,sql,...args)=>(await env.DB.prepare(sql).bind(...args).all()).results||[];
+const getRows=async(env,sql,...args)=>{
+  const statement=env.DB.prepare(sql);
+  return (await (args.length?statement.bind(...args):statement).all()).results||[];
+};
 const hex=async(value)=>{
   const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value));
   return Array.from(new Uint8Array(digest),b=>b.toString(16).padStart(2,'0')).join('');
@@ -179,6 +182,7 @@ export async function onRequestPost({request,env,data}){
         newGroup,current.rows.length,expectedWeekGroup,current.config.id,newGroup),
       assertSql(env,"(SELECT COUNT(*) FROM gate_v2_buses WHERE week_group=?)=? AND (SELECT COUNT(*) FROM gate_v2_dorms WHERE week_group=?)=? AND (SELECT COUNT(*) FROM gate_v2_sound_events WHERE week_group=?)=?",
         newGroup,current.bus_count,newGroup,current.dorm_count,newGroup,current.sound_count),
+      assertSql(env,"NOT EXISTS(SELECT 1 FROM records r LEFT JOIN gate_v2_buses m ON m.id=r.id WHERE r.type='bus' AND r.week_group=? AND (m.id IS NULL OR m.week_group IS NOT r.week_group OR m.data IS NOT r.data OR m.created_at IS NOT r.created_at OR m.updated_at IS NOT r.updated_at)) AND NOT EXISTS(SELECT 1 FROM records r LEFT JOIN gate_v2_dorms m ON m.id=r.id WHERE r.type='dorm' AND r.week_group=? AND (m.id IS NULL OR m.week_group IS NOT r.week_group OR m.data IS NOT r.data OR m.created_at IS NOT r.created_at OR m.updated_at IS NOT r.updated_at)) AND NOT EXISTS(SELECT 1 FROM records r LEFT JOIN gate_v2_sound_events m ON m.id=r.id WHERE r.type='sound_event' AND r.week_group=? AND (m.id IS NULL OR m.week_group IS NOT r.week_group OR m.data IS NOT r.data OR m.created_at IS NOT r.created_at OR m.updated_at IS NOT r.updated_at))",newGroup,newGroup,newGroup),
       assertSql(env,"EXISTS(SELECT 1 FROM gate_admin_week_group_renames WHERE operation_id=? AND source_record_count=?)",operationId,current.rows.length)
     );
     await env.DB.batch(statements);

@@ -59,7 +59,7 @@ function sqliteFixture(){
     const before=db.prepare('SELECT total_changes() AS n').get().n;
     const results=p.all(...bound);
     const changes=db.prepare('SELECT total_changes() AS n').get().n-before;
-    if (/^\s*(?:UPDATE|DELETE)\s+records\b/i.test(statement)) observedMutationChanges.push(changes);
+    if (/^\s*(?:UPDATE\s+records|DELETE\s+FROM\s+records)\b/i.test(statement)) observedMutationChanges.push(changes);
     return {success:true,results,meta:{changes}};
    },
    async run(){const result=p.run(...bound);return{meta:{changes:result.changes}}}

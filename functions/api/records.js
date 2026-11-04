@@ -145,9 +145,13 @@ function archivedRecordConflict() {
     error:'This Week Group has an archive. Operational records are locked pending lifecycle reconciliation.'},409);
 }
 
-function changedRows(result) {
-  const changes = Number(result?.meta?.changes ?? result?.changes);
-  return Number.isFinite(changes) ? changes : 0;
+// D1 meta.changes includes changes made by mirror and audit triggers.
+// RETURNING identifies the targeted source row instead of aggregate writes.
+function changedTargetRecord(result, id) {
+  return result?.success !== false
+    && Array.isArray(result?.results)
+    && result.results.length === 1
+    && String(result.results[0]?.id) === String(id);
 }
 
 function formatElapsedFromOpenedAt(openedAt, closedAt = new Date().toISOString()) {
@@ -571,7 +575,8 @@ export async function onRequestPut({ request, env, data }) {
       `UPDATE records
        SET type = ?, week_group = ?, data = ?, updated_at = ?
        WHERE id = ?${expected.supplied ? " AND COALESCE(CAST(json_extract(data, '$.record_version') AS INTEGER), 0) = ?" : ''}
-         ${guard ? ' AND ' + guard.sql : ''}`
+         ${guard ? ' AND ' + guard.sql : ''}
+       RETURNING id`
     ).bind(
       String(storedRecord.type || ''),
       String(storedRecord.week_group || ''),
@@ -582,8 +587,8 @@ export async function onRequestPut({ request, env, data }) {
       ...(guard?.values || [])
     );
 
-    const result = await statement.run();
-    if (changedRows(result) !== 1 && (expected.supplied || guard)) {
+    const result = await statement.all();
+    if (!changedTargetRecord(result, id)) {
       const currentRow = await getRecordRow(env, id);
       const latestVersion = recordVersionOf(parseStoredRecord(currentRow) || {});
       if (expected.supplied && latestVersion !== currentVersion)
@@ -642,7 +647,8 @@ export async function onRequestDelete({ request, env, data }) {
     const statement = env.DB.prepare(
       `DELETE FROM records WHERE id = ?
        ${expected.supplied ? " AND COALESCE(CAST(json_extract(data, '$.record_version') AS INTEGER), 0) = ?" : ''}
-       ${guard ? ' AND ' + guard.sql : ''}`
+       ${guard ? ' AND ' + guard.sql : ''}
+       RETURNING id`
     ).bind(id, ...(expected.supplied ? [currentVersion] : []), ...(guard?.values || []));
 
     // The existing delete trigger records a SYSTEM observation without authenticated attribution.
@@ -665,9 +671,9 @@ export async function onRequestDelete({ request, env, data }) {
       const batch = await env.DB.batch(statements);
       result = batch?.[0];
     } else {
-      result = await statement.run();
+      result = await statement.all();
     }
-    if ((expected.supplied || guard) && changedRows(result) !== 1) {
+    if (!changedTargetRecord(result, id)) {
       const currentRow = await getRecordRow(env, id);
       const latestVersion = recordVersionOf(parseStoredRecord(currentRow) || {});
       if (expected.supplied && latestVersion !== currentVersion)

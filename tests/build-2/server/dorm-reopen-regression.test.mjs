@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {runInNewContext} from 'node:vm';
 import {DatabaseSync} from 'node:sqlite';
-import {onRequestPut} from '../../../functions/api/records.js';
+import {onRequestPut,onRequestDelete} from '../../../functions/api/records.js';
 import {onRequest as apiMiddleware} from '../../../functions/api/_middleware.js';
 
 const root=url=>readFileSync(new URL(url,import.meta.url),'utf8');
@@ -49,12 +49,19 @@ function sqliteFixture(){
  db.exec(root('../../../migrations/0003_gate_persistence_foundation.sql'));
  db.exec(root('../../../migrations/0004_gate_record_audit_triggers.sql'));
  db.exec(root('../../../migrations/0011_gate_archive_source_immutability.sql'));
+ const observedMutationChanges=[];
  const sql=statement=>{
   const p=db.prepare(statement);let bound=[];
   return {
    bind(...args){bound=args;return this;},
    async first(){return p.get(...bound)||null;},
-   async all(){return{results:p.all(...bound)};},
+   async all(){
+    const before=db.prepare('SELECT total_changes() AS n').get().n;
+    const results=p.all(...bound);
+    const changes=db.prepare('SELECT total_changes() AS n').get().n-before;
+    if (/^\\s*(?:UPDATE|DELETE)\\s+records\\b/i.test(statement)) observedMutationChanges.push(changes);
+    return {success:true,results,meta:{changes}};
+   },
    async run(){const result=p.run(...bound);return{meta:{changes:result.changes}}}
   };
  };
@@ -65,7 +72,7 @@ function sqliteFixture(){
  seed('dorm-fixture','dorm',{state:'closed',phase:'Closed',max_load:44,current_load:12,
   dorm_name:'B04',opened_at:'2026-10-16T15:00:00.000Z',closed_at:'2026-10-16T15:32:00.000Z',
   closed_timer:'32:00',notes:'Preserve historical operational notes'});
- return {db,DB:{prepare:sql}};
+ return {db,DB:{prepare:sql},observedMutationChanges};
 }
 
 test('Processing shows specific Admin and Week Group errors without exposing raw database exceptions',()=>{
@@ -127,6 +134,29 @@ test('Server closed-dorm manual reopen preserves current load and provenance whi
  assert.equal(payload.data.created_by_role,'instructor');
  assert.equal(payload.data.updated_by_role,'instructor');
  assert.equal(db.prepare("SELECT COUNT(*) AS count FROM records WHERE id='dorm-fixture' AND json_extract(data,'$.state')='open'").get().count,1);
+});
+
+test('real SQLite mirror/audit triggers do not cause false Processing PUT or DELETE conflicts',async()=>{
+ const {db,DB,observedMutationChanges}=sqliteFixture();
+ const update=await onRequestPut({env:{DB},data:{session:{role:'instructor'}},
+  request:new Request('https://gate.example/api/records',{method:'PUT',
+   headers:{'Content-Type':'application/json','If-Match':'3'},
+   body:JSON.stringify({__backendId:'dorm-fixture',type:'dorm',week_group:'WG26104',
+     __changes:{notes:'Verified saved edit'},__base_values:{notes:'Preserve historical operational notes'}})})});
+ assert.equal(update.status,200,await update.clone().text());
+ assert.equal((await update.json()).data.record_version,4);
+ assert.equal(db.prepare("SELECT json_extract(data,'$.notes') AS notes FROM records WHERE id='dorm-fixture'").get().notes,'Verified saved edit');
+ assert.equal(db.prepare("SELECT COUNT(*) AS n FROM gate_audit_events WHERE entity_id='dorm-fixture' AND event_type='record_updated'").get().n,1);
+ assert.ok(observedMutationChanges[0]>1,'D1 metadata includes mirror and audit trigger changes');
+
+ const deleted=await onRequestDelete({env:{DB},data:{session:{role:'instructor'}},
+  request:new Request('https://gate.example/api/records',{method:'DELETE',
+   headers:{'Content-Type':'application/json','If-Match':'4'},
+   body:JSON.stringify({__backendId:'dorm-fixture'})})});
+ assert.equal(deleted.status,200,await deleted.clone().text());
+ assert.equal(db.prepare("SELECT COUNT(*) AS n FROM records WHERE id='dorm-fixture'").get().n,0);
+ assert.equal(db.prepare("SELECT COUNT(*) AS n FROM gate_audit_events WHERE entity_id='dorm-fixture' AND event_type='record_deleted'").get().n,1);
+ assert.ok(observedMutationChanges[1]>1,'DELETE metadata includes mirror and audit trigger changes');
 });
 
 test('Admin writes remain fail-closed pending verified migration; Instructor requires active Week Group',async()=>{

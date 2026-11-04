@@ -37,6 +37,12 @@ function createD1(seed = []) {
         return this;
       },
       async all() {
+        // UPDATE/DELETE RETURNING produce a result row even when audit and
+        // typed-mirror triggers inflate D1's aggregate meta.changes.
+        if (normalized.startsWith('UPDATE records') || normalized.startsWith('DELETE FROM records')) {
+          if (!normalized.includes('RETURNING id')) throw new Error('Mutation must return the target record id.');
+          return this.run();
+        }
         if (!normalized.startsWith('SELECT')) throw new Error(`Unsupported all SQL: ${normalized}`);
         if (normalized.includes("WHERE type='archive' AND week_group=?"))
           return {results:clone(rows.filter(item=>item.type==='archive' && item.week_group===bound[0]))};
@@ -72,7 +78,7 @@ function createD1(seed = []) {
           const conditional = normalized.includes('json_extract');
           const id = bound[4];
           const index = rows.findIndex(item => item.id === id);
-          if (index < 0) return { meta: { changes: 0 } };
+          if (index < 0) return { success: true, results: [], meta: { changes: 0 } };
           const current = JSON.parse(rows[index].data);
           if (current.type === 'audit_event') throw new Error('audit events are append-only');
           if (conditional && Number(current.record_version || 0) !== Number(bound[5])) {
@@ -85,7 +91,7 @@ function createD1(seed = []) {
             data: bound[2],
             updated_at: bound[3]
           };
-          return { meta: { changes: 1 } };
+          return { success: true, results: [{ id }], meta: { changes: 3 } };
         }
 
         if (normalized.startsWith('DELETE FROM records')) {
@@ -98,7 +104,7 @@ function createD1(seed = []) {
             return { meta: { changes: 0 } };
           }
           rows.splice(index, 1);
-          return { meta: { changes: 1 } };
+          return { success: true, results: [{ id }], meta: { changes: 3 } };
         }
 
         throw new Error(`Unsupported run SQL: ${normalized}`);
@@ -190,6 +196,34 @@ test('conditional update increments version and stale writes receive stable conf
   assert.equal(staleBody.code, 'record_version_conflict');
   assert.equal(staleBody.expectedRecordVersion, 1);
   assert.equal(staleBody.currentRecordVersion, 2);
+});
+
+test('Processing mutations acknowledge the affected row despite trigger-expanded D1 change counts', async () => {
+  const db=createD1([{__backendId:'dorm-trigger',type:'dorm',week_group:'WG',
+    state:'open',phase:'OPEN',current_load:0,max_load:40,record_version:1}]);
+  // This fixture reports 3 aggregate changes for a single source-row write:
+  // the record itself, a typed mirror, and an append-only audit event.
+  const edit=await onRequestPut({env:{DB:db},data:roleData('instructor'),
+    request:request('PUT',{__backendId:'dorm-trigger',
+      __changes:{phase:'AUDITORIUM'},__base_values:{phase:'OPEN'}},{'If-Match':'1'})});
+  assert.equal(edit.status,200,await edit.clone().text());
+  const edited=await json(edit);
+  assert.equal(edited.data.phase,'AUDITORIUM');
+  assert.equal(edited.data.record_version,2);
+
+  // Genuine version conflicts must still be rejected before any write.
+  const stale=await onRequestPut({env:{DB:db},data:roleData('instructor'),
+    request:request('PUT',{__backendId:'dorm-trigger',
+      __changes:{phase:'LOBBY'},__base_values:{phase:'OPEN'}},{'If-Match':'1'})});
+  assert.equal(stale.status,409);
+  assert.equal((await json(stale)).code,'record_version_conflict');
+  assert.equal(JSON.parse(db.rows[0].data).phase,'AUDITORIUM');
+
+  const removed=await onRequestDelete({env:{DB:db},data:roleData('instructor'),
+    request:request('DELETE',{__backendId:'dorm-trigger'},{'If-Match':'2'})});
+  assert.equal(removed.status,200,await removed.clone().text());
+  assert.equal((await json(removed)).id,'dorm-trigger');
+  assert.equal(db.rows.length,0);
 });
 
 test('operational PUT and DELETE require an explicit expected version',async()=>{

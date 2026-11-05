@@ -502,6 +502,8 @@ export async function onRequestPost({ request, env, data }) {
     if (type === 'archive' || type === 'archive_amendment')
       return jsonResponse({isOk:false,code:'immutable_archive',error:'Archives are created only by verified closeout; corrections use append-only amendments.'},405);
 
+    if (!['bus','config','sound_event','audit_event'].includes(type))
+      return jsonResponse({isOk:false,code:'validation',error:'Unsupported record type.'},400);
     if (!mayCreateRecord(role,{...record,type})) return forbidden();
     if (type === 'config' && String(record.key||'').trim().toLowerCase()==='week_group')
       return jsonResponse({isOk:false,code:'lifecycle_required',error:'Week Group configuration is controlled by lifecycle transactions.'},409);
@@ -518,7 +520,11 @@ export async function onRequestPost({ request, env, data }) {
       }
     }
 
+    if (type === 'config' && !/^[a-z][a-z0-9_]{0,59}$/.test(String(record.key||'')))
+      return jsonResponse({isOk:false,code:'validation',error:'Configuration key is required.'},400);
+    if (OPERATIONAL_TYPES.has(type)) record.week_group=normalizedOperationalWeek(record.week_group);
     if (type === 'bus') {
+      if (record.bus_type==='airport') record.bus_id=String(record.bus_id||'').trim();
       try { validateBusCounts(record); }
       catch (error) { return jsonResponse({isOk:false,code:error.code||'validation',error:error.message},error.status||400); }
       if (!['airport','local'].includes(record.bus_type) ||
@@ -628,6 +634,10 @@ export async function onRequestPut({ request, env, data }) {
     const incoming = patch ? { ...existingRecord, ...patch.changes } : record;
     if (!mayUpdateRecord(role, existingRecord, incoming)) return forbidden();
     const normalized = normalizeDormUpdate(incoming, existingRecord, now);
+    if (existingRow.type === 'config' && String(normalized.key||'')!==String(existingRecord.key||''))
+      return jsonResponse({isOk:false,code:'validation',error:'Configuration identity cannot change through record updates.'},400);
+    if (OPERATIONAL_TYPES.has(existingRow.type) && String(normalized.week_group||'')!==String(existingRow.week_group||''))
+      return jsonResponse({isOk:false,code:'lifecycle_required',error:'Operational Week Group identity cannot change.'},409);
     if (existingRow.type === 'bus') validateBusCounts(normalized);
     await enforceOperationalAccountingMutation(env, existingRecord, normalized);
     const storedRecord = stampUpdatedRecord(existingRecord, {

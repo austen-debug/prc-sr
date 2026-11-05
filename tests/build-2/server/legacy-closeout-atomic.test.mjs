@@ -225,7 +225,9 @@ test('Legacy closeout rejects pre-archive sound events even when a reused label 
   const init='5a0e48e0-0123-4123-8123-012345678901';
   for(const [id,key] of [['active-wg','initialization_request_id'],['dorm-one','initialization_request_id']]){
     const current=JSON.parse(f.db.prepare('SELECT data FROM records WHERE id=?').get(id).data);
-    f.db.prepare('UPDATE records SET data=? WHERE id=?').run(JSON.stringify({...current,[key]:init}),id);
+    f.db.prepare('UPDATE records SET data=? WHERE id=?').run(JSON.stringify({
+      ...current,[key]:init,...(id==='dorm-one'?{created_at:f.stamp}:{})
+    }),id);
   }
   f.db.prepare("UPDATE records SET created_at='2026-10-19T00:00:00.000Z' WHERE id='sound-one'").run();
   const before=f.db.prepare("SELECT id,type,week_group,data,created_at,updated_at FROM records WHERE type IN ('bus','dorm','sound_event') ORDER BY id").all();

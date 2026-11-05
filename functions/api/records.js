@@ -554,10 +554,17 @@ export async function onRequestPost({ request, env, data }) {
         SELECT ?,?,?,?,?,?
         WHERE (?='' OR NOT EXISTS(SELECT 1 FROM records WHERE type='bus'
           AND json_extract(data,'$.operation_id')=?))
-          AND (?<>'airport' OR NOT EXISTS(SELECT 1 FROM records WHERE type='bus' AND week_group=?
-            AND json_extract(data,'$.bus_type')='airport' AND json_extract(data,'$.bus_id')=?))
+          AND (?<>'airport' OR NOT EXISTS(SELECT 1 FROM records buses WHERE buses.type='bus'
+            AND buses.week_group=? AND json_extract(buses.data,'$.bus_type')='airport'
+            AND CAST(json_extract(buses.data,'$.bus_id') AS TEXT)=?
+            AND julianday(buses.created_at)>COALESCE((SELECT MAX(julianday(
+              COALESCE(json_extract(archives.data,'$.archived_at'),archives.created_at)))
+              FROM records archives WHERE archives.type='archive' AND archives.week_group=?),0)))
+          AND EXISTS(SELECT 1 FROM records WHERE type='config'
+            AND json_extract(data,'$.key')='week_group' AND json_extract(data,'$.value')=?)
         RETURNING id`).bind(...insert,operationId,operationId,record.bus_type,
-          String(record.week_group||''),String(record.bus_id||'').trim()).all();
+          String(record.week_group||''),String(record.bus_id||'').trim(),
+          String(record.week_group||''),String(record.week_group||'')).all();
       if (!changedTargetRecord(inserted,id)) {
         if (operationId) {
           const prior=await env.DB.prepare(`SELECT id,type,week_group,data,created_at,updated_at
@@ -576,6 +583,14 @@ export async function onRequestPost({ request, env, data }) {
         return jsonResponse({isOk:false,code:'bus_identity_conflict',
           error:'An airport bus with this number already exists. Refresh the bus log before dispatching.'},409);
       }
+    } else if (type === 'sound_event') {
+      // A closeout can commit between the initial lifecycle read and INSERT.
+      const confirmed=await env.DB.prepare(`INSERT INTO records (id,type,week_group,data,created_at,updated_at)
+        SELECT ?,?,?,?,?,? WHERE EXISTS(SELECT 1 FROM records WHERE type='config'
+          AND json_extract(data,'$.key')='week_group' AND json_extract(data,'$.value')=?)
+        RETURNING id`).bind(...insert,storedRecord.week_group).all();
+      if (!changedTargetRecord(confirmed,id))
+        return jsonResponse({isOk:false,code:'lifecycle_required',error:'The active Week Group changed before the sound event committed.'},409);
     } else {
       await env.DB.prepare(
         `INSERT INTO records (id, type, week_group, data, created_at, updated_at)

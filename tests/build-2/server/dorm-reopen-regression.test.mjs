@@ -251,6 +251,34 @@ test('Airport bus number uniqueness applies to the current initialized cycle, no
  assert.equal(db.prepare("SELECT COUNT(*) AS n FROM records WHERE type='archive'").get().n,1);
 });
 
+test('Registered operational records receive trusted cycle identity and reject reassignment',async()=>{
+ const {db,DB}=sqliteFixture();
+ const cycle='5a0e48e0-0123-4123-8123-012345678901';
+ db.prepare("INSERT INTO gate_week_groups(cycle_id,week_group,state,activated_at) VALUES(?,?,'active',?)")
+   .run(cycle,'WG26104','2026-10-16T16:00:00.000Z');
+ const env={DB},data={session:{role:'instructor'}};
+ const submit=extra=>onRequestPost({env,data,request:new Request('https://gate.example/api/records',{
+   method:'POST',headers:{'Content-Type':'application/json'},
+   body:JSON.stringify({type:'bus',bus_type:'local',bus_id:'',week_group:'WG26104',
+     destination:'Local',otw_count:2,status:'arrived',...extra})
+ })});
+ const forged=await submit({cycle_id:'wrong-cycle'});
+ assert.equal(forged.status,409);
+ const accepted=await submit({});
+ assert.equal(accepted.status,201,await accepted.clone().text());
+ const saved=(await accepted.json()).data;
+ assert.equal(saved.cycle_id,cycle);
+ assert.equal(db.prepare("SELECT json_extract(data,'$.cycle_id') AS id FROM records WHERE id=?")
+   .get(saved.__backendId).id,cycle);
+ const tamper=await onRequestPut({env,data,request:new Request('https://gate.example/api/records',{
+   method:'PUT',headers:{'Content-Type':'application/json','If-Match':'1'},
+   body:JSON.stringify({__backendId:saved.__backendId,__changes:{cycle_id:'wrong-cycle'}})
+ })});
+ assert.equal(tamper.status,400);
+ assert.equal(db.prepare("SELECT json_extract(data,'$.cycle_id') AS id FROM records WHERE id=?")
+   .get(saved.__backendId).id,cycle);
+});
+
 test('Server closed-dorm manual reopen preserves current load and provenance while clearing the closure',async()=>{
  const {db,DB}=sqliteFixture();
  const request=new Request('https://gate.example/api/records',{method:'PUT',headers:{'Content-Type':'application/json','If-Match':'"3"'},

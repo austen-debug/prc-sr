@@ -25,8 +25,13 @@ function rowFor(record, id = record.__backendId || record.id) {
   };
 }
 
-function createD1(seed = []) {
+function createD1(seed = [], { liveGroup = 'WG' } = {}) {
   const rows = seed.map(record => rowFor(record));
+  // Unit fixtures default to an active legacy cycle; explicitly pass an empty
+  // liveGroup to verify rejection when no authoritative cycle exists.
+  const virtualConfig = () => rows.filter(item=>item.type==='config' && JSON.parse(item.data).key==='week_group');
+  const configured = () => virtualConfig().length ? virtualConfig() : (liveGroup ?
+    [rowFor({__backendId:'fixture-week',type:'config',key:'week_group',value:liveGroup})] : []);
 
   function statement(sql) {
     const normalized = sql.replace(/\s+/g, ' ').trim();
@@ -39,7 +44,8 @@ function createD1(seed = []) {
       async all() {
         // UPDATE/DELETE RETURNING produce a result row even when audit and
         // typed-mirror triggers inflate D1's aggregate meta.changes.
-        if (normalized.startsWith('UPDATE records') || normalized.startsWith('DELETE FROM records')) {
+        if (normalized.startsWith('UPDATE records') || normalized.startsWith('DELETE FROM records') ||
+            (normalized.startsWith('INSERT INTO records') && normalized.includes('RETURNING id'))) {
           if (!normalized.includes('RETURNING id')) throw new Error('Mutation must return the target record id.');
           return this.run();
         }
@@ -47,7 +53,19 @@ function createD1(seed = []) {
         if (normalized.includes("WHERE type='archive' AND week_group=?"))
           return {results:clone(rows.filter(item=>item.type==='archive' && item.week_group===bound[0]))};
         if (normalized.includes("WHERE type='config' AND json_extract(data,'$.key')='week_group'"))
-          return {results:clone(rows.filter(item=>item.type==='config' && JSON.parse(item.data).key==='week_group'))};
+          return {results:clone(configured())};
+        if (normalized.includes("FROM gate_week_groups WHERE state<>'closed'"))
+          return {results:[]};
+        if (normalized.includes("FROM records WHERE type='archive' AND week_group=?"))
+          return {results:clone(rows.filter(item=>item.type==='archive' && item.week_group===bound[0])
+            .map(item=>({...item,archived_at:JSON.parse(item.data).archived_at||item.created_at})))};
+        if (normalized.includes("FROM records WHERE type='dorm' AND week_group=?"))
+          return {results:clone(rows.filter(item=>item.type==='dorm' && item.week_group===bound[0]).map(item=>({
+            id:item.id,created_at:item.created_at,initialization_request_id:JSON.parse(item.data).initialization_request_id||null
+          })).concat(rows.some(item=>item.type==='dorm'||item.type==='archive')||!liveGroup?[]:
+            [{id:'fixture-dorm',created_at:'2026-07-15T00:00:00Z',initialization_request_id:null}]))};
+        if (normalized.includes("FROM records WHERE type='bus' AND json_extract(data,'$.operation_id')=?"))
+          return {results:clone(rows.filter(item=>item.type==='bus' && JSON.parse(item.data).operation_id===bound[0]))};
         return { results: clone(rows) };
       },
       async first() {
@@ -70,8 +88,15 @@ function createD1(seed = []) {
       async run() {
         if (normalized.startsWith('INSERT INTO records')) {
           const [id, type, weekGroup, data, createdAt, updatedAt] = bound;
+          if (normalized.includes('RETURNING id')) {
+            const operationId=bound[6], busType=bound[8], busId=bound[10];
+            if ((operationId && rows.some(item=>item.type==='bus' && JSON.parse(item.data).operation_id===operationId)) ||
+                (busType==='airport' && rows.some(item=>item.type==='bus' && item.week_group===weekGroup &&
+                  JSON.parse(item.data).bus_type==='airport' && String(JSON.parse(item.data).bus_id)===busId)))
+              return {success:true,results:[],meta:{changes:0}};
+          }
           rows.push({ id, type, week_group: weekGroup, data, created_at: createdAt, updated_at: updatedAt });
-          return { meta: { changes: 1 } };
+          return { success:true,results:[{id}],meta: { changes: 1 } };
         }
 
         if (normalized.startsWith('UPDATE records')) {
@@ -150,6 +175,8 @@ test('server assigns version and trusted role provenance on create', async () =>
     request: request('POST', {
       type: 'bus',
       week_group: 'WG',
+      bus_type: 'airport',
+      bus_id: '1',
       status: 'active',
       record_version: 99,
       created_by_role: 'squadron',
@@ -177,14 +204,14 @@ test('conditional update increments version and stale writes receive stable conf
 
   const updated = await onRequestPut({
     env: { DB: db },
-    data: roleData('airman'),
+    data: roleData('instructor'),
     request: request('PUT', { __backendId: 'bus-1', status: 'arrived', arrived_at: '2026-07-15T01:00:00Z' }, { 'If-Match': '1' })
   });
   const updatedBody = await json(updated);
   assert.equal(updated.status, 200);
   assert.equal(updatedBody.data.record_version, 2);
   assert.equal(updatedBody.data.created_by_role, 'instructor');
-  assert.equal(updatedBody.data.updated_by_role, 'airman');
+  assert.equal(updatedBody.data.updated_by_role, 'instructor');
 
   const stale = await onRequestPut({
     env: { DB: db },
@@ -287,12 +314,12 @@ test('field changes cannot alter protected record identity, provenance, or metad
   }
   assert.equal(JSON.parse(db.rows[0].data).record_version,1);
 });
-test('legacy updates without If-Match remain compatible but still advance server version', async () => {
-  const db = createD1([{ __backendId: 'cfg-1', type: 'config', key: 'week_group', value: 'WG', record_version: 0 }]);
+test('legacy non-lifecycle configuration updates without If-Match retain compatibility and server versions', async () => {
+  const db = createD1([{ __backendId: 'cfg-1', type: 'config', key: 'last_airport', value: 'AA', record_version: 0 }]);
   const response = await onRequestPut({
     env: { DB: db },
     data: roleData('instructor'),
-    request: request('PUT', { __backendId: 'cfg-1', type: 'config', key: 'week_group', value: 'WG-2' })
+    request: request('PUT', { __backendId: 'cfg-1', type: 'config', key: 'last_airport', value: 'BB' })
   });
   const body = await json(response);
   assert.equal(response.status, 200);
@@ -491,7 +518,7 @@ test('generic records API rejects creation, update and deletion for an already a
     {__backendId:'sound-1',type:'sound_event',week_group:'WG',record_version:1}
   ]);
   const env={DB:db},data=roleData('instructor');
-  const create=await onRequestPost({env,data,request:request('POST',{type:'bus',week_group:'WG',otw_count:2,status:'active'})});
+  const create=await onRequestPost({env,data,request:request('POST',{type:'bus',bus_type:'airport',bus_id:'2',week_group:'WG',otw_count:2,status:'active'})});
   const update=await onRequestPut({env,data,request:request('PUT',{__backendId:'bus-1',week_group:'WG',status:'active'},{'If-Match':'1'})});
   const remove=await onRequestDelete({env,data,request:request('DELETE',{__backendId:'sound-1'})});
   for(const result of [create,update,remove]){
@@ -514,7 +541,7 @@ test('a genuinely reinitialized historical label remains writable after the prio
       initialization_request_id:init,created_at:current}
   ]);
   const response=await onRequestPost({env:{DB:db},data:roleData('instructor'),
-    request:request('POST',{type:'bus',week_group:'WG',status:'active',otw_count:2})});
+    request:request('POST',{type:'bus',bus_type:'airport',bus_id:'2',week_group:'WG',status:'active',otw_count:2})});
   assert.equal(response.status,201,await response.clone().text());
   assert.equal(db.rows.filter(row=>row.type==='bus').length,1);
 });

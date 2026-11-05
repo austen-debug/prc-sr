@@ -208,6 +208,7 @@ test('Archive folder-tag endpoint is instructor-only and returns a non-cacheable
     { type:'dorm', week_group:'WG26052', data:JSON.stringify({ type:'dorm', week_group:'WG26052', sdq:'535', dorm_name:'B09', max_load:52, current_load:8, sex:'female', space_force:'true', display_order:2 }), created_at:'2026-10-06T12:02:00Z', updated_at:'2026-10-06T12:02:00Z' }
   ];
 
+  let historicalArchive = false;
   const DB = {
     prepare(sql) {
       const state = { args:[] };
@@ -217,8 +218,13 @@ test('Archive folder-tag endpoint is instructor-only and returns a non-cacheable
           return sql.includes("type = 'config'") ? config : null;
         },
         async all() {
-          if (!sql.includes("type = 'dorm'")) return { results:[] };
-          return { results:dormRows.filter(row => row.week_group === state.args[0]) };
+          if (sql.includes("FROM records WHERE type='config'")) return {results:[config]};
+          if (sql.includes("FROM gate_week_groups")) return {results:[]};
+          if (sql.includes("FROM records WHERE type='archive'"))
+            return {results:historicalArchive?[{id:'archived',created_at:'2026-10-20T00:00:00Z',archived_at:'2026-10-20T00:00:00Z'}]:[]};
+          if (sql.includes("FROM records WHERE type='dorm'"))
+            return {results:dormRows.map((row,index)=>({id:'dorm-'+index,created_at:row.created_at,initialization_request_id:null}))};
+          return { results:sql.includes("type = 'dorm'") ? dormRows.filter(row => row.week_group === state.args[0]) : [] };
         }
       };
     }
@@ -240,6 +246,11 @@ test('Archive folder-tag endpoint is instructor-only and returns a non-cacheable
   assert.match(pdf, /\(BAND\) Tj/);
   assert.match(pdf, /\(SPACE FORCE\) Tj/);
   assert.match(pdf, /\(FEMALE\) Tj/);
+
+  historicalArchive = true;
+  const stranded = await onRequestGet({env:{DB},data:{session:{role:'instructor'}}});
+  assert.equal(stranded.status,503,'Historical residual dorms cannot generate live tags');
+  assert.equal((await stranded.json()).code,'integrity_error');
 });
 
 test('login, session, and authentication surfaces remain reachable', async () => {
@@ -282,7 +293,9 @@ test('authoritative records refresh contract remains live and mutation-confirmed
   assert.match(html, /const API_URL = ['"]\/api\/records['"]/);
   assert.match(html, /const LIVE_API_URL = ['"]\/api\/records\?scope=live['"]/);
   // Polling must initialize before attempting the first potentially failing GET.
-  assert.match(html, /setInterval\(\(\) => \{[\s\S]*refresh\(\)[\s\S]*\}, 3000\);[\s\S]*try \{\s*await refresh\(true\)/);
+  assert.match(html, /setInterval\(\(\) => \{[\s\S]*refresh\(\)[\s\S]*\}, 5000\);[\s\S]*try \{\s*await refresh\(true\)/);
+  assert.match(html, /requestedRead[\s\S]*appliedRead/);
+  assert.match(html, /gateRecordsReadiness/);
   // A committed create, update or delete is acknowledged independently of its
   // follow-up refresh. A retrying poll remains active after transient read errors.
   const create = html.slice(html.indexOf('async create(record) {'), html.indexOf('async update(record) {'));

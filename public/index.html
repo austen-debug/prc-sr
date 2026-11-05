@@ -692,6 +692,27 @@ body > * {
     const LIVE_API_URL = '/api/records?scope=live';
     let handlerRef = null;
     let lastPayload = '';
+    let verified = false;
+    let requestedRead = 0;
+    let appliedRead = 0;
+
+    function setReadiness(state) {
+      window.gateRecordsReadiness = state;
+      if (typeof document === 'undefined' || !document.body) return;
+      let banner = document.getElementById('gate-record-readiness');
+      if (state === 'ready') { banner?.remove(); return; }
+      if (!banner) {
+        banner = document.createElement('div');
+        banner.id = 'gate-record-readiness';
+        banner.setAttribute('role', 'alert');
+        banner.className = 'surface border rounded p-3 text-sm font-bold';
+        banner.style.cssText = 'position:fixed;z-index:9999;top:0;left:0;right:0;text-align:center;';
+        document.body.prepend(banner);
+      }
+      banner.textContent = state === 'stale'
+        ? 'GATE is displaying the last confirmed records. Live synchronization is unavailable; updates are paused.'
+        : 'GATE could not verify operational records. Empty displays are not confirmed; updates are paused.';
+    }
 
     async function fetchRecords() {
       const response = await fetch(LIVE_API_URL, {
@@ -704,30 +725,38 @@ body > * {
 
       const result = await response.json();
 
-      if (!result.isOk) {
+      if (response.ok === false || !result.isOk || !Array.isArray(result.records)) {
         throw new Error(result.error || 'Failed to fetch records.');
       }
-
-      window.gateCloseoutRecovery = result.closeout_recovery || null;
-      return result.records || [];
+      return result;
     }
 
-async function refresh(force = false) {
-  const records = await fetchRecords();
-  const payload = JSON.stringify({ records, closeoutRecovery: window.gateCloseoutRecovery });
+    async function refresh(force = false) {
+      const read = ++requestedRead;
+      try {
+        const result = await fetchRecords();
+        if (read < appliedRead) return result.records;
+        appliedRead = read;
+        const records = result.records;
+        window.gateCloseoutRecovery = result.closeout_recovery || null;
+        verified = true;
+        setReadiness('ready');
+        const payload = JSON.stringify({ records, closeoutRecovery: window.gateCloseoutRecovery });
+        if (force || payload !== lastPayload) {
+          lastPayload = payload;
+          handlerRef?.onDataChanged?.(records);
+        }
+        return records;
+      } catch (error) {
+        if (read >= appliedRead) setReadiness(verified ? 'stale' : 'unavailable');
+        throw error;
+      }
+    }
 
-  if (!force && payload === lastPayload) {
-    return records;
-  }
-
-  lastPayload = payload;
-
-  if (handlerRef && typeof handlerRef.onDataChanged === 'function') {
-    handlerRef.onDataChanged(records);
-  }
-
-  return records;
-}
+    function writeUnavailable() {
+      return { isOk: false, code: 'read_unavailable',
+        error: 'Live records are not verified. Updates are paused until synchronization recovers.' };
+    }
 
     window.dataSdk = {
       // Reuse the SDK's authoritative snapshot refresh after atomic server writes.
@@ -738,19 +767,27 @@ async function refresh(force = false) {
         // Start recovery polling even if the first read fails. Initial
         // availability is not a prerequisite for reconnecting to D1.
         setInterval(() => {
+          if (typeof document !== 'undefined' && document.hidden) return;
           refresh().catch(err => {
             console.error('PRC-SR refresh failed:', err);
           });
-        }, 3000);
+        }, 5000);
+        if (typeof document !== 'undefined' && document.addEventListener) {
+          document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) refresh().catch(error => console.warn('GATE resume refresh failed:', error));
+          });
+        }
         try {
           await refresh(true);
+          return { isOk: true };
         } catch (err) {
           console.warn('Initial GATE records read failed; automatic retry remains active:', err);
+          return { isOk: false, code: 'read_unavailable', error: 'The initial operational record read could not be verified.' };
         }
-        return { isOk: true };
       },
 
       async create(record) {
+        if (!verified || window.gateRecordsReadiness !== 'ready') return writeUnavailable();
         const response = await fetch(API_URL, {
           method: 'POST',
           headers: {
@@ -773,6 +810,7 @@ async function refresh(force = false) {
       },
 
       async update(record) {
+        if (!verified || window.gateRecordsReadiness !== 'ready') return writeUnavailable();
         const version = Number(record?.record_version);
         const headers = { 'Content-Type': 'application/json', 'Accept': 'application/json' };
         if (Number.isSafeInteger(version) && version >= 0) headers['If-Match'] = String(version);
@@ -799,6 +837,7 @@ async function refresh(force = false) {
       },
 
       async delete(record) {
+        if (!verified || window.gateRecordsReadiness !== 'ready') return writeUnavailable();
         const version = Number(record?.record_version);
         const headers = { 'Content-Type': 'application/json', 'Accept': 'application/json' };
         if (Number.isSafeInteger(version) && version >= 0) headers['If-Match'] = String(version);
@@ -811,7 +850,8 @@ async function refresh(force = false) {
         const result = await response.json();
 
         if (result.isOk) {
-          await refresh(true);
+          try { await refresh(true); }
+          catch (error) { console.warn('GATE record deletion committed; refresh will retry:', error); }
         }
 
         return result;

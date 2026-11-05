@@ -636,7 +636,8 @@ export async function onRequestPut({ request, env, data }) {
     const normalized = normalizeDormUpdate(incoming, existingRecord, now);
     if (existingRow.type === 'config' && String(normalized.key||'')!==String(existingRecord.key||''))
       return jsonResponse({isOk:false,code:'validation',error:'Configuration identity cannot change through record updates.'},400);
-    if (OPERATIONAL_TYPES.has(existingRow.type) && String(normalized.week_group||'')!==String(existingRow.week_group||''))
+    if (OPERATIONAL_TYPES.has(existingRow.type) && normalized.week_group !== undefined &&
+        String(normalized.week_group||'')!==String(existingRow.week_group||''))
       return jsonResponse({isOk:false,code:'lifecycle_required',error:'Operational Week Group identity cannot change.'},409);
     if (existingRow.type === 'bus') validateBusCounts(normalized);
     await enforceOperationalAccountingMutation(env, existingRecord, normalized);

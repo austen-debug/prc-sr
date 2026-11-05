@@ -67,6 +67,9 @@ export async function resolveLiveWeekGroup(env) {
   }
   if (genuinelyActive) {
     const cycleId=String(cycles[0]?.cycle_id||'');
+    // Transactional initialization supersedes any legacy request ID
+    // retained in the existing reusable config row.
+    const activeInitId=cycleId?'':initId;
     const archiveCutoff=archives.length?new Date(lastArchive).toISOString():'';
     // Initialization must leave ONE source owner. A reused label is not
     // evidence that pre-archive buses or sound events belong to the new cycle.
@@ -84,7 +87,7 @@ export async function resolveLiveWeekGroup(env) {
           AND json_extract(data,'$.cycle_id')<>?)
       )`).bind(configured,
       archiveCutoff,configured,archiveCutoff,
-      archives.length?initId:'',configured,initId,
+      archives.length?activeInitId:'',configured,activeInitId,
       cycleId,configured,cycleId).first();
     if (Number(ownership?.suspect||0)>0) return state('','recovery_required',{
       recovery_required:true,week_group:configured,reason:'cross_cycle_source_records',
@@ -92,7 +95,7 @@ export async function resolveLiveWeekGroup(env) {
       archive_id:archives.length===1?archives[0].id:null
     });
     return state(configured,'active',null,{
-      cycle_id:cycleId,initialization_request_id:initId,archive_cutoff_at:archiveCutoff
+      cycle_id:cycleId,initialization_request_id:activeInitId,archive_cutoff_at:archiveCutoff
     });
   }
 

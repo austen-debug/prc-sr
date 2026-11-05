@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {runInNewContext} from 'node:vm';
 import {DatabaseSync} from 'node:sqlite';
-import {onRequestPut,onRequestDelete} from '../../../functions/api/records.js';
+import {onRequestPost,onRequestPut,onRequestDelete} from '../../../functions/api/records.js';
 import {onRequest as apiMiddleware} from '../../../functions/api/_middleware.js';
 
 const root=url=>readFileSync(new URL(url,import.meta.url),'utf8');
@@ -16,7 +16,7 @@ function processingErrorMessage(){
  return new Function('return ('+source.slice(from,to).trim()+')')();
 }
 
-function sdkFixture(updateBody){
+function sdkFixture(updateBody, method='PUT'){
  const html=root('../../../public/index.html');
  const start=html.indexOf('  // Cloudflare Pages + D1 dataSdk replacement.');
  const end=html.indexOf('</script>',start);
@@ -32,7 +32,7 @@ function sdkFixture(updateBody){
     if(reads>1)throw new Error('Simulated read outage after committed write');
     return {json:async()=>({isOk:true,records:[]})};
    }
-   assert.equal(opts.method,'PUT');
+   assert.equal(opts.method,method);
    writes++;
    lastWrite=opts;
    return {json:async()=>updateBody};
@@ -115,6 +115,95 @@ test('active D1 SDK passes stored record versions and keeps explicit field patch
  assert.equal(f.lastWrite().headers['If-Match'],'4');
  assert.deepEqual(JSON.parse(f.lastWrite().body),payload);
 });
+test('A committed DELETE stays successful when its follow-up read is unavailable',async()=>{
+ const f=sdkFixture({isOk:true,id:'dorm-fixture'},'DELETE');
+ await f.sdk.init({onDataChanged(){}});
+ const result=await f.sdk.delete({type:'dorm',__backendId:'dorm-fixture',record_version:4});
+ assert.equal(result.isOk,true);
+ assert.deepEqual(f.counts(),{reads:2,writes:1});
+ assert.equal(f.lastWrite().headers['If-Match'],'4');
+ assert.equal(f.warnings.some(x=>/deletion committed/.test(x)),true);
+});
+
+test('Initial records outage pauses writes and a verified refresh safely restores them',async()=>{
+ const html=root('../../../public/index.html');
+ const start=html.indexOf('  // Cloudflare Pages + D1 dataSdk replacement.');
+ const end=html.indexOf('</script>',start);
+ let reads=0,writes=0;
+ const ctx={window:{},setInterval(){},console:{warn(){},error(){}},fetch:async (url,opts={})=>{
+  if(String(url).includes('scope=live')){
+   if(++reads===1)throw Error('outage');
+   return {json:async()=>({isOk:true,records:[]})};
+  }
+  writes++;return {json:async()=>({isOk:true,data:{__backendId:'b1'}})};
+ }};
+ runInNewContext(html.slice(start,end),ctx);
+ const sdk=ctx.window.dataSdk;
+ const init=await sdk.init({onDataChanged(){}});
+ assert.equal(init.isOk,false);
+ assert.equal(ctx.window.gateRecordsReadiness,'unavailable');
+ const denied=await sdk.create({type:'bus'});
+ assert.equal(denied.code,'read_unavailable');
+ assert.equal(writes,0);
+ await sdk.refresh();
+ assert.equal(ctx.window.gateRecordsReadiness,'ready');
+ assert.equal((await sdk.create({type:'bus'})).isOk,true);
+ assert.equal(writes,1);
+});
+
+test('A late earlier read cannot overwrite a newer confirmed record snapshot',async()=>{
+ const html=root('../../../public/index.html');
+ const start=html.indexOf('  // Cloudflare Pages + D1 dataSdk replacement.');
+ const end=html.indexOf('</script>',start);
+ let reads=0,releaseOlder;
+ const seen=[];
+ const ctx={window:{},setInterval(){},console:{warn(){},error(){}},fetch:async url=>{
+  assert.ok(String(url).includes('scope=live'));
+  const n=++reads;
+  if(n===2)return new Promise(resolve=>{releaseOlder=resolve;});
+  return {json:async()=>({isOk:true,records:[{type:'dorm',phase:n===3?'NEW':'OLD'}]})};
+ }};
+ runInNewContext(html.slice(start,end),ctx);
+ await ctx.window.dataSdk.init({onDataChanged:data=>seen.push(data[0]?.phase)});
+ const older=ctx.window.dataSdk.refresh();
+ await ctx.window.dataSdk.refresh();
+ releaseOlder({json:async()=>({isOk:true,records:[{type:'dorm',phase:'STALE'}]})});
+ await older;
+ assert.equal(seen.at(-1),'NEW');
+ assert.equal(seen.includes('STALE'),false);
+});
+
+test('real D1 trigger semantics preserve bus creation receipts and distinct local arrivals',async()=>{
+ const {db,DB}=sqliteFixture();
+ const env={DB},data={session:{role:'instructor'}};
+ const send=payload=>onRequestPost({env,data,request:new Request('https://gate.example/api/records',{
+  method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)
+ })});
+ const id='5a0e48e0-0123-4123-8123-012345678901';
+ const airport={type:'bus',bus_type:'airport',bus_id:'2',week_group:'WG26104',
+  status:'active',otw_count:20,operation_id:id,departed_at:'2026-10-16T17:00:00Z'};
+ const created=await send(airport);
+ assert.equal(created.status,201,await created.clone().text());
+ const first=(await created.json()).data.__backendId;
+ const retried=await send(airport);
+ assert.equal(retried.status,200,await retried.clone().text());
+ assert.equal((await retried.json()).data.__backendId,first);
+ const duplicate=await send({...airport,operation_id:'5a0e48e0-0123-4123-8123-012345678902'});
+ assert.equal(duplicate.status,409);
+ assert.equal((await duplicate.json()).code,'bus_identity_conflict');
+ const changed=await send({...airport,bus_id:'3'});
+ assert.equal(changed.status,409);
+ assert.equal((await changed.json()).code,'operation_conflict');
+ const local={type:'bus',bus_type:'local',week_group:'WG26104',bus_id:'',
+  destination:'Base Entrance',originating_destination:'Base Entrance',status:'arrived',
+  otw_count:1,operation_id:'5a0e48e0-0123-4123-8123-012345678903'};
+ assert.equal((await send(local)).status,201);
+ assert.equal((await send(local)).status,200);
+ assert.equal((await send({...local,operation_id:'5a0e48e0-0123-4123-8123-012345678904'})).status,201);
+ assert.equal(db.prepare("SELECT COUNT(*) AS n FROM records WHERE type='bus'").get().n,4);
+ assert.equal(db.prepare("SELECT COUNT(*) AS n FROM gate_v2_buses").get().n,4);
+});
+
 test('Server closed-dorm manual reopen preserves current load and provenance while clearing the closure',async()=>{
  const {db,DB}=sqliteFixture();
  const request=new Request('https://gate.example/api/records',{method:'PUT',headers:{'Content-Type':'application/json','If-Match':'"3"'},

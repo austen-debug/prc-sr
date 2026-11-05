@@ -377,7 +377,7 @@ test('legacy non-lifecycle configuration updates without If-Match retain compati
 });
 
 test('invalid If-Match and stale conditional deletes fail closed', async () => {
-  const db = createD1([{ __backendId: 'bus-1', type: 'bus', record_version: 3 }]);
+  const db = createD1([{ __backendId: 'bus-1', type: 'bus', week_group:'WG', record_version: 3 }]);
   const invalid = await onRequestDelete({
     env: { DB: db },
     data: roleData('instructor'),

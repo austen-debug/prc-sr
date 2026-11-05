@@ -539,17 +539,43 @@ export async function onRequestPost({ request, env, data }) {
       ? stampAuditEvent(record, { id, role, now })
       : stampCreatedRecord({ ...record, type }, { id, role, now });
 
-    await env.DB.prepare(
-      `INSERT INTO records (id, type, week_group, data, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?)`
-    ).bind(
-      id,
-      type,
-      String(storedRecord.week_group || ''),
-      JSON.stringify(storedRecord),
-      now,
-      now
-    ).run();
+    const insert = [id,type,String(storedRecord.week_group||''),JSON.stringify(storedRecord),now,now];
+    if (type === 'bus') {
+      // One SQLite statement atomically prevents duplicate operation receipts
+      // and duplicate airport bus numbers without a new table or migration.
+      const operationId=String(record.operation_id||'').trim();
+      const inserted=await env.DB.prepare(`INSERT INTO records (id,type,week_group,data,created_at,updated_at)
+        SELECT ?,?,?,?,?,?
+        WHERE (?='' OR NOT EXISTS(SELECT 1 FROM records WHERE type='bus'
+          AND json_extract(data,'$.operation_id')=?))
+          AND (?<>'airport' OR NOT EXISTS(SELECT 1 FROM records WHERE type='bus' AND week_group=?
+            AND json_extract(data,'$.bus_type')='airport' AND json_extract(data,'$.bus_id')=?))
+        RETURNING id`).bind(...insert,operationId,operationId,record.bus_type,
+          String(record.week_group||''),String(record.bus_id||'').trim()).all();
+      if (!changedTargetRecord(inserted,id)) {
+        if (operationId) {
+          const prior=await env.DB.prepare(`SELECT id,type,week_group,data,created_at,updated_at
+            FROM records WHERE type='bus' AND json_extract(data,'$.operation_id')=? LIMIT 2`)
+            .bind(operationId).all();
+          const matches=prior.results||[];
+          if (matches.length===1) {
+            const saved=parseStoredRecord(matches[0]);
+            if (sameBusSubmission(saved,storedRecord))
+              return jsonResponse({isOk:true,idempotent:true,data:saved},200,
+                {ETag:`"${saved.record_version}"`});
+          }
+          if (matches.length) return jsonResponse({isOk:false,code:'operation_conflict',
+            error:'Bus operation identity was reused with different details.'},409);
+        }
+        return jsonResponse({isOk:false,code:'bus_identity_conflict',
+          error:'An airport bus with this number already exists. Refresh the bus log before dispatching.'},409);
+      }
+    } else {
+      await env.DB.prepare(
+        `INSERT INTO records (id, type, week_group, data, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?)`
+      ).bind(...insert).run();
+    }
 
     return jsonResponse({ isOk: true, data: storedRecord }, 201, { ETag: `"${storedRecord.record_version}"` });
   } catch (error) {

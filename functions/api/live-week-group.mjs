@@ -70,6 +70,9 @@ export async function resolveLiveWeekGroup(env) {
     // Transactional initialization supersedes any legacy request ID
     // retained in the existing reusable config row.
     const activeInitId=cycleId?'':initId;
+    // New transactional drafts stamp every dorm with cycle_id. Adopted legacy
+    // cycles have no source_draft_id and intentionally retain legacy dorm rows.
+    const requiredDormCycle=cycles[0]?.source_draft_id?cycleId:'';
     const archiveCutoff=archives.length?new Date(lastArchive).toISOString():'';
     // Initialization must leave ONE source owner. A reused label is not
     // evidence that pre-archive buses or sound events belong to the new cycle.
@@ -83,11 +86,14 @@ export async function resolveLiveWeekGroup(env) {
           julianday(created_at) IS NULL OR julianday(created_at)<=julianday(?)))
         OR (?<>'' AND week_group=? AND type='dorm'
           AND COALESCE(json_extract(data,'$.initialization_request_id'),'')<>?)
+        OR (?<>'' AND week_group=? AND type='dorm'
+          AND COALESCE(json_extract(data,'$.cycle_id'),'')<>?)
         OR (?<>'' AND week_group=? AND json_extract(data,'$.cycle_id') IS NOT NULL
           AND json_extract(data,'$.cycle_id')<>?)
       )`).bind(configured,
       archiveCutoff,configured,archiveCutoff,
-      archives.length?activeInitId:'',configured,activeInitId,
+      activeInitId,configured,activeInitId,
+      requiredDormCycle,configured,requiredDormCycle,
       cycleId,configured,cycleId).first();
     if (Number(ownership?.suspect||0)>0) return state('','recovery_required',{
       recovery_required:true,week_group:configured,reason:'cross_cycle_source_records',

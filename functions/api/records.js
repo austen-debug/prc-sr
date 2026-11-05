@@ -626,8 +626,8 @@ export async function onRequestPut({ request, env, data }) {
 
     const now = new Date().toISOString();
     const incoming = patch ? { ...existingRecord, ...patch.changes } : record;
+    if (!mayUpdateRecord(role, existingRecord, incoming)) return forbidden();
     const normalized = normalizeDormUpdate(incoming, existingRecord, now);
-    if (!mayUpdateRecord(role, existingRecord, normalized)) return forbidden();
     if (existingRow.type === 'bus') validateBusCounts(normalized);
     await enforceOperationalAccountingMutation(env, existingRecord, normalized);
     const storedRecord = stampUpdatedRecord(existingRecord, {

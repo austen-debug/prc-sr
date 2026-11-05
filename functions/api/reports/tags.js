@@ -1,4 +1,5 @@
 import { buildDormTagPdf } from '../../lib/dorm-tag-pdf.mjs';
+import { resolveLiveWeekGroup } from '../live-week-group.mjs';
 
 function jsonResponse(data, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -36,20 +37,6 @@ function parseRecordData(row) {
   }
 }
 
-async function getActiveWeekGroup(env) {
-  const row = await env.DB.prepare(
-    `SELECT type, week_group, data, created_at, updated_at
-     FROM records
-     WHERE type = 'config'
-       AND json_extract(data, '$.key') = 'week_group'
-     ORDER BY updated_at DESC, created_at DESC
-     LIMIT 1`
-  ).first();
-
-  const record = parseRecordData(row);
-  return String(record?.value || '').trim().toUpperCase();
-}
-
 async function getDorms(env, weekGroup) {
   const result = await env.DB.prepare(
     `SELECT type, week_group, data, created_at, updated_at
@@ -70,7 +57,9 @@ export async function onRequestGet({ env, data }) {
   }
 
   try {
-    const weekGroup = await getActiveWeekGroup(env);
+    const live = await resolveLiveWeekGroup(env);
+    if (live.status === 'recovery_required') return jsonResponse({isOk:false,code:'integrity_error',error:'Week Group recovery is required before generating reports.'},503);
+    const weekGroup = live.week_group;
     if (!weekGroup) {
       return jsonResponse({ isOk: false, code: 'no_active_week_group', error: 'No active Week Group is available to generate tags.' }, 404);
     }

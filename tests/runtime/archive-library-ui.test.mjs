@@ -17,8 +17,11 @@ test('Archive controller remains syntactically valid and preserves all existing 
   assert.match(js, /function openMatrixDialog\(event\)/);
   assert.match(js, /function printArchiveReport\(event\)/);
   assert.match(js, /data-archive-print-id/);
-  assert.match(js, /function buildArchivePayload\(/);
+  assert.doesNotMatch(js, /function buildArchivePayload\(|function deleteRecordsSafely\(|function clearConfig\(/);
+  const closeout = await load('functions/api/legacy-closeout.js');
+  assert.match(closeout, /buildArchivePayload\(/);
   assert.match(js, /function runSafeCloseout\(/);
+  assert.match(js, /fetch\('\/api\/legacy-closeout'/);
 });
 
 test('Archive browser is a quiet, full-width document index with no automatic selection', async () => {

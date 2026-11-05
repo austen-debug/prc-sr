@@ -300,6 +300,13 @@ test('Registered operational records receive trusted cycle identity and reject r
  assert.equal(tamper.status,400);
  assert.equal(db.prepare("SELECT json_extract(data,'$.cycle_id') AS id FROM records WHERE id=?")
    .get(saved.__backendId).id,cycle);
+ const sound=await onRequestPost({env,data,request:new Request('https://gate.example/api/records',{
+   method:'POST',headers:{'Content-Type':'application/json'},
+   body:JSON.stringify({type:'sound_event',week_group:'WG26104',sound_key:'arrival'})
+ })});
+ assert.equal(sound.status,201,await sound.clone().text());
+ assert.equal((await sound.json()).data.cycle_id,cycle);
+ assert.equal(db.prepare("SELECT COUNT(*) AS n FROM gate_v2_sound_events").get().n,1);
 });
 
 test('Server closed-dorm manual reopen preserves current load and provenance while clearing the closure',async()=>{

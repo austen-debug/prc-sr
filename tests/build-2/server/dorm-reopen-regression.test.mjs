@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {runInNewContext} from 'node:vm';
 import {DatabaseSync} from 'node:sqlite';
-import {onRequestPut,onRequestDelete} from '../../../functions/api/records.js';
+import {onRequestPost,onRequestPut,onRequestDelete} from '../../../functions/api/records.js';
 import {onRequest as apiMiddleware} from '../../../functions/api/_middleware.js';
 
 const root=url=>readFileSync(new URL(url,import.meta.url),'utf8');
@@ -16,7 +16,7 @@ function processingErrorMessage(){
  return new Function('return ('+source.slice(from,to).trim()+')')();
 }
 
-function sdkFixture(updateBody){
+function sdkFixture(updateBody, method='PUT'){
  const html=root('../../../public/index.html');
  const start=html.indexOf('  // Cloudflare Pages + D1 dataSdk replacement.');
  const end=html.indexOf('</script>',start);
@@ -32,7 +32,7 @@ function sdkFixture(updateBody){
     if(reads>1)throw new Error('Simulated read outage after committed write');
     return {json:async()=>({isOk:true,records:[]})};
    }
-   assert.equal(opts.method,'PUT');
+   assert.equal(opts.method,method);
    writes++;
    lastWrite=opts;
    return {json:async()=>updateBody};
@@ -68,6 +68,7 @@ function sqliteFixture(){
  const now='2026-10-16T16:00:00.000Z';
  const seed=(id,type,data)=>db.prepare('INSERT INTO records(id,type,week_group,data,created_at,updated_at) VALUES(?,?,?,?,?,?)')
   .run(id,type,'WG26104',JSON.stringify({...data,type,week_group:'WG26104',record_version:3,created_by_role:'instructor'}),now,now);
+ seed('config-week','config',{key:'week_group',value:'WG26104'});
  seed('bus-fixture','bus',{bus_type:'airport',otw_count:25,status:'arrived'});
  seed('dorm-fixture','dorm',{state:'closed',phase:'Closed',max_load:44,current_load:12,
   dorm_name:'B04',opened_at:'2026-10-16T15:00:00.000Z',closed_at:'2026-10-16T15:32:00.000Z',
@@ -114,6 +115,129 @@ test('active D1 SDK passes stored record versions and keeps explicit field patch
  assert.equal(f.lastWrite().headers['If-Match'],'4');
  assert.deepEqual(JSON.parse(f.lastWrite().body),payload);
 });
+test('A committed DELETE stays successful when its follow-up read is unavailable',async()=>{
+ const f=sdkFixture({isOk:true,id:'dorm-fixture'},'DELETE');
+ await f.sdk.init({onDataChanged(){}});
+ const result=await f.sdk.delete({type:'dorm',__backendId:'dorm-fixture',record_version:4});
+ assert.equal(result.isOk,true);
+ assert.deepEqual(f.counts(),{reads:2,writes:1});
+ assert.equal(f.lastWrite().headers['If-Match'],'4');
+ assert.equal(f.warnings.some(x=>/deletion committed/.test(x)),true);
+});
+
+test('Initial records outage pauses writes and a verified refresh safely restores them',async()=>{
+ const html=root('../../../public/index.html');
+ const start=html.indexOf('  // Cloudflare Pages + D1 dataSdk replacement.');
+ const end=html.indexOf('</script>',start);
+ let reads=0,writes=0;
+ const ctx={window:{},setInterval(){},console:{warn(){},error(){}},fetch:async (url,opts={})=>{
+  if(String(url).includes('scope=live')){
+   if(++reads===1)throw Error('outage');
+   return {json:async()=>({isOk:true,records:[]})};
+  }
+  writes++;return {json:async()=>({isOk:true,data:{__backendId:'b1'}})};
+ }};
+ runInNewContext(html.slice(start,end),ctx);
+ const sdk=ctx.window.dataSdk;
+ const init=await sdk.init({onDataChanged(){}});
+ assert.equal(init.isOk,false);
+ assert.equal(ctx.window.gateRecordsReadiness,'unavailable');
+ const denied=await sdk.create({type:'bus'});
+ assert.equal(denied.code,'read_unavailable');
+ assert.equal(writes,0);
+ await sdk.refresh();
+ assert.equal(ctx.window.gateRecordsReadiness,'ready');
+ assert.equal((await sdk.create({type:'bus'})).isOk,true);
+ assert.equal(writes,1);
+});
+
+test('A late earlier read cannot overwrite a newer confirmed record snapshot',async()=>{
+ const html=root('../../../public/index.html');
+ const start=html.indexOf('  // Cloudflare Pages + D1 dataSdk replacement.');
+ const end=html.indexOf('</script>',start);
+ let reads=0,releaseOlder;
+ const seen=[];
+ const ctx={window:{},setInterval(){},console:{warn(){},error(){}},fetch:async url=>{
+  assert.ok(String(url).includes('scope=live'));
+  const n=++reads;
+  if(n===2)return new Promise(resolve=>{releaseOlder=resolve;});
+  return {json:async()=>({isOk:true,records:[{type:'dorm',phase:n===3?'NEW':'OLD'}]})};
+ }};
+ runInNewContext(html.slice(start,end),ctx);
+ await ctx.window.dataSdk.init({onDataChanged:data=>seen.push(data[0]?.phase)});
+ const older=ctx.window.dataSdk.refresh();
+ await ctx.window.dataSdk.refresh();
+ releaseOlder({json:async()=>({isOk:true,records:[{type:'dorm',phase:'STALE'}]})});
+ await older;
+ assert.equal(seen.at(-1),'NEW');
+ assert.equal(seen.includes('STALE'),false);
+});
+
+test('real D1 trigger semantics preserve bus creation receipts and distinct local arrivals',async()=>{
+ const {db,DB}=sqliteFixture();
+ const env={DB},data={session:{role:'instructor'}};
+ const send=payload=>onRequestPost({env,data,request:new Request('https://gate.example/api/records',{
+  method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)
+ })});
+ const id='5a0e48e0-0123-4123-8123-012345678901';
+ const airport={type:'bus',bus_type:'airport',bus_id:'2',week_group:'WG26104',
+  status:'active',otw_count:20,operation_id:id,departed_at:'2026-10-16T17:00:00Z'};
+ const created=await send(airport);
+ assert.equal(created.status,201,await created.clone().text());
+ const first=(await created.json()).data.__backendId;
+ const retried=await send(airport);
+ assert.equal(retried.status,200,await retried.clone().text());
+ assert.equal((await retried.json()).data.__backendId,first);
+ const duplicate=await send({...airport,operation_id:'5a0e48e0-0123-4123-8123-012345678902'});
+ assert.equal(duplicate.status,409);
+ assert.equal((await duplicate.json()).code,'bus_identity_conflict');
+ const changed=await send({...airport,bus_id:'3'});
+ assert.equal(changed.status,409);
+ assert.equal((await changed.json()).code,'operation_conflict');
+ const local={type:'bus',bus_type:'local',week_group:'WG26104',bus_id:'',
+  destination:'Base Entrance',originating_destination:'Base Entrance',status:'arrived',
+  otw_count:1,operation_id:'5a0e48e0-0123-4123-8123-012345678903'};
+ assert.equal((await send(local)).status,201);
+ assert.equal((await send(local)).status,200);
+ assert.equal((await send({...local,operation_id:'5a0e48e0-0123-4123-8123-012345678904'})).status,201);
+ assert.equal(db.prepare("SELECT COUNT(*) AS n FROM records WHERE type='bus'").get().n,4);
+ assert.equal(db.prepare("SELECT COUNT(*) AS n FROM gate_v2_buses").get().n,4);
+});
+
+test('Airport bus number uniqueness applies to the current initialized cycle, not historical reuse',async()=>{
+ const {db,DB}=sqliteFixture();
+ const archiveAt='2026-10-17T00:00:00.000Z';
+ const reinitializedAt='2026-10-18T00:00:00.000Z';
+ const initId='5a0e48e0-0123-4123-8123-012345678901';
+ const originalBus=JSON.parse(db.prepare("SELECT data FROM records WHERE id='bus-fixture'").get().data);
+ originalBus.bus_id='2';
+ db.prepare("UPDATE records SET data=? WHERE id='bus-fixture'").run(JSON.stringify(originalBus));
+ db.prepare('INSERT INTO records(id,type,week_group,data,created_at,updated_at) VALUES(?,?,?,?,?,?)')
+  .run('previous-archive','archive','WG26104',JSON.stringify({
+   type:'archive',week_group:'WG26104',archived_at:archiveAt
+  }),archiveAt,archiveAt);
+ const config=JSON.parse(db.prepare("SELECT data FROM records WHERE id='config-week'").get().data);
+ config.initialization_request_id=initId;
+ db.prepare("UPDATE records SET data=?,updated_at=? WHERE id='config-week'")
+  .run(JSON.stringify(config),reinitializedAt);
+ const newDorm={type:'dorm',week_group:'WG26104',dorm_name:'C21',state:'empty',
+  initialization_request_id:initId,record_version:1,current_load:0,max_load:50};
+ db.prepare('INSERT INTO records(id,type,week_group,data,created_at,updated_at) VALUES(?,?,?,?,?,?)')
+  .run('new-dorm','dorm','WG26104',JSON.stringify(newDorm),reinitializedAt,reinitializedAt);
+ const send=operationId=>onRequestPost({env:{DB},data:{session:{role:'instructor'}},
+  request:new Request('https://gate.example/api/records',{
+   method:'POST',headers:{'Content-Type':'application/json'},
+   body:JSON.stringify({type:'bus',bus_type:'airport',bus_id:'2',week_group:'WG26104',
+    status:'active',otw_count:20,operation_id:operationId,departed_at:'2026-10-18T01:00:00.000Z'})
+  })});
+ const first=await send('5a0e48e0-0123-4123-8123-012345678902');
+ assert.equal(first.status,201,await first.clone().text());
+ const repeat=await send('5a0e48e0-0123-4123-8123-012345678903');
+ assert.equal(repeat.status,409);
+ assert.equal((await repeat.json()).code,'bus_identity_conflict');
+ assert.equal(db.prepare("SELECT COUNT(*) AS n FROM records WHERE type='bus' AND json_extract(data,'$.bus_id')='2'").get().n,2);
+});
+
 test('Server closed-dorm manual reopen preserves current load and provenance while clearing the closure',async()=>{
  const {db,DB}=sqliteFixture();
  const request=new Request('https://gate.example/api/records',{method:'PUT',headers:{'Content-Type':'application/json','If-Match':'"3"'},
@@ -159,7 +283,7 @@ test('real SQLite mirror/audit triggers do not cause false Processing PUT or DEL
  assert.ok(observedMutationChanges[1]>1,'DELETE metadata includes mirror and audit trigger changes');
 });
 
-test('Admin writes remain fail-closed pending verified migration; Instructor requires active Week Group',async()=>{
+test('Admin writes remain fail-closed and Instructor requests honor active-cycle cutover',async()=>{
  const {DB}=sqliteFixture(),body=JSON.stringify({__backendId:'dorm-fixture',type:'dorm',state:'open',manual_reopen_override:'true'});
  const make=role=>apiMiddleware({env:{DB,GATE_PERSISTENCE_ENABLED:'true',GATE_PERSISTENCE_CUTOVER_READY:'true',AUTH_SECRET:'test-only'},data:{session:{role}},
   request:new Request('https://gate.example/api/records',{method:'PUT',headers:{'Content-Type':'application/json'},body}),
@@ -167,5 +291,5 @@ test('Admin writes remain fail-closed pending verified migration; Instructor req
  const admin=await make('admin');
  assert.equal(admin.status,503);assert.equal((await admin.json()).code,'admin_schema_required');
  const instructor=await make('instructor');
- assert.equal(instructor.status,503);assert.equal((await instructor.json()).code,'cutover_not_ready');
+ assert.equal(instructor.status,409);assert.equal((await instructor.json()).code,'lifecycle_required');
 });

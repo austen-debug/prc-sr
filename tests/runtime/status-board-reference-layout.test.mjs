@@ -69,8 +69,8 @@ test('render paths, API read and write ownership, auditoriums and flags stay sep
   assert.match(auditorium,/boardSlot\.insertAdjacentHTML\('beforeend', html\)/);
   const input=await source('public/index.html');
   assert.match(input,/const LIVE_API_URL = '\/api\/records\?scope=live'/);
-  assert.match(input,/setInterval\(\(\) => \{\s*refresh\(\)\.catch/);
-  assert.match(input,/}\s*, 3000\)/);
+  assert.match(input,/setInterval\(\(\) => \{[\s\S]*?refresh\(\)\.catch/);
+  assert.match(input,/}\s*, 5000\)/);
   const api=await source('functions/api/records.js');
   assert.match(api,/mayReadRecords/);
   assert.match(api,/mayWriteRecords/);

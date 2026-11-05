@@ -25,6 +25,42 @@ export function mayWriteRecords(role) {
   return WRITE_ROLE_SET.has(normalizeServerRole(role));
 }
 
+const AIRMAN_DORM_FIELDS = new Set([
+  'phase', 'current_load', 'assigned_airman', 'auditorium_location',
+  'overtime_sound_sent', 'overtime_sound_at'
+]);
+const SERVER_OWNED_FIELDS = new Set([
+  '__backendId', 'id', 'type', 'week_group', 'record_version', 'recordVersion',
+  'created_at', 'updated_at', 'created_by_role', 'updated_by_role'
+]);
+
+// Build 1 and Build 2 share this server-owned command boundary.
+// Airmen may process live dorms and register local arrivals, not administer
+// configuration, dispatch airport buses, delete records, or change dorm identity.
+export function mayCreateRecord(role, record = {}) {
+  const actor = normalizeServerRole(role);
+  const type = String(record.type || '').toLowerCase();
+  if (!['bus','config','sound_event','audit_event'].includes(type)) return false;
+  if (actor === 'airman') return type === 'sound_event' || type === 'audit_event' ||
+    (type === 'bus' && record.bus_type === 'local');
+  return ['admin','instructor','system'].includes(actor);
+}
+
+export function mayUpdateRecord(role, existing = {}, incoming = {}) {
+  const actor = normalizeServerRole(role);
+  if (actor !== 'airman') return ['admin','instructor','system'].includes(actor);
+  if (existing.type !== 'dorm' || incoming.type !== 'dorm' ||
+      existing.week_group !== incoming.week_group) return false;
+  return [...new Set([...Object.keys(existing), ...Object.keys(incoming)])].every(key =>
+    SERVER_OWNED_FIELDS.has(key) ||
+    JSON.stringify(existing[key] ?? null) === JSON.stringify(incoming[key] ?? null) ||
+    AIRMAN_DORM_FIELDS.has(key));
+}
+
+export function mayDeleteRecord(role) {
+  return ['admin','instructor','system'].includes(normalizeServerRole(role));
+}
+
 export function parseExpectedRecordVersion(value) {
   const raw = String(value ?? '').trim();
   if (!raw) return Object.freeze({ supplied: false, valid: true, value: null });

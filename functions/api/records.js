@@ -4,7 +4,10 @@ import {
   RECORDS_API_CAPABILITIES,
   conflictResponseBody,
   isAuditEvent,
+  mayCreateRecord,
+  mayDeleteRecord,
   mayReadRecords,
+  mayUpdateRecord,
   mayWriteRecords,
   normalizeServerRole,
   parseExpectedRecordVersion,
@@ -143,6 +146,27 @@ async function archivedWeekGroup(env, type, weekGroup) {
 function archivedRecordConflict() {
   return jsonResponse({isOk:false,code:'week_group_archived',
     error:'This Week Group has an archive. Operational records are locked pending lifecycle reconciliation.'},409);
+}
+
+// Shared write boundary: legacy and cutover requests must agree with the
+// same lifecycle resolver used by live reads and the Squadron Board.
+const OPERATIONAL_TYPES = new Set(['bus','dorm','sound_event']);
+async function activeRecordScope(env, type, weekGroup) {
+  if (!OPERATIONAL_TYPES.has(type)) return null;
+  const live = await resolveLiveWeekGroup(env);
+  if (live.status === 'recovery_required')
+    return jsonResponse({isOk:false,code:'integrity_error',error:'Active Week Group requires reconciliation before operational writes.'},503);
+  if (live.status !== 'active' || !live.week_group)
+    return jsonResponse({isOk:false,code:'lifecycle_required',error:'Register an active Week Group before changing operational records.'},409);
+  if (normalizedOperationalWeek(weekGroup) !== live.week_group)
+    return jsonResponse({isOk:false,code:'lifecycle_required',error:'Only records in the active Week Group can be modified.'},409);
+  return null;
+}
+
+function sameBusSubmission(prior, next) {
+  const fields=['week_group','bus_type','bus_id','destination','originating_destination',
+    'otw_count','female_count','nat_count','space_force_count','status','departed_at','arrived_at'];
+  return fields.every(key=>JSON.stringify(prior?.[key] ?? null)===JSON.stringify(next?.[key] ?? null));
 }
 
 // D1 meta.changes includes changes made by mirror and audit triggers.
@@ -426,9 +450,10 @@ export async function onRequestGet({ request, env, data }) {
     const liveState = liveOnly ? await resolveLiveWeekGroup(env) : null;
     const activeWeek = liveState?.week_group || '';
     const sql = liveOnly
-      ? "SELECT id,type,week_group,data,created_at,updated_at FROM records WHERE type <> 'archive' ORDER BY created_at ASC"
+      ? "SELECT id,type,week_group,data,created_at,updated_at FROM records WHERE type NOT IN ('archive','bus','dorm','sound_event') OR (type IN ('bus','dorm','sound_event') AND week_group=?) ORDER BY created_at ASC"
       : "SELECT id,type,week_group,data,created_at,updated_at FROM records ORDER BY created_at ASC";
-    const result = await env.DB.prepare(sql).all();
+    const query = env.DB.prepare(sql);
+    const result = await (liveOnly ? query.bind(activeWeek) : query).all();
 
     // Default all-record reads retain legacy administrative visibility.
     // scope=live projects only the single verified active Week Group.
@@ -470,10 +495,18 @@ export async function onRequestPost({ request, env, data }) {
 
   try {
     const record = await request.json();
+    if (!record || typeof record !== 'object' || Array.isArray(record))
+      return jsonResponse({isOk:false,code:'validation',error:'A record object is required.'},400);
     const type = String(record.type || '').trim().toLowerCase();
     if (!type) return jsonResponse({ isOk: false, code: 'validation', error: 'Record type is required.' }, 400);
     if (type === 'archive' || type === 'archive_amendment')
       return jsonResponse({isOk:false,code:'immutable_archive',error:'Archives are created only by verified closeout; corrections use append-only amendments.'},405);
+
+    if (!['bus','config','sound_event','audit_event'].includes(type))
+      return jsonResponse({isOk:false,code:'validation',error:'Unsupported record type.'},400);
+    if (!mayCreateRecord(role,{...record,type})) return forbidden();
+    if (type === 'config' && String(record.key||'').trim().toLowerCase()==='week_group')
+      return jsonResponse({isOk:false,code:'lifecycle_required',error:'Week Group configuration is controlled by lifecycle transactions.'},409);
 
     if (type === 'audit_event') {
       // Administrative event names are reserved to server-owned D1 transactions.
@@ -487,16 +520,24 @@ export async function onRequestPost({ request, env, data }) {
       }
     }
 
-    if (type === 'dorm' || type === 'bus') {
-      try {
-        if (type === 'dorm') validateDormLoadShape(record);
-        else validateBusCounts(record);
-      } catch (error) {
-        return jsonResponse({ isOk: false, code: error.code || 'validation', error: error.message }, error.status || 400);
-      }
+    if (type === 'config' && !/^[a-z][a-z0-9_]{0,59}$/.test(String(record.key||'')))
+      return jsonResponse({isOk:false,code:'validation',error:'Configuration key is required.'},400);
+    if (OPERATIONAL_TYPES.has(type)) record.week_group=normalizedOperationalWeek(record.week_group);
+    if (type === 'bus') {
+      if (record.bus_type==='airport') record.bus_id=String(record.bus_id||'').trim();
+      try { validateBusCounts(record); }
+      catch (error) { return jsonResponse({isOk:false,code:error.code||'validation',error:error.message},error.status||400); }
+      if (!['airport','local'].includes(record.bus_type) ||
+          (record.bus_type==='airport' && !String(record.bus_id||'').trim()) ||
+          (record.bus_type==='local' && !String(record.destination||record.originating_destination||'').trim()))
+        return jsonResponse({isOk:false,code:'validation',error:'Bus type and operational identity are required.'},400);
+      if (record.operation_id && !/^[a-f0-9]{8}-[a-f0-9-]{27,36}$/i.test(String(record.operation_id)))
+        return jsonResponse({isOk:false,code:'validation',error:'Invalid bus operation identity.'},400);
     }
 
     if (await archivedWeekGroup(env,type,record.week_group)) return archivedRecordConflict();
+    const scope = await activeRecordScope(env,type,record.week_group);
+    if (scope) return scope;
 
     const id = makeId();
     const now = new Date().toISOString();
@@ -504,17 +545,58 @@ export async function onRequestPost({ request, env, data }) {
       ? stampAuditEvent(record, { id, role, now })
       : stampCreatedRecord({ ...record, type }, { id, role, now });
 
-    await env.DB.prepare(
-      `INSERT INTO records (id, type, week_group, data, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?)`
-    ).bind(
-      id,
-      type,
-      String(storedRecord.week_group || ''),
-      JSON.stringify(storedRecord),
-      now,
-      now
-    ).run();
+    const insert = [id,type,String(storedRecord.week_group||''),JSON.stringify(storedRecord),now,now];
+    if (type === 'bus') {
+      // One SQLite statement atomically prevents duplicate operation receipts
+      // and duplicate airport bus numbers without a new table or migration.
+      const operationId=String(record.operation_id||'').trim();
+      const inserted=await env.DB.prepare(`INSERT INTO records (id,type,week_group,data,created_at,updated_at)
+        SELECT ?,?,?,?,?,?
+        WHERE (?='' OR NOT EXISTS(SELECT 1 FROM records WHERE type='bus'
+          AND json_extract(data,'$.operation_id')=?))
+          AND (?<>'airport' OR NOT EXISTS(SELECT 1 FROM records buses WHERE buses.type='bus'
+            AND buses.week_group=? AND json_extract(buses.data,'$.bus_type')='airport'
+            AND CAST(json_extract(buses.data,'$.bus_id') AS TEXT)=?
+            AND julianday(buses.created_at)>COALESCE((SELECT MAX(julianday(
+              COALESCE(json_extract(archives.data,'$.archived_at'),archives.created_at)))
+              FROM records archives WHERE archives.type='archive' AND archives.week_group=?),0)))
+          AND EXISTS(SELECT 1 FROM records WHERE type='config'
+            AND json_extract(data,'$.key')='week_group' AND json_extract(data,'$.value')=?)
+        RETURNING id`).bind(...insert,operationId,operationId,record.bus_type,
+          String(record.week_group||''),String(record.bus_id||'').trim(),
+          String(record.week_group||''),String(record.week_group||'')).all();
+      if (!changedTargetRecord(inserted,id)) {
+        if (operationId) {
+          const prior=await env.DB.prepare(`SELECT id,type,week_group,data,created_at,updated_at
+            FROM records WHERE type='bus' AND json_extract(data,'$.operation_id')=? LIMIT 2`)
+            .bind(operationId).all();
+          const matches=prior.results||[];
+          if (matches.length===1) {
+            const saved=parseStoredRecord(matches[0]);
+            if (sameBusSubmission(saved,storedRecord))
+              return jsonResponse({isOk:true,idempotent:true,data:saved},200,
+                {ETag:`"${saved.record_version}"`});
+          }
+          if (matches.length) return jsonResponse({isOk:false,code:'operation_conflict',
+            error:'Bus operation identity was reused with different details.'},409);
+        }
+        return jsonResponse({isOk:false,code:'bus_identity_conflict',
+          error:'An airport bus with this number already exists. Refresh the bus log before dispatching.'},409);
+      }
+    } else if (type === 'sound_event') {
+      // A closeout can commit between the initial lifecycle read and INSERT.
+      const confirmed=await env.DB.prepare(`INSERT INTO records (id,type,week_group,data,created_at,updated_at)
+        SELECT ?,?,?,?,?,? WHERE EXISTS(SELECT 1 FROM records WHERE type='config'
+          AND json_extract(data,'$.key')='week_group' AND json_extract(data,'$.value')=?)
+        RETURNING id`).bind(...insert,storedRecord.week_group).all();
+      if (!changedTargetRecord(confirmed,id))
+        return jsonResponse({isOk:false,code:'lifecycle_required',error:'The active Week Group changed before the sound event committed.'},409);
+    } else {
+      await env.DB.prepare(
+        `INSERT INTO records (id, type, week_group, data, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?)`
+      ).bind(...insert).run();
+    }
 
     return jsonResponse({ isOk: true, data: storedRecord }, 201, { ETag: `"${storedRecord.record_version}"` });
   } catch (error) {
@@ -546,6 +628,10 @@ export async function onRequestPut({ request, env, data }) {
     }
 
     if (await archivedWeekGroup(env,existingRow.type,existingRow.week_group)) return archivedRecordConflict();
+    if (existingRow.type==='config' && existingRecord.key==='week_group')
+      return jsonResponse({isOk:false,code:'lifecycle_required',error:'Week Group configuration is controlled by lifecycle transactions.'},409);
+    const scope = await activeRecordScope(env,existingRow.type,existingRow.week_group);
+    if (scope) return scope;
     const currentVersion = recordVersionOf(existingRecord);
     if (['bus','dorm'].includes(existingRow.type) && !expected.supplied)
       return jsonResponse({isOk:false,code:'record_version_required',error:'An If-Match record version is required for operational updates.'},428);
@@ -561,7 +647,13 @@ export async function onRequestPut({ request, env, data }) {
 
     const now = new Date().toISOString();
     const incoming = patch ? { ...existingRecord, ...patch.changes } : record;
+    if (!mayUpdateRecord(role, existingRecord, incoming)) return forbidden();
     const normalized = normalizeDormUpdate(incoming, existingRecord, now);
+    if (existingRow.type === 'config' && String(normalized.key||'')!==String(existingRecord.key||''))
+      return jsonResponse({isOk:false,code:'validation',error:'Configuration identity cannot change through record updates.'},400);
+    if (OPERATIONAL_TYPES.has(existingRow.type) && normalized.week_group !== undefined &&
+        String(normalized.week_group||'')!==String(existingRow.week_group||''))
+      return jsonResponse({isOk:false,code:'lifecycle_required',error:'Operational Week Group identity cannot change.'},409);
     if (existingRow.type === 'bus') validateBusCounts(normalized);
     await enforceOperationalAccountingMutation(env, existingRecord, normalized);
     const storedRecord = stampUpdatedRecord(existingRecord, {
@@ -631,6 +723,11 @@ export async function onRequestDelete({ request, env, data }) {
     }
 
     if (await archivedWeekGroup(env,existingRow.type,existingRow.week_group)) return archivedRecordConflict();
+    if (!mayDeleteRecord(role)) return forbidden();
+    if (existingRow.type==='config' && existingRecord.key==='week_group')
+      return jsonResponse({isOk:false,code:'lifecycle_required',error:'Week Group configuration is controlled by lifecycle transactions.'},409);
+    const scope = await activeRecordScope(env,existingRow.type,existingRow.week_group);
+    if (scope) return scope;
     const currentVersion = recordVersionOf(existingRecord);
     if (['bus','dorm'].includes(existingRow.type) && !expected.supplied)
       return jsonResponse({isOk:false,code:'record_version_required',error:'An If-Match record version is required for operational deletion.'},428);

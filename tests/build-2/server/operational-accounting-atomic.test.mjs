@@ -16,6 +16,8 @@ function setup() {
     {__backendId:'dorm-b',type:'dorm',week_group:'26003',current_load:0,max_load:40,record_version:1}
   ]) db.prepare('INSERT INTO records VALUES(?,?,?,?,?,?)')
     .run(record.__backendId,record.type,record.week_group,JSON.stringify(record),stamp,stamp);
+  db.prepare('INSERT INTO records VALUES(?,?,?,?,?,?)').run('week-group','config','26003',
+    JSON.stringify({type:'config',key:'week_group',value:'26003',record_version:1}),stamp,stamp);
   return {db,env:{DB:{prepare(sql){
     let args=[];
     return {

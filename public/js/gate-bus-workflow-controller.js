@@ -280,6 +280,16 @@
     });
   }
 
+  // Retain one command identity across uncertain network outcomes. Editing the
+  // form creates a new command; local arrivals remain independently repeatable.
+  function creationState(form, values) {
+    const fingerprint = JSON.stringify(values);
+    if (form.__gateBusCreate?.fingerprint !== fingerprint) {
+      form.__gateBusCreate = { fingerprint, id: crypto.randomUUID(), at: new Date().toISOString() };
+    }
+    return form.__gateBusCreate;
+  }
+
   async function createAirport(form) {
     clearErrors('bus');
     const total = n(document.getElementById('bus-otw')?.value);
@@ -299,12 +309,14 @@
       submit.textContent = 'Dispatching...';
     }
 
-    const busId = typeof getNextAirportBusId === 'function' ? getNextAirportBusId() : Date.now();
-    const now = new Date().toISOString();
+    const operation = creationState(form, ['airport',activeWg,total,females,naturals,spaceForce]);
+    const busId = operation.busId ?? (operation.busId = typeof getNextAirportBusId === 'function' ? getNextAirportBusId() : Date.now());
+    const now = operation.at;
     const payload = {
       type: 'bus',
       bus_id: String(busId),
       bus_type: 'airport',
+      operation_id: operation.id,
       destination: '',
       otw_count: total,
       female_count: females,
@@ -316,15 +328,16 @@
       week_group: activeWg
     };
 
-    const result = await window.dataSdk.create(payload);
-
-    if (submit) {
-      submit.disabled = false;
-      submit.textContent = original || 'DISPATCH BUS';
+    let result;
+    try { result = await window.dataSdk.create(payload); }
+    catch { return showMessage('airport-msg', 'Dispatch outcome unconfirmed. Retry the same command to reconcile; do not add a second bus.', true); }
+    finally {
+      if (submit) { submit.disabled = false; submit.textContent = original || 'DISPATCH BUS'; }
     }
 
     if (!result?.isOk) return showMessage('airport-msg', result?.error || 'Failed to dispatch bus.', true);
 
+    delete form.__gateBusCreate;
     updateCache(result.data || payload);
     refreshAllSurfaces('airport-dispatch');
     form.reset();
@@ -368,11 +381,13 @@
       submit.textContent = 'SAVING...';
     }
 
-    const now = new Date().toISOString();
+    const operation = creationState(form, ['local',activeWg,destination,total,females,naturals,spaceForce]);
+    const now = operation.at;
     const payload = {
       type: 'bus',
       bus_id: '',
       bus_type: 'local',
+      operation_id: operation.id,
       destination,
       originating_destination: destination,
       otw_count: total,
@@ -386,15 +401,16 @@
       week_group: activeWg
     };
 
-    const result = await window.dataSdk.create(payload);
-
-    if (submit) {
-      submit.disabled = false;
-      submit.textContent = original || 'ADD LOCAL ARRIVAL';
+    let result;
+    try { result = await window.dataSdk.create(payload); }
+    catch { return showMessage('local-bus-msg', 'Arrival outcome unconfirmed. Retry the same command to reconcile; do not add a second arrival.', true); }
+    finally {
+      if (submit) { submit.disabled = false; submit.textContent = original || 'ADD LOCAL ARRIVAL'; }
     }
 
     if (!result?.isOk) return showMessage('local-bus-msg', result?.error || 'Failed to add local arrival.', true);
 
+    delete form.__gateBusCreate;
     updateCache(result.data || payload);
     form.reset();
     ['local-female', 'local-nat', 'local-sf'].forEach(id => { const input = document.getElementById(id); if (input) input.value = '0'; });

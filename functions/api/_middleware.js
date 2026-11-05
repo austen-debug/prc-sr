@@ -140,6 +140,16 @@ export async function onRequest(context) {
   // query string or raw exception. The reporter is best-effort.
   try {
     const response=await context.next();
+    if(url.pathname==='/api/records' && response.status===409) {
+      // Capture only known conflict classifications. Payloads and record IDs
+      // are never copied to diagnostics.
+      const code=String((await response.clone().json().catch(()=>null))?.code||'');
+      if (['record_version_conflict','operational_invariant','week_group_archived',
+        'bus_identity_conflict','operation_conflict'].includes(code))
+        await recordDiagnostic(context.env,{source:'server',category:'api',severity:'warning',
+          code:'API_'+code.toUpperCase(),route:url.pathname,
+          detail:'A conditional records mutation was rejected.',status:409});
+    }
     if(url.pathname!=='/api/client-diagnostics' && response.status>=500) {
       await recordDiagnostic(context.env,{source:'server',category:'api',severity:'error',
         code:'API_HTTP_'+response.status,route:safeRoute(url.pathname),

@@ -68,6 +68,7 @@ function sqliteFixture(){
  const now='2026-10-16T16:00:00.000Z';
  const seed=(id,type,data)=>db.prepare('INSERT INTO records(id,type,week_group,data,created_at,updated_at) VALUES(?,?,?,?,?,?)')
   .run(id,type,'WG26104',JSON.stringify({...data,type,week_group:'WG26104',record_version:3,created_by_role:'instructor'}),now,now);
+ seed('config-week','config',{key:'week_group',value:'WG26104'});
  seed('bus-fixture','bus',{bus_type:'airport',otw_count:25,status:'arrived'});
  seed('dorm-fixture','dorm',{state:'closed',phase:'Closed',max_load:44,current_load:12,
   dorm_name:'B04',opened_at:'2026-10-16T15:00:00.000Z',closed_at:'2026-10-16T15:32:00.000Z',

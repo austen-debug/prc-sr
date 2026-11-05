@@ -552,6 +552,19 @@ export async function onRequestPost({ request, env, data }) {
         record.initialization_request_id=scope.initialization_request_id;
     }
 
+    // The source identity must still match inside the INSERT statement.
+    // A closeout and immediate reuse of the same display label cannot turn a
+    // stale request into a write owned by the subsequent initialization.
+    const sourceFence = scope ? (scope.cycle_id
+      ? {sql:`AND EXISTS(SELECT 1 FROM records WHERE type='config'
+            AND json_extract(data,'$.key')='week_group' AND json_extract(data,'$.value')=?)
+          AND EXISTS(SELECT 1 FROM gate_week_groups
+            WHERE cycle_id=? AND week_group=? AND state='active')`,
+        values:[record.week_group,scope.cycle_id,record.week_group]}
+      : {sql:`AND EXISTS(SELECT 1 FROM records WHERE type='config'
+            AND json_extract(data,'$.key')='week_group' AND json_extract(data,'$.value')=?
+            AND COALESCE(json_extract(data,'$.initialization_request_id'),'')=?)`,
+        values:[record.week_group,scope.initialization_request_id||'']}) : null;
     const id = makeId();
     const now = new Date().toISOString();
     const storedRecord = type === 'audit_event'
@@ -573,12 +586,17 @@ export async function onRequestPost({ request, env, data }) {
             AND julianday(buses.created_at)>COALESCE((SELECT MAX(julianday(
               COALESCE(json_extract(archives.data,'$.archived_at'),archives.created_at)))
               FROM records archives WHERE archives.type='archive' AND archives.week_group=?),0)))
-          AND EXISTS(SELECT 1 FROM records WHERE type='config'
-            AND json_extract(data,'$.key')='week_group' AND json_extract(data,'$.value')=?)
+          ${sourceFence.sql}
         RETURNING id`).bind(...insert,operationId,operationId,record.bus_type,
           String(record.week_group||''),String(record.bus_id||'').trim(),
-          String(record.week_group||''),String(record.week_group||'')).all();
+          String(record.week_group||''),...sourceFence.values).all();
       if (!changedTargetRecord(inserted,id)) {
+        const current=await resolveLiveWeekGroup(env);
+        if (current.status!=='active'||current.week_group!==scope.week_group||
+            current.cycle_id!==scope.cycle_id||
+            current.initialization_request_id!==scope.initialization_request_id)
+          return jsonResponse({isOk:false,code:'lifecycle_required',
+            error:'The Week Group initialization changed before the dispatch committed.'},409);
         if (operationId) {
           const prior=await env.DB.prepare(`SELECT id,type,week_group,data,created_at,updated_at
             FROM records WHERE type='bus' AND json_extract(data,'$.operation_id')=? LIMIT 2`)
@@ -599,9 +617,8 @@ export async function onRequestPost({ request, env, data }) {
     } else if (type === 'sound_event') {
       // A closeout can commit between the initial lifecycle read and INSERT.
       const confirmed=await env.DB.prepare(`INSERT INTO records (id,type,week_group,data,created_at,updated_at)
-        SELECT ?,?,?,?,?,? WHERE EXISTS(SELECT 1 FROM records WHERE type='config'
-          AND json_extract(data,'$.key')='week_group' AND json_extract(data,'$.value')=?)
-        RETURNING id`).bind(...insert,storedRecord.week_group).all();
+        SELECT ?,?,?,?,?,? WHERE 1=1 ${sourceFence.sql}
+        RETURNING id`).bind(...insert,...sourceFence.values).all();
       if (!changedTargetRecord(confirmed,id))
         return jsonResponse({isOk:false,code:'lifecycle_required',error:'The active Week Group changed before the sound event committed.'},409);
     } else {

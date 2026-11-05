@@ -225,6 +225,56 @@ test('conditional update increments version and stale writes receive stable conf
   assert.equal(staleBody.currentRecordVersion, 2);
 });
 
+test('Airman commands are limited to local arrivals and approved Processing fields',async()=>{
+ const db=createD1([
+  {__backendId:'bus-1',type:'bus',bus_type:'airport',bus_id:'1',week_group:'WG',
+    status:'arrived',otw_count:20,record_version:1},
+  {__backendId:'dorm-1',type:'dorm',week_group:'WG',state:'open',phase:'OPEN',
+    max_load:30,current_load:0,assigned_airman:'',auditorium_location:'',record_version:1},
+  {__backendId:'config-1',type:'config',key:'last_airport',value:'AA',record_version:1}
+ ]);
+ const env={DB:db},data=roleData('airman');
+ const call=(handler,method,body,version)=>handler({env,data,
+  request:request(method,body,version===undefined?{}:{'If-Match':String(version)})});
+ for(const payload of [
+  {type:'config',key:'last_airport',value:'XX'},
+  {type:'bus',bus_type:'airport',bus_id:'3',week_group:'WG',status:'active',otw_count:2},
+  {type:'dorm',week_group:'WG',max_load:20,current_load:0}
+ ]){
+  const response=await call(onRequestPost,'POST',payload);
+  assert.equal(response.status,403,JSON.stringify(payload));
+ }
+ assert.equal((await call(onRequestPut,'PUT',{__backendId:'config-1',value:'BB'},1)).status,403);
+ assert.equal((await call(onRequestPut,'PUT',{__backendId:'bus-1',status:'active'},1)).status,403);
+ assert.equal((await call(onRequestDelete,'DELETE',{__backendId:'bus-1'},1)).status,403);
+ assert.equal((await call(onRequestPut,'PUT',{__backendId:'dorm-1',
+  __changes:{state:'closed'},__base_values:{state:'open'}},1)).status,403);
+ const processing=await call(onRequestPut,'PUT',{__backendId:'dorm-1',
+  __changes:{phase:'LOBBY',current_load:6,assigned_airman:'A',auditorium_location:'Room'},
+  __base_values:{phase:'OPEN',current_load:0,assigned_airman:'',auditorium_location:''}},1);
+ assert.equal(processing.status,200,await processing.clone().text());
+ assert.equal((await processing.json()).data.updated_by_role,'airman');
+ const arrival=await call(onRequestPost,'POST',{type:'bus',bus_type:'local',bus_id:'',
+  week_group:'WG',destination:'Local',originating_destination:'Local',otw_count:2,status:'arrived'});
+ assert.equal(arrival.status,201,await arrival.clone().text());
+});
+
+test('Operational writes reject absent and mismatched live Week Group identity',async()=>{
+ const inactive=createD1([],{liveGroup:''});
+ const unavailable=await onRequestPost({env:{DB:inactive},data:roleData('instructor'),
+  request:request('POST',{type:'bus',bus_type:'airport',bus_id:'1',week_group:'WG',
+    status:'active',otw_count:2})});
+ assert.equal(unavailable.status,409);
+ assert.equal((await unavailable.json()).code,'lifecycle_required');
+ const db=createD1([{__backendId:'bus-old',type:'bus',week_group:'OTHER',
+  status:'active',record_version:1}]);
+ const change=await onRequestPut({env:{DB:db},data:roleData('instructor'),
+  request:request('PUT',{__backendId:'bus-old',status:'arrived'},{'If-Match':'1'})});
+ assert.equal(change.status,409);
+ assert.equal((await change.json()).code,'lifecycle_required');
+ assert.equal(JSON.parse(db.rows[0].data).status,'active');
+});
+
 test('Processing mutations acknowledge the affected row despite trigger-expanded D1 change counts', async () => {
   const db=createD1([{__backendId:'dorm-trigger',type:'dorm',week_group:'WG',
     state:'open',phase:'OPEN',current_load:0,max_load:40,record_version:1}]);

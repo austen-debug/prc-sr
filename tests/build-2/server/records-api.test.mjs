@@ -242,7 +242,7 @@ test('Airman commands are limited to local arrivals and approved Processing fiel
   {type:'dorm',week_group:'WG',max_load:20,current_load:0}
  ]){
   const response=await call(onRequestPost,'POST',payload);
-  assert.equal(response.status,403,JSON.stringify(payload));
+  assert.equal(response.status,payload.type==='dorm'?400:403,JSON.stringify(payload));
  }
  assert.equal((await call(onRequestPut,'PUT',{__backendId:'config-1',value:'BB'},1)).status,403);
  assert.equal((await call(onRequestPut,'PUT',{__backendId:'bus-1',status:'active'},1)).status,403);

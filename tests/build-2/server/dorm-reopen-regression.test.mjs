@@ -251,6 +251,29 @@ test('Airport bus number uniqueness applies to the current initialized cycle, no
  assert.equal(db.prepare("SELECT COUNT(*) AS n FROM records WHERE type='archive'").get().n,1);
 });
 
+test('Dispatch checks current initialization again during the insert',async()=>{
+ const {db,DB}=sqliteFixture();
+ let switched=false;
+ const proxy={prepare(sql){
+   if(!switched && sql.includes('INSERT INTO records')&&sql.includes('RETURNING id')){
+     switched=true;
+     const row=db.prepare("SELECT data FROM records WHERE id='config-week'").get();
+     const data=JSON.parse(row.data);
+     data.initialization_request_id='a-new-cycle';
+     db.prepare("UPDATE records SET data=? WHERE id='config-week'").run(JSON.stringify(data));
+   }
+   return DB.prepare(sql);
+ }};
+ const response=await onRequestPost({env:{DB:proxy},data:{session:{role:'instructor'}},
+  request:new Request('https://gate.example/api/records',{method:'POST',
+   headers:{'Content-Type':'application/json'},
+   body:JSON.stringify({type:'bus',bus_type:'local',week_group:'WG26104',
+     destination:'Local',otw_count:1,status:'arrived'})})});
+ assert.equal(switched,true);
+ assert.equal(response.status,409);
+ assert.equal(db.prepare("SELECT COUNT(*) AS n FROM records WHERE type='bus'").get().n,1);
+});
+
 test('Registered operational records receive trusted cycle identity and reject reassignment',async()=>{
  const {db,DB}=sqliteFixture();
  const cycle='5a0e48e0-0123-4123-8123-012345678901';

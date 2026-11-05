@@ -72,6 +72,8 @@ function createD1(seed = [], { liveGroup = 'WG' } = {}) {
         // Pre-migration D1 contains no Admin disposition table. Model that
         // catalog lookup without changing existing record fixture semantics.
         if (normalized.includes('FROM sqlite_master')) return null;
+        if (normalized.startsWith('SELECT COUNT(*) AS suspect FROM records'))
+          return {suspect:0}; // SQL-time source ownership is covered by the real SQLite regressions.
         if (normalized.includes("FROM gate_week_groups WHERE")) return null;
         if (normalized.includes("WHERE type='dorm' AND week_group=?"))
           return clone(rows.find(item=>item.type==='dorm' && item.week_group===bound[0] &&

@@ -217,6 +217,25 @@ test('Tampered source-count or format cannot authorize recovery',async()=>{
   }
 });
 
+test('Legacy closeout rejects pre-archive sound events even when a reused label has fresh dorm evidence',async()=>{
+  const f=setup(),priorAt='2026-10-20T10:00:00.000Z';
+  f.db.prepare('INSERT INTO records VALUES(?,?,?,?,?,?)').run(
+    'historic-archive','archive','WG26053',
+    JSON.stringify({type:'archive',week_group:'WG26053',archived_at:priorAt}),priorAt,priorAt);
+  const init='5a0e48e0-0123-4123-8123-012345678901';
+  for(const [id,key] of [['active-wg','initialization_request_id'],['dorm-one','initialization_request_id']]){
+    const current=JSON.parse(f.db.prepare('SELECT data FROM records WHERE id=?').get(id).data);
+    f.db.prepare('UPDATE records SET data=? WHERE id=?').run(JSON.stringify({...current,[key]:init}),id);
+  }
+  f.db.prepare("UPDATE records SET created_at='2026-10-19T00:00:00.000Z' WHERE id='sound-one'").run();
+  const before=f.db.prepare("SELECT id,type,week_group,data,created_at,updated_at FROM records WHERE type IN ('bus','dorm','sound_event') ORDER BY id").all();
+  const response=await f.close();
+  assert.equal(response.status,503,await response.clone().text());
+  assert.equal((await response.json()).code,'integrity_error');
+  assert.deepEqual(f.db.prepare("SELECT id,type,week_group,data,created_at,updated_at FROM records WHERE type IN ('bus','dorm','sound_event') ORDER BY id").all(),before);
+  assert.equal(count(f.db,'archive','WG26053'),1);
+});
+
 test('A separately initialized reused Week Group label may close without modifying prior archive',async()=>{
   const f=setup();
   const prior=JSON.stringify({type:'archive',week_group:'WG26053',archived_at:'2026-10-20T10:00:00.000Z',archive_schema_version:'gate-archive-schema-v3-canonical'});

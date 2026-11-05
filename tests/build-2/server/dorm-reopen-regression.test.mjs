@@ -230,12 +230,25 @@ test('Airport bus number uniqueness applies to the current initialized cycle, no
    body:JSON.stringify({type:'bus',bus_type:'airport',bus_id:'2',week_group:'WG26104',
     status:'active',otw_count:20,operation_id:operationId,departed_at:'2026-10-18T01:00:00.000Z'})
   })});
+ const blocked=await send('5a0e48e0-0123-4123-8123-012345678902');
+ assert.equal(blocked.status,503,'Residual historical sources must block new-cycle writes');
+ assert.equal((await blocked.json()).code,'integrity_error');
+ assert.equal(db.prepare("SELECT COUNT(*) AS n FROM records WHERE type='bus'").get().n,1);
+
+ // Simulate separate, verified off-production reconciliation in this fixture.
+ // Only after both historical source rows are absent can a reused number be created.
+ db.prepare("DELETE FROM records WHERE id IN ('bus-fixture','dorm-fixture')").run();
  const first=await send('5a0e48e0-0123-4123-8123-012345678902');
  assert.equal(first.status,201,await first.clone().text());
+ const saved=(await first.json()).data;
+ assert.equal(saved.initialization_request_id,initId,'Bus source ownership is server-stamped');
+ const acknowledged=await send('5a0e48e0-0123-4123-8123-012345678902');
+ assert.equal(acknowledged.status,200,'A retry acknowledges the existing command');
  const repeat=await send('5a0e48e0-0123-4123-8123-012345678903');
  assert.equal(repeat.status,409);
  assert.equal((await repeat.json()).code,'bus_identity_conflict');
- assert.equal(db.prepare("SELECT COUNT(*) AS n FROM records WHERE type='bus' AND json_extract(data,'$.bus_id')='2'").get().n,2);
+ assert.equal(db.prepare("SELECT COUNT(*) AS n FROM records WHERE type='bus' AND json_extract(data,'$.bus_id')='2'").get().n,1);
+ assert.equal(db.prepare("SELECT COUNT(*) AS n FROM records WHERE type='archive'").get().n,1);
 });
 
 test('Server closed-dorm manual reopen preserves current load and provenance while clearing the closure',async()=>{

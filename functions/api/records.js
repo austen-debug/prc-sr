@@ -58,7 +58,7 @@ function fieldChangeRequest(record) {
   const changes=record.__changes, base=record.__base_values;
   if (!changes || typeof changes!=='object' || Array.isArray(changes) || !Object.keys(changes).length)
     throw Object.assign(new Error('Changed fields must be a non-empty object.'),{status:400,code:'validation'});
-  const protectedKeys=/^(?:__.*|id|type|week_group|record_version|recordVersion|created_at|updated_at|created_by_role|updated_by_role)$/;
+  const protectedKeys=/^(?:__.*|id|type|week_group|cycle_id|initialization_request_id|record_version|recordVersion|created_at|updated_at|created_by_role|updated_by_role)$/;
   if (Object.entries(changes).some(([key,value])=>protectedKeys.test(key) || value !== null && typeof value==='object'))
     throw Object.assign(new Error('Field changes include protected or unsupported values.'),{status:400,code:'validation'});
   if (base !== undefined && (!base || typeof base!=='object' || Array.isArray(base) ||
@@ -160,7 +160,7 @@ async function activeRecordScope(env, type, weekGroup) {
     return jsonResponse({isOk:false,code:'lifecycle_required',error:'Register an active Week Group before changing operational records.'},409);
   if (normalizedOperationalWeek(weekGroup) !== live.week_group)
     return jsonResponse({isOk:false,code:'lifecycle_required',error:'Only records in the active Week Group can be modified.'},409);
-  return null;
+  return live;
 }
 
 function sameBusSubmission(prior, next) {
@@ -537,8 +537,34 @@ export async function onRequestPost({ request, env, data }) {
 
     if (await archivedWeekGroup(env,type,record.week_group)) return archivedRecordConflict();
     const scope = await activeRecordScope(env,type,record.week_group);
-    if (scope) return scope;
+    if (scope instanceof Response) return scope;
+    if (scope) {
+      // The server, not an inbound request, owns source-cycle attribution.
+      if ((record.cycle_id && record.cycle_id!==scope.cycle_id) ||
+          (record.initialization_request_id &&
+            record.initialization_request_id!==scope.initialization_request_id))
+        return jsonResponse({isOk:false,code:'lifecycle_required',
+          error:'Submitted record belongs to a different initialization cycle.'},409);
+      delete record.cycle_id;
+      delete record.initialization_request_id;
+      if (scope.cycle_id) record.cycle_id=scope.cycle_id;
+      if (scope.initialization_request_id)
+        record.initialization_request_id=scope.initialization_request_id;
+    }
 
+    // The source identity must still match inside the INSERT statement.
+    // A closeout and immediate reuse of the same display label cannot turn a
+    // stale request into a write owned by the subsequent initialization.
+    const sourceFence = scope ? (scope.cycle_id
+      ? {sql:`AND EXISTS(SELECT 1 FROM records WHERE type='config'
+            AND json_extract(data,'$.key')='week_group' AND json_extract(data,'$.value')=?)
+          AND EXISTS(SELECT 1 FROM gate_week_groups
+            WHERE cycle_id=? AND week_group=? AND state='active')`,
+        values:[record.week_group,scope.cycle_id,record.week_group]}
+      : {sql:`AND EXISTS(SELECT 1 FROM records WHERE type='config'
+            AND json_extract(data,'$.key')='week_group' AND json_extract(data,'$.value')=?
+            AND COALESCE(json_extract(data,'$.initialization_request_id'),'')=?)`,
+        values:[record.week_group,scope.initialization_request_id||'']}) : null;
     const id = makeId();
     const now = new Date().toISOString();
     const storedRecord = type === 'audit_event'
@@ -560,12 +586,17 @@ export async function onRequestPost({ request, env, data }) {
             AND julianday(buses.created_at)>COALESCE((SELECT MAX(julianday(
               COALESCE(json_extract(archives.data,'$.archived_at'),archives.created_at)))
               FROM records archives WHERE archives.type='archive' AND archives.week_group=?),0)))
-          AND EXISTS(SELECT 1 FROM records WHERE type='config'
-            AND json_extract(data,'$.key')='week_group' AND json_extract(data,'$.value')=?)
+          ${sourceFence.sql}
         RETURNING id`).bind(...insert,operationId,operationId,record.bus_type,
           String(record.week_group||''),String(record.bus_id||'').trim(),
-          String(record.week_group||''),String(record.week_group||'')).all();
+          String(record.week_group||''),...sourceFence.values).all();
       if (!changedTargetRecord(inserted,id)) {
+        const current=await resolveLiveWeekGroup(env);
+        if (current.status!=='active'||current.week_group!==scope.week_group||
+            current.cycle_id!==scope.cycle_id||
+            current.initialization_request_id!==scope.initialization_request_id)
+          return jsonResponse({isOk:false,code:'lifecycle_required',
+            error:'The Week Group initialization changed before the dispatch committed.'},409);
         if (operationId) {
           const prior=await env.DB.prepare(`SELECT id,type,week_group,data,created_at,updated_at
             FROM records WHERE type='bus' AND json_extract(data,'$.operation_id')=? LIMIT 2`)
@@ -586,9 +617,8 @@ export async function onRequestPost({ request, env, data }) {
     } else if (type === 'sound_event') {
       // A closeout can commit between the initial lifecycle read and INSERT.
       const confirmed=await env.DB.prepare(`INSERT INTO records (id,type,week_group,data,created_at,updated_at)
-        SELECT ?,?,?,?,?,? WHERE EXISTS(SELECT 1 FROM records WHERE type='config'
-          AND json_extract(data,'$.key')='week_group' AND json_extract(data,'$.value')=?)
-        RETURNING id`).bind(...insert,storedRecord.week_group).all();
+        SELECT ?,?,?,?,?,? WHERE 1=1 ${sourceFence.sql}
+        RETURNING id`).bind(...insert,...sourceFence.values).all();
       if (!changedTargetRecord(confirmed,id))
         return jsonResponse({isOk:false,code:'lifecycle_required',error:'The active Week Group changed before the sound event committed.'},409);
     } else {
@@ -631,7 +661,7 @@ export async function onRequestPut({ request, env, data }) {
     if (existingRow.type==='config' && existingRecord.key==='week_group')
       return jsonResponse({isOk:false,code:'lifecycle_required',error:'Week Group configuration is controlled by lifecycle transactions.'},409);
     const scope = await activeRecordScope(env,existingRow.type,existingRow.week_group);
-    if (scope) return scope;
+    if (scope instanceof Response) return scope;
     const currentVersion = recordVersionOf(existingRecord);
     if (['bus','dorm'].includes(existingRow.type) && !expected.supplied)
       return jsonResponse({isOk:false,code:'record_version_required',error:'An If-Match record version is required for operational updates.'},428);
@@ -647,6 +677,11 @@ export async function onRequestPut({ request, env, data }) {
 
     const now = new Date().toISOString();
     const incoming = patch ? { ...existingRecord, ...patch.changes } : record;
+    if ((incoming.cycle_id !== undefined && incoming.cycle_id !== existingRecord.cycle_id) ||
+        (incoming.initialization_request_id !== undefined &&
+          incoming.initialization_request_id !== existingRecord.initialization_request_id))
+      return jsonResponse({isOk:false,code:'lifecycle_required',
+        error:'Source initialization identity cannot change through record updates.'},409);
     if (!mayUpdateRecord(role, existingRecord, incoming)) return forbidden();
     const normalized = normalizeDormUpdate(incoming, existingRecord, now);
     if (existingRow.type === 'config' && String(normalized.key||'')!==String(existingRecord.key||''))
@@ -727,7 +762,7 @@ export async function onRequestDelete({ request, env, data }) {
     if (existingRow.type==='config' && existingRecord.key==='week_group')
       return jsonResponse({isOk:false,code:'lifecycle_required',error:'Week Group configuration is controlled by lifecycle transactions.'},409);
     const scope = await activeRecordScope(env,existingRow.type,existingRow.week_group);
-    if (scope) return scope;
+    if (scope instanceof Response) return scope;
     const currentVersion = recordVersionOf(existingRecord);
     if (['bus','dorm'].includes(existingRow.type) && !expected.supplied)
       return jsonResponse({isOk:false,code:'record_version_required',error:'An If-Match record version is required for operational deletion.'},428);

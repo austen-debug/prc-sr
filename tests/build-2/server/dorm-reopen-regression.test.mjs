@@ -230,12 +230,83 @@ test('Airport bus number uniqueness applies to the current initialized cycle, no
    body:JSON.stringify({type:'bus',bus_type:'airport',bus_id:'2',week_group:'WG26104',
     status:'active',otw_count:20,operation_id:operationId,departed_at:'2026-10-18T01:00:00.000Z'})
   })});
+ const blocked=await send('5a0e48e0-0123-4123-8123-012345678902');
+ assert.equal(blocked.status,503,'Residual historical sources must block new-cycle writes');
+ assert.equal((await blocked.json()).code,'integrity_error');
+ assert.equal(db.prepare("SELECT COUNT(*) AS n FROM records WHERE type='bus'").get().n,1);
+
+ // Simulate separate, verified off-production reconciliation in this fixture.
+ // Only after both historical source rows are absent can a reused number be created.
+ db.prepare("DELETE FROM records WHERE id IN ('bus-fixture','dorm-fixture')").run();
  const first=await send('5a0e48e0-0123-4123-8123-012345678902');
  assert.equal(first.status,201,await first.clone().text());
+ const saved=(await first.json()).data;
+ assert.equal(saved.initialization_request_id,initId,'Bus source ownership is server-stamped');
+ const acknowledged=await send('5a0e48e0-0123-4123-8123-012345678902');
+ assert.equal(acknowledged.status,200,'A retry acknowledges the existing command');
  const repeat=await send('5a0e48e0-0123-4123-8123-012345678903');
  assert.equal(repeat.status,409);
  assert.equal((await repeat.json()).code,'bus_identity_conflict');
- assert.equal(db.prepare("SELECT COUNT(*) AS n FROM records WHERE type='bus' AND json_extract(data,'$.bus_id')='2'").get().n,2);
+ assert.equal(db.prepare("SELECT COUNT(*) AS n FROM records WHERE type='bus' AND json_extract(data,'$.bus_id')='2'").get().n,1);
+ assert.equal(db.prepare("SELECT COUNT(*) AS n FROM records WHERE type='archive'").get().n,1);
+});
+
+test('Dispatch checks current initialization again during the insert',async()=>{
+ const {db,DB}=sqliteFixture();
+ let switched=false;
+ const proxy={prepare(sql){
+   if(!switched && sql.includes('INSERT INTO records')&&sql.includes('RETURNING id')){
+     switched=true;
+     const row=db.prepare("SELECT data FROM records WHERE id='config-week'").get();
+     const data=JSON.parse(row.data);
+     data.initialization_request_id='a-new-cycle';
+     db.prepare("UPDATE records SET data=? WHERE id='config-week'").run(JSON.stringify(data));
+   }
+   return DB.prepare(sql);
+ }};
+ const response=await onRequestPost({env:{DB:proxy},data:{session:{role:'instructor'}},
+  request:new Request('https://gate.example/api/records',{method:'POST',
+   headers:{'Content-Type':'application/json'},
+   body:JSON.stringify({type:'bus',bus_type:'local',week_group:'WG26104',
+     destination:'Local',otw_count:1,status:'arrived'})})});
+ assert.equal(switched,true);
+ assert.equal(response.status,409);
+ assert.equal(db.prepare("SELECT COUNT(*) AS n FROM records WHERE type='bus'").get().n,1);
+});
+
+test('Registered operational records receive trusted cycle identity and reject reassignment',async()=>{
+ const {db,DB}=sqliteFixture();
+ const cycle='5a0e48e0-0123-4123-8123-012345678901';
+ db.prepare("INSERT INTO gate_week_groups(cycle_id,week_group,state,activated_at) VALUES(?,?,'active',?)")
+   .run(cycle,'WG26104','2026-10-16T16:00:00.000Z');
+ const env={DB},data={session:{role:'instructor'}};
+ const submit=extra=>onRequestPost({env,data,request:new Request('https://gate.example/api/records',{
+   method:'POST',headers:{'Content-Type':'application/json'},
+   body:JSON.stringify({type:'bus',bus_type:'local',bus_id:'',week_group:'WG26104',
+     destination:'Local',otw_count:2,status:'arrived',...extra})
+ })});
+ const forged=await submit({cycle_id:'wrong-cycle'});
+ assert.equal(forged.status,409);
+ const accepted=await submit({});
+ assert.equal(accepted.status,201,await accepted.clone().text());
+ const saved=(await accepted.json()).data;
+ assert.equal(saved.cycle_id,cycle);
+ assert.equal(db.prepare("SELECT json_extract(data,'$.cycle_id') AS id FROM records WHERE id=?")
+   .get(saved.__backendId).id,cycle);
+ const tamper=await onRequestPut({env,data,request:new Request('https://gate.example/api/records',{
+   method:'PUT',headers:{'Content-Type':'application/json','If-Match':'1'},
+   body:JSON.stringify({__backendId:saved.__backendId,__changes:{cycle_id:'wrong-cycle'}})
+ })});
+ assert.equal(tamper.status,400);
+ assert.equal(db.prepare("SELECT json_extract(data,'$.cycle_id') AS id FROM records WHERE id=?")
+   .get(saved.__backendId).id,cycle);
+ const sound=await onRequestPost({env,data,request:new Request('https://gate.example/api/records',{
+   method:'POST',headers:{'Content-Type':'application/json'},
+   body:JSON.stringify({type:'sound_event',week_group:'WG26104',sound_key:'arrival'})
+ })});
+ assert.equal(sound.status,201,await sound.clone().text());
+ assert.equal((await sound.json()).data.cycle_id,cycle);
+ assert.equal(db.prepare("SELECT COUNT(*) AS n FROM gate_v2_sound_events").get().n,1);
 });
 
 test('Server closed-dorm manual reopen preserves current load and provenance while clearing the closure',async()=>{

@@ -4,7 +4,8 @@
 const week = value => String(value || '').trim().toUpperCase();
 const stamp = value => { const n=Date.parse(String(value||'')); return Number.isFinite(n)?n:NaN; };
 const failure = message => Object.assign(new Error(message),{code:'integrity_error'});
-const state = (week_group='',status='idle',recovery=null) => Object.freeze({week_group,status,recovery});
+const state = (week_group='',status='idle',recovery=null,ownership={}) =>
+  Object.freeze({week_group,status,recovery,...ownership});
 
 export async function resolveLiveWeekGroup(env) {
   if (!env?.DB) throw failure('D1 binding is unavailable.');
@@ -47,7 +48,7 @@ export async function resolveLiveWeekGroup(env) {
   // An invalid archive timestamp prevents attribution to a newer cycle.
   const lastArchive=dates.length && dates.every(Number.isFinite) ? Math.max(...dates) : (archives.length?NaN:null);
   const dormRows=await env.DB.prepare(
-    "SELECT id,created_at,json_extract(data,'$.initialization_request_id') AS initialization_request_id FROM records WHERE type='dorm' AND week_group=?"
+    "SELECT id,created_at,json_extract(data,'$.cycle_id') AS cycle_id,json_extract(data,'$.initialization_request_id') AS initialization_request_id FROM records WHERE type='dorm' AND week_group=?"
   ).bind(configured).all();
   const dorms=dormRows.results||[];
 
@@ -64,7 +65,45 @@ export async function resolveLiveWeekGroup(env) {
       Number.isFinite(configTime) && configTime>lastArchive &&
       dorms.some(row=>row.initialization_request_id===initId && stamp(row.created_at)>lastArchive);
   }
-  if (genuinelyActive) return state(configured,'active');
+  if (genuinelyActive) {
+    const cycleId=String(cycles[0]?.cycle_id||'');
+    // Transactional initialization supersedes any legacy request ID
+    // retained in the existing reusable config row.
+    const activeInitId=cycleId?'':initId;
+    // New transactional drafts stamp every dorm with cycle_id. Adopted legacy
+    // cycles have no source_draft_id and intentionally retain legacy dorm rows.
+    const requiredDormCycle=cycles[0]?.source_draft_id?cycleId:'';
+    const archiveCutoff=archives.length?new Date(lastArchive).toISOString():'';
+    // Initialization must leave ONE source owner. A reused label is not
+    // evidence that pre-archive buses or sound events belong to the new cycle.
+    // The global mismatch condition also catches bypasses of initialization's
+    // existing prohibition on orphaned records from other Week Groups.
+    const ownership=await env.DB.prepare(`
+      SELECT COUNT(*) AS suspect FROM records
+      WHERE type IN ('bus','dorm','sound_event') AND (
+        week_group IS NULL OR week_group<>?
+        OR (?<>'' AND week_group=? AND (
+          julianday(created_at) IS NULL OR julianday(created_at)<=julianday(?)))
+        OR (?<>'' AND week_group=? AND type='dorm'
+          AND COALESCE(json_extract(data,'$.initialization_request_id'),'')<>?)
+        OR (?<>'' AND week_group=? AND type='dorm'
+          AND COALESCE(json_extract(data,'$.cycle_id'),'')<>?)
+        OR (?<>'' AND week_group=? AND json_extract(data,'$.cycle_id') IS NOT NULL
+          AND json_extract(data,'$.cycle_id')<>?)
+      )`).bind(configured,
+      archiveCutoff,configured,archiveCutoff,
+      activeInitId,configured,activeInitId,
+      requiredDormCycle,configured,requiredDormCycle,
+      cycleId,configured,cycleId).first();
+    if (Number(ownership?.suspect||0)>0) return state('','recovery_required',{
+      recovery_required:true,week_group:configured,reason:'cross_cycle_source_records',
+      suspect_source_count:Number(ownership.suspect),
+      archive_id:archives.length===1?archives[0].id:null
+    });
+    return state(configured,'active',null,{
+      cycle_id:cycleId,initialization_request_id:activeInitId,archive_cutoff_at:archiveCutoff
+    });
+  }
 
   const counts=await env.DB.prepare(
     "SELECT type,COUNT(*) AS n FROM records WHERE week_group=? AND type IN ('bus','dorm','sound_event') GROUP BY type"

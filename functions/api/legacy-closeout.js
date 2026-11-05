@@ -3,6 +3,7 @@ import { cutoverRequested } from './persistence-core.mjs';
 // browser-directed per-record DELETEs. No migration or new tables are required.
 // Legacy closeout is unavailable while transactional persistence is enabled.
 import { buildArchivePayload, parseOperationalRow } from './persistence-core.mjs';
+import { resolveLiveWeekGroup } from './live-week-group.mjs';
 
 const send = (body, status=200) => new Response(JSON.stringify(body), {
   status, headers:{'Content-Type':'application/json','Cache-Control':'no-store'}
@@ -162,6 +163,10 @@ export async function onRequestPost({request,env,data}){
       const sounds=rows.filter(row=>row.type==='sound_event').length;
       return refuse('existing_archive',`An archive already exists. ${dorms.length} dorm, ${buses.length} bus, and ${sounds} sound-event records remain. Automatic recovery requires exact archived source-record proof; records were not changed.`);
     }
+
+    const verified=await resolveLiveWeekGroup(env);
+    if(verified.status!=='active'||verified.week_group!==weekGroup)
+      return refuse('integrity_error','Source ownership is not verified. Reconcile historical records before closeout.',503);
 
     if(!dorms.length&&!buses.length)return refuse('incomplete_closeout','No live dorm or bus records remain. Check archive history before retrying.');
 

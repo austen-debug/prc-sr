@@ -314,14 +314,16 @@ async function closeout(env,payload,actor) {
   if (current.state!=='active') return conflict('Cycle needs recovery before closeout.');
   const config=await configRecord(env);
   if (configValue(config)!==current.week_group) return conflict('Active configuration does not match the lifecycle.');
-  const verified=await resolveLiveWeekGroup(env);
-  if (verified.status!=='active'||verified.week_group!==current.week_group||
-      verified.cycle_id!==current.cycle_id)
-    return unavailable('Active source cycle cannot be verified. Reconcile residual records before closeout.');
   if (!(await mirrorStatus(env)).ready) return unavailable('Migration parity or triggers are incomplete.');
   const orphans=await env.DB.prepare("SELECT COUNT(*) AS n FROM records WHERE type IN ('bus','dorm') AND week_group IS NOT ?").bind(current.week_group).first();
   if (Number(orphans.n)>0) return conflict('Other live Week Group records require recovery before closeout.');
   const rows=await env.DB.prepare("SELECT id,type,week_group,data,created_at,updated_at FROM records WHERE week_group=? AND type IN ('dorm','bus','sound_event') ORDER BY created_at,id").bind(current.week_group).all();
+  // Verify after selecting the snapshot: a later source-row insert must either
+  // fail ownership validation or invalidate the batch's row-count/content CAS.
+  const verified=await resolveLiveWeekGroup(env);
+  if (verified.status!=='active'||verified.week_group!==current.week_group||
+      verified.cycle_id!==current.cycle_id)
+    return unavailable('Active source cycle cannot be verified. Reconcile residual records before closeout.');
   const snapshot=rows.results||[], dorms=snapshot.filter(row=>row.type==='dorm').map(parseOperationalRow), buses=snapshot.filter(row=>row.type==='bus').map(parseOperationalRow);
   if (!dorms.length&&!buses.length) return conflict('No live buses or dorms found.');
   let windows;

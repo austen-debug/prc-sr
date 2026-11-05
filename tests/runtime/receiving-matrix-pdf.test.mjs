@@ -87,7 +87,7 @@ test('Matrix uses 20 numbered rows on every page and handles legacy ordering', (
   assert.throws(() => buildDormMatrixPdf({ weekGroup: 'WG26052', dorms, notes: 'x'.repeat(221) }), /220 characters/);
 });
 
-function fakeDatabase(active = 'WG26052') {
+function fakeDatabase(active = 'WG26052', { archived = false } = {}) {
   const config = {
     type: 'config', data: JSON.stringify({ type: 'config', key: 'week_group', value: active }),
     created_at: '2026-10-12T08:00:00Z', updated_at: '2026-10-12T08:00:00Z'
@@ -103,6 +103,12 @@ function fakeDatabase(active = 'WG26052') {
         bind(...args) { state.args = args; return this; },
         async first() { return sql.includes("type = 'config'") ? config : null; },
         async all() {
+          if (sql.includes("FROM records WHERE type='config'")) return {results:[config]};
+          if (sql.includes("FROM gate_week_groups")) return {results:[]};
+          if (sql.includes("FROM records WHERE type='archive'"))
+            return {results:archived?[{id:'archived',created_at:'2026-10-20T00:00:00Z',archived_at:'2026-10-20T00:00:00Z'}]:[]};
+          if (sql.includes("FROM records WHERE type='dorm'"))
+            return {results:rows.map((row,index)=>({id:'dorm-'+index,created_at:row.created_at,initialization_request_id:null}))};
           return { results: sql.includes("type = 'dorm'") ? rows.filter(row => row.week_group === state.args[0]) : [] };
         }
       };
@@ -134,6 +140,13 @@ test('Matrix endpoint checks role, Week Group consistency and note boundaries', 
   assert.match(response.headers.get('Cache-Control'), /no-store/);
   const pdf = asText(new Uint8Array(await response.arrayBuffer()));
   assert.match(pdf, /\(Attention: gate receiving\.\) Tj/);
+});
+
+test('Matrix refuses historical residual dorms when lifecycle verification requires recovery', async () => {
+  const response=await onRequestPost({env:{DB:fakeDatabase('WG26052',{archived:true})},
+    request:formRequest(),data:{session:{role:'instructor'}}});
+  assert.equal(response.status,503);
+  assert.equal((await response.json()).code,'integrity_error');
 });
 
 test('Archive button and dialog retain isolated handlers and scoped spacing', async () => {

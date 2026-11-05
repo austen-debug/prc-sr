@@ -1,4 +1,5 @@
 import { buildDormMatrixPdf } from '../../lib/dorm-matrix-pdf.mjs';
+import { resolveLiveWeekGroup } from '../live-week-group.mjs';
 
 function jsonResponse(data, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -25,15 +26,6 @@ function parseRecord(row) {
 function filenamePart(value) {
   return String(value || 'CURRENT').trim().toUpperCase()
     .replace(/[^A-Z0-9_-]+/g, '_').replace(/^_+|_+$/g, '') || 'CURRENT';
-}
-
-async function activeWeekGroup(DB) {
-  const row = await DB.prepare(
-    "SELECT type, week_group, data, created_at, updated_at FROM records " +
-    "WHERE type = 'config' AND json_extract(data, '$.key') = 'week_group' " +
-    'ORDER BY updated_at DESC, created_at DESC LIMIT 1'
-  ).first();
-  return String(parseRecord(row)?.value || '').trim().toUpperCase();
 }
 
 async function dormsForWeekGroup(DB, weekGroup) {
@@ -73,7 +65,9 @@ export async function onRequestPost({ request, env, data }) {
   }
 
   try {
-    const weekGroup = await activeWeekGroup(env.DB);
+    const live = await resolveLiveWeekGroup(env);
+    if (live.status === 'recovery_required') return jsonResponse({isOk:false,code:'integrity_error',error:'Week Group recovery is required before generating reports.'},503);
+    const weekGroup = live.week_group;
     if (!weekGroup || weekGroup !== expected) {
       return jsonResponse({ isOk: false, code: 'week_group_changed', error: 'The active Week Group changed. Reopen Print Matrix.' }, 409);
     }

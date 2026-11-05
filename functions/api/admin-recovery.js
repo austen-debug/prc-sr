@@ -1,5 +1,6 @@
 import { readSiteLock, siteLockJson } from './site-lock-core.mjs';
 import { cutoverRequested, normalizeDraft, buildDormRows, buildArchivePayload, parseOperationalRow } from './persistence-core.mjs';
+import { resolveLiveWeekGroup } from './live-week-group.mjs';
 
 const reply=siteLockJson;
 const fail=(code,message,status=409)=>reply({isOk:false,code,error:message},status);
@@ -35,6 +36,9 @@ async function currentState(env) {
   const cycle=cycles.results?.[0]||null;
   if(!group||!/^[A-Z0-9_-]{1,24}$/.test(group)||
     (cycle&&(cycle.week_group!==group||cycle.state!=='active')))throw Error('No verified active Week Group');
+  const verified=await resolveLiveWeekGroup(env);
+  if(verified.status!=='active'||verified.week_group!==group||
+    (cycle&&verified.cycle_id!==cycle.cycle_id))throw Error('Active source-cycle ownership is not verified');
   const sources=records.results||[];
   if(!sources.length||sources.some(row=>row.week_group!==group))throw Error('No complete current operational snapshot');
   const dorms=sources.filter(row=>row.type==='dorm').map(parseOperationalRow);

@@ -204,6 +204,40 @@ test('real D1 trigger semantics preserve bus creation receipts and distinct loca
  assert.equal(db.prepare("SELECT COUNT(*) AS n FROM gate_v2_buses").get().n,4);
 });
 
+test('Airport bus number uniqueness applies to the current initialized cycle, not historical reuse',async()=>{
+ const {db,DB}=sqliteFixture();
+ const archiveAt='2026-10-17T00:00:00.000Z';
+ const reinitializedAt='2026-10-18T00:00:00.000Z';
+ const initId='5a0e48e0-0123-4123-8123-012345678901';
+ const originalBus=JSON.parse(db.prepare("SELECT data FROM records WHERE id='bus-fixture'").get().data);
+ originalBus.bus_id='2';
+ db.prepare("UPDATE records SET data=? WHERE id='bus-fixture'").run(JSON.stringify(originalBus));
+ db.prepare('INSERT INTO records(id,type,week_group,data,created_at,updated_at) VALUES(?,?,?,?,?,?)')
+  .run('previous-archive','archive','WG26104',JSON.stringify({
+   type:'archive',week_group:'WG26104',archived_at:archiveAt
+  }),archiveAt,archiveAt);
+ const config=JSON.parse(db.prepare("SELECT data FROM records WHERE id='config-week'").get().data);
+ config.initialization_request_id=initId;
+ db.prepare("UPDATE records SET data=?,updated_at=? WHERE id='config-week'")
+  .run(JSON.stringify(config),reinitializedAt);
+ const newDorm={type:'dorm',week_group:'WG26104',dorm_name:'C21',state:'empty',
+  initialization_request_id:initId,record_version:1,current_load:0,max_load:50};
+ db.prepare('INSERT INTO records(id,type,week_group,data,created_at,updated_at) VALUES(?,?,?,?,?,?)')
+  .run('new-dorm','dorm','WG26104',JSON.stringify(newDorm),reinitializedAt,reinitializedAt);
+ const send=operationId=>onRequestPost({env:{DB},data:{session:{role:'instructor'}},
+  request:new Request('https://gate.example/api/records',{
+   method:'POST',headers:{'Content-Type':'application/json'},
+   body:JSON.stringify({type:'bus',bus_type:'airport',bus_id:'2',week_group:'WG26104',
+    status:'active',otw_count:20,operation_id:operationId,departed_at:'2026-10-18T01:00:00.000Z'})
+  })});
+ const first=await send('5a0e48e0-0123-4123-8123-012345678902');
+ assert.equal(first.status,201,await first.clone().text());
+ const repeat=await send('5a0e48e0-0123-4123-8123-012345678903');
+ assert.equal(repeat.status,409);
+ assert.equal((await repeat.json()).code,'bus_identity_conflict');
+ assert.equal(db.prepare("SELECT COUNT(*) AS n FROM records WHERE type='bus' AND json_extract(data,'$.bus_id')='2'").get().n,2);
+});
+
 test('Server closed-dorm manual reopen preserves current load and provenance while clearing the closure',async()=>{
  const {db,DB}=sqliteFixture();
  const request=new Request('https://gate.example/api/records',{method:'PUT',headers:{'Content-Type':'application/json','If-Match':'"3"'},

@@ -1,6 +1,7 @@
 // Admin-only live Week Group identity correction. No deletes, closeout or reset.
 // Preview may be read while operational; mutation requires an audited Site Lock.
 import {readSiteLock,siteLockJson} from './site-lock-core.mjs';
+import {resolveLiveWeekGroup} from './live-week-group.mjs';
 
 const reply=siteLockJson;
 const fail=(code,error,status=409)=>reply({isOk:false,code,error},status);
@@ -55,6 +56,9 @@ async function preview(env){
   if(!WG.test(old)||!UUID.test(init)||rows.length===0||
      rows.some(row=>row.week_group!==old)||!rows.some(row=>row.type==='dorm'))
     return {...base,reason:'Active source records or initialization identity cannot be verified.'};
+  const verified=await resolveLiveWeekGroup(env);
+  if(verified.status!=='active'||verified.week_group!==old)
+    return {...base,reason:'Operational source ownership is not verified; reconcile before renaming.'};
   const summary={...base,week_group:old,initialization_id:init,config,
     rows,dorm_count:rows.filter(r=>r.type==='dorm').length,
     bus_count:rows.filter(r=>r.type==='bus').length,

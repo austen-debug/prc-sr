@@ -115,8 +115,9 @@ function flightAlertTableText(items) {
     ([field, aliases]) => [field, { accepted: new Set(aliases.map(compact)), items: [] }]
   ));
   const tokens = [...items];
-  for (const first of items) {
-    for (const second of items) {
+  const headerFragments = items.filter(item => /^[A-Za-z][A-Za-z /]{1,30}$/.test(item.text.trim()));
+  for (const first of headerFragments) {
+    for (const second of headerFragments) {
       if (second.x <= first.x || second.x - first.x > 110 || Math.abs(second.y - first.y) > 3) continue;
       const combined = { text: first.text + ' ' + second.text, x: first.x, y: first.y, order: first.order };
       if (Object.values(headingCandidates).some(field => field.accepted.has(compact(combined.text)))) tokens.push(combined);

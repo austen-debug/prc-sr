@@ -119,3 +119,66 @@ test('WG26052 Excel/Acrobat layout reconstructs all merged SQD/SEC rows and reco
   assert.doesNotMatch(text,/798\/323|WEDNESDAY/);
 });
 
+
+
+test('WG27006 Flight Alert: SECT heading, merged squadron cells, 16 flights and AAFES 898', async () => {
+  // Synthetic, source-layout regression from the 6-Nov-2026 Flight Alert.
+  // No operational PDF or trainee information is committed to the repository.
+  const records = [
+    ['320', '4', '3D2', 'M', 57], ['320', '4', '3D1', 'M', 57],
+    ['320', '4', '4D2', 'M', 57], ['320', '4', '4D1', 'F', 54],
+    ['321', '1', '2A1', 'M', 57], ['321', '1', '2A2', 'M', 57],
+    ['321', '1', '3A2', 'M', 57], ['321', '1', '3A1', 'F', 54],
+    ['322', '2', 'B06', 'M', 57], ['322', '2', 'B09', 'M', 57],
+    ['323', '3', '2C1', 'M', 57], ['323', '3', '2C2', 'M', 57],
+    ['323', '1', '3A1', 'M', 57], ['323', '1', '3A2', 'F', 54],
+    ['324', '1', 'A03', 'M', 56], ['324', '1', 'B03', 'F', 53]
+  ];
+  const yPositions = [510, 496, 482, 468, 440, 426, 412, 398, 370, 356, 328, 314, 286, 272, 244, 230];
+  const cells = [];
+  const put = (text, x, y) => cells.push({ text: String(text), x, y });
+  [['SQD', 50], ['SECT', 105], ['INTER/SECT', 180], ['DORM', 258],
+    ['SEX', 325], ['LOAD', 380]].forEach(([text, x]) => put(text, x, 540));
+  put('FLT/SQUADRON', 500, 540);
+  put('PROC DAY', 590, 540);
+  put('TRNG START DATE/WEEK GROUP 27006', 520, 558);
+  for (const [squadron, y] of [['320', 489], ['321', 419], ['322', 363], ['323', 300], ['324', 237]]) {
+    put(squadron, 55, y);
+  }
+  for (const [section, y] of [['4', 489], ['1', 419], ['2', 363],
+    ['3', 321], ['1', 279], ['1', 237]]) put(section, 111, y);
+  records.forEach(([squadron, section, dorm, sex, load], index) => {
+    const y = yPositions[index];
+    put(index + 1, 190, y);
+    put(dorm, 260, y);
+    put(sex, 330, y);
+    put(load, 385, y);
+  });
+  put('B067/321', 505, 412); // Right-hand schedule is not a dorm row.
+  put('THURSDAY', 590, 412);
+  put('TOTAL FLTS - 16', 510, 185);
+  put('AAFES: 898', 105, 185);
+  const content = cells.map(cell =>
+    'BT /F1 10 Tf 1 0 0 1 ' + cell.x + ' ' + cell.y +
+    ' Tm (' + cell.text + ') Tj ET').join('\n');
+  const pdf = '%PDF-1.4\n1 0 obj << /Length ' + content.length +
+    ' >> stream\n' + content + '\nendstream\nendobj\n%%EOF';
+  const extracted = await extractFlightAlertPdf(fixture(pdf));
+  const result = parseFlightAlertText(extracted);
+  assert.equal(result.ok, true, JSON.stringify({ extracted, issues: result.issues }));
+  assert.equal(result.format, 'six-column-v2');
+  assert.equal(result.declaredRowCount, 16);
+  assert.equal(result.rows.length, 16);
+  assert.equal(result.publishedTotal, 898);
+  assert.equal(result.calculatedTotal, 898);
+  assert.equal(result.variance, 0);
+  assert.deepEqual(result.rows.map(row => [
+    row.sdq, row.sec, row.inter_sec, row.dorm_name, row.sex, row.load
+  ]), records.map(([squadron, section, dorm, sex, load], index) => [
+    squadron + ' TRS', section, String(index + 1), dorm,
+    sex === 'F' ? 'female' : 'male', String(load)
+  ]));
+  assert.doesNotMatch(extracted, /THURSDAY|B067\/321/);
+  assert.equal(result.rows[6].dorm_name, '3A2');
+  assert.equal(result.rows[7].dorm_name, '3A1');
+});

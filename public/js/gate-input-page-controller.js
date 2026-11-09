@@ -5,6 +5,13 @@
 
   const WINDOW_STORAGE_PREFIX = 'gate_receiving_windows_';
   const ROW_COUNT = 25;
+  const ACCEPTED_SQUADRONS = new Set(['320','321','322','323','324','326','327','328','331','535']);
+  function acceptedSquadron(value) {
+    const match = String(value ?? '').trim().match(/^(\d{3})(?:\s*TRS)?$/i);
+    return match && ACCEPTED_SQUADRONS.has(match[1]) ? `${match[1]} TRS` : '';
+  }
+  const isSpaceForceRow = row => Boolean(row?.space_force) || acceptedSquadron(row?.sdq)==='535 TRS';
+  const maximumLoad = row => isSpaceForceRow(row) ? 300 : 100;
   const GRID_TEMPLATE = '1fr 1fr 1.5fr 1.5fr 1fr 0.5fr 0.5fr 1fr 40px';
   const WINDOW_FIELDS = [
     ['receiving_day_one_start', 'RECEIVING DAY ONE START DATE / TIME'],
@@ -50,7 +57,7 @@
   }
 
   function emptyRow(index) {
-    return { rowIndex: index, sdq: '', sec: '', inter_sec: '', dorm_name: '', sex: 'male', band: false, space_force: false, load: '' };
+    return { rowIndex: index, sdq: '', sec: '', inter_sec: '', dorm_name: '', sex: 'male', band: false, space_force: false, load: '', load_confirmed: false };
   }
 
   function batchRowsSafe() {
@@ -67,7 +74,9 @@
         if (typeof row.band === 'undefined') row.band = false;
         if (typeof row.space_force === 'undefined') row.space_force = false;
         if (typeof row.load === 'undefined') row.load = '';
-        if (row.band && row.space_force) row.space_force = false;
+        if (typeof row.load_confirmed === 'undefined') row.load_confirmed = false;
+        if (acceptedSquadron(row.sdq) === '535 TRS') { row.space_force = true; row.band = false; }
+        else if (row.band && row.space_force) row.space_force = false;
       });
       return batchRows;
     } catch (_) {
@@ -297,8 +306,14 @@
           <option value="female" ${row.sex === 'female' ? 'selected' : ''}>Female</option>
         </select>
         <label class="flex items-center justify-center" title="Band dorm"><input type="checkbox" class="batch-band w-4 h-4" data-row="${index}" ${row.band ? 'checked' : ''} aria-label="Row ${index + 1} Band"></label>
-        <label class="flex items-center justify-center" title="Space Force dorm"><input type="checkbox" class="batch-space-force w-4 h-4" data-row="${index}" ${row.space_force ? 'checked' : ''} aria-label="Row ${index + 1} Space Force"></label>
-        <input type="number" class="batch-load border rounded px-1 py-1 bg-transparent text-xs font-tabular" style="border-color:var(--border);color:var(--text);" inputmode="numeric" data-row="${index}" min="1" max="100" value="${esc(row.load)}" aria-label="Row ${index + 1} Load">
+        <label class="flex items-center justify-center" title="Space Force dorm"><input type="checkbox" class="batch-space-force w-4 h-4" data-row="${index}" ${row.space_force ? 'checked' : ''} ${acceptedSquadron(row.sdq)==='535 TRS' ? 'disabled' : ''} aria-label="Row ${index + 1} Space Force"></label>
+        <div class="grid gap-1">
+          <input type="number" class="batch-load border rounded px-1 py-1 bg-transparent text-xs font-tabular" style="border-color:var(--border);color:var(--text);" inputmode="numeric" data-row="${index}" min="1" max="${maximumLoad(row)}" value="${esc(row.load)}" aria-label="Row ${index + 1} Load">
+          <label data-gate-input-load-confirm="${index}" ${n(row.load)>70?'':'hidden'} class="flex gap-1 items-center text-[10px]" title="Confirm the published dorm load above 70">
+            <input type="checkbox" class="batch-load-confirm" data-row="${index}" ${row.load_confirmed ? 'checked' : ''} aria-label="Row ${index + 1} confirm load above 70">
+            Confirm &gt;70
+          </label>
+        </div>
         <button type="button" data-gate-input-clear-row="${index}" class="text-red-500 text-lg leading-none" aria-label="Clear row ${index + 1}">×</button>
       </div>
     `).join('');
@@ -313,16 +328,42 @@
     const rows = batchRowsSafe();
     if (!Number.isFinite(index) || !rows[index]) return;
 
-    if (target.classList.contains('batch-sdq')) rows[index].sdq = target.value;
+    if (target.classList.contains('batch-sdq')) {
+      const previous=acceptedSquadron(rows[index].sdq);
+      rows[index].sdq = target.value;
+      if(previous!==acceptedSquadron(rows[index].sdq))rows[index].load_confirmed=false;
+      if(acceptedSquadron(rows[index].sdq)==='535 TRS'){
+        rows[index].space_force=true;rows[index].band=false;
+      }
+      const sf=document.querySelector(`.batch-space-force[data-row="${index}"]`);
+      if(sf){sf.checked=Boolean(rows[index].space_force);sf.disabled=acceptedSquadron(rows[index].sdq)==='535 TRS';}
+      const band=document.querySelector(`.batch-band[data-row="${index}"]`);
+      if(band)band.checked=Boolean(rows[index].band);
+      const load=document.querySelector(`.batch-load[data-row="${index}"]`);
+      if(load)load.max=String(maximumLoad(rows[index]));
+    }
     if (target.classList.contains('batch-sec')) rows[index].sec = target.value;
     if (target.classList.contains('batch-inter')) rows[index].inter_sec = target.value;
     if (target.classList.contains('batch-dorm')) rows[index].dorm_name = target.value;
     if (target.classList.contains('batch-sex')) rows[index].sex = target.value || 'male';
-    if (target.classList.contains('batch-load')) rows[index].load = target.value;
+    if (target.classList.contains('batch-load')) {
+      if(String(rows[index].load)!==target.value)rows[index].load_confirmed=false;
+      rows[index].load = target.value;
+      const check=document.querySelector(`.batch-load-confirm[data-row="${index}"]`);
+      if(check)check.checked=Boolean(rows[index].load_confirmed);
+      const wrapper=document.querySelector(`[data-gate-input-load-confirm="${index}"]`);
+      if(wrapper)wrapper.hidden=!(n(rows[index].load)>70);
+    }
+    if (target.classList.contains('batch-load-confirm')) rows[index].load_confirmed=n(rows[index].load)>70 && Boolean(target.checked);
 
     if (target.classList.contains('batch-space-force')) {
-      rows[index].space_force = Boolean(target.checked);
-      if (target.checked) {
+      const previous=Boolean(rows[index].space_force);
+      rows[index].space_force = acceptedSquadron(rows[index].sdq)==='535 TRS' || Boolean(target.checked);
+      target.checked=rows[index].space_force;
+      if (previous!==rows[index].space_force)rows[index].load_confirmed=false;
+      const loadInput=document.querySelector(`.batch-load[data-row="${index}"]`);
+      if(loadInput)loadInput.max=String(maximumLoad(rows[index]));
+      if (rows[index].space_force) {
         rows[index].band = false;
         const bandInput = document.querySelector(`.batch-band[data-row="${index}"]`);
         if (bandInput) bandInput.checked = false;
@@ -330,8 +371,9 @@
     }
 
     if (target.classList.contains('batch-band')) {
-      rows[index].band = Boolean(target.checked);
-      if (target.checked) {
+      rows[index].band = acceptedSquadron(rows[index].sdq)!=='535 TRS' && Boolean(target.checked);
+      target.checked=rows[index].band;
+      if (rows[index].band) {
         rows[index].space_force = false;
         const sfInput = document.querySelector(`.batch-space-force[data-row="${index}"]`);
         if (sfInput) sfInput.checked = false;
@@ -418,22 +460,26 @@
       row.band || row.space_force
     );
     const incomplete = populated.find(row =>
-      !String(row.sdq ?? '').trim() || !String(row.dorm_name ?? '').trim() ||
+      !acceptedSquadron(row.sdq) || !String(row.dorm_name ?? '').trim() ||
       !/^(?:[0-9][A-Za-z][0-9]|[A-Za-z][0-9]{2})$/.test(String(row.dorm_name ?? '').trim()) ||
       !['male','female'].includes(row.sex) ||
       !/^\d{1,3}$/.test(String(row.load ?? '').trim()) ||
-      Number(row.load) < 1 || Number(row.load) > 100
+      Number(row.load) < 1 || Number(row.load) > maximumLoad(row)
     );
     if (incomplete) return { ok: false, message:
-      `Input row ${Number(incomplete.rowIndex) + 1} is incomplete: SQD, valid DORM, SEX and LOAD (1–100) are required. Blank SEC / INTER/SECT are allowed.` };
+      `Input row ${Number(incomplete.rowIndex) + 1} is incomplete: an approved SQD, valid DORM, SEX and LOAD (1–100 ordinary; 1–300 Space Force) are required. Blank SEC / INTER/SECT are allowed.` };
     const rows = filledRows();
     if (rows.length === 0) return { ok: false, message: 'At least one row with Load required.' };
 
     const conflict = rows.find(row => row.band && row.space_force);
     if (conflict) return { ok: false, message: 'A dorm cannot be both Band and Space Force. Clear one selection before initializing.' };
 
-    const invalidLoad = rows.find(row => n(row.load) <= 0 || n(row.load) > 100);
-    if (invalidLoad) return { ok: false, message: 'Dorm loads must be between 1 and 100.' };
+    const invalidLoad = rows.find(row => n(row.load) <= 0 || n(row.load) > maximumLoad(row));
+    if (invalidLoad) return { ok: false, message: 'Dorm loads must be 1–100, or 1–300 when Space Force is flagged.' };
+    const wrongBand = rows.find(row=>row.band && acceptedSquadron(row.sdq)!=='321 TRS');
+    if(wrongBand)return {ok:false,message:'Band classification is available only for 321 TRS.'};
+    const pendingLoad=rows.find(row=>n(row.load)>70 && row.load_confirmed!==true);
+    if(pendingLoad)return {ok:false,message:`Confirm the load above 70 for Input row ${pendingLoad.rowIndex+1} (${pendingLoad.dorm_name}).`};
 
     const duplicate = findDuplicateDormIdentity(rows);
     if (duplicate) {
@@ -457,12 +503,12 @@
   }
 
   function buildDormPayload(row, weekGroup, windows) {
-    const spaceForce = Boolean(row.space_force);
+    const spaceForce = isSpaceForceRow(row);
     const displayOrder = Number(row.rowIndex) + 1;
     const now = new Date().toISOString();
     const identitySource = {
       week_group: weekGroup,
-      sdq: String(row.sdq || '').trim(),
+      sdq: acceptedSquadron(row.sdq) || String(row.sdq || '').trim(),
       dorm_name: normalizedDormName(row)
     };
     const identity = recordDisplay()?.dormIdentityKey
@@ -473,9 +519,10 @@
       type: 'dorm',
       dorm_name: normalizedDormName(row),
       section: String(row.sec || '').trim(),
-      sdq: String(row.sdq || '').trim(),
+      sdq: acceptedSquadron(row.sdq) || String(row.sdq || '').trim(),
       inter_sec: String(row.inter_sec || '').trim(),
       max_load: n(row.load),
+      load_confirmed: n(row.load)>70 ? 'true' : 'false',
       current_load: 0,
       sex: row.sex === 'female' ? 'female' : 'male',
       band: row.band && !spaceForce ? 'true' : 'false',

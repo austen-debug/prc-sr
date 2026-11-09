@@ -306,7 +306,7 @@
           <option value="female" ${row.sex === 'female' ? 'selected' : ''}>Female</option>
         </select>
         <label class="flex items-center justify-center" title="Band dorm"><input type="checkbox" class="batch-band w-4 h-4" data-row="${index}" ${row.band ? 'checked' : ''} aria-label="Row ${index + 1} Band"></label>
-        <label class="flex items-center justify-center" title="Space Force dorm"><input type="checkbox" class="batch-space-force w-4 h-4" data-row="${index}" ${row.space_force ? 'checked' : ''} ${acceptedSquadron(row.sdq)==='535 TRS' ? 'disabled' : ''} aria-label="Row ${index + 1} Space Force"></label>
+        <label class="flex items-center justify-center" title="Space Force dorm"><input type="checkbox" class="batch-space-force w-4 h-4" data-row="${index}" data-fixed-sf="${acceptedSquadron(row.sdq)==='535 TRS'}" ${row.space_force ? 'checked' : ''} ${acceptedSquadron(row.sdq)==='535 TRS' ? 'disabled' : ''} aria-label="Row ${index + 1} Space Force"></label>
         <div class="grid gap-1">
           <input type="number" class="batch-load border rounded px-1 py-1 bg-transparent text-xs font-tabular" style="border-color:var(--border);color:var(--text);" inputmode="numeric" data-row="${index}" min="1" max="${maximumLoad(row)}" value="${esc(row.load)}" aria-label="Row ${index + 1} Load">
           <label data-gate-input-load-confirm="${index}" ${n(row.load)>70?'':'hidden'} class="flex gap-1 items-center text-[10px]" title="Confirm the published dorm load above 70">
@@ -336,7 +336,7 @@
         rows[index].space_force=true;rows[index].band=false;
       }
       const sf=document.querySelector(`.batch-space-force[data-row="${index}"]`);
-      if(sf){sf.checked=Boolean(rows[index].space_force);sf.disabled=acceptedSquadron(rows[index].sdq)==='535 TRS';}
+      if(sf){sf.checked=Boolean(rows[index].space_force);sf.dataset.fixedSf=String(acceptedSquadron(rows[index].sdq)==='535 TRS');sf.disabled=sf.dataset.fixedSf==='true';}
       const band=document.querySelector(`.batch-band[data-row="${index}"]`);
       if(band)band.checked=Boolean(rows[index].band);
       const load=document.querySelector(`.batch-load[data-row="${index}"]`);

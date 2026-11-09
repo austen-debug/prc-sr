@@ -4,7 +4,13 @@ import '../../public/js/gate-receiving-window-engine.js';
 
 // Pure GATE persistence validation and lossless snapshot construction.
 const WINDOWS = ['receiving_day_one_start','receiving_day_one_end','receiving_day_two_start','receiving_day_two_end'];
-const ROW_FIELDS = new Set(['rowIndex','sdq','sec','inter_sec','dorm_name','sex','band','space_force','load']);
+const ROW_FIELDS = new Set(['rowIndex','sdq','sec','inter_sec','dorm_name','sex','band','space_force','load','load_confirmed']);
+const APPROVED_SQUADRONS = new Set(['320','321','322','323','324','326','327','328','331','535']);
+function approvedSquadron(value) {
+  const match = String(value ?? '').trim().match(/^(\d{3})(?:\s*TRS)?$/i);
+  return match && APPROVED_SQUADRONS.has(match[1]) ? `${match[1]} TRS` : '';
+}
+const maxDormLoad = (squadron, spaceForce) => spaceForce || squadron==='535 TRS' ? 300 : 100;
 const REVIEW_FIELDS = new Set(['published_total','band_decision']);
 export class PersistenceValidationError extends Error {
   constructor(message) { super(message); this.name = 'PersistenceValidationError'; }
@@ -38,9 +44,12 @@ export function normalizeDraft(payload = {}) {
     if (!row || typeof row !== 'object' || Array.isArray(row)) throw new PersistenceValidationError(`Invalid row ${index + 1}.`);
     noUnknownKeys(row, ROW_FIELDS, `row ${index + 1}`);
     const load = row.load === '' || row.load === null || row.load === undefined ? '' : Number(row.load);
-    if (load !== '' && (!Number.isInteger(load) || load < 0 || load > 100)) throw new PersistenceValidationError(`Invalid load on row ${index + 1}.`);
     const band = flag(row.band, 'Band');
-    const spaceForce = flag(row.space_force, 'Space Force');
+    const squadron = approvedSquadron(row.sdq);
+    const spaceForce = flag(row.space_force, 'Space Force') || squadron === '535 TRS';
+    const loadConfirmed = flag(row.load_confirmed, 'Load confirmation');
+    if (load !== '' && (!Number.isInteger(load) || load < 0 || load > maxDormLoad(squadron, spaceForce)))
+      throw new PersistenceValidationError(`Invalid load on row ${index + 1}: maximum is ${maxDormLoad(squadron, spaceForce)}.`);
     if (band && spaceForce) throw new PersistenceValidationError(`Row ${index + 1} cannot be both Band and Space Force.`);
     if (row.sex !== undefined && row.sex !== '' && row.sex !== 'male' && row.sex !== 'female') throw new PersistenceValidationError(`Invalid sex on row ${index + 1}.`);
     // Legacy Input sends populated rows only; preserve their original slot numbers.
@@ -51,7 +60,7 @@ export function normalizeDraft(payload = {}) {
     return {
       rowIndex: sourceIndex, sdq: bounded(row.sdq, 48, 'Squadron'), sec: bounded(row.sec, 48, 'Section'),
       inter_sec: bounded(row.inter_sec, 64, 'Intermediate section'), dorm_name: bounded(row.dorm_name, 80, 'Dorm name'),
-      sex: row.sex === 'female' ? 'female' : 'male', band, space_force: spaceForce, load
+      sex: row.sex === 'female' ? 'female' : 'male', band, space_force: spaceForce, load, load_confirmed: loadConfirmed
     };
   });
   const supplied = payload.receiving_windows ?? {};
@@ -77,10 +86,15 @@ export function validateInitialization(draft) {
   if (!populated.length) throw new PersistenceValidationError('At least one dorm must be configured.');
   const seen = new Set();
   for (const row of populated) {
-    if (!row.sdq || !/^(?:[0-9][A-Za-z][0-9]|[A-Za-z][0-9]{2})$/.test(row.dorm_name))
-      throw new PersistenceValidationError(`Input row ${row.rowIndex + 1} requires a Squadron and valid three-character dorm designation.`);
-    if (!Number.isInteger(row.load) || row.load < 1 || row.load > 100) throw new PersistenceValidationError('Each configured dorm requires a load from 1 to 100.');
-    const key = `${row.sdq.toUpperCase()}::${row.dorm_name.toUpperCase()}`;
+    const squadron = approvedSquadron(row.sdq);
+    if (!squadron || !/^(?:[0-9][A-Za-z][0-9]|[A-Za-z][0-9]{2})$/.test(row.dorm_name))
+      throw new PersistenceValidationError(`Input row ${row.rowIndex + 1} requires an approved Squadron and valid LNN or NLN dorm designation.`);
+    if (!Number.isInteger(row.load) || row.load < 1 || row.load > maxDormLoad(squadron, row.space_force))
+      throw new PersistenceValidationError(`Input row ${row.rowIndex + 1}: load must be 1–100 ordinary or 1–300 Space Force.`);
+    if (row.band && squadron !== '321 TRS') throw new PersistenceValidationError('Only 321 TRS may have Band-designated dorms.');
+    if (row.load > 70 && !row.load_confirmed)
+      throw new PersistenceValidationError(`Input row ${row.rowIndex + 1}: confirm the dorm load above 70 before initialization.`);
+    const key = `${squadron}::${row.dorm_name.toUpperCase()}`;
     if (seen.has(key)) throw new PersistenceValidationError(`Duplicate Squadron/Dorm: ${key}.`);
     seen.add(key);
   }
@@ -94,11 +108,12 @@ export function buildDormRows(draft, cycleId, now, makeId, actorRole = 'instruct
     const data = {
       ...draft.receiving_windows, type:'dorm', week_group:draft.proposed_week_group,
       ...(cycleId ? { cycle_id:cycleId } : {}),
-      dorm_name:name, sdq:row.sdq, section:row.sec, inter_sec:row.inter_sec,
+      dorm_name:name, sdq:approvedSquadron(row.sdq), section:row.sec, inter_sec:row.inter_sec,
       max_load:row.load, current_load:0, sex:row.sex,
+      load_confirmed:row.load>70?'true':'false',
       band:row.band?'true':'false', space_force:row.space_force?'true':'false', is_space_force:row.space_force?'true':'false',
       display_order:order, input_order:order, source_row_index:row.rowIndex,
-      dorm_identity:`${draft.proposed_week_group}::${row.sdq.toUpperCase()}::${name.toUpperCase()}`,
+      dorm_identity:`${draft.proposed_week_group}::${approvedSquadron(row.sdq)}::${name.toUpperCase()}`,
       state:'empty', phase:'', opened_at:'', closed_timer:'', closed_at:'', notes:'', assigned_airman:'', auditorium_location:'',
       overtime_sound_sent:'false', overtime_sound_at:'', destination:'', bus_type:'',
       __backendId:id, record_version:1, created_by_role:actorRole, updated_by_role:actorRole, created_at:now, updated_at:now

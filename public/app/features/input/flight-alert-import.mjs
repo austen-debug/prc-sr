@@ -1,7 +1,7 @@
 /** GATE Input enhancement: Flight Alert import changes draft rows only, never operational records. */
 import './week-group-action-placement.mjs?v=live-closeout-reverify-20261027-v1';
-import { parseFlightAlertText, validateFlightAlertRows, normalizeSquadron, orderFlightAlertRows, prepareFlightAlertReviewRows } from './flight-alert-parser.mjs?v=flight-alert-parser-20261013-pdfjs';
-import { extractFlightAlertPdf } from './flight-alert-pdf.mjs?v=flight-alert-pdf-20261109-sect';
+import { parseFlightAlertText, validateFlightAlertRows, normalizeSquadron, orderFlightAlertRows, prepareFlightAlertReviewRows } from './flight-alert-parser.mjs?v=flight-alert-parser-20261109-accepted-fields';
+import { extractFlightAlertPdf } from './flight-alert-pdf.mjs?v=flight-alert-pdf-20261109-accepted-fields';
 
 const $ = id => document.getElementById(id);
 const esc = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
@@ -187,9 +187,9 @@ function applyCandidate(candidate) {
   const defects = validateFlightAlertRows(candidate.rows,candidate.publishedTotal).issues.filter(issue=>issue.level==='error');
   if (defects.length) { modalError(defects.slice(0,4).map(issue=>issue.message).join(' ')); return; }
   const sourceOrdered = orderFlightAlertRows(candidate.rows, candidate.declaredRowCount ?? null);
-  const draft = sourceOrdered.map((item,index)=>({ rowIndex:index, sdq:item.sdq, sec:item.sec || '', inter_sec:item.inter_sec || '', dorm_name:item.dorm_name, sex:item.sex, band:false, space_force:item.space_force, load:item.load }));
+  const draft = sourceOrdered.map((item,index)=>({ rowIndex:index, sdq:item.sdq, sec:item.sec || '', inter_sec:item.inter_sec || '', dorm_name:item.dorm_name, sex:item.sex, band:false, space_force:normalizeSquadron(item.sdq)==='535 TRS' || Boolean(item.space_force), load:item.load, load_confirmed:Boolean(item.load_confirmed) }));
   const count = Math.max(25,draft.length);
-  const empty = index=>({rowIndex:index,sdq:'',sec:'',inter_sec:'',dorm_name:'',sex:'male',band:false,space_force:false,load:''});
+  const empty = index=>({rowIndex:index,sdq:'',sec:'',inter_sec:'',dorm_name:'',sex:'male',band:false,space_force:false,load:'',load_confirmed:false});
   while (draft.length<count) draft.push(empty(draft.length));
   const target=rows();
   target.splice(0,target.length,...draft);
@@ -302,7 +302,7 @@ function processText(text) {
     const errors = parsed.issues.filter(issue=>issue.level==='error').map(issue=>issue.message);
     if (parsed.issues.some(issue=>issue.code==='no_rows')) {
       const lines = String(text || '').split(/\r?\n/).filter(line=>line.trim());
-      const headerRecognized = /SQD|SQUADRON|SDQ/i.test(text) &&
+      const headerRecognized = /SQD|SQDRN|SQUADRON|SDQ/i.test(text) &&
         /DORM/i.test(text) && /LOAD/i.test(text);
       errors.push(`Diagnostic: ${lines.length} extracted text lines; roster headers ${headerRecognized ? 'detected' : 'not detected'}. The chosen PDF is retained for retry. A PDF without a usable text layer requires a different extraction method; it cannot be safely guessed from the image.`);
     }
@@ -351,6 +351,12 @@ function drawImportReview(parsed) {
     'I verified all required flight information, preserved source order, and reviewed intentional SEC / INTER/SEC blanks.'
   ));
   root.append(acknowledgment);
+  const highLoadLabel=element('label','flex items-start gap-2 text-sm');
+  const highLoadCheckbox=element('input');
+  highLoadCheckbox.type='checkbox';highLoadCheckbox.id='gate-import-high-load-confirm';highLoadCheckbox.className='mt-1';
+  const highLoadText=document.createTextNode('');
+  highLoadLabel.append(highLoadCheckbox,highLoadText);
+  root.append(highLoadLabel);
   const actions=element('div','flex flex-wrap justify-end gap-2');
   const back=element('button',BTN,'Back to PDF');
   back.type='button';back.style.borderColor=COLORS.border;
@@ -366,6 +372,12 @@ function drawImportReview(parsed) {
     const blankInter=incoming.filter(row=>!String(row.inter_sec||'').trim()).length;
     const awaiting=incoming.filter(row=>row.needsReview || !String(row.sdq||'').trim() ||
       !String(row.dorm_name||'').trim() || !String(row.sex||'').trim() || !String(row.load||'').trim()).length;
+    const elevated=incoming.filter(row=>Number(row.load)>70 && Number.isInteger(Number(row.load)));
+    highLoadLabel.hidden=elevated.length===0;
+    highLoadText.textContent=elevated.length
+      ? 'I confirm these '+elevated.length+' dorm load(s) above 70 against the Flight Alert: '+
+        elevated.map(row=>`${row.sdq || 'SQD?'} ${row.dorm_name || 'DORM?'} (${row.load})`).join(', ')+'.'
+      : '';
     status.textContent=`${parsed.rows.length} extracted from PDF; ${incoming.length} reviewed${expected===null?'':' of '+expected+' declared'} flights. ${blankSec} blank SEC; ${blankInter} blank INTER/SEC.` +
       (missing?` ${missing} flight${missing===1?' is':'s are'} missing. Add and complete ${missing===1?'it':'them'} below.`:'') +
       (awaiting?` ${awaiting} row${awaiting===1?' needs':'s need'} required-field verification.`:'');
@@ -395,6 +407,7 @@ function drawImportReview(parsed) {
     if(expected===null)repair.hidden=true;
     // Every structural edit resets the acknowledgment so it cannot be reused.
     checkbox.checked=false;
+    highLoadCheckbox.checked=false;
     table.querySelectorAll('[data-review-index]').forEach(input=>{
       input.addEventListener('input',()=>{
         const row=incoming[Number(input.dataset.reviewIndex)];
@@ -405,6 +418,7 @@ function drawImportReview(parsed) {
         // Keep the editor stable while typing: re-rendering the table on
         // every field change destroys focus, caret and scroll position.
         checkbox.checked=false;
+        highLoadCheckbox.checked=false;
       });
       input.addEventListener('change',()=>{
         const row=incoming[Number(input.dataset.reviewIndex)];
@@ -413,6 +427,7 @@ function drawImportReview(parsed) {
         if(input.dataset.reviewField==='dorm_name')row.dorm_name=row.dorm_name.toUpperCase();
         // Do not rebuild the entire table on blur; validation runs on submit.
         checkbox.checked=false;
+        highLoadCheckbox.checked=false;
       });
     });
   }
@@ -422,7 +437,7 @@ function drawImportReview(parsed) {
     const index=Number(where.value);
     incoming.splice(index,0,{
       sourceLine:null,sdq:'',sec:'',inter_sec:'',dorm_name:'',sex:'',load:'',
-      space_force:false,band:false,needsReview:true
+      space_force:false,band:false,load_confirmed:false,needsReview:true
     });
     refresh();
     const input=table.querySelector(`[data-review-index="${index}"][data-review-field="sdq"]`);
@@ -435,13 +450,20 @@ function drawImportReview(parsed) {
       modalError(`The Flight Alert declares ${expected} flights, but ${incoming.length} are present. Add and complete the missing flight before applying the draft.`);
       return;
     }
-    const defects=validateFlightAlertRows(incoming,parsed.publishedTotal).issues.filter(issue=>issue.level==='error');
+    const confirmedRows=incoming.map(row=>({...row,
+      space_force:normalizeSquadron(row.sdq)==='535 TRS' || Boolean(row.space_force),
+      load_confirmed:Number(row.load)>70 && highLoadCheckbox.checked
+    }));
+    const defects=validateFlightAlertRows(confirmedRows,parsed.publishedTotal).issues.filter(issue=>issue.level==='error');
     if(defects.length){modalError(defects.slice(0,5).map(issue=>issue.message).join(' '));return;}
+    if(confirmedRows.some(row=>Number(row.load)>70) && !highLoadCheckbox.checked){
+      modalError('Confirm every dorm load above 70 before importing. Space Force dorms may hold up to 300.');return;
+    }
     if(!checkbox.checked){
       modalError('Review the extracted flights and acknowledge any remaining blank SEC or INTER/SEC values before importing.');
       return;
     }
-    applyCandidate({...parsed,rows:orderFlightAlertRows(incoming,expected)});
+    applyCandidate({...parsed,rows:orderFlightAlertRows(confirmedRows,expected)});
   });
   refresh();
 }

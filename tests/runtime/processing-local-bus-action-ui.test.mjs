@@ -47,7 +47,7 @@ test('Input placement module and stylesheet references have fresh independent re
   const flight = await source('public/app/features/input/flight-alert-import.mjs');
   const cssUrl = budget.currentDirectStyles.find(url => url.startsWith('/css/military-glass-terminal.css?v='));
   assert.ok(cssUrl, 'Active runtime stylesheet version must exist');
-  const importUrl = '/app/features/input/flight-alert-import.mjs?v=flight-alert-sect-20261109';
+  const importUrl = '/app/features/input/flight-alert-import.mjs?v=flight-alert-rules-20261109-v1';
   assert.ok(middleware.includes(cssUrl));
   assert.ok(standalone.includes(cssUrl));
   assert.ok(budget.currentDirectStyles.includes(cssUrl));

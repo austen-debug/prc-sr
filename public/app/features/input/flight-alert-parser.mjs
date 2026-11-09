@@ -1,15 +1,19 @@
 /** Flight Alert text contract. Pure, memory-only; never persists source text or PII. */
 const DORM = /^(?:[0-9][A-Z][0-9]|[A-Z][0-9]{2})$/;
 const SQUADRON = /^(\d{3})(?:\s*TRS)?$/i;
-const SIX_COLUMN_HEADER = /\bINTER\s*\/\s*SECT?\b/i;
-const HEADERS = /\b(?:SQUADRON|SQDN|SDQ)\b.*\b(?:SECTION|SEC)\b.*\bDORM\b/i;
+const ACCEPTED_SQUADRONS = new Set(['320','321','322','323','324','326','327','328','331','535']);
+const STANDARD_LOAD_LIMIT = 100;
+const SPACE_FORCE_LOAD_LIMIT = 300;
+const LOAD_CONFIRMATION_THRESHOLD = 70;
+const SIX_COLUMN_HEADER = /\b(?:INTER\s*\/\s*SECT(?:ION)?|INTERNAL\s+SECTION|INTER)\b/i;
+const HEADERS = /\b(?:SQUADRON|SQDRN|SQDN|SQD|SDQ)\b.*\b(?:SECTION|SECT|SEC)\b.*\bDORM(?:ITORY)?\b/i;
 const TOTAL = /\b(?:AAFES|GRAND\s+TOTAL|TOTAL\s+(?:EXPECTED\s+)?(?:LOAD|STRENGTH)|EXPECTED\s+TOTAL|TOTAL\s+EXPECTED)\b\s*[:=\-]?\s*([\d,]+)\b/i;
 const ROW_COUNT = /\bTOTAL\s+FLT\s*['’]?\s*S\s*[:=\-]?\s*(\d+)\b/i;
-const HEADER_FIELD = /^(?:SQUADRON|SQDN|SDQ|SECTION|SEC|INTER|SECT|DORM|DORMITORY|MALE|FEMALE|SEX|GENDER|LOAD|EXPECTED|COUNT|TOTAL)$/i;
+const HEADER_FIELD = /^(?:SQUADRON|SQDRN|SQD|SQDN|SDQ|SECTION|SEC|INTER|INTERNAL|SECT|DORM|DORMITORY|MALE|FEMALE|SEX|GENDER|LOAD|FLT|FLIGHT|EXPECTED|COUNT|TOTAL)$/i;
 
 export function normalizeSquadron(value) {
   const match = String(value ?? '').trim().match(SQUADRON);
-  return match ? `${match[1]} TRS` : '';
+  return match && ACCEPTED_SQUADRONS.has(match[1]) ? `${match[1]} TRS` : '';
 }
 export function normalizeDorm(value) {
   const dorm = String(value ?? '').trim().toUpperCase();
@@ -40,8 +44,8 @@ function parseDelimitedLine(line, sourceLine, context) {
   context.section = sec; // Blank SEC remains blank; do not inherit or guess it.
   return {
     sourceLine, sdq: squadron ? squadron + ' TRS' : '', sec, inter_sec: interSec,
-    dorm_name: dorm, sex: sex === 'FEMALE' || sex === 'F' ? 'female' : 'male',
-    load: load ? String(Number(load)) : '', band: false,
+    dorm_name: dorm, sex: !sex ? '' : (sex === 'FEMALE' || sex === 'F' ? 'female' : 'male'),
+    load: load ? String(Number(load)) : '', band: false, load_confirmed: false,
     space_force: squadron === '535', capacity: load ? Number(load) : null
   };
 }
@@ -91,7 +95,7 @@ function parseLine(line, sourceLine, context, sixColumns) {
     sdq: squadron ? `${squadron} TRS` : '', sec: section, inter_sec: interSec,
     dorm_name: dormToken,
     sex: sexToken === 'FEMALE' || sexToken === 'F' ? 'female' : 'male',
-    load: String(Number(loadToken)), band: false,
+    load: String(Number(loadToken)), band: false, load_confirmed: false,
     space_force: squadron === '535', capacity: Number(loadToken)
   };
 }
@@ -114,8 +118,13 @@ export function validateFlightAlertRows(rows, publishedTotal) {
     if (!String(row.sec ?? '').trim()) issues.push(diagnostic('section', `Row ${index + 1}: SEC is blank; review before importing.`, location, 'warning'));
     else if (!section) issues.push(diagnostic('section', `Row ${index + 1}: section must be 1–4 if supplied.`, location));
     if (!dorm) issues.push(diagnostic('dorm', `Row ${index + 1}: invalid dorm identifier.`, location));
-    if (!Number.isInteger(load) || load < 1 || load > 100) issues.push(diagnostic('load', `Row ${index + 1}: load must be 1–100.`, location));
-    else calculated += load;
+    const spaceForce = row.space_force === true || row.space_force === 'true' || squadron === '535 TRS';
+    const loadLimit = spaceForce ? SPACE_FORCE_LOAD_LIMIT : STANDARD_LOAD_LIMIT;
+    if (squadron === '535 TRS' && row.space_force !== true && row.space_force !== 'true') issues.push(diagnostic('space_force', `Row ${index + 1}: 535 TRS must be flagged Space Force.`, location));
+    if (!Number.isInteger(load) || load < 1 || load > loadLimit) issues.push(diagnostic('load', `Row ${index + 1}: load must be 1–${loadLimit}${spaceForce ? ' (Space Force)' : ''}.`, location));
+    else { calculated += load;
+      if (load > LOAD_CONFIRMATION_THRESHOLD && row.load_confirmed !== true) issues.push(diagnostic('load_confirmation', `Row ${index + 1}: load ${load} exceeds 70; confirm this dorm capacity before importing or initializing.`, location, 'warning'));
+    }
     if (!['male', 'female'].includes(row.sex)) issues.push(diagnostic('sex', `Row ${index + 1}: select Male or Female.`, location));
     if (squadron && dorm) {
       const key = `${squadron}::${dorm}`;
@@ -123,7 +132,7 @@ export function validateFlightAlertRows(rows, publishedTotal) {
       seen.add(key);
     }
     if (row.band && squadron !== '321 TRS') issues.push(diagnostic('band', `Row ${index + 1}: Band requires 321 TRS.`, location));
-    if (row.band && row.space_force) issues.push(diagnostic('classification', `Row ${index + 1}: Band and Space Force conflict.`, location));
+    if (row.band && spaceForce) issues.push(diagnostic('classification', `Row ${index + 1}: Band and Space Force conflict.`, location));
     if (!String(row.inter_sec ?? '').trim()) issues.push(diagnostic('inter_sec', `Row ${index + 1}: INTER/SEC is blank; review before importing.`, location, 'warning'));
     else if (!/^\d{1,3}$/.test(String(row.inter_sec).trim())) issues.push(diagnostic('inter_sec_invalid', `Row ${index + 1}: INTER/SEC must be numeric if supplied.`, location));
     else {
@@ -172,7 +181,7 @@ export function prepareFlightAlertReviewRows(parsed) {
   const byNumber = new Map(ordered.map(row => [Number(row.inter_sec), row]));
   return Array.from({ length: expected }, (_, i) => byNumber.get(i + 1) || {
     sourceLine: null, sdq: '', sec: '', inter_sec: String(i + 1),
-    dorm_name: '', sex: '', load: '', space_force: false, band: false,
+    dorm_name: '', sex: '', load: '', space_force: false, band: false, load_confirmed: false,
     needsReview: true
   });
 }

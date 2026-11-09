@@ -232,7 +232,7 @@ test('the Flight Alert UI requires explicit review before an incomplete draft ca
   assert.match(ui,/function drawImportReview\(parsed\)/);
   assert.match(ui,/gate-import-validated/);
   assert.match(ui,/if\(!checkbox\.checked\)/);
-  assert.match(ui,/validateFlightAlertRows\(incoming,parsed\.publishedTotal\)/);
+  assert.match(ui,/validateFlightAlertRows\(confirmedRows,parsed\.publishedTotal\)/);
   assert.match(ui,/sec:item\.sec \|\| ''/);
   assert.match(ui,/inter_sec:item\.inter_sec \|\| ''/);
   assert.doesNotMatch(ui,/if\(!existing\.length\)\{applyCandidate\(parsed\);return;\}/);
@@ -290,6 +290,8 @@ test('canonical Input preflight catches incomplete draft rows that LOAD-only fil
     n:value=>Number(value)||0,
     findDuplicateDormIdentity:()=>null,
     allDataSafe:()=>[],
+    acceptedSquadron:value=>/^(320|321|322|323|324|326|327|328|331|535)( TRS)?$/.test(String(value))?value:'',
+    maximumLoad:row=>row.space_force||String(row.sdq).startsWith('535')?300:100,
   };
   const preflight=new Script('(function(){'+code.slice(from,to)+'return preflightInitialization;})()')
     .runInNewContext(context);
@@ -319,7 +321,9 @@ test('Input preflight and populated-row selection retain sparse original slot in
   assert.ok(preflightFrom>0&&preflightTo>preflightFrom);
   const preflight=new Script('(function(){'+code.slice(preflightFrom,preflightTo)+'return preflightInitialization;})()').runInNewContext({
     getWeekGroupInputValue:()=> 'WG27002',validateReceivingWindows:()=>'',batchRowsSafe:()=>slots,
-    filledRows:filled,n:value=>Number(value)||0,findDuplicateDormIdentity:()=>null,allDataSafe:()=>[]
+    filledRows:filled,n:value=>Number(value)||0,findDuplicateDormIdentity:()=>null,allDataSafe:()=>[],
+    acceptedSquadron:value=>/^(320|321|322|323|324|326|327|328|331|535)( TRS)?$/.test(String(value))?value:'',
+    maximumLoad:row=>row.space_force||String(row.sdq).startsWith('535')?300:100
   });
   assert.equal(preflight().ok,true);
   slots[5].sdq='323 TRS';
@@ -334,7 +338,9 @@ test('persisted dorm ordering follows normalized source sequence rather than rev
     normalizedDormName:row=>row.dorm_name,
     normalizeDormIdentityPart:value=>String(value||'').toUpperCase(),
     recordDisplay:()=>null,
-    n:value=>Number(value)||0
+    n:value=>Number(value)||0,
+    acceptedSquadron:value=>String(value||''),
+    isSpaceForceRow:row=>Boolean(row?.space_force)||String(row?.sdq).startsWith('535')
   };
   const build=new Script('(function(){'+code.slice(from,to)+'return buildDormPayload;})()')
     .runInNewContext(context);
@@ -437,4 +443,50 @@ test('Week Group action relocation does nothing if either original button is mis
  const {doc,closeout}=actionFixture();closeout.remove();
  assert.equal(relocateWeekGroupActions(doc),false);
  assert.equal(doc.getElementById('gate-week-group-actions'),undefined);
+});
+
+
+test('approved squadron catalog and LNN/NLN dorm formats reject unsupported identifiers',()=>{
+  for(const sq of ['320','321','322','323','324','326','327','328','331','535'])
+    assert.equal(normalizeSquadron(sq),sq+' TRS');
+  for(const sq of ['319','325','329','330','999','5350','535 TRG'])
+    assert.equal(normalizeSquadron(sq),'');
+  for(const dorm of ['A01','B99','3D2','9Z0'])assert.equal(normalizeDorm(dorm),dorm);
+  for(const dorm of ['A1','1AA','AA1','123','A123'])assert.equal(normalizeDorm(dorm),'');
+});
+
+test('Flight Alert load threshold 70 and Space Force maximum 300 require explicit confirmation',()=>{
+  const lines=load=>['SQDRN SECT INTER DORMITORY GENDER FLIGHT LOAD',
+    '535 1 1 A01 F '+load,'TOTAL FLTS - 1','AAFES: '+load].join('\n');
+  const seventy=parseFlightAlertText(lines(70));
+  assert.equal(seventy.ok,true,JSON.stringify(seventy.issues));
+  assert.equal(seventy.rows[0].space_force,true);
+  assert.equal(seventy.issues.some(i=>i.code==='load_confirmation'),false);
+  for(const load of [71,100,101,300]){
+    const parsed=parseFlightAlertText(lines(load));
+    assert.equal(parsed.ok,true,JSON.stringify(parsed.issues));
+    assert.equal(parsed.rows[0].space_force,true);
+    assert.equal(parsed.issues.some(i=>i.code==='load_confirmation'),true);
+    assert.equal(validateFlightAlertRows([{...parsed.rows[0],load_confirmed:true}],load)
+      .issues.some(i=>i.level==='error'),false);
+  }
+  const tooLarge=parseFlightAlertText(lines(301));
+  assert.equal(tooLarge.ok,false);
+  assert.equal(tooLarge.issues.some(i=>i.code==='load'),true);
+  const ordinary=parseFlightAlertText(['SQDRN SECT INTER DORM GENDER LOAD','320 1 1 3A2 M 101','AAFES: 101'].join('\n'));
+  assert.equal(ordinary.ok,false);
+  assert.equal(ordinary.issues.some(i=>i.code==='load'),true);
+  const unknown=parseFlightAlertText(['SQD SECT INTER DORM SEX LOAD','999 1 1 A01 F 57','AAFES: 57'].join('\n'));
+  assert.equal(unknown.issues.some(i=>i.code==='squadron'),true);
+});
+
+test('the review and Input controller require explicit high-load confirmation',async()=>{
+  const ui=await readFile(new URL('../../public/app/features/input/flight-alert-import.mjs',import.meta.url),'utf8');
+  const controller=await readFile(new URL('../../public/js/gate-input-page-controller.js',import.meta.url),'utf8');
+  const persistence=await readFile(new URL('../../public/js/gate-persistence-runtime.js',import.meta.url),'utf8');
+  assert.match(ui,/gate-import-high-load-confirm/);
+  assert.match(ui,/load_confirmed:Number\(row\.load\)>70 && highLoadCheckbox\.checked/);
+  assert.match(controller,/batch-load-confirm/);
+  assert.match(controller,/pendingLoad=rows\.find\(row=>n\(row\.load\)>70 && row\.load_confirmed!==true\)/);
+  assert.match(persistence,/load_confirmed:Boolean\(row\.load_confirmed\)/);
 });

@@ -83,7 +83,7 @@ test('shared initializer refuses missing identities and flag-only draft rows',()
     {rowIndex:3,band:true}
   ]) {
     const normalized=normalizeDraft({...draft,rows:[row]});
-    assert.throws(()=>validateInitialization(normalized),/requires a Squadron and valid three-character dorm/);
+    assert.throws(()=>validateInitialization(normalized),/requires an approved Squadron and valid LNN or NLN dorm/);
   }
 });
 test('staged initialization never creates a fallback dorm from an incomplete saved draft',async()=>{
@@ -423,4 +423,39 @@ test('transactional initialization refuses orphaned sound-event records',async()
   assert.equal(attempted.status,409,JSON.stringify(attempted.body));
   assert.equal(f.native.prepare("SELECT COUNT(*) AS n FROM records WHERE type='sound_event'").get().n,1);
   assert.equal(f.native.prepare("SELECT COUNT(*) AS n FROM records WHERE type='dorm'").get().n,0);
+});
+
+
+test('persistence confirms 71–100 ordinary loads and 71–300 Space Force loads',()=>{
+  const base={...draft.rows[0],band:false,sex:'male',load:70};
+  const safe=normalizeDraft({...draft,rows:[base]});
+  assert.equal(validateInitialization(safe).length,1);
+  const high=normalizeDraft({...draft,rows:[{...base,load:71}]});
+  assert.throws(()=>validateInitialization(high),/confirm the dorm load above 70/);
+  assert.equal(validateInitialization(normalizeDraft({...draft,
+    rows:[{...base,load:100,load_confirmed:true}]})).length,1);
+  assert.throws(()=>normalizeDraft({...draft,rows:[{...base,load:101}]}),/maximum is 100/);
+  const space=normalizeDraft({...draft,rows:[{...base,sdq:'535',space_force:false,load:300,load_confirmed:true}]});
+  assert.equal(space.rows[0].space_force,true);
+  assert.equal(validateInitialization(space).length,1);
+  assert.throws(()=>validateInitialization(normalizeDraft({...draft,
+    rows:[{...base,sdq:'535 TRS',load:300,load_confirmed:false}]})),/confirm the dorm load above 70/);
+  assert.throws(()=>normalizeDraft({...draft,
+    rows:[{...base,sdq:'535',space_force:true,load:301,load_confirmed:true}]}),/maximum is 300/);
+  assert.throws(()=>validateInitialization(normalizeDraft({...draft,
+    rows:[{...base,sdq:'999 TRS',load:60}]})),/approved Squadron/);
+  assert.throws(()=>validateInitialization(normalizeDraft({...draft,
+    rows:[{...base,sdq:'535 TRS',band:true,load:60}]})),/Band and Space Force/);
+});
+
+test('D1 initialization rejects missing load acknowledgement without creating operational records',async()=>{
+  const f=fixture();
+  const pending={...draft,rows:[{...draft.rows[0],band:false,load:84,load_confirmed:false}]};
+  const saved=await f.post(pending);
+  assert.equal(saved.status,201,JSON.stringify(saved.body));
+  const attempted=await f.post({action:'initialize',draft_id:saved.body.draft.draft_id,revision:1});
+  assert.equal(attempted.status,400,JSON.stringify(attempted.body));
+  assert.match(attempted.body.error,/confirm the dorm load above 70/);
+  assert.equal(f.native.prepare("SELECT COUNT(*) AS n FROM records").get().n,0);
+  assert.equal(f.native.prepare("SELECT status FROM gate_input_drafts").get().status,'draft');
 });

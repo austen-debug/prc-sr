@@ -27,7 +27,7 @@ const UI_STYLESHEETS = [
 const UI_INLINE_ASSETS = [];
 // The existing staged lifecycle owner loads only after explicit cutover authorization.
 // Do not add another controller or load this asset during the legacy workflow.
-const CUTOVER_RUNTIME_SCRIPT = '<script src="/js/gate-persistence-runtime.js?v=cutover-readiness-20261028" defer></script>';
+const CUTOVER_RUNTIME_SCRIPT = '<script src="/js/gate-persistence-runtime.js?v=flight-alert-load-20261109-v1" defer></script>';
 
 const UI_HEAD_SCRIPTS = [
   '<script src="/js/gate-record-display-contract.js?v=record-display-integrity-20260714b" defer></script>',
@@ -45,10 +45,10 @@ const UI_HEAD_SCRIPTS = [
   '<script src="/js/prc-dash-auditorium-location.js?v=status-board-spacing-20261017-v1" defer></script>',
   '<script src="/js/gate-bus-workflow-controller.js?v=airport-pax-limit-60-20261017-v1" defer></script>',
   '<script src="/js/gate-airport-bus-delete-controller.js?v=airport-bus-delete-20260714" defer></script>',
-  '<script src="/js/gate-input-page-controller.js?v=week-group-progress-20261018-v1" defer></script>',
+  '<script src="/js/gate-input-page-controller.js?v=flight-alert-load-20261109-v1" defer></script>',
   '<script src="/js/gate-archive-controller.js?v=atomic-legacy-closeout-20261027-v1" defer></script>',
   '<script src="/js/gate-permission-guard.js?v=permission-server-role-20260922" defer></script>',
-  '<script type="module" src="/app/features/input/flight-alert-import.mjs?v=flight-alert-sect-20261109"></script>',
+  '<script type="module" src="/app/features/input/flight-alert-import.mjs?v=flight-alert-rules-20261109-v1"></script>',
   '<script src="/js/gate-app-shell-controller.js?v=tablet-menu-20260929" defer></script>',
   '<script src="/js/gate-fullscreen-board-layout-controller.js?v=fullscreen-board-menu-owner-20260929" defer></script>',
   '<script src="/js/prc-dash-modal-mobile-validation.js?v=phase-7e-ui-ownership-20260709" defer></script>',

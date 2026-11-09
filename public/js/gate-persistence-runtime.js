@@ -74,7 +74,7 @@
     if(mode==='legacy'||mode==='checking')return;
     const locked=mode!=='ready'||active()||actionInFlight;
     const selectors='#wg-batch-input, #batch-rows-container input, #batch-rows-container select, #batch-rows-container [data-gate-input-clear-row], #receiving-windows-panel input, #gate-import-open, #gate-import-inter';
-    document.querySelectorAll(selectors).forEach(element=>{element.disabled=locked;});
+    document.querySelectorAll(selectors).forEach(element=>{element.disabled=locked||element.dataset?.fixedSf==='true';});
     if(byId('init-wg-btn'))byId('init-wg-btn').disabled=locked||conflict;
     // A cached failed health read must not permanently strand closeout.
     // Allow re-verification only; the transaction still requires server readiness.

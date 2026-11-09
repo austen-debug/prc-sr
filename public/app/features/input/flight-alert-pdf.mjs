@@ -111,7 +111,7 @@ function flightAlertTableText(items) {
   // PDF.js may expose "INTERNAL SECTION" and "FLIGHT LOAD" as two
   // separate text fragments. Combining adjacent fragments keeps the actual
   // column geometry and avoids treating a second "SECTION" as the SEC column.
-  const candidates = Object.fromEntries(Object.entries(HEADER_ALIASES).map(
+  const headingCandidates = Object.fromEntries(Object.entries(HEADER_ALIASES).map(
     ([field, aliases]) => [field, { accepted: new Set(aliases.map(compact)), items: [] }]
   ));
   const tokens = [...items];
@@ -119,21 +119,21 @@ function flightAlertTableText(items) {
     for (const second of items) {
       if (second.x <= first.x || second.x - first.x > 110 || Math.abs(second.y - first.y) > 3) continue;
       const combined = { text: first.text + ' ' + second.text, x: first.x, y: first.y, order: first.order };
-      if (Object.values(candidates).some(field => field.accepted.has(compact(combined.text)))) tokens.push(combined);
+      if (Object.values(headingCandidates).some(field => field.accepted.has(compact(combined.text)))) tokens.push(combined);
     }
   }
   for (const item of tokens) {
-    for (const field of Object.keys(candidates)) {
-      if (candidates[field].accepted.has(compact(item.text))) candidates[field].items.push(item);
+    for (const field of Object.keys(headingCandidates)) {
+      if (headingCandidates[field].accepted.has(compact(item.text))) headingCandidates[field].items.push(item);
     }
   }
   const fields = Object.keys(HEADER_ALIASES);
   let headers = null;
-  for (const first of candidates.sdq.items.sort((a, b) => b.y - a.y || a.x - b.x)) {
+  for (const first of headingCandidates.sdq.items.sort((a, b) => b.y - a.y || a.x - b.x)) {
     const possible = { sdq: first };
     let previous = first;
     for (const field of fields.slice(1)) {
-      const next = candidates[field].items
+      const next = headingCandidates[field].items
         .filter(item => item.x > previous.x + 4 && Math.abs(item.y - first.y) <= 6)
         .sort((a, b) => a.x - b.x || a.order - b.order)[0];
       if (!next) break;

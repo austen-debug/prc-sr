@@ -118,12 +118,12 @@ export function validateFlightAlertRows(rows, publishedTotal) {
     if (!String(row.sec ?? '').trim()) issues.push(diagnostic('section', `Row ${index + 1}: SEC is blank; review before importing.`, location, 'warning'));
     else if (!section) issues.push(diagnostic('section', `Row ${index + 1}: section must be 1–4 if supplied.`, location));
     if (!dorm) issues.push(diagnostic('dorm', `Row ${index + 1}: invalid dorm identifier.`, location));
-    const spaceForce = Boolean(row.space_force) || squadron === '535 TRS';
+    const spaceForce = row.space_force === true || row.space_force === 'true' || squadron === '535 TRS';
     const loadLimit = spaceForce ? SPACE_FORCE_LOAD_LIMIT : STANDARD_LOAD_LIMIT;
-    if (squadron === '535 TRS' && !row.space_force) issues.push(diagnostic('space_force', `Row ${index + 1}: 535 TRS must be flagged Space Force.`, location));
+    if (squadron === '535 TRS' && row.space_force !== true && row.space_force !== 'true') issues.push(diagnostic('space_force', `Row ${index + 1}: 535 TRS must be flagged Space Force.`, location));
     if (!Number.isInteger(load) || load < 1 || load > loadLimit) issues.push(diagnostic('load', `Row ${index + 1}: load must be 1–${loadLimit}${spaceForce ? ' (Space Force)' : ''}.`, location));
     else { calculated += load;
-      if (load > LOAD_CONFIRMATION_THRESHOLD && !row.load_confirmed) issues.push(diagnostic('load_confirmation', `Row ${index + 1}: load ${load} exceeds 70; confirm this dorm capacity before importing or initializing.`, location, 'warning'));
+      if (load > LOAD_CONFIRMATION_THRESHOLD && row.load_confirmed !== true) issues.push(diagnostic('load_confirmation', `Row ${index + 1}: load ${load} exceeds 70; confirm this dorm capacity before importing or initializing.`, location, 'warning'));
     }
     if (!['male', 'female'].includes(row.sex)) issues.push(diagnostic('sex', `Row ${index + 1}: select Male or Female.`, location));
     if (squadron && dorm) {

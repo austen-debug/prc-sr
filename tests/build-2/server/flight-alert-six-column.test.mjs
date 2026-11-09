@@ -182,3 +182,34 @@ test('WG27006 Flight Alert: SECT heading, merged squadron cells, 16 flights and 
   assert.equal(result.rows[6].dorm_name, '3A2');
   assert.equal(result.rows[7].dorm_name, '3A1');
 });
+
+
+test('alternate split PDF headings resolve SQDRN/SECT/INTERNAL SECTION/DORMITORY/GENDER/FLIGHT LOAD',async()=>{
+  const cells=[];
+  const put=(text,x,y)=>cells.push([text,x,y]);
+  [['SQDRN',50],['SECT',110],['INTERNAL',180],['SECTION',226],
+    ['DORMITORY',287],['GENDER',365],['FLIGHT',430],['LOAD',462]]
+    .forEach(([value,x])=>put(value,x,520));
+  put('535',55,480);put('1',115,480);put('1',190,480);put('A01',290,480);
+  put('F',368,480);put('300',436,480);
+  put('320',55,451);put('2',115,451);put('2',190,451);put('3A2',290,451);
+  put('M',368,451);put('61',436,451);
+  put('FLT/SQUADRON',540,520);put('PROC DAY',645,520);put('THURSDAY',645,480);
+  put('TOTAL FLTS - 2',545,402);put('AAFES: 361',108,402);
+  const content=cells.map(([value,x,y])=>'BT /F1 12 Tf 1 0 0 1 '+x+' '+y+' Tm ('+value+') Tj ET').join('\n');
+  const pdf='%PDF-1.4\n1 0 obj << /Length '+content.length+' >> stream\n'+content+'\nendstream\nendobj\n%%EOF';
+  const extracted=await extractFlightAlertPdf(fixture(pdf));
+  const parsed=parseFlightAlertText(extracted);
+  assert.equal(parsed.ok,true,JSON.stringify({extracted,issues:parsed.issues}));
+  assert.equal(parsed.format,'six-column-v2');
+  assert.deepEqual(parsed.rows.map(row=>[
+    row.sdq,row.sec,row.inter_sec,row.dorm_name,row.sex,row.load,row.space_force
+  ]),[
+    ['535 TRS','1','1','A01','female','300',true],
+    ['320 TRS','2','2','3A2','male','61',false]
+  ]);
+  assert.equal(parsed.calculatedTotal,361);
+  assert.equal(parsed.publishedTotal,361);
+  assert.equal(parsed.issues.some(i=>i.code==='load_confirmation'),true);
+  assert.doesNotMatch(extracted,/THURSDAY/);
+});

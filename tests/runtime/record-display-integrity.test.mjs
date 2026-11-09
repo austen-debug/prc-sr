@@ -71,14 +71,14 @@ test('Input owns dorm identity and never re-matches a created dorm to the live g
   assert.doesNotMatch(input, /liveDorms\.find\(item => String\(item\.dorm_name/);
 });
 
-test('Input dorm loads accept 1 through 100 consistently in field and preflight validation', async () => {
+test('Input uses 70-person confirmation threshold with 100 normal / 300 Space Force limits', async () => {
   const input = await source('public/js/gate-input-page-controller.js');
 
-  assert.match(input, /class="batch-load[\s\S]*?min="1"\s+max="100"/);
-  assert.match(input, /n\(row\.load\)\s*>\s*100/);
-  assert.match(input, /Dorm loads must be between 1 and 100\./);
-  assert.doesNotMatch(input, /n\(row\.load\)\s*>\s*60/);
-  assert.doesNotMatch(input, /Dorm loads must be between 1 and 60\./);
+  assert.match(input, /const maximumLoad = row => isSpaceForceRow\(row\) \? 300 : 100/);
+  assert.match(input, /class="batch-load[\s\S]*?min="1" max="\$\{maximumLoad\(row\)\}"/);
+  assert.match(input, /class="batch-load-confirm"/);
+  assert.match(input, /pendingLoad=rows\.find\(row=>n\(row\.load\)>70 && row\.load_confirmed!==true\)/);
+  assert.match(input, /Dorm loads must be 1–100, or 1–300 when Space Force is flagged/);
 });
 
 test('Processing Space Force marker is bound to the canonical persistent card class', async () => {

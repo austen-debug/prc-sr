@@ -1,7 +1,7 @@
 /** GATE Input enhancement: Flight Alert import changes draft rows only, never operational records. */
 import './week-group-action-placement.mjs?v=live-closeout-reverify-20261027-v1';
 import { parseFlightAlertText, validateFlightAlertRows, normalizeSquadron, orderFlightAlertRows, prepareFlightAlertReviewRows } from './flight-alert-parser.mjs?v=flight-alert-parser-20261013-pdfjs';
-import { extractFlightAlertPdf } from './flight-alert-pdf.mjs?v=flight-alert-pdf-20261013-pdfjs';
+import { extractFlightAlertPdf } from './flight-alert-pdf.mjs?v=flight-alert-pdf-20261109-sect';
 
 const $ = id => document.getElementById(id);
 const esc = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));

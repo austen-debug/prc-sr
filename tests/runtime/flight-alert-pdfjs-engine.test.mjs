@@ -14,10 +14,10 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL('../../public/vendor/pdfjs/pdf.wor
  * searchable ASCII: this is what the old lightweight reader could not decode.
  * No source Flight Alert PDF or its metadata is checked into the repository.
  */
-function makeEncodedFlightAlert() {
+function makeEncodedFlightAlert(sectionHeader = 'SEC') {
   const cells = [];
   const put = (x, y, value) => cells.push({ x, y, text: String(value) });
-  [['SQD', 55], ['SEC', 95], ['INTER/SECT', 130], ['DORM', 190],
+  [['SQD', 55], [sectionHeader, 95], ['INTER/SECT', 130], ['DORM', 190],
     ['SEX', 240], ['LOAD', 280]].forEach(([heading, x]) => put(x, 520, heading));
   const groups = [
     { sq: '321', begin: 1, end: 4 },
@@ -135,4 +135,18 @@ test('actual PDF.js import path preserves all 16 numbered flights and SEC zero',
   assert.equal(result.calculatedTotal, 897);
   assert.equal(result.variance, 0);
   assert.doesNotMatch(extracted, /017\/321|PROC DAY/, 'right-side schedule must not pollute the dorm table');
+});
+
+
+test('PDF.js decodes SECT header and assigns merged squadron cells to all 16 flights', async () => {
+  const extracted = await extractFlightAlertPdf(makeEncodedFlightAlert('SECT'), pdfjs);
+  const result = parseFlightAlertText(extracted);
+  assert.equal(result.ok, true, JSON.stringify({ extracted, issues: result.issues }));
+  assert.equal(result.rows.length, 16);
+  assert.deepEqual(result.rows.map(row => row.inter_sec),
+    Array.from({ length: 16 }, (_, i) => String(i + 1)));
+  assert.deepEqual(result.rows.slice(0, 4).map(row => row.sdq), Array(4).fill('321 TRS'));
+  assert.equal(result.publishedTotal, 897);
+  assert.equal(result.variance, 0);
+  assert.doesNotMatch(extracted, /017\/321|PROC DAY/);
 });

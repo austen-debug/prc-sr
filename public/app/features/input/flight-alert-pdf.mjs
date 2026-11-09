@@ -4,7 +4,7 @@ const NUMBER = '[-+]?(?:\\d+\\.?\\d*|\\.\\d+)';
 const DORM_CELL = /^(?:[0-9][A-Z][0-9]|[A-Z][0-9]{2})$/;
 const HEADER_ALIASES = Object.freeze({
   sdq: ['SQD', 'SDQ', 'SQUADRON'],
-  sec: ['SEC', 'SECTION'],
+  sec: ['SEC', 'SECT', 'SECTION'],
   inter: ['INTER/SECT', 'INTER/SEC'],
   dorm: ['DORM', 'DORMITORY'],
   sex: ['SEX', 'GENDER'],

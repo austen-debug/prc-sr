@@ -35,10 +35,10 @@
     "/js/prc-dash-auditorium-location.js?v=status-board-spacing-20261017-v1",
     "/js/gate-bus-workflow-controller.js?v=airport-pax-limit-60-20261017-v1",
     "/js/gate-airport-bus-delete-controller.js?v=airport-bus-delete-20260714",
-    "/js/gate-input-page-controller.js?v=week-group-progress-20261018-v1",
+    "/js/gate-input-page-controller.js?v=flight-alert-load-20261109-v1",
     "/js/gate-archive-controller.js?v=atomic-legacy-closeout-20261027-v1",
     "/js/gate-permission-guard.js?v=permission-server-role-20260922",
-    "/app/features/input/flight-alert-import.mjs?v=flight-alert-sect-20261109",
+    "/app/features/input/flight-alert-import.mjs?v=flight-alert-rules-20261109-v1",
     "/js/gate-app-shell-controller.js?v=tablet-menu-20260929",
     "/js/gate-fullscreen-board-layout-controller.js?v=fullscreen-board-menu-owner-20260929",
     "/js/prc-dash-modal-mobile-validation.js?v=phase-7e-ui-ownership-20260709",
@@ -61,6 +61,6 @@
     "The hidden Phase 3A shadow observer remains the only Build 2 runtime asset until a separate authorization decision.",
     "The existing staged lifecycle runtime may be appended only under the two-step cutover gate; 27 legacy direct scripts plus one staged controller must not exceed the 28-script limit."
   ],
-  "cutoverRuntimeScript": "/js/gate-persistence-runtime.js?v=cutover-readiness-20261028",
+  "cutoverRuntimeScript": "/js/gate-persistence-runtime.js?v=flight-alert-load-20261109-v1",
   "cutoverRuntimeCondition": "GATE_PERSISTENCE_ENABLED=true AND GATE_PERSISTENCE_CUTOVER_READY=true for authenticated Instructor/Admin app routes"
 }

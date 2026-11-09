@@ -4,7 +4,7 @@
   'use strict';
   const ENDPOINT='/api/persistence';
   const WINDOWS=['receiving_day_one_start','receiving_day_one_end','receiving_day_two_start','receiving_day_two_end'];
-  const emptyRow=index=>({rowIndex:index,sdq:'',sec:'',inter_sec:'',dorm_name:'',sex:'male',band:false,space_force:false,load:''});
+  const emptyRow=index=>({rowIndex:index,sdq:'',sec:'',inter_sec:'',dorm_name:'',sex:'male',band:false,space_force:false,load:'',load_confirmed:false});
   let mode='checking',health=null,draftId=null,draftRevision=null,lastSaved='',inFlight=null,timer=null;
   let dirtyDuringBoot=false,conflict=false,actionInFlight=false,recoveredReview=null,recoveredReviewGroup='';
   const byId=id=>document.getElementById(id);
@@ -55,7 +55,7 @@
     return {proposed_week_group:group,
       rows:(controller()?.getRows?.()||[]).map((row,index)=>({rowIndex:index,sdq:row.sdq||'',sec:row.sec||'',
         inter_sec:row.inter_sec||'',dorm_name:row.dorm_name||'',sex:row.sex||'male',band:Boolean(row.band),
-        space_force:Boolean(row.space_force),load:row.load??''})),
+        space_force:Boolean(row.space_force),load:row.load??'',load_confirmed:Boolean(row.load_confirmed)})),
       receiving_windows:Object.fromEntries(WINDOWS.map(key=>[key,byId(key)?.value||''])),
       import_review:{published_total:published?(published.value===''?null:published.value):(saved?.published_total??null),
         band_decision:selected?.dataset.band||saved?.band_decision||null}};

@@ -227,6 +227,91 @@ test('conditional update increments version and stale writes receive stable conf
   assert.equal(staleBody.currentRecordVersion, 2);
 });
 
+test('Status Board accepts en-route buses for Airman, Instructor and Admin but not Squadron', async () => {
+  for (const role of ['airman', 'instructor', 'admin']) {
+    const db = createD1([{
+      __backendId: 'bus-status-board',
+      type: 'bus', bus_type: 'airport', bus_id: '7',
+      week_group: 'WG', status: role === 'airman' ? 'otw' : 'active',
+      otw_count: 27, female_count: 8, nat_count: 2, space_force_count: 3,
+      arrived_at: '', record_version: 2
+    }]);
+    const before = JSON.parse(db.rows[0].data);
+    const arrivedAt = '2026-11-10T21:00:00.000Z';
+    const response = await onRequestPut({
+      env: { DB: db }, data: roleData(role),
+      request: request('PUT', {
+        __backendId: 'bus-status-board', type: 'bus', record_version: 2,
+        __changes: { status: 'arrived', arrived_at: arrivedAt },
+        __base_values: { status: before.status, arrived_at: '' }
+      }, { 'If-Match': '2' })
+    });
+    assert.equal(response.status, 200, role + ': ' + await response.clone().text());
+    const saved = (await response.json()).data;
+    assert.equal(saved.status, 'arrived', role);
+    assert.equal(saved.arrived_at, arrivedAt, role);
+    assert.equal(saved.record_version, 3, role);
+    for (const key of ['bus_id', 'otw_count', 'female_count', 'nat_count', 'space_force_count']) {
+      assert.equal(saved[key], before[key], role + ': ' + key);
+    }
+    assert.equal(calculateOperationalAccounting(db.rows.map(row => JSON.parse(row.data)), 'WG').arrived, 27, role);
+  }
+
+  const db = createD1([{
+    __backendId: 'bus-status-board', type: 'bus', bus_type: 'airport', bus_id: '7',
+    week_group: 'WG', status: 'active', otw_count: 27, record_version: 2
+  }]);
+  const denied = await onRequestPut({
+    env: { DB: db }, data: roleData('squadron'),
+    request: request('PUT', {
+      __backendId: 'bus-status-board', type: 'bus', record_version: 2,
+      __changes: { status: 'arrived', arrived_at: '2026-11-10T21:00:00.000Z' },
+      __base_values: { status: 'active', arrived_at: null }
+    }, { 'If-Match': '2' })
+  });
+  assert.equal(denied.status, 403);
+  assert.equal(JSON.parse(db.rows[0].data).status, 'active');
+});
+
+test('Airman bus confirmation cannot modify counts, identity, timestamps, or completed buses', async () => {
+  const base = {
+    __backendId: 'bus-locked', type: 'bus', bus_type: 'airport', bus_id: '2',
+    week_group: 'WG', status: 'active', otw_count: 20, female_count: 4,
+    arrived_at: '', record_version: 1
+  };
+  const stamp = '2026-11-10T21:00:00.000Z';
+  const attemptedChanges = [
+    { status: 'arrived', arrived_at: stamp, otw_count: 30 },
+    { status: 'arrived', arrived_at: stamp, bus_id: '99' },
+    { status: 'arrived', arrived_at: stamp, departed_at: stamp },
+    { status: 'arrived', arrived_at: 'invalid' },
+    { status: 'active', arrived_at: stamp }
+  ];
+  for (const changes of attemptedChanges) {
+    const db = createD1([base]);
+    const response = await onRequestPut({
+      env: { DB: db }, data: roleData('airman'),
+      request: request('PUT', {
+        __backendId: base.__backendId, type: 'bus', record_version: 1,
+        __changes: changes,
+        __base_values: Object.fromEntries(Object.keys(changes).map(key => [key, base[key] ?? null]))
+      }, { 'If-Match': '1' })
+    });
+    assert.equal(response.status, 403, JSON.stringify(changes));
+    assert.equal(JSON.parse(db.rows[0].data).status, 'active');
+  }
+  const arrivedDb = createD1([{ ...base, status: 'arrived', arrived_at: stamp }]);
+  const response = await onRequestPut({
+    env: { DB: arrivedDb }, data: roleData('airman'),
+    request: request('PUT', {
+      __backendId: base.__backendId, type: 'bus', record_version: 1,
+      __changes: { status: 'arrived', arrived_at: '2026-11-10T21:01:00.000Z' },
+      __base_values: { status: 'arrived', arrived_at: stamp }
+    }, { 'If-Match': '1' })
+  });
+  assert.equal(response.status, 403);
+});
+
 test('Airman commands are limited to local arrivals and approved Processing fields',async()=>{
  const db=createD1([
   {__backendId:'bus-1',type:'bus',bus_type:'airport',bus_id:'1',week_group:'WG',

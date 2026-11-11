@@ -49,6 +49,23 @@ export function mayCreateRecord(role, record = {}) {
 export function mayUpdateRecord(role, existing = {}, incoming = {}) {
   const actor = normalizeServerRole(role);
   if (actor !== 'airman') return ['admin','instructor','system'].includes(actor);
+
+  // Airmen may confirm an en-route bus on the Status Board, but cannot edit
+  // its identity, passenger counts, departure time, or any other bus field.
+  if (existing.type === 'bus' && incoming.type === 'bus' &&
+      existing.week_group === incoming.week_group) {
+    const wasEnRoute = ['active', 'otw'].includes(String(existing.status || '').trim().toLowerCase());
+    const isArrived = String(incoming.status || '').trim().toLowerCase() === 'arrived';
+    const arrivedAt = String(incoming.arrived_at || '');
+    if (!wasEnRoute || !isArrived ||
+        !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z$/.test(arrivedAt) ||
+        !Number.isFinite(Date.parse(arrivedAt))) return false;
+    return [...new Set([...Object.keys(existing), ...Object.keys(incoming)])].every(key =>
+      SERVER_OWNED_FIELDS.has(key) ||
+      key === 'status' || key === 'arrived_at' ||
+      JSON.stringify(existing[key] ?? null) === JSON.stringify(incoming[key] ?? null));
+  }
+
   if (existing.type !== 'dorm' || incoming.type !== 'dorm' ||
       existing.week_group !== incoming.week_group) return false;
   return [...new Set([...Object.keys(existing), ...Object.keys(incoming)])].every(key =>

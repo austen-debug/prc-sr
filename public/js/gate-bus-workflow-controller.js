@@ -552,27 +552,9 @@
     if (window.confirm(message)) callback();
   }
 
-  function showBusArrivalError(message = '') {
-    const board = document.getElementById('page-board');
-    if (!board) return;
-    let notice = document.getElementById('gate-bus-arrival-error');
-    if (!notice) {
-      notice = document.createElement('div');
-      notice.id = 'gate-bus-arrival-error';
-      notice.className = 'text-sm';
-      notice.setAttribute('role', 'alert');
-      const panel = document.getElementById('active-buses');
-      if (panel) panel.insertAdjacentElement('afterend', notice);
-      else board.appendChild(notice);
-    }
-    notice.textContent = message;
-    notice.style.color = 'var(--red)';
-    notice.hidden = !message;
-  }
-
   function confirmBusArrivalCanonical(id) {
-    // The Status Board renders every active bus record, including legacy
-    // records without an explicit bus_type. Resolve by backend identity.
+    // The board shows all en-route bus records. Use persistent record identity,
+    // not the optional airport/local bus classification, to resolve its action.
     const recordId = String(id || '');
     const findBus = () => data().find(record =>
       record?.type === 'bus' && String(record.__backendId || '') === recordId);
@@ -582,40 +564,33 @@
       ? `LOCAL – ${bus.destination || bus.originating_destination || 'Originating Destination'}`
       : `Bus #${bus.bus_id || ''}`;
 
-    showBusArrivalError('');
     confirmAction(`Confirm ${busLabel} has arrived at PRC?`, async () => {
       if (pendingArrivals.has(recordId)) return;
       const current = findBus();
-      if (!current) {
-        showBusArrivalError('Bus record is unavailable. Refresh the Status Board and retry.');
-        return;
-      }
+      if (!current) return;
       if (!isActiveBus(current)) {
         refreshAllSurfaces('bus-already-arrived');
         return;
       }
 
       pendingArrivals.add(recordId);
-      const arrivedAt = new Date().toISOString();
       const payload = {
-        __backendId: current.__backendId,
-        type: 'bus',
-        record_version: current.record_version,
-        __changes: { status: 'arrived', arrived_at: arrivedAt },
+        __backendId: current.__backendId, type: 'bus', record_version: current.record_version,
+        __changes: { status: 'arrived', arrived_at: new Date().toISOString() },
         __base_values: { status: current.status ?? null, arrived_at: current.arrived_at ?? null }
       };
       try {
         const result = await window.dataSdk.update(payload);
-        if (!result?.isOk) {
-          showBusArrivalError(result?.error || 'Bus arrival could not be confirmed. Please retry.');
-          return;
+        if (result?.isOk) {
+          if (result.data) updateCache(result.data);
+          refreshAllSurfaces('bus-arrival-confirm');
+        } else {
+          console.warn('GATE bus arrival confirmation rejected:', result?.code || result?.error || 'update_failed');
+          showMessage('airport-msg', result?.error || 'Failed to confirm bus arrival.', true);
         }
-        if (result.data) updateCache(result.data);
-        showBusArrivalError('');
-        refreshAllSurfaces('bus-arrival-confirm');
       } catch (error) {
         console.error('GATE bus arrival confirmation failed:', error);
-        showBusArrivalError('Bus arrival could not be verified. Refresh the Status Board before retrying.');
+        showMessage('airport-msg', 'Failed to confirm bus arrival.', true);
       } finally {
         pendingArrivals.delete(recordId);
       }

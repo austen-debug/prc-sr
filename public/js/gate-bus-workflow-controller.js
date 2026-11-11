@@ -7,6 +7,7 @@
   let hooksRegistered = false;
   let refreshQueued = false;
   let editBusBaseline = null;
+  const pendingArrivals = new Set();
   const MAX_BUS_PAX = 60;
 
   function n(value) {
@@ -552,22 +553,46 @@
   }
 
   function confirmBusArrivalCanonical(id) {
-    const bus = busById(id);
-    if (!bus || !isActiveBus(bus)) return;
+    // The board shows all en-route bus records. Use persistent record identity,
+    // not the optional airport/local bus classification, to resolve its action.
+    const recordId = String(id || '');
+    const findBus = () => data().find(record =>
+      record?.type === 'bus' && String(record.__backendId || '') === recordId);
+    const bus = findBus();
+    if (!bus || !isActiveBus(bus) || pendingArrivals.has(recordId)) return;
     const busLabel = bus.bus_type === 'local'
       ? `LOCAL – ${bus.destination || bus.originating_destination || 'Originating Destination'}`
       : `Bus #${bus.bus_id || ''}`;
 
     confirmAction(`Confirm ${busLabel} has arrived at PRC?`, async () => {
-      const payload = {__backendId:bus.__backendId,type:'bus',record_version:bus.record_version,
-        __changes:{status:'arrived',arrived_at:new Date().toISOString()},
-        __base_values:{status:bus.status ?? null,arrived_at:bus.arrived_at ?? null}};
-      const result = await window.dataSdk.update(payload);
-      if (result?.isOk) {
-        updateCache(result.data || payload);
-        refreshAllSurfaces('bus-arrival-confirm');
-      } else {
-        showMessage('airport-msg', result?.error || 'Failed to confirm bus arrival.', true);
+      if (pendingArrivals.has(recordId)) return;
+      const current = findBus();
+      if (!current) return;
+      if (!isActiveBus(current)) {
+        refreshAllSurfaces('bus-already-arrived');
+        return;
+      }
+
+      pendingArrivals.add(recordId);
+      const payload = {
+        __backendId: current.__backendId, type: 'bus', record_version: current.record_version,
+        __changes: { status: 'arrived', arrived_at: new Date().toISOString() },
+        __base_values: { status: current.status ?? null, arrived_at: current.arrived_at ?? null }
+      };
+      try {
+        const result = await window.dataSdk.update(payload);
+        if (result?.isOk) {
+          if (result.data) updateCache(result.data);
+          refreshAllSurfaces('bus-arrival-confirm');
+        } else {
+          console.warn('GATE bus arrival confirmation rejected:', result?.code || result?.error || 'update_failed');
+          showMessage('airport-msg', result?.error || 'Failed to confirm bus arrival.', true);
+        }
+      } catch (error) {
+        console.error('GATE bus arrival confirmation failed:', error);
+        showMessage('airport-msg', 'Failed to confirm bus arrival.', true);
+      } finally {
+        pendingArrivals.delete(recordId);
       }
     });
   }

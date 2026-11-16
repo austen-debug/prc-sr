@@ -19,7 +19,7 @@ test('standalone Squadron phone controls occupy a dedicated row without moving t
   assert.match(mobile, /\.gate-squadron-standalone #page-squadron \.gate-squadron-actions \.gate-squadron-utility\s*\{[^}]*min-height:44px;[^}]*white-space:normal/);
   assert.match(mobile, /\.gate-squadron-standalone #page-squadron \.gate-squadron-traffic\s*\{\s*grid-row:3;/);
   assert.doesNotMatch(mobile, /\.gate-squadron-heading\s*\{/, 'the mobile title layout stays untouched');
-  assert.match(html, /\/css\/military-glass-terminal\.css\?v=squadron-mobile-actions-20261116-v1/);
+  assert.match(html, /\/css\/military-glass-terminal\.css\?v=week-group-progress-20261018-v1/);
   assert.match(controller, /id="squadron-enable-sound"/);
   assert.match(controller, /id="squadron-logout"/);
   assert.match(controller, /byId\('squadron-enable-sound'\)\?\.addEventListener\('click'/);

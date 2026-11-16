@@ -5727,6 +5727,29 @@ body.theme-light :is(input, textarea):focus-visible {
 #page-squadron .gate-squadron-publish-status { min-height:1.25em; font-size:12px; line-height:1.35; color:var(--mg-text-soft); }
 @media(max-width:950px) { #page-squadron .gate-squadron-metrics { grid-template-columns:repeat(2,minmax(0,1fr)); } #page-squadron .gate-squadron-metric:nth-child(3) { border-left:0; } #page-squadron .gate-squadron-metric:nth-child(n+3) { border-top:1px solid var(--mg-border-soft); } #page-squadron .gate-squadron-columns { grid-template-columns:1fr; } }
 @media(max-width:620px) { #page-squadron .gate-squadron-topbar { grid-template-columns:1fr auto; } #page-squadron .gate-squadron-heading { grid-column:1/-1; grid-row:1; padding-inline:36px; } #page-squadron .gate-squadron-top-left { grid-column:1; grid-row:1; z-index:1; } #page-squadron .gate-squadron-actions { grid-column:2; grid-row:1; z-index:1; } #page-squadron .gate-squadron-actions .gate-squadron-tag { display:none; } #page-squadron .gate-squadron-traffic { grid-row:2; } #page-squadron .gate-squadron-view { padding:8px; } #page-squadron .gate-squadron-metric { padding:10px 8px; } #page-squadron .gate-squadron-tempo-option { padding:7px 1px; } #page-squadron .gate-squadron-instruction-row { grid-template-columns:1fr; } #page-squadron .gate-squadron-instruction-row .gate-squadron-utility { width:100%; } #page-squadron .gate-squadron-publish-actions { grid-template-columns:1fr; } }
+/* Standalone Squadron phone view: utility buttons have their own row below the title. */
+@media (max-width:620px) {
+  .gate-squadron-standalone #page-squadron .gate-squadron-actions {
+    grid-column:1/-1;
+    grid-row:2;
+    justify-self:stretch;
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    align-items:stretch;
+    gap:8px;
+    z-index:auto;
+  }
+  .gate-squadron-standalone #page-squadron .gate-squadron-actions .gate-squadron-utility {
+    width:100%;
+    min-width:0;
+    min-height:44px;
+    padding:8px;
+    text-align:center;
+    white-space:normal;
+    overflow-wrap:anywhere;
+  }
+  .gate-squadron-standalone #page-squadron .gate-squadron-traffic { grid-row:3; }
+}
 @media(prefers-reduced-motion:reduce) { #page-squadron .gate-squadron-information.has-notice { animation:none; } }
 
 
